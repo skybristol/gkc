@@ -318,9 +318,7 @@ class WikiverseAuth(AuthBase):
                 csrf_token: str = data["query"]["tokens"]["csrftoken"]
                 return csrf_token
             else:
-                raise AuthenticationError(
-                    f"Failed to get CSRF token. Response: {data}"
-                )
+                raise AuthenticationError(f"Failed to get CSRF token. Response: {data}")
 
         except requests.RequestException as e:
             raise AuthenticationError(f"Network error getting CSRF token: {str(e)}")
