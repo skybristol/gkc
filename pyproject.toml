@@ -22,6 +22,7 @@ classifiers = [
 [tool.poetry.dependencies]
 python = "^3.9"
 requests = "^2.31.0"
+pyshex = "^0.8.1"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.0.0"
