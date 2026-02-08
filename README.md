@@ -59,27 +59,92 @@ The `WikiverseAuth` class provides unified authentication for all Wikimedia proj
 3. Your username will be in the format `YourUsername@BotName`
 4. Save the generated password (you won't see it again!)
 
-**Using WikiverseAuth:**
+**Basic Usage:**
 
 ```python
-from gkc import WikiverseAuth
+from gkc import WikiverseAuth, AuthenticationError
 
-# Method 1: Using explicit credentials (bot password format)
+# Method 1: Using environment variables (recommended)
+auth = WikiverseAuth()
+auth.login()
+
+# Method 2: Using explicit credentials
 auth = WikiverseAuth(
     username="YourUsername@BotName",
     password="abc123def456ghi789"
 )
-
-# Method 2: Using environment variables (WIKIVERSE_USERNAME, WIKIVERSE_PASSWORD)
-auth = WikiverseAuth()
+auth.login()
 
 # Method 3: Interactive prompt
 auth = WikiverseAuth(interactive=True)
+auth.login()
 
-# Check authentication status
-if auth.is_authenticated():
-    print(f"Authenticated as: {auth.get_account_name()}")
+# Check login status
+if auth.is_logged_in():
+    print(f"Logged in as: {auth.get_account_name()}")
     print(f"Bot name: {auth.get_bot_name()}")
+```
+
+**Targeting Different Wikimedia Projects:**
+
+```python
+# Wikidata (default)
+auth = WikiverseAuth(
+    username="User@Bot",
+    password="secret",
+    api_url="wikidata"  # or just omit for default
+)
+auth.login()
+
+# English Wikipedia
+auth = WikiverseAuth(
+    username="User@Bot",
+    password="secret",
+    api_url="wikipedia"
+)
+auth.login()
+
+# Wikimedia Commons
+auth = WikiverseAuth(
+    username="User@Bot",
+    password="secret",
+    api_url="commons"
+)
+auth.login()
+
+# Custom MediaWiki instance (e.g., enterprise wiki)
+auth = WikiverseAuth(
+    username="User@Bot",
+    password="secret",
+    api_url="https://wiki.mycompany.com/w/api.php"
+)
+auth.login()
+```
+
+**Making Authenticated API Requests:**
+
+```python
+# After login, use the session for API requests
+auth = WikiverseAuth()
+auth.login()
+
+# Example: Query user information
+response = auth.session.get(auth.api_url, params={
+    "action": "query",
+    "meta": "userinfo",
+    "format": "json"
+})
+print(response.json())
+
+# For editing, get a CSRF token
+try:
+    csrf_token = auth.get_csrf_token()
+    print(f"CSRF Token: {csrf_token}")
+except AuthenticationError as e:
+    print(f"Error: {e}")
+
+# When done, logout
+auth.logout()
 ```
 
 **Helper Methods:**
@@ -92,6 +157,10 @@ print(auth.get_account_name())  # Output: "Alice"
 
 # Extract bot name
 print(auth.get_bot_name())  # Output: "MyBot"
+
+# Check authentication state
+print(auth.is_authenticated())  # Has credentials
+print(auth.is_logged_in())      # Successfully logged in to API
 ```
 
 #### OpenStreetMap
@@ -117,15 +186,31 @@ if auth.is_authenticated():
 
 You can set the following environment variables for automatic authentication:
 
-- `WIKIVERSE_USERNAME` and `WIKIVERSE_PASSWORD` for Wikimedia projects (Wikidata, Wikipedia, Wikimedia Commons)
-- `OPENSTREETMAP_USERNAME` and `OPENSTREETMAP_PASSWORD` for OpenStreetMap
+**Wikimedia Projects:**
+- `WIKIVERSE_USERNAME` - Bot password username (format: Username@BotName)
+- `WIKIVERSE_PASSWORD` - Bot password
+- `WIKIVERSE_API_URL` - (Optional) MediaWiki API endpoint. Defaults to Wikidata. Can use shortcuts: "wikidata", "wikipedia", "commons"
+
+**OpenStreetMap:**
+- `OPENSTREETMAP_USERNAME` - OpenStreetMap username
+- `OPENSTREETMAP_PASSWORD` - OpenStreetMap password
 
 Example:
 
 ```bash
-# Bot password format: Username@BotName
+# Wikidata (default)
 export WIKIVERSE_USERNAME="Alice@MyBot"
 export WIKIVERSE_PASSWORD="abc123def456ghi789"
+
+# Wikipedia
+export WIKIVERSE_USERNAME="Alice@MyBot"
+export WIKIVERSE_PASSWORD="abc123def456ghi789"
+export WIKIVERSE_API_URL="wikipedia"
+
+# Custom MediaWiki instance
+export WIKIVERSE_USERNAME="Alice@MyBot"
+export WIKIVERSE_PASSWORD="abc123def456ghi789"
+export WIKIVERSE_API_URL="https://wiki.mycompany.com/w/api.php"
 
 # OpenStreetMap
 export OPENSTREETMAP_USERNAME="your_osm_username"

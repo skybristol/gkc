@@ -7,6 +7,6 @@ Wikidata, Wikipedia, Wikimedia Commons, and OpenStreetMap.
 
 __version__ = "0.1.0"
 
-from gkc.auth import OpenStreetMapAuth, WikiverseAuth
+from gkc.auth import AuthenticationError, OpenStreetMapAuth, WikiverseAuth
 
-__all__ = ["WikiverseAuth", "OpenStreetMapAuth"]
+__all__ = ["WikiverseAuth", "OpenStreetMapAuth", "AuthenticationError"]
