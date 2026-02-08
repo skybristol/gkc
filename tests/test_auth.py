@@ -1,7 +1,9 @@
 """Tests for authentication module."""
 
 from unittest.mock import Mock, patch
+
 import pytest
+
 from gkc.auth import AuthenticationError, OpenStreetMapAuth, WikiverseAuth
 
 
@@ -30,34 +32,28 @@ class TestWikiverseAuth:
         auth = WikiverseAuth(
             username="testuser@testbot",
             password="testpass",
-            api_url="https://custom.wiki.org/w/api.php"
+            api_url="https://custom.wiki.org/w/api.php",
         )
         assert auth.api_url == "https://custom.wiki.org/w/api.php"
 
     def test_init_with_api_url_shortcut_wikidata(self):
         """Test initialization with API URL shortcut for Wikidata."""
         auth = WikiverseAuth(
-            username="testuser@testbot",
-            password="testpass",
-            api_url="wikidata"
+            username="testuser@testbot", password="testpass", api_url="wikidata"
         )
         assert auth.api_url == "https://www.wikidata.org/w/api.php"
 
     def test_init_with_api_url_shortcut_wikipedia(self):
         """Test initialization with API URL shortcut for Wikipedia."""
         auth = WikiverseAuth(
-            username="testuser@testbot",
-            password="testpass",
-            api_url="wikipedia"
+            username="testuser@testbot", password="testpass", api_url="wikipedia"
         )
         assert auth.api_url == "https://en.wikipedia.org/w/api.php"
 
     def test_init_with_api_url_shortcut_commons(self):
         """Test initialization with API URL shortcut for Commons."""
         auth = WikiverseAuth(
-            username="testuser@testbot",
-            password="testpass",
-            api_url="commons"
+            username="testuser@testbot", password="testpass", api_url="commons"
         )
         assert auth.api_url == "https://commons.wikimedia.org/w/api.php"
 
@@ -136,13 +132,11 @@ class TestWikiverseAuth:
         token_response.json.return_value = {
             "query": {"tokens": {"logintoken": "test_token"}}
         }
-        
+
         # Mock login request
         login_response = Mock()
-        login_response.json.return_value = {
-            "login": {"result": "Success"}
-        }
-        
+        login_response.json.return_value = {"login": {"result": "Success"}}
+
         mock_session.get.return_value = token_response
         mock_session.post.return_value = login_response
 
@@ -164,34 +158,31 @@ class TestWikiverseAuth:
         token_response.json.return_value = {
             "query": {"tokens": {"logintoken": "test_token"}}
         }
-        
+
         # Mock login request with failure
         login_response = Mock()
         login_response.json.return_value = {
-            "login": {
-                "result": "Failed",
-                "reason": "Invalid credentials"
-            }
+            "login": {"result": "Failed", "reason": "Invalid credentials"}
         }
-        
+
         mock_session.get.return_value = token_response
         mock_session.post.return_value = login_response
 
         auth = WikiverseAuth(username="testuser@testbot", password="testpass")
-        
+
         with pytest.raises(AuthenticationError) as exc_info:
             auth.login()
-        
+
         assert "Failed" in str(exc_info.value)
         assert not auth.is_logged_in()
 
     def test_login_without_credentials(self):
         """Test login without credentials."""
         auth = WikiverseAuth()
-        
+
         with pytest.raises(AuthenticationError) as exc_info:
             auth.login()
-        
+
         assert "credentials not provided" in str(exc_info.value)
 
     @patch("gkc.auth.requests.Session")
@@ -217,10 +208,10 @@ class TestWikiverseAuth:
     def test_get_csrf_token_not_logged_in(self):
         """Test getting CSRF token when not logged in."""
         auth = WikiverseAuth(username="testuser@testbot", password="testpass")
-        
+
         with pytest.raises(AuthenticationError) as exc_info:
             auth.get_csrf_token()
-        
+
         assert "Not logged in" in str(exc_info.value)
 
     @patch("gkc.auth.requests.Session")

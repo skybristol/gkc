@@ -17,11 +17,11 @@ Bot passwords provide:
 - Format: Username@BotName (e.g., "Alice@MyBot")
 """
 
-import os
 import getpass
-from typing import Optional, Dict, Any
-import requests
+import os
+from typing import Optional
 
+import requests
 
 # Default MediaWiki API endpoints for common Wikimedia projects
 DEFAULT_WIKIMEDIA_APIS = {
@@ -33,6 +33,7 @@ DEFAULT_WIKIMEDIA_APIS = {
 
 class AuthenticationError(Exception):
     """Raised when authentication fails."""
+
     pass
 
 
@@ -75,7 +76,7 @@ class WikiverseAuth(AuthBase):
         >>> # Authenticate to Wikidata (default)
         >>> auth = WikiverseAuth()
         >>> auth.login()
-        
+
         >>> # Direct parameters (bot password format)
         >>> auth = WikiverseAuth(
         ...     username="MyUsername@MyBot",
@@ -83,7 +84,7 @@ class WikiverseAuth(AuthBase):
         ...     api_url="https://www.wikidata.org/w/api.php"
         ... )
         >>> auth.login()
-        
+
         >>> # Custom MediaWiki instance
         >>> auth = WikiverseAuth(
         ...     username="MyUsername@MyBot",
@@ -91,7 +92,7 @@ class WikiverseAuth(AuthBase):
         ...     api_url="https://my-wiki.example.com/w/api.php"
         ... )
         >>> auth.login()
-        
+
         >>> # Use authenticated session for API requests
         >>> response = auth.session.get(auth.api_url, params={
         ...     "action": "query",
@@ -111,9 +112,10 @@ class WikiverseAuth(AuthBase):
 
         Args:
             username: Bot password username in format "Username@BotName".
-                     If not provided, reads from WIKIVERSE_USERNAME environment variable.
-            password: Bot password. If not provided, reads from WIKIVERSE_PASSWORD
-                     environment variable.
+                If not provided, reads from WIKIVERSE_USERNAME
+                environment variable.
+            password: Bot password. If not provided, reads from
+                WIKIVERSE_PASSWORD environment variable.
             api_url: MediaWiki API endpoint URL. If not provided, reads from
                     WIKIVERSE_API_URL environment variable, or defaults to Wikidata.
                     Can also use shortcuts: "wikidata", "wikipedia", "commons"
@@ -127,11 +129,14 @@ class WikiverseAuth(AuthBase):
         # If credentials still not available and interactive mode is requested
         if interactive and not (username and password):
             print("Bot password credentials not found in environment.")
-            username = input("Enter Wikiverse username (format: Username@BotName): ").strip()
+            username = input(
+                "Enter Wikiverse username (format: Username@BotName): "
+            ).strip()
             password = getpass.getpass("Enter Wikiverse password: ").strip()
             if not api_url:
                 api_url_input = input(
-                    "Enter API URL (or 'wikidata', 'wikipedia', 'commons') [default: wikidata]: "
+                    "Enter API URL (or 'wikidata', 'wikipedia', 'commons') "
+                    "[default: wikidata]: "
                 ).strip()
                 api_url = api_url_input if api_url_input else "wikidata"
 
@@ -148,9 +153,9 @@ class WikiverseAuth(AuthBase):
 
         # Initialize session for authenticated requests
         self.session = requests.Session()
-        self.session.headers.update({
-            "User-Agent": "GKC-Python-Client/0.1 (https://github.com/skybristol/gkc)"
-        })
+        self.session.headers.update(
+            {"User-Agent": "GKC-Python-Client/0.1 (https://github.com/skybristol/gkc)"}
+        )
         self._logged_in = False
 
     def login(self) -> bool:
@@ -180,7 +185,7 @@ class WikiverseAuth(AuthBase):
                 "action": "query",
                 "meta": "tokens",
                 "type": "login",
-                "format": "json"
+                "format": "json",
             }
             token_response = self.session.get(self.api_url, params=token_params)
             token_response.raise_for_status()
@@ -200,7 +205,7 @@ class WikiverseAuth(AuthBase):
                 "lgname": self.username,
                 "lgpassword": self.password,
                 "lgtoken": login_token,
-                "format": "json"
+                "format": "json",
             }
             login_response = self.session.post(self.api_url, data=login_params)
             login_response.raise_for_status()
@@ -257,7 +262,7 @@ class WikiverseAuth(AuthBase):
                     "action": "query",
                     "meta": "tokens",
                     "type": "csrf",
-                    "format": "json"
+                    "format": "json",
                 }
                 token_response = self.session.get(self.api_url, params=token_params)
                 token_data = token_response.json()
@@ -267,7 +272,7 @@ class WikiverseAuth(AuthBase):
                 logout_params = {
                     "action": "logout",
                     "token": csrf_token,
-                    "format": "json"
+                    "format": "json",
                 }
                 self.session.post(self.api_url, data=logout_params)
             except Exception:
@@ -303,25 +308,33 @@ class WikiverseAuth(AuthBase):
                 "action": "query",
                 "meta": "tokens",
                 "type": "csrf",
-                "format": "json"
+                "format": "json",
             }
             response = self.session.get(self.api_url, params=token_params)
             response.raise_for_status()
             data = response.json()
 
             if "query" in data and "tokens" in data["query"]:
-                return data["query"]["tokens"]["csrftoken"]
+                csrf_token: str = data["query"]["tokens"]["csrftoken"]
+                return csrf_token
             else:
-                raise AuthenticationError(f"Failed to get CSRF token. Response: {data}")
+                raise AuthenticationError(
+                    f"Failed to get CSRF token. Response: {data}"
+                )
 
         except requests.RequestException as e:
             raise AuthenticationError(f"Network error getting CSRF token: {str(e)}")
 
     def __repr__(self) -> str:
-        status = "logged in" if self._logged_in else (
-            "authenticated" if self.is_authenticated() else "not authenticated"
+        status = (
+            "logged in"
+            if self._logged_in
+            else ("authenticated" if self.is_authenticated() else "not authenticated")
         )
-        return f"WikiverseAuth(username={self.username!r}, api_url={self.api_url!r}, {status})"
+        return (
+            f"WikiverseAuth(username={self.username!r}, "
+            f"api_url={self.api_url!r}, {status})"
+        )
 
     def get_bot_name(self) -> Optional[str]:
         """
@@ -368,10 +381,10 @@ class OpenStreetMapAuth(AuthBase):
     Example:
         >>> # Using environment variables
         >>> auth = OpenStreetMapAuth()
-        
+
         >>> # Direct parameters
         >>> auth = OpenStreetMapAuth(username="myuser", password="mypass")
-        
+
         >>> # Interactive prompt
         >>> auth = OpenStreetMapAuth(interactive=True)
         Enter OpenStreetMap username: myuser
