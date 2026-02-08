@@ -46,38 +46,52 @@ poetry install
 
 ### Authentication
 
-The package provides authentication classes for various Global Knowledge Commons services. You can provide credentials directly or via environment variables.
+The package provides authentication classes for Global Knowledge Commons services. You can provide credentials directly, via environment variables, or through interactive prompts.
 
-#### Wikidata
+#### Wikiverse (Wikidata, Wikipedia, Wikimedia Commons)
+
+The `WikiverseAuth` class provides unified authentication for all Wikimedia projects using **bot passwords**. The same credentials work across Wikidata, Wikipedia, and Wikimedia Commons due to Wikimedia's Single User Login (SUL) system.
+
+**Setting up Bot Passwords:**
+
+1. Go to [Special:BotPasswords](https://www.wikidata.org/wiki/Special:BotPasswords) on Wikidata
+2. Create a new bot password with appropriate permissions
+3. Your username will be in the format `YourUsername@BotName`
+4. Save the generated password (you won't see it again!)
+
+**Using WikiverseAuth:**
 
 ```python
-from gkc import WikidataAuth
+from gkc import WikiverseAuth
 
-# Using explicit credentials
-auth = WikidataAuth(username="your_username", password="your_password")
+# Method 1: Using explicit credentials (bot password format)
+auth = WikiverseAuth(
+    username="YourUsername@BotName",
+    password="abc123def456ghi789"
+)
 
-# Using environment variables (WIKIDATA_USERNAME, WIKIDATA_PASSWORD)
-auth = WikidataAuth()
+# Method 2: Using environment variables (WIKIVERSE_USERNAME, WIKIVERSE_PASSWORD)
+auth = WikiverseAuth()
+
+# Method 3: Interactive prompt
+auth = WikiverseAuth(interactive=True)
 
 # Check authentication status
 if auth.is_authenticated():
-    print("Authenticated successfully!")
+    print(f"Authenticated as: {auth.get_account_name()}")
+    print(f"Bot name: {auth.get_bot_name()}")
 ```
 
-#### Wikipedia
+**Helper Methods:**
 
 ```python
-from gkc import WikipediaAuth
+auth = WikiverseAuth(username="Alice@MyBot", password="secret")
 
-# Using explicit credentials
-auth = WikipediaAuth(username="your_username", password="your_password")
+# Extract account name
+print(auth.get_account_name())  # Output: "Alice"
 
-# Using environment variables (WIKIPEDIA_USERNAME, WIKIPEDIA_PASSWORD)
-auth = WikipediaAuth()
-
-# Check authentication status
-if auth.is_authenticated():
-    print("Authenticated successfully!")
+# Extract bot name
+print(auth.get_bot_name())  # Output: "MyBot"
 ```
 
 #### OpenStreetMap
@@ -85,11 +99,14 @@ if auth.is_authenticated():
 ```python
 from gkc import OpenStreetMapAuth
 
-# Using explicit credentials
+# Method 1: Using explicit credentials
 auth = OpenStreetMapAuth(username="your_username", password="your_password")
 
-# Using environment variables (OPENSTREETMAP_USERNAME, OPENSTREETMAP_PASSWORD)
+# Method 2: Using environment variables (OPENSTREETMAP_USERNAME, OPENSTREETMAP_PASSWORD)
 auth = OpenStreetMapAuth()
+
+# Method 3: Interactive prompt
+auth = OpenStreetMapAuth(interactive=True)
 
 # Check authentication status
 if auth.is_authenticated():
@@ -100,15 +117,19 @@ if auth.is_authenticated():
 
 You can set the following environment variables for automatic authentication:
 
-- `WIKIDATA_USERNAME` and `WIKIDATA_PASSWORD` for Wikidata
-- `WIKIPEDIA_USERNAME` and `WIKIPEDIA_PASSWORD` for Wikipedia
+- `WIKIVERSE_USERNAME` and `WIKIVERSE_PASSWORD` for Wikimedia projects (Wikidata, Wikipedia, Wikimedia Commons)
 - `OPENSTREETMAP_USERNAME` and `OPENSTREETMAP_PASSWORD` for OpenStreetMap
 
 Example:
 
 ```bash
-export WIKIDATA_USERNAME="your_username"
-export WIKIDATA_PASSWORD="your_password"
+# Bot password format: Username@BotName
+export WIKIVERSE_USERNAME="Alice@MyBot"
+export WIKIVERSE_PASSWORD="abc123def456ghi789"
+
+# OpenStreetMap
+export OPENSTREETMAP_USERNAME="your_osm_username"
+export OPENSTREETMAP_PASSWORD="your_osm_password"
 ```
 
 ## Development
