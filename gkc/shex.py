@@ -225,7 +225,38 @@ class ShExValidator:
         """
         if self.results is None:
             raise ShExValidationError("No validation results. Call validate() first.")
-        return bool(self.results)
+
+        # Handle mocked results (for testing)
+        if isinstance(self.results, bool):
+            return self.results
+
+        # PyShEx returns results as a list of EvaluationResult objects
+        # When validation succeeds, reason contains matching triples
+        # When validation fails, reason contains error messages like
+        # "Node: ... not in value set"
+        # If no focus is specified, PyShEx tests all nodes;
+        # we need at least one success
+        if not self.results:
+            return False
+
+        # Check if at least one result succeeded (no error indicators)
+        for result in self.results:
+            reason = result.reason or ""
+            # Common failure indicators in PyShEx error messages
+            has_error = any(
+                indicator in reason
+                for indicator in [
+                    "not in value set",
+                    "does not match",
+                    "Constraint violation",
+                    "No matching",
+                    "Failed to",
+                ]
+            )
+            if not has_error:
+                return True
+
+        return False
 
     def __repr__(self) -> str:
         """String representation of validator."""

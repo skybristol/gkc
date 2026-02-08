@@ -1,0 +1,153 @@
+PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+PREFIX prov: <http://www.w3.org/ns/prov#>
+PREFIX wd: <http://www.wikidata.org/entity/>
+PREFIX wdt: <http://www.wikidata.org/prop/direct/>
+PREFIX p: <http://www.wikidata.org/prop/>
+PREFIX ps: <http://www.wikidata.org/prop/statement/>
+PREFIX pq: <http://www.wikidata.org/prop/qualifier/>
+PREFIX pr: <http://www.wikidata.org/prop/reference/>
+PREFIX geo: <http://www.opengis.net/ont/geosparql#>
+PREFIX wikibase: <http://wikiba.se/ontology#>
+
+# QUERY MAP:  SELECT ?id WHERE { ?id wdt:P31 wd:Q7840353. }
+
+START = @<FederallyRecognizedTribe>
+
+<FederallyRecognizedTribe> {
+    p:P31 @<InstanceOfFedTribe> ;  # Must have exactly one P31 matching Q7840353 with stated in reference
+    wdt:P30 [ wd:Q49 ] ; # Continent: North America
+    wdt:P17 [ wd:Q30 ] + ; # Country: United States (allow others for Tribes that cross nation boundaries)
+    p:P571 @<Inception> * ; # Inception (date of establishment, generally from the perspective of the governmental entity interacting with the United States)
+    p:P2124 @<MemberCount> * ; # Member count
+    p:P1705 @<NativeLabel> * ; # Native label
+    p:P856 @<OfficialWebsite> * ; # Official website
+    p:P159 @<HeadquartersLocation> * ; # Headquarters location
+    p:P18 @<Image> * ; # Image representative of the tribe
+    p:P41 @<FlagImage> * ; # Official flag image for the tribe
+    p:P158 @<SealImage> * ; # Official seal image for the tribe
+    p:P242 @<LocatorMapImage> * ; # Locator map image that shows the location of the tribe relative to a larger area
+    wdt:P457 @<AnyItem> * ; # Item representing the foundational text for the tribe such as a constitution
+    wdt:P527 @<TimeboundItem> * ; # Parts of the tribe such as subdivisions or associated entities
+    wdt:P361 @<TimeboundItem> * ; # The tribe as a part of another entity such as a confederation
+    p:P1313 @<OfficeHeldByHeadOfGovernment> * ; # Office held by head of government
+    p:P1906 @<OfficeHeldByHeadOfState> * ; # Office held by head of state
+    p:P6 @<HeadOfGovernment> * ; # Head of government
+    p:P35 @<HeadOfState> * ; # Head of state
+    p:P910 @<TopicsMainCategory> ? ; # Topic's main category
+    p:P7084 @<CategoryRelatedToList> * ; # Category related to list
+}
+
+<InstanceOfFedTribe> {
+    ps:P31 [ wd:Q7840353 ] ; # Instance of: federally recognized tribe
+    prov:wasDerivedFrom @<StatedInReference> + ; # Must have at least one stated in reference
+}
+
+<Inception> {
+    ps:P571 xsd:dateTime ; # Inception date
+    prov:wasDerivedFrom @<AnyReference> * ; # Must have a reference of some type pointing to a source
+}
+
+<MemberCount> {
+    ps:P2124 xsd:decimal ; # Expect whole number member count
+    pq:P585 xsd:dateTime * ; # Must have a point in time qualifier with at least a year
+    prov:wasDerivedFrom @<AnyReference> * ; # Must have a reference of some type pointing to a source
+}
+
+<NativeLabel> {
+    ps:P1705 LITERAL ;  # Matches any literal including language-tagged
+    prov:wasDerivedFrom @<AnyReference> * ; # Optional reference
+}
+
+<OfficialWebsite> {
+    ps:P856 IRI ; # Official website URL
+    pq:P407 [ wd:Q1860 ] + ; # Language of work or name: English
+    pq:P407 @<AnyItem> * ; # Other languages used on the web site
+    prov:wasDerivedFrom @<AnyReference> * ; # Optional reference
+}
+
+<HeadquartersLocation> {
+    ps:P159 @<AnyItem> ; # Headquarters location
+    pq:P281 LITERAL * ; # Postal code
+    pq:P625 geo:wktLiteral * ; # Coordinate location
+    pq:P6375 LITERAL * ; # Street address
+    pq:P11693 LITERAL * ; # OpenStreetMap Node ID
+    pq:P580 xsd:dateTime ? ; # Start time
+    pq:P582 xsd:dateTime ? ; # End time
+    prov:wasDerivedFrom @<AnyReference> * ; # Optional reference
+}
+
+<Image> {
+    ps:P18 IRI ; # Image (Commons media file)
+    prov:wasDerivedFrom @<AnyReference> * ; # Must have a reference
+}
+
+<FlagImage> {
+    ps:P41 IRI ; # Flag image (Commons media file)
+    prov:wasDerivedFrom @<AnyReference> * ; # Must have a reference
+}
+
+<SealImage> {
+    ps:P158 IRI ; # Seal image (Commons media file)
+    prov:wasDerivedFrom @<AnyReference> * ; # Must have a reference
+}
+
+<LocatorMapImage> {
+    ps:P242 IRI ; # Locator map image (Commons media file)
+    prov:wasDerivedFrom @<AnyReference> * ; # Optional reference
+}
+
+<StatedInReference> {
+    pr:P248 @<AnyItem> + ; # Stated in reference pointing to some item
+}
+
+<AnyReference> {}
+
+<AnyItem> {
+    prov:wasDerivedFrom @<AnyReference> * ; # Optional reference (ultimately required)
+}
+
+<TimeboundItem> {
+    pq:P580 xsd:dateTime ? ; # Start time
+    pq:P582 xsd:dateTime ? ; # End time
+    pq:P2868 @<AnyItem> * ; # Role of the tribe in the timebound item
+    prov:wasDerivedFrom @<AnyReference> * ; # Optional reference (ultimately required)
+}
+
+<OfficeHeldByHeadOfGovernment> {
+    ps:P1313 @<AnyItem> ; # Office held by head of government
+    prov:wasDerivedFrom @<AnyReference> * ; # Must have a reference
+}
+
+<OfficeHeldByHeadOfState> {
+    ps:P1906 @<AnyItem> ; # Office held by head of state
+    prov:wasDerivedFrom @<AnyReference> * ; # Must have a reference
+}
+
+<HeadOfGovernment> {
+    ps:P6 IRI ; # Head of government (entity IRI)
+    pq:P580 xsd:dateTime ? ; # Start time
+    pq:P582 xsd:dateTime ? ; # End time
+    prov:wasDerivedFrom @<AnyReference> * ; # Must have a reference
+}
+
+<HeadOfState> {
+    ps:P35 IRI ; # Head of state (entity IRI)
+    pq:P580 xsd:dateTime ? ; # Start time
+    pq:P582 xsd:dateTime ? ; # End time
+    prov:wasDerivedFrom @<AnyReference> * ; # Must have a reference
+}
+
+<Person> {
+    p:P31 { ps:P31 [ wd:Q5 ] } ; # Instance of: human
+}
+
+<TopicsMainCategory> {
+    ps:P910 IRI ; # Topic's main Wikimedia category (Wikidata item IRI)
+    prov:wasDerivedFrom @<AnyReference> * ; # Optional reference
+}
+
+<CategoryRelatedToList> {
+    ps:P7084 IRI ; # Additional Wikimedia category related to tribe (Wikidata item IRI)
+    pq:P1792 @<AnyItem> + ; # Category contains (at least one required)
+    prov:wasDerivedFrom @<AnyReference> * ; # Optional reference
+}
