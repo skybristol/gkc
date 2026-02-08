@@ -11,6 +11,6 @@ def test_version():
 
 def test_imports():
     """Test that main classes are importable."""
-    assert hasattr(gkc, "WikidataAuth")
-    assert hasattr(gkc, "WikipediaAuth")
+    assert hasattr(gkc, "WikiverseAuth")
     assert hasattr(gkc, "OpenStreetMapAuth")
+    assert hasattr(gkc, "AuthenticationError")

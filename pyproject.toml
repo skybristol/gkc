@@ -29,6 +29,7 @@ pytest-cov = "^6.0.0"
 ruff = "^0.8.0"
 black = "^25.1.0"
 mypy = "^1.13.0"
+types-requests = "^2.32.4.20260107"
 
 [build-system]
 requires = ["poetry-core"]

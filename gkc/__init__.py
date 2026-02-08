@@ -2,11 +2,11 @@
 GKC - Global Knowledge Commons
 
 A Python package for working with the Global Knowledge Commons including
-Wikidata, Wikipedia, and OpenStreetMap.
+Wikidata, Wikipedia, Wikimedia Commons, and OpenStreetMap.
 """
 
 __version__ = "0.1.0"
 
-from gkc.auth import OpenStreetMapAuth, WikidataAuth, WikipediaAuth
+from gkc.auth import AuthenticationError, OpenStreetMapAuth, WikiverseAuth
 
-__all__ = ["WikidataAuth", "WikipediaAuth", "OpenStreetMapAuth"]
+__all__ = ["WikiverseAuth", "OpenStreetMapAuth", "AuthenticationError"]
