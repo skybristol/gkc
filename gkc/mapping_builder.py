@@ -70,9 +70,7 @@ class ShExPropertyExtractor:
         for match in self.SHAPE_PATTERN.finditer(self.schema_text):
             shape_name = match.group(1)
             shape_body = match.group(2)
-            self.shape_comments[shape_name] = self._extract_shape_properties(
-                shape_body
-            )
+            self.shape_comments[shape_name] = self._extract_shape_properties(shape_body)
 
     def _extract_shape_properties(self, shape_body: str) -> dict:
         """Extract properties from a shape body with their comments."""
@@ -354,14 +352,14 @@ class ClaimsMapBuilder:
                         "property": "P248",
                         "value": "TODO_SOURCE_QID",
                         "datatype": "wikibase-item",
-                        "comment": "Stated in: UPDATE with actual source QID"
+                        "comment": "Stated in: UPDATE with actual source QID",
                     },
                     {
                         "property": "P813",
                         "value": "current_date",
                         "datatype": "time",
-                        "comment": "Retrieved date"
-                    }
+                        "comment": "Retrieved date",
+                    },
                 ]
             },
             "qualifier_library": {
@@ -370,7 +368,7 @@ class ClaimsMapBuilder:
                         "property": "P585",
                         "source_field": "TODO_date_field",
                         "datatype": "time",
-                        "comment": "Point in time qualifier - UPDATE source_field"
+                        "comment": "Point in time qualifier - UPDATE source_field",
                     }
                 ]
             },
@@ -380,7 +378,9 @@ class ClaimsMapBuilder:
                         "source_field": "label",
                         "language": "en",
                         "required": True,
-                        "comment": "Main label - UPDATE source_field to match your data",
+                        "comment": (
+                            "Main label - UPDATE source_field to " "match your data"
+                        ),
                     }
                 ],
                 "aliases": [
@@ -397,7 +397,9 @@ class ClaimsMapBuilder:
                         "source_field": "description",
                         "language": "en",
                         "required": False,
-                        "comment": "Description - UPDATE source_field to match your data",
+                        "comment": (
+                            "Description - UPDATE source_field to " "match your data"
+                        ),
                     }
                 ],
                 "sitelinks": [
@@ -406,7 +408,10 @@ class ClaimsMapBuilder:
                         "source_field": "wikipedia_en",
                         "required": False,
                         "badges": [],
-                        "comment": "English Wikipedia article - UPDATE source_field to match your data"
+                        "comment": (
+                            "English Wikipedia article - "
+                            "UPDATE source_field to match your data"
+                        ),
                     }
                 ],
                 "claims": claims_map,
@@ -415,12 +420,27 @@ class ClaimsMapBuilder:
                 "This mapping was auto-generated from a ShEx schema",
                 "UPDATE all 'source_field' values to match your data",
                 "REVIEW all 'transform' configurations",
-                "ADD appropriate references to claims (use reference_library entries)",
+                (
+                    "ADD appropriate references to claims "
+                    "(use reference_library entries)"
+                ),
                 "UPDATE reference_library with actual source QIDs and URLs",
-                "ADD fixed-value claims (instance of, continent, country) with 'value' instead of 'source_field'",
-                "For repeated references, use library entry names (e.g., 'basic_reference') instead of inline dicts",
-                "ADD sitelinks for Wikipedia and other Wikimedia projects (enwiki, frwiki, commons, etc.)",
-                "Sitelinks can use 'source_field' for data-driven titles or 'title' for fixed values",
+                (
+                    "ADD fixed-value claims (instance of, continent, country) "
+                    "with 'value' instead of 'source_field'"
+                ),
+                (
+                    "For repeated references, use library entry names "
+                    "(e.g., 'basic_reference') instead of inline dicts"
+                ),
+                (
+                    "ADD sitelinks for Wikipedia and other Wikimedia projects "
+                    "(enwiki, frwiki, commons, etc.)"
+                ),
+                (
+                    "Sitelinks can use 'source_field' for data-driven titles "
+                    "or 'title' for fixed values"
+                ),
             ],
         }
 
@@ -495,7 +515,9 @@ class ClaimsMapBuilder:
             print("-" * 60)
             for prop_id, info in props:
                 prop_data = property_info.get(prop_id)
-                required = "REQUIRED" if info["cardinality"].get("required") else "optional"
+                required = (
+                    "REQUIRED" if info["cardinality"].get("required") else "optional"
+                )
                 label = prop_data.get_label() if prop_data else "Unknown"
                 datatype = prop_data.datatype if prop_data else "unknown"
                 comment = info.get("comment", "")

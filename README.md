@@ -40,6 +40,9 @@ curl -sSL https://install.python-poetry.org | python3 -
 
 # Install dependencies
 poetry install
+
+# Run pre-merge checks (recommended before PRs)
+./scripts/pre-merge-check.sh
 ```
 
 ## Usage
@@ -279,7 +282,14 @@ The project uses GitHub Actions for continuous integration and deployment:
   
 - **Publish Workflow**: Runs on release creation
   - Builds the package
-  - Publishes to PyPI using trusted publishing
+  - Publishes to PyPI using PyPI Trusted Publishing (OIDC)
+
+**Before merging or creating a PR**, run the pre-merge checks:
+```bash
+./scripts/pre-merge-check.sh
+```
+
+See [CI/CD Documentation](docs/CI_CD.md) for detailed setup instructions and release process.
 
 ## Contributing
 
@@ -287,9 +297,11 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 
 1. Fork the repository
 2. Create your feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add some amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
+3. Make your changes
+4. **Run pre-merge checks**: `./scripts/pre-merge-check.sh`
+5. Commit your changes (`git commit -m 'Add some amazing feature'`)
+6. Push to the branch (`git push origin feature/amazing-feature`)
+7. Open a Pull Request
 
 ## License
 

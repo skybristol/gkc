@@ -5,12 +5,15 @@ This is a proposed design showing the key classes and their interactions.
 Not yet functional - serves as a blueprint for implementation.
 """
 
-from datetime import datetime
 import math
-from typing import Any, Optional
+from datetime import datetime
+from typing import TYPE_CHECKING, Any, Optional
 
 from gkc.auth import WikiverseAuth
 from gkc.shex import ShExValidator
+
+if TYPE_CHECKING:
+    from gkc.mapping_builder import ClaimsMapBuilder
 
 
 class DataTypeTransformer:
@@ -42,18 +45,20 @@ class DataTypeTransformer:
         date_input: str | int, precision: int | None = None, calendar: str = "Q1985727"
     ) -> dict:
         """Convert date input to Wikidata time datavalue.
-        
+
         Args:
-            date_input: Year (2005), partial date (2005-01), or full ISO date (2005-01-15)
-            precision: Explicit precision (9=year, 10=month, 11=day) or None to auto-detect
+            date_input: Year (2005), partial date (2005-01),
+                or full ISO date (2005-01-15)
+            precision: Explicit precision (9=year, 10=month, 11=day)
+                or None to auto-detect
             calendar: Calendar model QID (default: Q1985727 = Gregorian)
-            
+
         Returns:
             Wikidata time datavalue structure
         """
         # Convert int to string
         date_str = str(date_input).strip()
-        
+
         # Parse the date and determine precision
         if precision is None:
             # Auto-detect precision from format
@@ -75,11 +80,17 @@ class DataTypeTransformer:
                     # Handle time portion if present
                     if "T" in day:
                         day = day.split("T")[0]
-                    time_str = f"+{year.zfill(4)}-{month.zfill(2)}-{day.zfill(2)}T00:00:00Z"
+                    time_str = (
+                        f"+{year.zfill(4)}-{month.zfill(2)}-{day.zfill(2)}T00:00:00Z"
+                    )
                 else:
                     # Fallback for unexpected format
                     precision = 11
-                    time_str = f"+{date_str}T00:00:00Z" if "T" not in date_str else f"+{date_str}"
+                    time_str = (
+                        f"+{date_str}T00:00:00Z"
+                        if "T" not in date_str
+                        else f"+{date_str}"
+                    )
         else:
             # Use explicit precision
             if precision == 9:
@@ -97,8 +108,10 @@ class DataTypeTransformer:
                 if "T" not in date_str:
                     time_str = f"+{date_str}T00:00:00Z"
                 else:
-                    time_str = f"+{date_str}" if date_str.startswith("+") else f"+{date_str}"
-        
+                    time_str = (
+                        f"+{date_str}" if date_str.startswith("+") else f"+{date_str}"
+                    )
+
         return {
             "value": {
                 "time": time_str,
@@ -251,11 +264,11 @@ class PropertyMapper:
         self.transformer = DataTypeTransformer()
         self.snak_builder = SnakBuilder(self.transformer)
         self.claim_builder = ClaimBuilder(self.snak_builder)
-        
+
         # Load explicit reference and qualifier libraries
         self.reference_library = mapping_config.get("reference_library", {}).copy()
         self.qualifier_library = mapping_config.get("qualifier_library", {}).copy()
-        
+
         # Extract and merge inline named references/qualifiers from claims
         self._extract_inline_named_elements()
 
@@ -276,7 +289,8 @@ class PropertyMapper:
         Create a PropertyMapper directly from a ClaimsMapBuilder.
 
         Args:
-            builder: ClaimsMapBuilder instance (can be already loaded or will load schema)
+            builder: ClaimsMapBuilder instance (can be already loaded
+                or will load schema)
             entity_type: Optional entity type QID for the mapping
 
         Returns:
@@ -285,11 +299,12 @@ class PropertyMapper:
         Example:
             >>> from gkc import ClaimsMapBuilder, PropertyMapper
             >>> builder = ClaimsMapBuilder(eid="E502")
-            >>> mapper = PropertyMapper.from_claims_builder(builder, entity_type="Q7840353")
+            >>> mapper = PropertyMapper.from_claims_builder(
+            ...     builder, entity_type="Q7840353"
+            ... )
             >>> # Now mapper is ready to transform data
         """
         # Import here to avoid circular dependency
-        from gkc.mapping_builder import ClaimsMapBuilder
 
         config = builder.build_complete_mapping(entity_type=entity_type)
         return cls(config)
@@ -299,41 +314,50 @@ class PropertyMapper:
         Scan all claims for inline named references and qualifiers.
         Merge them into the reference_library and qualifier_library.
         Explicit library entries take precedence over inline named elements.
-        
+
         New consistent structure: references/qualifiers use "property" field,
         not property-as-key. Named references are defined inline with "name" field.
         """
         claims = self.config.get("mappings", {}).get("claims", [])
-        
+
         for claim in claims:
             # Extract named references
             references = claim.get("references", [])
-            
+
             # Check if this reference array has a name (defines a reusable reference)
-            named_refs = [r for r in references if isinstance(r, dict) and "name" in r and "property" in r]
-            
+            named_refs = [
+                r
+                for r in references
+                if isinstance(r, dict) and "name" in r and "property" in r
+            ]
+
             if named_refs:
                 # Get the name from the first named reference
                 name = named_refs[0]["name"]
-                
+
                 # Don't override explicit library entries
                 if name not in self.reference_library:
-                    # Store all property objects (without "name" key) as the library entry
+                    # Store all property objects (without "name" key)
+                    # as the library entry
                     ref_array = []
                     for ref in references:
                         if isinstance(ref, dict) and "property" in ref:
                             ref_copy = {k: v for k, v in ref.items() if k != "name"}
                             ref_array.append(ref_copy)
                     self.reference_library[name] = ref_array
-            
+
             # Extract named qualifiers
             qualifiers = claim.get("qualifiers", [])
-            
-            named_quals = [q for q in qualifiers if isinstance(q, dict) and "name" in q and "property" in q]
-            
+
+            named_quals = [
+                q
+                for q in qualifiers
+                if isinstance(q, dict) and "name" in q and "property" in q
+            ]
+
             if named_quals:
                 name = named_quals[0]["name"]
-                
+
                 if name not in self.qualifier_library:
                     qual_array = []
                     for qual in qualifiers:
@@ -386,7 +410,13 @@ class PropertyMapper:
 
     def transform_to_wikidata(self, source_record: dict) -> dict:
         """Transform a source record to Wikidata item JSON."""
-        item = {"labels": {}, "descriptions": {}, "aliases": {}, "claims": {}, "sitelinks": {}}
+        item = {
+            "labels": {},
+            "descriptions": {},
+            "aliases": {},
+            "claims": {},
+            "sitelinks": {},
+        }
 
         # Process labels
         for label_mapping in self.config["mappings"].get("labels", []):
@@ -396,13 +426,13 @@ class PropertyMapper:
                 value = source_record[source_field]
                 if self._is_empty_value(value):
                     continue
-                
+
                 # Handle separator if multiple values in one field
                 separator = label_mapping.get("separator")
                 values = self._split_values(value, separator)
                 if values:
                     item["labels"][lang] = {"language": lang, "value": values[0]}
-        
+
         # Process aliases
         for alias_mapping in self.config["mappings"].get("aliases", []):
             source_field = alias_mapping["source_field"]
@@ -411,17 +441,17 @@ class PropertyMapper:
                 value = source_record[source_field]
                 if self._is_empty_value(value):
                     continue
-                
+
                 # Handle separator for multiple aliases in one field
                 separator = alias_mapping.get("separator")
                 values = self._split_values(value, separator)
                 if not values:
                     continue
-                
+
                 # Add all values as aliases
                 if lang not in item["aliases"]:
                     item["aliases"][lang] = []
-                
+
                 for val in values:
                     item["aliases"][lang].append({"language": lang, "value": val})
 
@@ -437,19 +467,21 @@ class PropertyMapper:
 
             if not self._is_empty_value(value):
                 item["descriptions"][lang] = {"language": lang, "value": value}
-        
+
         # Process sitelinks
         for sitelink_mapping in self.config["mappings"].get("sitelinks", []):
             site = sitelink_mapping["site"]
-            
+
             # Determine title value
             if "source_field" in sitelink_mapping:
                 source_field = sitelink_mapping["source_field"]
                 if source_field not in source_record:
                     if sitelink_mapping.get("required", False):
-                        raise ValueError(f"Required sitelink field '{source_field}' is missing")
+                        raise ValueError(
+                            f"Required sitelink field '{source_field}' is missing"
+                        )
                     continue
-                
+
                 title = source_record[source_field]
                 if self._is_empty_value(title):
                     continue
@@ -459,24 +491,24 @@ class PropertyMapper:
             else:
                 # Skip sitelinks without a title source
                 continue
-            
+
             # Build sitelink object
             sitelink = {
                 "site": site,
                 "title": str(title).strip(),
-                "badges": sitelink_mapping.get("badges", [])
+                "badges": sitelink_mapping.get("badges", []),
             }
-            
+
             item["sitelinks"][site] = sitelink
 
         # Process all claims (both data-driven and fixed-value)
         for claim_mapping in self.config["mappings"].get("claims", []):
             prop_id = claim_mapping["property"]
-            
+
             # Determine the value - either from source data or fixed
             if "source_field" in claim_mapping:
                 source_field = claim_mapping["source_field"]
-                
+
                 # Skip if field not in source or is empty
                 if source_field not in source_record or self._is_empty_value(
                     source_record[source_field]
@@ -484,7 +516,7 @@ class PropertyMapper:
                     if claim_mapping.get("required", False):
                         raise ValueError(f"Required field '{source_field}' is missing")
                     continue
-                
+
                 value = source_record[source_field]
             elif "value" in claim_mapping:
                 # Fixed/default value
@@ -527,23 +559,25 @@ class PropertyMapper:
     ) -> list[dict]:
         """
         Resolve qualifiers from library references or inline definitions.
-        
+
         Consistent structure with references: Each qualifier is a property object with
         "property", "value"/"source_field", "datatype" fields.
-        
+
         Args:
             qualifier_configs: Array of property objects
                               OR [{"name": "lib_name"}] for library reference
             source_record: Source data record
-            
+
         Returns:
             List of resolved qualifier dictionaries
         """
         # Check if this is a library reference (name-only object)
-        if (len(qualifier_configs) == 1 and 
-            isinstance(qualifier_configs[0], dict) and 
-            "name" in qualifier_configs[0] and 
-            "property" not in qualifier_configs[0]):
+        if (
+            len(qualifier_configs) == 1
+            and isinstance(qualifier_configs[0], dict)
+            and "name" in qualifier_configs[0]
+            and "property" not in qualifier_configs[0]
+        ):
             # Library reference - expand it
             name = qualifier_configs[0]["name"]
             if name in self.qualifier_library:
@@ -552,17 +586,17 @@ class PropertyMapper:
                 return self._resolve_qualifiers(lib_quals, source_record)
             else:
                 raise ValueError(f"Qualifier library entry '{name}' not found")
-        
+
         qualifiers = []
-        
+
         for qual_config in qualifier_configs:
             if not isinstance(qual_config, dict):
                 continue
-                
+
             # Skip name-only or objects without property
             if "property" not in qual_config:
                 continue
-            
+
             # Determine value
             qual_field = qual_config.get("source_field")
             if qual_field:
@@ -578,14 +612,16 @@ class PropertyMapper:
                 value = qual_config["value"]
             else:
                 continue  # Skip if no value source
-            
-            qualifiers.append({
-                "property": qual_config["property"],
-                "value": value,
-                "datatype": qual_config["datatype"],
-                "transform": qual_config.get("transform"),
-            })
-        
+
+            qualifiers.append(
+                {
+                    "property": qual_config["property"],
+                    "value": value,
+                    "datatype": qual_config["datatype"],
+                    "transform": qual_config.get("transform"),
+                }
+            )
+
         return qualifiers
 
     def _resolve_references(
@@ -593,23 +629,25 @@ class PropertyMapper:
     ) -> list[dict]:
         """
         Resolve references from library references or inline definitions.
-        
+
         New consistent structure: Each reference is a property object with
         "property", "value"/"value_from", "datatype" fields.
-        
+
         Args:
             reference_configs: Array of property objects (one reference block)
                               OR [{"name": "lib_name"}] for library reference
             source_record: Source data record
-            
+
         Returns:
             List of resolved reference dictionaries (typically one block)
         """
         # Check if this is a library reference (name-only object)
-        if (len(reference_configs) == 1 and 
-            isinstance(reference_configs[0], dict) and 
-            "name" in reference_configs[0] and 
-            "property" not in reference_configs[0]):
+        if (
+            len(reference_configs) == 1
+            and isinstance(reference_configs[0], dict)
+            and "name" in reference_configs[0]
+            and "property" not in reference_configs[0]
+        ):
             # Library reference - expand it
             name = reference_configs[0]["name"]
             if name in self.reference_library:
@@ -618,23 +656,23 @@ class PropertyMapper:
                 return self._resolve_references(lib_refs, source_record)
             else:
                 raise ValueError(f"Reference library entry '{name}' not found")
-        
+
         # Build one reference block from all property objects (Option A)
         resolved_ref = {}
-        
+
         for prop_obj in reference_configs:
             if not isinstance(prop_obj, dict):
                 continue
-                
+
             # Skip name-only or objects without property
             if "property" not in prop_obj:
                 continue
-            
+
             prop = prop_obj["property"]
-            
+
             # Determine value - support both "source_field" and "value_from"
             source_field = prop_obj.get("source_field") or prop_obj.get("value_from")
-            
+
             if source_field:
                 # Get value from source record
                 if source_field == "current_date":
@@ -651,13 +689,13 @@ class PropertyMapper:
                 value = prop_obj["value"]
             else:
                 continue  # Skip if no value specified
-            
+
             resolved_ref[prop] = {
                 "value": value,
                 "datatype": prop_obj.get("datatype", "wikibase-item"),
                 "transform": prop_obj.get("transform"),
             }
-        
+
         # Return array with single reference block (Option A)
         return [resolved_ref] if resolved_ref else []
 
