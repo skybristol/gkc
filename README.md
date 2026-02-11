@@ -4,7 +4,7 @@
 [![PyPI version](https://badge.fury.io/py/gkc.svg)](https://badge.fury.io/py/gkc)
 [![Python Versions](https://img.shields.io/pypi/pyversions/gkc.svg)](https://pypi.org/project/gkc/)
 
-A Python package for working in the Global Knowledge Commons, including Wikidata, Wikipedia, and OpenStreetMap.
+The "Global Knowledge Commons" is a term of art describing the de facto confederation of community built and maintained data, information and knowledge assets. These include Wikipedia, Wikidata, Wikimedia Commons (and other parts of the "Wikiverse") along with OpenStreetMap for mapping data and services. This Python project is designed to provide a full working suite of capabilities for contributing to the Commons in a robust and documented fashion. Read more in the background document.
 
 ## Features
 
