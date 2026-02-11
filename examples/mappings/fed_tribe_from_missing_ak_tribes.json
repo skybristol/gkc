@@ -1,0 +1,201 @@
+{
+  "$schema": "https://example.com/gkc/mapping-schema.json",
+  "version": "1.0",
+  "metadata": {
+    "name": "Auto-generated mapping",
+    "description": "Generated from ShEx schema",
+    "entity_schema_id": "E502",
+    "target_entity_type": "Q7840353",
+    "generated_date": "TODO"
+  },
+  "qualifier_library": {
+    "lang_en": [
+      {
+        "property": "P407",
+        "value": "Q1860",
+        "datatype": "wikibase-item",
+        "comment": "language of work or name - English"
+      }
+    ]
+  },
+  "mappings": {
+    "labels": [
+      {
+        "source_field": "fr_label",
+        "language": "en",
+        "required": true,
+        "comment": "Main label - UPDATE source_field to match your data"
+      }
+    ],
+    "aliases": [
+      {
+        "source_field": "fr_alternate_labels",
+        "language": "en",
+        "separator": "|",
+        "required": false,
+        "comment": "Aliases separated by |"
+      }
+    ],
+    "descriptions": [
+      {
+        "source_field": "description",
+        "default": "federally recognized tribe in Alaska, United States",
+        "language": "en",
+        "required": false,
+        "comment": "Description - UPDATE source_field to match your data"
+      }
+    ],
+    "sitelinks": [
+      {
+        "site": "enwiki",
+        "source_field": "wikipedia_en",
+        "required": false,
+        "badges": [],
+        "comment": "English Wikipedia article - UPDATE source_field to match your data"
+      }
+    ],
+    "claims": [
+      {
+        "property": "P31",
+        "comment": "instance of - Must have exactly one P31 matching Q7840353 with stated in reference - type to which this subject corresponds/belongs. Different from P279 (subclass of); for example: K2 is an instance of mountain; volcano is a subclass of mountain",
+        "value": "Q7840353",
+        "datatype": "wikibase-item",
+        "qualifiers": [],
+        "references": [
+          {
+            "property": "P248",
+            "value": "Q127419548",
+            "datatype": "wikibase-item",
+            "comment": "Stated in: 2024 Federal Register Notice of Indian Entities Recognized and Eligible To Receive Services From the United States Bureau of Indian Affairs"
+          }
+        ]
+      },
+      {
+        "property": "P30",
+        "comment": "continent - Continent: North America - continent of which the subject is a part",
+        "value": "Q49",
+        "datatype": "wikibase-item",
+        "qualifiers": [],
+        "references": [
+          {
+            "property": "P887",
+            "name": "inferred from hq location",
+            "value": "Q131921702",
+            "datatype": "wikibase-item",
+            "comment": "based on heuristic - inferred from headquarters location"
+          }
+        ]
+      },
+      {
+        "property": "P17",
+        "comment": "country - Country: United States (allow others for Tribes that cross nation boundaries) - sovereign state that this item is in (not to be used for human beings)",
+        "value": "Q30",
+        "datatype": "wikibase-item",
+        "qualifiers": [],
+        "references": [
+          {
+            "name": "inferred from hq location"
+          }
+        ]
+      },
+      {
+        "property": "P2124",
+        "comment": "member count - Member count - number of entities that are part of an organization at a particular time",
+        "source_field": "member_count_2005",
+        "datatype": "quantity",
+        "required": false,
+        "transform": {
+          "type": "number_to_quantity",
+          "unit": "1"
+        },
+        "qualifiers": [
+          {
+            "property": "P585",
+            "comment": "point in time - Point in time for member count - specific date or point in time for which the member count is valid",
+            "value": "2005",
+            "datatype": "time",
+            "required": false,
+            "transform": {
+              "type": "date_to_time"
+            }
+          }
+        ],
+        "references": [
+          {
+            "property": "P854",
+            "value": "https://www.gao.gov/assets/gao-05-719.pdf",
+            "datatype": "url",
+            "comment": "source for member count - source for member count data",
+            "name": "GAO report on Alaska Native Tribes - 2005"
+          }
+        ]
+      },
+      {
+        "property": "P361",
+        "comment": "part of - The tribe as a part of another entity such as a confederation - object of which the subject is a part (if this subject is already part of object A which is a part of object B, then please only make the subject part of object A), inverse property of \"has part\" (P527, see also \"has parts of the class\" (P2670))",
+        "source_field": "qid_anrc",
+        "datatype": "wikibase-item",
+        "required": false,
+        "qualifiers": [],
+        "references": [
+          {
+            "name": "GAO report on Alaska Native Tribes - 2005"
+          }
+        ]
+      },
+      {
+        "property": "P973",
+        "comment": "described at URL - URL for the National Indian Law Library index page for the tribe",
+        "source_field": "nill_index",
+        "datatype": "url",
+        "required": false,
+        "qualifiers": [
+          {
+            "name": "lang_en"
+          }
+        ],
+        "references": [
+          {
+            "property": "P854",
+            "source_field": "nill_index",
+            "datatype": "url",
+            "comment": "source for NILL index URL - source for National Indian Law Library index"
+          }
+        ]
+      },
+      {
+        "property": "P1889",
+        "comment": "different from - used here to distinguish the Alaska Native tribe from an Alaska city",
+        "source_field": "qid_ak_city",
+        "datatype": "wikibase-item",
+        "required": false,
+        "qualifiers": [],
+        "references": [
+          {
+            "property": "P248",
+            "value": "Q28869",
+            "datatype": "wikibase-item",
+            "comment": "Wikipedia list page listing AK cities"
+          }
+        ]
+      }
+    ]
+  },
+  "sitelinks": {
+    "enwiki": {
+      "site": "enwiki",
+      "source_field": "wikipedia_en",
+      "badges": []
+    }
+  },
+  "notes": [
+    "This mapping was auto-generated from a ShEx schema",
+    "UPDATE all 'source_field' values to match your data",
+    "REVIEW all 'transform' configurations",
+    "ADD appropriate references to claims (use reference_library entries)",
+    "UPDATE reference_library with actual source QIDs and URLs",
+    "ADD fixed-value claims (instance of, continent, country) with 'value' instead of 'source_field'",
+    "For repeated references, use library entry names (e.g., 'basic_reference') instead of inline dicts",
+    "ADD sitelinks for Wikipedia links using 'source_field' to point to CSV columns with article titles"
+  ]
+}
