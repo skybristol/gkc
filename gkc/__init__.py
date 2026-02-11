@@ -8,6 +8,12 @@ Wikidata, Wikipedia, Wikimedia Commons, and OpenStreetMap.
 __version__ = "0.1.0"
 
 from gkc.auth import AuthenticationError, OpenStreetMapAuth, WikiverseAuth
+from gkc.mapping_builder import (
+    ClaimsMapBuilder,
+    PropertyInfo,
+    ShExPropertyExtractor,
+    WikidataPropertyFetcher,
+)
 from gkc.shex import ShExValidationError, ShExValidator
 from gkc.wd import WikidataFetchError, fetch_entity_rdf, fetch_entity_schema
 
@@ -20,4 +26,8 @@ __all__ = [
     "WikidataFetchError",
     "fetch_entity_rdf",
     "fetch_entity_schema",
+    "ClaimsMapBuilder",
+    "PropertyInfo",
+    "ShExPropertyExtractor",
+    "WikidataPropertyFetcher",
 ]
