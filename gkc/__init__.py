@@ -15,6 +15,11 @@ from gkc.mapping_builder import (
     WikidataPropertyFetcher,
 )
 from gkc.shex import ShExValidationError, ShExValidator
+from gkc.sitelinks import (
+    SitelinkValidator,
+    check_wikipedia_page,
+    validate_sitelink_dict,
+)
 from gkc.wd import WikidataFetchError, fetch_entity_rdf, fetch_entity_schema
 
 __all__ = [
@@ -30,4 +35,7 @@ __all__ = [
     "PropertyInfo",
     "ShExPropertyExtractor",
     "WikidataPropertyFetcher",
+    "SitelinkValidator",
+    "check_wikipedia_page",
+    "validate_sitelink_dict",
 ]

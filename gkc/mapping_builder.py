@@ -400,6 +400,15 @@ class ClaimsMapBuilder:
                         "comment": "Description - UPDATE source_field to match your data",
                     }
                 ],
+                "sitelinks": [
+                    {
+                        "site": "enwiki",
+                        "source_field": "wikipedia_en",
+                        "required": False,
+                        "badges": [],
+                        "comment": "English Wikipedia article - UPDATE source_field to match your data"
+                    }
+                ],
                 "claims": claims_map,
             },
             "notes": [
@@ -410,6 +419,8 @@ class ClaimsMapBuilder:
                 "UPDATE reference_library with actual source QIDs and URLs",
                 "ADD fixed-value claims (instance of, continent, country) with 'value' instead of 'source_field'",
                 "For repeated references, use library entry names (e.g., 'basic_reference') instead of inline dicts",
+                "ADD sitelinks for Wikipedia and other Wikimedia projects (enwiki, frwiki, commons, etc.)",
+                "Sitelinks can use 'source_field' for data-driven titles or 'title' for fixed values",
             ],
         }
 

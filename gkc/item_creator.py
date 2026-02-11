@@ -6,6 +6,7 @@ Not yet functional - serves as a blueprint for implementation.
 """
 
 from datetime import datetime
+import math
 from typing import Any, Optional
 
 from gkc.auth import WikiverseAuth
@@ -38,14 +39,69 @@ class DataTypeTransformer:
 
     @staticmethod
     def to_time(
-        date_str: str, precision: int = 11, calendar: str = "Q1985727"
+        date_input: str | int, precision: int | None = None, calendar: str = "Q1985727"
     ) -> dict:
-        """Convert ISO date string to Wikidata time datavalue."""
-        # Precision: 9=year, 10=month, 11=day
-        # This is simplified - real implementation needs date parsing
+        """Convert date input to Wikidata time datavalue.
+        
+        Args:
+            date_input: Year (2005), partial date (2005-01), or full ISO date (2005-01-15)
+            precision: Explicit precision (9=year, 10=month, 11=day) or None to auto-detect
+            calendar: Calendar model QID (default: Q1985727 = Gregorian)
+            
+        Returns:
+            Wikidata time datavalue structure
+        """
+        # Convert int to string
+        date_str = str(date_input).strip()
+        
+        # Parse the date and determine precision
+        if precision is None:
+            # Auto-detect precision from format
+            if "-" not in date_str:
+                # Just a year: 2005
+                precision = 9
+                time_str = f"+{date_str.zfill(4)}-00-00T00:00:00Z"
+            else:
+                parts = date_str.split("-")
+                if len(parts) == 2:
+                    # Year-month: 2005-01
+                    precision = 10
+                    year, month = parts
+                    time_str = f"+{year.zfill(4)}-{month.zfill(2)}-00T00:00:00Z"
+                elif len(parts) == 3:
+                    # Full date: 2005-01-15
+                    precision = 11
+                    year, month, day = parts
+                    # Handle time portion if present
+                    if "T" in day:
+                        day = day.split("T")[0]
+                    time_str = f"+{year.zfill(4)}-{month.zfill(2)}-{day.zfill(2)}T00:00:00Z"
+                else:
+                    # Fallback for unexpected format
+                    precision = 11
+                    time_str = f"+{date_str}T00:00:00Z" if "T" not in date_str else f"+{date_str}"
+        else:
+            # Use explicit precision
+            if precision == 9:
+                # Year precision: use -00-00
+                year = date_str.split("-")[0]
+                time_str = f"+{year.zfill(4)}-00-00T00:00:00Z"
+            elif precision == 10:
+                # Month precision: use -00 for day
+                parts = date_str.split("-")
+                year = parts[0]
+                month = parts[1] if len(parts) > 1 else "01"
+                time_str = f"+{year.zfill(4)}-{month.zfill(2)}-00T00:00:00Z"
+            else:
+                # Day precision (11) or other
+                if "T" not in date_str:
+                    time_str = f"+{date_str}T00:00:00Z"
+                else:
+                    time_str = f"+{date_str}" if date_str.startswith("+") else f"+{date_str}"
+        
         return {
             "value": {
-                "time": f"+{date_str}T00:00:00Z",
+                "time": time_str,
                 "timezone": 0,
                 "before": 0,
                 "after": 0,
@@ -99,9 +155,10 @@ class SnakBuilder:
             unit = transform_config.get("unit", "1") if transform_config else "1"
             datavalue = self.transformer.to_quantity(value, unit)
         elif datatype == "time":
-            precision = (
-                transform_config.get("precision", 11) if transform_config else 11
-            )
+            # Get precision from transform_config or auto-detect
+            precision = None
+            if transform_config:
+                precision = transform_config.get("precision")
             datavalue = self.transformer.to_time(value, precision)
         elif datatype == "monolingualtext":
             language = (
@@ -285,39 +342,81 @@ class PropertyMapper:
                             qual_array.append(qual_copy)
                     self.qualifier_library[name] = qual_array
 
+    @staticmethod
+    def _is_empty_value(value: Any) -> bool:
+        if value is None:
+            return True
+        if isinstance(value, float) and math.isnan(value):
+            return True
+        try:
+            import pandas as pd
+        except Exception:
+            pd = None
+        if pd is not None and pd.isna(value):
+            return True
+        try:
+            nan_check = value != value
+        except Exception:
+            nan_check = False
+        if isinstance(nan_check, bool) and nan_check:
+            return True
+        if isinstance(value, str) and not value.strip():
+            return True
+        return False
+
+    @staticmethod
+    def _split_values(value: Any, separator: Optional[str] = None) -> list[str]:
+        values = value if isinstance(value, (list, tuple)) else [value]
+        result: list[str] = []
+
+        for val in values:
+            if PropertyMapper._is_empty_value(val):
+                continue
+            text = val if isinstance(val, str) else str(val)
+            text = text.strip()
+            if not text:
+                continue
+            if separator and isinstance(val, str):
+                parts = [part.strip() for part in val.split(separator)]
+            else:
+                parts = [text]
+            result.extend([part for part in parts if part])
+
+        return result
+
     def transform_to_wikidata(self, source_record: dict) -> dict:
         """Transform a source record to Wikidata item JSON."""
-        item = {"labels": {}, "descriptions": {}, "aliases": {}, "claims": {}}
+        item = {"labels": {}, "descriptions": {}, "aliases": {}, "claims": {}, "sitelinks": {}}
 
         # Process labels
         for label_mapping in self.config["mappings"].get("labels", []):
             source_field = label_mapping["source_field"]
-            if source_field in source_record and source_record[source_field]:
+            if source_field in source_record:
                 lang = label_mapping["language"]
                 value = source_record[source_field]
+                if self._is_empty_value(value):
+                    continue
                 
                 # Handle separator if multiple values in one field
-                if "separator" in label_mapping:
-                    # If there's a separator, take the first value as the primary label
-                    values = [v.strip() for v in value.split(label_mapping["separator"]) if v.strip()]
-                    if values:
-                        item["labels"][lang] = {"language": lang, "value": values[0]}
-                else:
-                    # Single value
-                    item["labels"][lang] = {"language": lang, "value": value}
+                separator = label_mapping.get("separator")
+                values = self._split_values(value, separator)
+                if values:
+                    item["labels"][lang] = {"language": lang, "value": values[0]}
         
         # Process aliases
         for alias_mapping in self.config["mappings"].get("aliases", []):
             source_field = alias_mapping["source_field"]
-            if source_field in source_record and source_record[source_field]:
+            if source_field in source_record:
                 lang = alias_mapping["language"]
                 value = source_record[source_field]
+                if self._is_empty_value(value):
+                    continue
                 
                 # Handle separator for multiple aliases in one field
-                if "separator" in alias_mapping:
-                    values = [v.strip() for v in value.split(alias_mapping["separator"]) if v.strip()]
-                else:
-                    values = [value]
+                separator = alias_mapping.get("separator")
+                values = self._split_values(value, separator)
+                if not values:
+                    continue
                 
                 # Add all values as aliases
                 if lang not in item["aliases"]:
@@ -336,8 +435,39 @@ class PropertyMapper:
             else:
                 value = desc_mapping.get("default", "")
 
-            if value:
+            if not self._is_empty_value(value):
                 item["descriptions"][lang] = {"language": lang, "value": value}
+        
+        # Process sitelinks
+        for sitelink_mapping in self.config["mappings"].get("sitelinks", []):
+            site = sitelink_mapping["site"]
+            
+            # Determine title value
+            if "source_field" in sitelink_mapping:
+                source_field = sitelink_mapping["source_field"]
+                if source_field not in source_record:
+                    if sitelink_mapping.get("required", False):
+                        raise ValueError(f"Required sitelink field '{source_field}' is missing")
+                    continue
+                
+                title = source_record[source_field]
+                if self._is_empty_value(title):
+                    continue
+            elif "title" in sitelink_mapping:
+                # Fixed/default title
+                title = sitelink_mapping["title"]
+            else:
+                # Skip sitelinks without a title source
+                continue
+            
+            # Build sitelink object
+            sitelink = {
+                "site": site,
+                "title": str(title).strip(),
+                "badges": sitelink_mapping.get("badges", [])
+            }
+            
+            item["sitelinks"][site] = sitelink
 
         # Process all claims (both data-driven and fixed-value)
         for claim_mapping in self.config["mappings"].get("claims", []):
@@ -348,7 +478,9 @@ class PropertyMapper:
                 source_field = claim_mapping["source_field"]
                 
                 # Skip if field not in source or is empty
-                if source_field not in source_record or not source_record[source_field]:
+                if source_field not in source_record or self._is_empty_value(
+                    source_record[source_field]
+                ):
                     if claim_mapping.get("required", False):
                         raise ValueError(f"Required field '{source_field}' is missing")
                     continue
@@ -431,22 +563,28 @@ class PropertyMapper:
             if "property" not in qual_config:
                 continue
             
-            # Inline qualifier definition
+            # Determine value
             qual_field = qual_config.get("source_field")
-            if qual_field and qual_field in source_record:
-                qualifiers.append({
-                    "property": qual_config["property"],
-                    "value": source_record[qual_field],
-                    "datatype": qual_config["datatype"],
-                    "transform": qual_config.get("transform"),
-                })
+            if qual_field:
+                # From source record
+                if qual_field == "current_date":
+                    value = datetime.now().strftime("%Y-%m-%d")
+                elif qual_field in source_record:
+                    value = source_record[qual_field]
+                else:
+                    continue  # Skip if field not in source
             elif "value" in qual_config:
                 # Static value
-                qualifiers.append({
-                    "property": qual_config["property"],
-                    "value": qual_config["value"],
-                    "datatype": qual_config["datatype"],
-                })
+                value = qual_config["value"]
+            else:
+                continue  # Skip if no value source
+            
+            qualifiers.append({
+                "property": qual_config["property"],
+                "value": value,
+                "datatype": qual_config["datatype"],
+                "transform": qual_config.get("transform"),
+            })
         
         return qualifiers
 
@@ -494,14 +632,18 @@ class PropertyMapper:
             
             prop = prop_obj["property"]
             
-            # Determine value
-            if "value_from" in prop_obj:
+            # Determine value - support both "source_field" and "value_from"
+            source_field = prop_obj.get("source_field") or prop_obj.get("value_from")
+            
+            if source_field:
                 # Get value from source record
-                field = prop_obj["value_from"]
-                if field == "current_date":
+                if source_field == "current_date":
                     value = datetime.now().strftime("%Y-%m-%d")
-                elif field in source_record:
-                    value = source_record[field]
+                elif source_field in source_record:
+                    value = source_record[source_field]
+                    # Skip if value is empty/NaN
+                    if self._is_empty_value(value):
+                        continue
                 else:
                     continue  # Skip if field not in source
             elif "value" in prop_obj:

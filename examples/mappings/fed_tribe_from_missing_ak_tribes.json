@@ -8,6 +8,16 @@
     "target_entity_type": "Q7840353",
     "generated_date": "TODO"
   },
+  "qualifier_library": {
+    "lang_en": [
+      {
+        "property": "P407",
+        "value": "Q1860",
+        "datatype": "wikibase-item",
+        "comment": "language of work or name - English"
+      }
+    ]
+  },
   "mappings": {
     "labels": [
       {
@@ -33,6 +43,15 @@
         "language": "en",
         "required": false,
         "comment": "Description - UPDATE source_field to match your data"
+      }
+    ],
+    "sitelinks": [
+      {
+        "site": "enwiki",
+        "source_field": "wikipedia_en",
+        "required": false,
+        "badges": [],
+        "comment": "English Wikipedia article - UPDATE source_field to match your data"
       }
     ],
     "claims": [
@@ -80,180 +99,94 @@
         ]
       },
       {
-        "property": "P571",
-        "comment": "inception - Inception (date of establishment, generally from the perspective of the governmental entity interacting with the United States) - time when an entity begins to exist; for date of official opening use P1619",
-        "source_field": "p571_value",
-        "datatype": "time",
-        "required": false,
-        "transform": {
-          "type": "iso_date_to_wikidata_time",
-          "precision": 11
-        },
-        "qualifiers": [],
-        "references": []
-      },
-      {
         "property": "P2124",
         "comment": "member count - Member count - number of entities that are part of an organization at a particular time",
-        "source_field": "p2124_value",
+        "source_field": "member_count_2005",
         "datatype": "quantity",
         "required": false,
         "transform": {
           "type": "number_to_quantity",
           "unit": "1"
         },
-        "qualifiers": [],
-        "references": []
-      },
-      {
-        "property": "P1705",
-        "comment": "native label - Native label - label for the items in their official language or their original language",
-        "source_field": "p1705_value",
-        "datatype": "monolingualtext",
-        "required": false,
-        "transform": {
-          "type": "monolingualtext",
-          "language": "en"
-        },
-        "qualifiers": [],
-        "references": []
-      },
-      {
-        "property": "P856",
-        "comment": "official website - Official website - URL of the official page of an item (current or former). Usage: If a listed URL no longer points to the official website, do not remove it, but see the \"Hijacked or dead websites\" section of the Talk page",
-        "source_field": "p856_value",
-        "datatype": "url",
-        "required": false,
-        "qualifiers": [],
-        "references": []
-      },
-      {
-        "property": "P159",
-        "comment": "headquarters location - Headquarters location - city or town where an organization's headquarters is or has been situated. Use P276 qualifier for specific building",
-        "source_field": "p159_value",
-        "datatype": "wikibase-item",
-        "required": false,
-        "qualifiers": [],
-        "references": []
-      },
-      {
-        "property": "P18",
-        "comment": "image - Image representative of the tribe - image of relevant illustration of the subject; if available, also use more specific properties (sample: coat of arms image, locator map, flag image, signature image, logo image, collage image)",
-        "source_field": "p18_value",
-        "datatype": "commonsMedia",
-        "required": false,
-        "qualifiers": [],
-        "references": []
-      },
-      {
-        "property": "P41",
-        "comment": "flag image - Official flag image for the tribe - image of the item's flag",
-        "source_field": "p41_value",
-        "datatype": "commonsMedia",
-        "required": false,
-        "qualifiers": [],
-        "references": []
-      },
-      {
-        "property": "P158",
-        "comment": "seal image - Official seal image for the tribe - image of subject's seal (emblem)",
-        "source_field": "p158_value",
-        "datatype": "commonsMedia",
-        "required": false,
-        "qualifiers": [],
-        "references": []
-      },
-      {
-        "property": "P242",
-        "comment": "locator map image - Locator map image that shows the location of the tribe relative to a larger area - geographic map image which highlights the location of the subject within some larger entity",
-        "source_field": "p242_value",
-        "datatype": "commonsMedia",
-        "required": false,
-        "qualifiers": [],
-        "references": []
-      },
-      {
-        "property": "P457",
-        "comment": "foundational text - Item representing the foundational text for the tribe such as a constitution - text through which an institution or object has been created or established",
-        "source_field": "p457_value",
-        "datatype": "wikibase-item",
-        "required": false,
-        "qualifiers": [],
-        "references": []
-      },
-      {
-        "property": "P527",
-        "comment": "has part(s) - Parts of the tribe such as subdivisions or associated entities - part of this subject; inverse property of \"part of\" (P361). See also \"has parts of the class\" (P2670).",
-        "source_field": "p527_value",
-        "datatype": "wikibase-item",
-        "required": false,
-        "qualifiers": [],
-        "references": []
+        "qualifiers": [
+          {
+            "property": "P585",
+            "comment": "point in time - Point in time for member count - specific date or point in time for which the member count is valid",
+            "value": "2005",
+            "datatype": "time",
+            "required": false,
+            "transform": {
+              "type": "date_to_time"
+            }
+          }
+        ],
+        "references": [
+          {
+            "property": "P854",
+            "value": "https://www.gao.gov/assets/gao-05-719.pdf",
+            "datatype": "url",
+            "comment": "source for member count - source for member count data",
+            "name": "GAO report on Alaska Native Tribes - 2005"
+          }
+        ]
       },
       {
         "property": "P361",
         "comment": "part of - The tribe as a part of another entity such as a confederation - object of which the subject is a part (if this subject is already part of object A which is a part of object B, then please only make the subject part of object A), inverse property of \"has part\" (P527, see also \"has parts of the class\" (P2670))",
-        "source_field": "p361_value",
+        "source_field": "qid_anrc",
         "datatype": "wikibase-item",
         "required": false,
         "qualifiers": [],
-        "references": []
+        "references": [
+          {
+            "name": "GAO report on Alaska Native Tribes - 2005"
+          }
+        ]
       },
       {
-        "property": "P1313",
-        "comment": "office held by head of government - Office held by head of government - political office that is fulfilled by the head of the government of this item",
-        "source_field": "p1313_value",
-        "datatype": "wikibase-item",
+        "property": "P973",
+        "comment": "described at URL - URL for the National Indian Law Library index page for the tribe",
+        "source_field": "nill_index",
+        "datatype": "url",
         "required": false,
-        "qualifiers": [],
-        "references": []
+        "qualifiers": [
+          {
+            "name": "lang_en"
+          }
+        ],
+        "references": [
+          {
+            "property": "P854",
+            "source_field": "nill_index",
+            "datatype": "url",
+            "comment": "source for NILL index URL - source for National Indian Law Library index"
+          }
+        ]
       },
       {
-        "property": "P1906",
-        "comment": "office held by head of state - Office held by head of state - political office that is fulfilled by the head of state of this item",
-        "source_field": "p1906_value",
+        "property": "P1889",
+        "comment": "different from - used here to distinguish the Alaska Native tribe from an Alaska city",
+        "source_field": "qid_ak_city",
         "datatype": "wikibase-item",
         "required": false,
         "qualifiers": [],
-        "references": []
-      },
-      {
-        "property": "P6",
-        "comment": "head of government - Head of government - head of the executive power of this town, city, municipality, state, country, or other governmental body",
-        "source_field": "p6_value",
-        "datatype": "wikibase-item",
-        "required": false,
-        "qualifiers": [],
-        "references": []
-      },
-      {
-        "property": "P35",
-        "comment": "head of state - Head of state - official with the highest formal authority in a country/state",
-        "source_field": "p35_value",
-        "datatype": "wikibase-item",
-        "required": false,
-        "qualifiers": [],
-        "references": []
-      },
-      {
-        "property": "P910",
-        "comment": "topic's main category - Topic's main category - main Wikimedia category",
-        "source_field": "p910_value",
-        "datatype": "wikibase-item",
-        "required": false,
-        "qualifiers": [],
-        "references": []
-      },
-      {
-        "property": "P7084",
-        "comment": "related category - Category related to list - Wikimedia category is related to this item",
-        "source_field": "p7084_value",
-        "datatype": "wikibase-item",
-        "required": false,
-        "qualifiers": [],
-        "references": []
+        "references": [
+          {
+            "property": "P248",
+            "value": "Q28869",
+            "datatype": "wikibase-item",
+            "comment": "Wikipedia list page listing AK cities"
+          }
+        ]
       }
     ]
+  },
+  "sitelinks": {
+    "enwiki": {
+      "site": "enwiki",
+      "source_field": "wikipedia_en",
+      "badges": []
+    }
   },
   "notes": [
     "This mapping was auto-generated from a ShEx schema",
@@ -262,6 +195,7 @@
     "ADD appropriate references to claims (use reference_library entries)",
     "UPDATE reference_library with actual source QIDs and URLs",
     "ADD fixed-value claims (instance of, continent, country) with 'value' instead of 'source_field'",
-    "For repeated references, use library entry names (e.g., 'basic_reference') instead of inline dicts"
+    "For repeated references, use library entry names (e.g., 'basic_reference') instead of inline dicts",
+    "ADD sitelinks for Wikipedia links using 'source_field' to point to CSV columns with article titles"
   ]
 }
