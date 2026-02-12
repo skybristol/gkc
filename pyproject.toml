@@ -32,6 +32,11 @@ black = "^25.1.0"
 mypy = "^1.13.0"
 types-requests = "^2.32.4.20260107"
 
+[tool.poetry.group.docs.dependencies]
+mkdocs = "^1.6.1"
+mkdocs-material = "^9.6.7"
+mkdocstrings = {version = "^0.27.0", extras = ["python"]}
+
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
