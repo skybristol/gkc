@@ -29,7 +29,7 @@ Enhanced the `DataTypeTransformer.to_time()` method to:
 
 ## Changes Made
 
-### 1. Enhanced `DataTypeTransformer.to_time()` ([gkc/item_creator.py](gkc/item_creator.py#L41-L107))
+### 1. Enhanced `DataTypeTransformer.to_time()` ([gkc/item_creator.py](https://github.com/skybristol/gkc/blob/main/gkc/item_creator.py#L41-L107))
 
 **Before:**
 ```python
@@ -62,7 +62,7 @@ def to_time(date_input: str | int, precision: int | None = None, calendar: str =
     # ... handle explicit precision
 ```
 
-### 2. Updated `SnakBuilder.create_snak()` ([gkc/item_creator.py](gkc/item_creator.py#L118-L147))
+### 2. Updated `SnakBuilder.create_snak()` ([gkc/item_creator.py](https://github.com/skybristol/gkc/blob/main/gkc/item_creator.py#L118-L147))
 
 **Before:**
 ```python
@@ -81,7 +81,7 @@ elif datatype == "time":
     datavalue = self.transformer.to_time(value, precision)
 ```
 
-### 3. Enhanced Qualifier Resolution ([gkc/item_creator.py](gkc/item_creator.py#L531-L565))
+### 3. Enhanced Qualifier Resolution ([gkc/item_creator.py](https://github.com/skybristol/gkc/blob/main/gkc/item_creator.py#L531-L565))
 
 Added support for:
 - `"current_date"` special value (auto-inserts today's date)
@@ -111,8 +111,8 @@ elif "value" in qual_config:
 
 ## Files Modified
 
-- `gkc/item_creator.py` - Core transformation logic
-- `docs/date_time_handling.md` - Comprehensive documentation (new)
+- [`gkc/item_creator.py`](https://github.com/skybristol/gkc/blob/main/gkc/item_creator.py) - Core transformation logic
+- [Date/Time Handling](../date_time_handling.md) - Comprehensive documentation
 - `examples/date_handling_test.py` - Test suite (new)
 - `examples/README.md` - Updated with date handling example
 
@@ -237,4 +237,4 @@ References:
 2. **Update mapping files**: Remove unnecessary explicit precision settings
 3. **Review year-only dates**: Ensure fields with just years (like "2005") are formatting correctly
 4. **Add retrieval dates**: Use `"current_date"` for P813 (retrieved date) references
-5. **Check documentation**: See [docs/date_time_handling.md](docs/date_time_handling.md) for comprehensive examples
+5. **Check documentation**: See [Date/Time Handling](../date_time_handling.md) for comprehensive examples

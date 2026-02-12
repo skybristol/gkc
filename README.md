@@ -1,14 +1,14 @@
 # GKC - Global Knowledge Commons
 
 [![CI](https://github.com/skybristol/gkc/workflows/CI/badge.svg)](https://github.com/skybristol/gkc/actions)
-[![PyPI version](https://badge.fury.io/py/gkc.svg)](https://badge.fury.io/py/gkc)
+[![PyPI version](https://img.shields.io/pypi/v/gkc.svg)](https://pypi.org/project/gkc/)
 [![Python Versions](https://img.shields.io/pypi/pyversions/gkc.svg)](https://pypi.org/project/gkc/)
 
-The "Global Knowledge Commons" is a term of art describing the de facto confederation of community built and maintained data, information and knowledge assets. These include Wikipedia, Wikidata, Wikimedia Commons (and other parts of the "Wikiverse") along with OpenStreetMap for mapping data and services. This Python project is designed to provide a full working suite of capabilities for contributing to the Commons in a robust and documented fashion. Read more in the background document.
+The "Global Knowledge Commons" is a term of art describing the de facto confederation of community built and maintained data, information and knowledge assets freely available online for anyone to use and contribute to. These include Wikipedia, Wikidata, Wikimedia Commons (and other parts of the "Wikiverse") along with OpenStreetMap for mapping data and services. This project is motivated by a desire to make the process of contributing accurate and usable data and information to these assets as seamless and error free as possible. This Python package is designed to provide a full working suite of capabilities for contributing to the Commons in a robust and documented fashion. Read more in the [deployed documentation](https://skybristol.github.io/gkc).
 
 ## Features
 
-- 🔐 Authentication support for Wikidata, Wikipedia, and OpenStreetMap
+- 🔐 Authentication support for Wikidata (and other Wikimedia projects) and OpenStreetMap
 - 🌍 Easy-to-use interface for Global Knowledge Commons services
 - 📦 Built with Poetry for modern Python development
 - ✅ Comprehensive test coverage
@@ -45,180 +45,33 @@ poetry install
 ./scripts/pre-merge-check.sh
 ```
 
-## Usage
+## Quick Start
+
+For detailed usage instructions, see the [full documentation](https://skybristol.github.io/gkc).
 
 ### Authentication
 
-The package provides authentication classes for Global Knowledge Commons services. You can provide credentials directly, via environment variables, or through interactive prompts.
-
-#### Wikiverse (Wikidata, Wikipedia, Wikimedia Commons)
-
-The `WikiverseAuth` class provides unified authentication for all Wikimedia projects using **bot passwords**. The same credentials work across Wikidata, Wikipedia, and Wikimedia Commons due to Wikimedia's Single User Login (SUL) system.
-
-**Setting up Bot Passwords:**
-
-1. Go to [Special:BotPasswords](https://www.wikidata.org/wiki/Special:BotPasswords) on Wikidata
-2. Create a new bot password with appropriate permissions
-3. Your username will be in the format `YourUsername@BotName`
-4. Save the generated password (you won't see it again!)
-
-**Basic Usage:**
+GKC provides authentication for Wikidata (and other Wikimedia projects) and OpenStreetMap:
 
 ```python
-from gkc import WikiverseAuth, AuthenticationError
+from gkc import WikiverseAuth
 
-# Method 1: Using environment variables (recommended)
+# Using environment variables (recommended)
 auth = WikiverseAuth()
-auth.login()
-
-# Method 2: Using explicit credentials
-auth = WikiverseAuth(
-    username="YourUsername@BotName",
-    password="abc123def456ghi789"
-)
-auth.login()
-
-# Method 3: Interactive prompt
-auth = WikiverseAuth(interactive=True)
 auth.login()
 
 # Check login status
 if auth.is_logged_in():
     print(f"Logged in as: {auth.get_account_name()}")
-    print(f"Bot name: {auth.get_bot_name()}")
 ```
 
-**Targeting Different Wikimedia Projects:**
+See the [Authentication Guide](https://skybristol.github.io/gkc/authentication/) for complete setup instructions, including:
 
-```python
-# Wikidata (default)
-auth = WikiverseAuth(
-    username="User@Bot",
-    password="secret",
-    api_url="wikidata"  # or just omit for default
-)
-auth.login()
-
-# English Wikipedia
-auth = WikiverseAuth(
-    username="User@Bot",
-    password="secret",
-    api_url="wikipedia"
-)
-auth.login()
-
-# Wikimedia Commons
-auth = WikiverseAuth(
-    username="User@Bot",
-    password="secret",
-    api_url="commons"
-)
-auth.login()
-
-# Custom MediaWiki instance (e.g., enterprise wiki)
-auth = WikiverseAuth(
-    username="User@Bot",
-    password="secret",
-    api_url="https://wiki.mycompany.com/w/api.php"
-)
-auth.login()
-```
-
-**Making Authenticated API Requests:**
-
-```python
-# After login, use the session for API requests
-auth = WikiverseAuth()
-auth.login()
-
-# Example: Query user information
-response = auth.session.get(auth.api_url, params={
-    "action": "query",
-    "meta": "userinfo",
-    "format": "json"
-})
-print(response.json())
-
-# For editing, get a CSRF token
-try:
-    csrf_token = auth.get_csrf_token()
-    print(f"CSRF Token: {csrf_token}")
-except AuthenticationError as e:
-    print(f"Error: {e}")
-
-# When done, logout
-auth.logout()
-```
-
-**Helper Methods:**
-
-```python
-auth = WikiverseAuth(username="Alice@MyBot", password="secret")
-
-# Extract account name
-print(auth.get_account_name())  # Output: "Alice"
-
-# Extract bot name
-print(auth.get_bot_name())  # Output: "MyBot"
-
-# Check authentication state
-print(auth.is_authenticated())  # Has credentials
-print(auth.is_logged_in())      # Successfully logged in to API
-```
-
-#### OpenStreetMap
-
-```python
-from gkc import OpenStreetMapAuth
-
-# Method 1: Using explicit credentials
-auth = OpenStreetMapAuth(username="your_username", password="your_password")
-
-# Method 2: Using environment variables (OPENSTREETMAP_USERNAME, OPENSTREETMAP_PASSWORD)
-auth = OpenStreetMapAuth()
-
-# Method 3: Interactive prompt
-auth = OpenStreetMapAuth(interactive=True)
-
-# Check authentication status
-if auth.is_authenticated():
-    print("Authenticated successfully!")
-```
-
-### Environment Variables
-
-You can set the following environment variables for automatic authentication:
-
-**Wikimedia Projects:**
-- `WIKIVERSE_USERNAME` - Bot password username (format: Username@BotName)
-- `WIKIVERSE_PASSWORD` - Bot password
-- `WIKIVERSE_API_URL` - (Optional) MediaWiki API endpoint. Defaults to Wikidata. Can use shortcuts: "wikidata", "wikipedia", "commons"
-
-**OpenStreetMap:**
-- `OPENSTREETMAP_USERNAME` - OpenStreetMap username
-- `OPENSTREETMAP_PASSWORD` - OpenStreetMap password
-
-Example:
-
-```bash
-# Wikidata (default)
-export WIKIVERSE_USERNAME="Alice@MyBot"
-export WIKIVERSE_PASSWORD="abc123def456ghi789"
-
-# Wikipedia
-export WIKIVERSE_USERNAME="Alice@MyBot"
-export WIKIVERSE_PASSWORD="abc123def456ghi789"
-export WIKIVERSE_API_URL="wikipedia"
-
-# Custom MediaWiki instance
-export WIKIVERSE_USERNAME="Alice@MyBot"
-export WIKIVERSE_PASSWORD="abc123def456ghi789"
-export WIKIVERSE_API_URL="https://wiki.mycompany.com/w/api.php"
-
-# OpenStreetMap
-export OPENSTREETMAP_USERNAME="your_osm_username"
-export OPENSTREETMAP_PASSWORD="your_osm_password"
-```
+- Setting up bot passwords for Wikimedia projects
+- Targeting different Wikimedia sites (Wikidata, Wikipedia, Commons)
+- OpenStreetMap authentication
+- Using environment variables
+- Security best practices
 
 ## Development
 

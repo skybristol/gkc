@@ -390,5 +390,5 @@ except SPARQLError as e:
 
 ## See Also
 
-- [gkc.wd](../reference/wd/) - Low-level Wikidata entity access
-- [gkc.mapping_builder](../reference/mapping_builder/) - Property mapping utilities
+- [API Reference](api/index.md) - Complete API documentation
+- [SPARQL Quick Reference](sparql_quick_reference.md) - Quick start guide

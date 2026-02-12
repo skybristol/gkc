@@ -180,8 +180,8 @@ The generated sitelinks structure is fully compatible with Wikidata's `wbeditent
 
 ## Files Modified
 
-- `gkc/item_creator.py` - Core transformation logic
-- `gkc/mapping_builder.py` - Auto-generation support
+- [`gkc/item_creator.py`](https://github.com/skybristol/gkc/blob/main/gkc/item_creator.py) - Core transformation logic
+- [`gkc/mapping_builder.py`](https://github.com/skybristol/gkc/blob/main/gkc/mapping_builder.py) - Auto-generation support
 - `docs/sitelinks_usage.md` - Comprehensive documentation (new)
 - `examples/sitelinks_example.py` - Working examples (new)
 - `examples/csv_to_wikidata_dryrun.ipynb` - Interactive demo updates

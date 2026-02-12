@@ -4,6 +4,7 @@ Welcome to the documentation for GKC (Global Knowledge Commons), a Python packag
 
 ## Getting Started
 
+- [Authentication](authentication.md) - Set up credentials for Wikidata, Wikipedia, and OpenStreetMap
 - [Background](background.md)
 - [Claims Map Builder](claims_map_builder.md)
 - [Item Creation Approach](item_creation_approach.md)
@@ -23,6 +24,10 @@ Welcome to the documentation for GKC (Global Knowledge Commons), a Python packag
 
 - [SPARQL queries](sparql_queries.md)
 - [SPARQL quick reference](sparql_quick_reference.md)
+
+## Development Notes
+
+- [Implementation Notes](copilot/index.md) - Detailed technical documentation from feature development sessions
 
 ## CI/CD
 
