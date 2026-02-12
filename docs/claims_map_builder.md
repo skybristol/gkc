@@ -422,7 +422,7 @@ Parses ShEx schema text to extract property information.
 
 ## Examples
 
-See [mapping_builder_example.py](../examples/mapping_builder_example.py) for complete working examples:
+See [mapping_builder_example.py](https://github.com/skybristol/gkc/blob/main/examples/mapping_builder_example.py) for complete working examples:
 
 1. **Analyze Schema** - Parse and analyze ShEx structure
 2. **Build Claims Map** - Generate just the claims section
@@ -459,6 +459,6 @@ See [mapping_builder_example.py](../examples/mapping_builder_example.py) for com
 
 ## Related
 
-- [Item Creation Approach](../docs/item_creation_approach.md) - Overall architecture
-- [Mapping Example](../examples/mappings/tribe_mapping_example.json) - Hand-crafted mapping
-- [ShEx Validation](README.md) - Using ShEx for validation
+- [Item Creation Approach](item_creation_approach.md) - Overall architecture
+- [Mapping Example](https://github.com/skybristol/gkc/blob/main/examples/mappings/tribe_mapping_example.json) - Hand-crafted mapping
+- [ShEx Validation](https://github.com/skybristol/gkc/blob/main/README.md) - Using ShEx for validation

@@ -343,7 +343,7 @@ The refactored code does NOT support the old format. You must migrate existing m
 
 ## Complete Example
 
-See [examples/mappings/tribe_mapping_example.json](../examples/mappings/tribe_mapping_example.json) for a complete working example using the new structure.
+See [examples/mappings/tribe_mapping_example.json](https://github.com/skybristol/gkc/blob/main/examples/mappings/tribe_mapping_example.json) for a complete working example using the new structure.
 
 ## Questions?
 

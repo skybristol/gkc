@@ -195,9 +195,9 @@ All properties in the array form **one reference block**:
 
 ## Examples
 
-- **Explicit Library:** See [tribe_mapping_example.json](../examples/mappings/tribe_mapping_example.json)
-- **Inline Named:** See [inline_named_pattern_example.py](../examples/inline_named_pattern_example.py)
-- **Both Patterns:** See [fed_tribe_from_missing_ak_tribes.json](../examples/mappings/fed_tribe_from_missing_ak_tribes.json)
+- **Explicit Library:** See [tribe_mapping_example.json](https://github.com/skybristol/gkc/blob/main/examples/mappings/tribe_mapping_example.json)
+- **Inline Named:** See [inline_named_pattern_example.py](https://github.com/skybristol/gkc/blob/main/examples/inline_named_pattern_example.py)
+- **Both Patterns:** See [fed_tribe_from_missing_ak_tribes.json](https://github.com/skybristol/gkc/blob/main/examples/mappings/fed_tribe_from_missing_ak_tribes.json)
 
 ## Migration
 
