@@ -79,16 +79,12 @@ class SPARQLQuery:
 
             # Check if it's a Wikidata Query Service URL
             if "query.wikidata.org" not in parsed.netloc:
-                raise SPARQLError(
-                    f"Not a Wikidata Query Service URL: {parsed.netloc}"
-                )
+                raise SPARQLError(f"Not a Wikidata Query Service URL: {parsed.netloc}")
 
             # Extract the fragment (everything after #)
             fragment = parsed.fragment
             if not fragment:
-                raise SPARQLError(
-                    "No query found in URL fragment (after #)"
-                )
+                raise SPARQLError("No query found in URL fragment (after #)")
 
             # URL decode the fragment
             decoded_query = unquote(fragment)
@@ -176,9 +172,7 @@ class SPARQLQuery:
                 return response.text
 
         except requests.Timeout:
-            raise SPARQLError(
-                f"Query timeout after {self.timeout} seconds"
-            )
+            raise SPARQLError(f"Query timeout after {self.timeout} seconds")
         except requests.RequestException as e:
             raise SPARQLError(f"Query failed: {str(e)}")
         except ValueError as e:
