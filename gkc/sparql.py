@@ -8,6 +8,7 @@ and raw query strings.
 
 from typing import Any, Optional
 from urllib.parse import unquote, urlparse
+
 import requests
 
 try:

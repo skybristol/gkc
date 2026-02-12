@@ -1,13 +1,11 @@
 """Tests for SPARQL query utilities."""
 
-import json
 from unittest.mock import MagicMock, patch
 from urllib.parse import quote
 
 import pytest
 
 from gkc.sparql import (
-    DEFAULT_WIKIDATA_ENDPOINT,
     SPARQLError,
     SPARQLQuery,
     execute_sparql,
@@ -285,7 +283,10 @@ class TestSPARQLToCSV:
         filepath = tmp_path / "results.csv"
 
         executor = SPARQLQuery()
-        result = executor.to_csv("SELECT ?item ?itemLabel WHERE { ... }", filepath=str(filepath))
+        result = executor.to_csv(
+            "SELECT ?item ?itemLabel WHERE { ... }",
+            filepath=str(filepath),
+        )
 
         assert result == csv_data
         assert filepath.read_text() == csv_data

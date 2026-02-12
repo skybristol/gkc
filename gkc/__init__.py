@@ -20,13 +20,13 @@ from gkc.sitelinks import (
     check_wikipedia_page,
     validate_sitelink_dict,
 )
-from gkc.wd import WikidataFetchError, fetch_entity_rdf, fetch_entity_schema
 from gkc.sparql import (
     SPARQLError,
     SPARQLQuery,
     execute_sparql,
     execute_sparql_to_dataframe,
 )
+from gkc.wd import WikidataFetchError, fetch_entity_rdf, fetch_entity_schema
 
 __all__ = [
     "WikiverseAuth",
