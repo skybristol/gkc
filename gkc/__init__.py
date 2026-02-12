@@ -21,6 +21,12 @@ from gkc.sitelinks import (
     validate_sitelink_dict,
 )
 from gkc.wd import WikidataFetchError, fetch_entity_rdf, fetch_entity_schema
+from gkc.sparql import (
+    SPARQLError,
+    SPARQLQuery,
+    execute_sparql,
+    execute_sparql_to_dataframe,
+)
 
 __all__ = [
     "WikiverseAuth",
@@ -38,4 +44,8 @@ __all__ = [
     "SitelinkValidator",
     "check_wikipedia_page",
     "validate_sitelink_dict",
+    "SPARQLError",
+    "SPARQLQuery",
+    "execute_sparql",
+    "execute_sparql_to_dataframe",
 ]
