@@ -19,6 +19,11 @@ Welcome to the documentation for GKC (Global Knowledge Commons), a Python packag
 - [Sitelinks Usage](sitelinks_usage.md)
 - [Sitelinks Validation](sitelinks_validation.md)
 
+## Utilities
+
+- [SPARQL queries](sparql_queries.md)
+- [SPARQL quick reference](sparql_quick_reference.md)
+
 ## CI/CD
 
 - [CI/CD](CI_CD.md)

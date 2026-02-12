@@ -120,9 +120,9 @@ Quick function to execute query and return DataFrame.
 
 ## Documentation
 
-- [Full API Reference](docs/sparql_queries.md)
-- [Quick Reference](docs/sparql_quick_reference.md)
-- [Examples](examples/sparql_query_example.py)
+- [Full API Reference](../sparql_queries.md)
+- [Quick Reference](../sparql_quick_reference.md)
+- [Examples](https://github.com/skybristol/gkc/blob/main/examples/sparql_query_example.py)
 
 ## Examples
 
@@ -151,7 +151,7 @@ for row in results:
     print(f"{row['itemLabel']}: {row['population']}")
 ```
 
-### Example 2: Data Analysis with DataFramse
+### Example 2: Data Analysis with DataFrame
 
 ```python
 from gkc import execute_sparql_to_dataframe
