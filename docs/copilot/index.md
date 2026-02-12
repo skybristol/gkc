@@ -1,6 +1,8 @@
 # Development Notes
 
-This section contains detailed implementation notes and summaries from feature development sessions carried out in VSCode with Copilot. These documents provide technical details about how various GKC features were designed, implemented, and tested and serve as a curated history of AI-assisted code development in the project..
+This section contains detailed implementation notes and summaries from feature development sessions carried out in VSCode with Copilot. These documents provide technical details about how various GKC features were designed, implemented, and tested and serve as a curated history of AI-assisted code development in the project.
+
+**See also**: [Collaboration Guidelines](COLLABORATION_GUIDELINES.md) - Conventions and practices for AI-assisted development on this project.
 
 ## Purpose
 
