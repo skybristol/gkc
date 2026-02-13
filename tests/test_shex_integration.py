@@ -186,10 +186,10 @@ class TestFetchFromWikidata:
         This test shows how to download data from Wikidata and save it
         for use in offline tests.
         """
-        from gkc.wd import fetch_entity_rdf, fetch_entity_schema
+        from gkc.cooperage import fetch_entity_rdf, fetch_schema_specification
 
         # Fetch tribe schema
-        schema_text = fetch_entity_schema("E502")
+        schema_text = fetch_schema_specification("E502")
         schema_file = tmp_path / "tribe_E502.shex"
         schema_file.write_text(schema_text)
 

@@ -10,11 +10,7 @@ Plain meaning: Convert transformed data into Wikidata item structure.
 """
 
 import math
-from datetime import datetime
 from typing import TYPE_CHECKING, Any, Optional
-
-from gkc.auth import WikiverseAuth
-from gkc.spirit_safe import SpiritSafeValidator
 
 if TYPE_CHECKING:
     from gkc.recipe import RecipeBuilder

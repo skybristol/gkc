@@ -341,9 +341,7 @@ class RecipeBuilder:
         """
         return self.assemble_recipe(include_qualifiers, include_references)
 
-    def finalize_recipe(
-        self, entity_type: Optional[str] = None
-    ) -> dict[str, Any]:
+    def finalize_recipe(self, entity_type: Optional[str] = None) -> dict[str, Any]:
         """
         Finalize a complete recipe configuration skeleton.
 

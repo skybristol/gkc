@@ -129,7 +129,8 @@ class SpiritSafeValidator:
         except CooperageError as e:
             raise SpiritSafeValidationError(f"Failed to load schema: {str(e)}") from e
         except OSError as e:
-            raise SpiritSafeValidationError(f"Failed to read schema file: {str(e)}") from e
+            msg = f"Failed to read schema file: {str(e)}"
+            raise SpiritSafeValidationError(msg) from e
 
         return self
 
@@ -158,7 +159,8 @@ class SpiritSafeValidator:
             elif self.rdf_file:
                 rdf_path = Path(self.rdf_file)
                 if not rdf_path.exists():
-                    raise SpiritSafeValidationError(f"RDF file not found: {self.rdf_file}")
+                    msg = f"RDF file not found: {self.rdf_file}"
+                    raise SpiritSafeValidationError(msg)
                 self._rdf = rdf_path.read_text(encoding="utf-8")
             elif self.qid:
                 self._rdf = fetch_entity_rdf(
@@ -218,7 +220,8 @@ class SpiritSafeValidator:
                 rdf=self._rdf, schema=self._schema, focus=focus
             ).evaluate()
         except Exception as e:
-            raise SpiritSafeValidationError(f"Spirit Safe evaluation failed: {str(e)}") from e
+            msg = f"Spirit Safe evaluation failed: {str(e)}"
+            raise SpiritSafeValidationError(msg) from e
 
         return self
 
@@ -261,7 +264,8 @@ class SpiritSafeValidator:
             SpiritSafeValidationError: If check() hasn't been called yet
         """
         if self.results is None:
-            raise SpiritSafeValidationError("No validation results. Call check() first.")
+            msg = "No validation results. Call check() first."
+            raise SpiritSafeValidationError(msg)
 
         # Handle mocked results (for testing)
         if isinstance(self.results, bool):
