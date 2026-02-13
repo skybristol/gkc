@@ -10,7 +10,7 @@ Plain meaning: Convert transformed data into Wikidata item structure.
 """
 
 import math
-from typing import TYPE_CHECKING, Any, Optional
+from typing import TYPE_CHECKING, Any, Optional, Union
 
 if TYPE_CHECKING:
     from gkc.recipe import RecipeBuilder
@@ -33,7 +33,7 @@ class DataTypeTransformer:
         }
 
     @staticmethod
-    def to_quantity(value: float | int, unit: str = "1") -> dict:
+    def to_quantity(value: Union[float, int], unit: str = "1") -> dict:
         """Convert a number to quantity datavalue."""
         return {
             "value": {"amount": f"+{value}", "unit": unit},
@@ -42,7 +42,9 @@ class DataTypeTransformer:
 
     @staticmethod
     def to_time(
-        date_input: str | int, precision: int | None = None, calendar: str = "Q1985727"
+        date_input: Union[str, int],
+        precision: Optional[int] = None,
+        calendar: str = "Q1985727",
     ) -> dict:
         """Convert date input to Wikidata time datavalue.
 
