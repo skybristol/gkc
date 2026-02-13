@@ -17,9 +17,9 @@ The following sections lay out the extract, transform and load (ETL) workflow th
 
 ### Data Ingestion (mash tun)
 
-- [Schema building](schema_building.md) - present a list of properties or existing Wikidata item to get the start to an entity schema
-- [Data source annotation](source_annotation.md) - review and enhance annotation on data sources
-- [Mystery data sniffer](ingredient_sniffer.md) - evaluating source data to produce a best-guess data map
+- Schema building - present a list of properties or existing Wikidata item to get the start to an entity schema
+- Data source annotation - review and enhance annotation on data sources
+- Mystery data sniffer - evaluating source data to produce a best-guess data map
 
 ### Data Integration (ferment, distill, refine, proof and blend)
 
@@ -31,10 +31,10 @@ The following sections lay out the extract, transform and load (ETL) workflow th
 
 ### Data Delivery (bottling)
 
-- [Wikidata item maintainer](wd_item_maintainer.md) - create new items and make claims on existing items in Wikidata
-- [Infobox template builder](infobox_templates.md) - output one or more filled infobox templates for Wikipedia
-- [Commons contributor](commons_item_maintainer.md) - create new items and add properties on existing items in Wikimedia Commons
-- [OSM mapping & tagging](osm_map_n_tag.md) - create new features or add to existing features with OSM tags
+- Wikidata item maintainer - create new items and make claims on existing items in Wikidata
+- Infobox template builder - output one or more filled infobox templates for Wikipedia
+- Commons contributor - create new items and add properties on existing items in Wikimedia Commons
+- OSM mapping & tagging - create new features or add to existing features with OSM tags
 
 ## Older Documentation for Examination
 

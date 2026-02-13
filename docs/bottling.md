@@ -295,7 +295,7 @@ Filter by `_proofing_status == "pass"` or a minimum quality threshold.
 - **Configuration File Format**: (Link to bottling config schema)
 - **API Reference**: (Link to Bottler class)
 - **Target Output Specs**: (Links to Wikidata JSON, OSM, Commons, Wikipedia formats)
-- **Related**: [Blending](blending.md) | [Proofing](proofing.md) | [Wikidata Maintainer](wd_item_maintainer.md)
+- **Related**: [Blending](blending.md) | [Proofing](proofing.md) | Wikidata Maintainer
 
 ---
 

@@ -67,6 +67,7 @@ python_functions = ["test_*"]
 addopts = "-v --cov=gkc --cov-report=term-missing --cov-report=html"
 markers = [
     "slow: marks tests as slow (deselect with '-m \"not slow\"')",
+    "docs: marks documentation build checks",
 ]
 
 [tool.mypy]
