@@ -7,15 +7,9 @@ on:
 
 permissions:
   contents: read
-  pages: write
-  id-token: write
-
-concurrency:
-  group: pages
-  cancel-in-progress: true
 
 jobs:
-  build:
+  build-and-deploy:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -36,18 +30,27 @@ jobs:
       - name: Build docs
         run: poetry run mkdocs build --strict
 
-      - name: Upload Pages artifact
-        uses: actions/upload-pages-artifact@v3
+      - name: Checkout dd repository
+        uses: actions/checkout@v4
         with:
-          path: site
+          repository: skybristol/dd
+          token: ${{ secrets.DD_PAT }}
+          path: dd
 
-  deploy:
-    needs: build
-    runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    steps:
-      - name: Deploy to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v4
+      - name: Sync site to dd/gkc
+        run: |
+          mkdir -p dd/gkc
+          rsync -a --delete site/ dd/gkc/
+
+      - name: Commit and push changes
+        run: |
+          cd dd
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add gkc
+          if git diff --cached --quiet; then
+            echo "No changes to publish."
+          else
+            git commit -m "Update GKC docs"
+            git push origin main
+          fi
