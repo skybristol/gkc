@@ -381,7 +381,7 @@ Store:
 
 **After**: [Refinement](refinement.md) takes linked records and deduplicates, enriches, and validates them
 
-**Parallel**: [Spirit Safe](spirit_safe.md) validates links during distillation
+**Parallel**: Spirit Safe validates links during distillation
 
 ---
 
@@ -405,7 +405,7 @@ Cache results of manual reviews. Build a "match history" to improve heuristics o
 - **Authority Integrations**: (Links to Wikidata, OSM, VIAF integrations)
 - **Matching Strategies**: (Detailed matching algorithm docs)
 - **Troubleshooting**: (Link to common issues once compiled)
-- **Related**: [Schema Building](schema_building.md) | [Fermentation](fermentation.md) | [Refinement](refinement.md) | [Spirit Safe](spirit_safe.md)
+- **Related**: Schema Building | [Fermentation](fermentation.md) | [Refinement](refinement.md) | Spirit Safe
 
 ---
 

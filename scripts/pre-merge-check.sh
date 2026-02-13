@@ -50,6 +50,16 @@ poetry run pytest -v
 echo "✓ All tests passed"
 echo ""
 
+# Build docs (strict) if available
+echo "📚 Running MkDocs build check..."
+if poetry run mkdocs --version > /dev/null 2>&1; then
+    poetry run mkdocs build --strict
+    echo "✓ MkDocs build passed"
+else
+    echo "⚠️  MkDocs not available. Run 'poetry install --with docs' to enable docs checks."
+fi
+echo ""
+
 # Build package
 echo "📦 Testing package build..."
 poetry build

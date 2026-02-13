@@ -410,7 +410,7 @@ Empty "num_publications" → set to None, flag as "_num_publications_was_missing
 ## Supporting Systems
 
 ### Schema Registry
-Fermentation relies on a [Schema Registry](schema_building.md) that defines:
+Fermentation relies on a Schema Registry that defines:
 - Canonical field names and types
 - Valid enum values and mappings
 - Required vs. optional fields
@@ -453,7 +453,7 @@ Keep `_raw` fields for all transformed values (double storage but full auditabil
 - **Configuration File Format**: (Link to fermentation config schema once defined)
 - **API Reference**: (Link to Fermenter class once documented)
 - **Troubleshooting**: (Link to common issues once compiled)
-- **Related**: [Schema Building](schema_building.md) | [Distillation](distillation.md) | [Spirit Safe](spirit_safe.md) (validation reference)
+- **Related**: Schema Building | [Distillation](distillation.md) | Spirit Safe (validation reference)
 
 ---
 

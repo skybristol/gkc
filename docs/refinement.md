@@ -415,7 +415,7 @@ Fetch sitelinks, related entities, and property completeness scores during Refin
 - **Deduplication Algorithms**: (Blocking, clustering, merging strategies)
 - **Enrichment Sources**: (Wikidata, OSM, custom catalogs)
 - **ShEx Validation**: (Shape expression tutorials and schemas)
-- **Related**: [Distillation](distillation.md) | [Proofing](proofing.md) | [Spirit Safe](spirit_safe.md)
+- **Related**: [Distillation](distillation.md) | [Proofing](proofing.md) | Spirit Safe
 
 ---
 

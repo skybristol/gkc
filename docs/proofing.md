@@ -300,7 +300,7 @@ For Wikidata, require high completeness and confidence. For internal analysis, a
 - **API Reference**: (Link to Proofer class)
 - **Quality Metrics**: (Definition of completeness, consistency, confidence)
 - **Review Workflow**: (Manual review process and feedback loops)
-- **Related**: [Refinement](refinement.md) | [Blending](blending.md) | [Spirit Safe](spirit_safe.md)
+- **Related**: [Refinement](refinement.md) | [Blending](blending.md) | Spirit Safe
 
 ---
 

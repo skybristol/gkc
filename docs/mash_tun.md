@@ -425,7 +425,7 @@ Handle pagination in Mash Tun config. Cache full results in Barrel for reproduci
 - **API Reference**: (Link to MashTun class once documented)
 - **Format Parsers**: (Link to format-specific parsing docs)
 - **Troubleshooting**: (Link to common issues once compiled)
-- **Related**: [Schema Building](schema_building.md) | [Fermentation](fermentation.md) | [Barrel](barrel.md) (provenance & caching)
+- **Related**: Schema Building | [Fermentation](fermentation.md) | Barrel (provenance & caching)
 
 ---
 
