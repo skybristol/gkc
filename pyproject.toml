@@ -37,6 +37,7 @@ types-requests = "^2.32.4.20260107"
 mkdocs = "^1.6.1"
 mkdocs-material = "^9.6.7"
 mkdocstrings = {version = "^0.27.0", extras = ["python"]}
+pymdown-extensions = "^10.11.0"
 jupyter = "^1.0.0"
 jupyterlab = "^4.0.0"
 ipykernel = "^6.29.0"

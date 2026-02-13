@@ -23,11 +23,29 @@ plugins:
             show_source: true
             heading_level: 2
 
+markdown_extensions:
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+
 nav:
   - Home: index.md
   - Background: background.md
   - Getting Started:
+    - Setup and Orientation: setup.md
     - Authentication: authentication.md
+  - Data Distillery Workflow:
+    - Pipeline Overview: pipeline_overview.md
+    - Distillery Glossary: distillery_glossary.md
+    - Mash Tun: mash_tun.md
+    - Fermentation: fermentation.md
+    - Distillation: distillation.md
+    - Refinement: refinement.md
+    - Proofing: proofing.md
+    - Blending: blending.md
+    - Bottling: bottling.md
   - Schema Forward Approach:
     - Mapping Format Migration: mapping_format_migration.md
   - Wikidata:
