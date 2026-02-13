@@ -11,6 +11,8 @@ Example:
 
 import warnings
 
+import requests
+
 # Re-export everything from cooperage
 from gkc.cooperage import (
     CooperageError,
