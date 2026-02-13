@@ -74,7 +74,7 @@ All CI/CD configuration has been verified and is ready for production use.
 **Requirements**:
 - ✅ Workflow configured correctly
 - ⚠️  **User must configure Trusted Publishing on PyPI** (one-time setup)
-  - See [docs/CI_CD.md](docs/CI_CD.md) for step-by-step instructions
+  - See [CI/CD Guide](../CI_CD.md) for step-by-step instructions
   - **Do this before creating first release**
 
 **Note**: User has `PYPI_TOKEN` secret configured, but it's not needed with Trusted Publishing (kept as backup if needed).
@@ -102,7 +102,7 @@ All CI/CD configuration has been verified and is ready for production use.
 ### 7. Documentation ✅
 Created comprehensive documentation:
 
-- **`docs/CI_CD.md`**: Complete CI/CD guide
+- [**CI/CD Guide**](../CI_CD.md): Complete CI/CD documentation
   - Local testing instructions
   - CI workflow explanation
   - PyPI Trusted Publishing setup
@@ -168,7 +168,7 @@ User must complete ONE-TIME PyPI setup:
 
 ### New Files
 - ✅ `scripts/pre-merge-check.sh` - Local testing script
-- ✅ `docs/CI_CD.md` - Comprehensive CI/CD documentation
+- ✅ [CI/CD Guide](../CI_CD.md) - Comprehensive CI/CD documentation
 
 ### Updated Files
 - ✅ `README.md` - Added pre-merge check info, updated contributing
@@ -198,6 +198,6 @@ The GKC project is fully configured for professional CI/CD:
 ✅ **Releases**: One-click publishing to PyPI via GitHub releases  
 ✅ **Documentation**: Comprehensive guides for all workflows  
 
-The only remaining step is the one-time PyPI Trusted Publishing configuration, which takes 5 minutes and is documented in [docs/CI_CD.md](docs/CI_CD.md).
+The only remaining step is the one-time PyPI Trusted Publishing configuration, which takes 5 minutes and is documented in the [CI/CD Guide](../CI_CD.md).
 
 **Ready to merge and release! 🚀**

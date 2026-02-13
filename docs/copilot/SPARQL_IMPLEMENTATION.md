@@ -180,16 +180,16 @@ results = executor.query(url)
 
 ## File Locations
 
-- Module: [gkc/sparql.py](gkc/sparql.py)
-- Tests: [tests/test_sparql.py](tests/test_sparql.py)
-- Documentation: [docs/sparql_queries.md](docs/sparql_queries.md)
-- Examples: [examples/sparql_query_example.py](examples/sparql_query_example.py)
+- Module: [`gkc/sparql.py`](https://github.com/skybristol/gkc/blob/main/gkc/sparql.py)
+- Tests: [`tests/test_sparql.py`](https://github.com/skybristol/gkc/blob/main/tests/test_sparql.py)
+- Documentation: [SPARQL Queries](../sparql_queries.md)
+- Examples: [`examples/sparql_query_example.py`](https://github.com/skybristol/gkc/blob/main/examples/sparql_query_example.py)
 
 ## Integration Points
 
 The SPARQL module integrates with existing GKC modules:
-- Can complement [gkc.wd](gkc/wd.py) for low-level entity access
-- Works with [gkc.mapping_builder](gkc/mapping_builder.py) for property queries
+- Can complement [`gkc.wd`](https://github.com/skybristol/gkc/blob/main/gkc/wd.py) for low-level entity access
+- Works with [`gkc.mapping_builder`](https://github.com/skybristol/gkc/blob/main/gkc/mapping_builder.py) for property queries
 - Provides alternative query method compared to direct API calls
 
 ## Next Steps (Optional)
