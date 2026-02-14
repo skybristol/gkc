@@ -1,0 +1,3100 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Data Distillery - A framework for data distillation toward the Global Knowledge Commons">
+      
+      
+      
+        <link rel="canonical" href="https://datadistillery.org/gkc/refinement/">
+      
+      
+        <link rel="prev" href="../distillation/">
+      
+      
+        <link rel="next" href="../proofing/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.1">
+    
+    
+      
+        <title>Refinement - Data Distillery</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.484c7ddc.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/_mkdocstrings.css">
+    
+      <link rel="stylesheet" href="../../stylesheets/extra.css">
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    <body dir="ltr">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#refinement-deduplication-enrichment" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="Data Distillery" class="md-header__button md-logo" aria-label="Data Distillery" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            Data Distillery
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Refinement
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/skybristol/gkc" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    skybristol/gkc
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="Data Distillery" class="md-nav__button md-logo" aria-label="Data Distillery" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    Data Distillery
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/skybristol/gkc" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    skybristol/gkc
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    GKC Documentation
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    GKC Documentation
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../background/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Background
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_2_3" id="__nav_2_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Getting Started
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Getting Started
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../setup/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Setup and Orientation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../authentication/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Authentication
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_4" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_2_4" id="__nav_2_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Data Distillery Workflow
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_4_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_2_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Data Distillery Workflow
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../pipeline_overview/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Pipeline Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../distillery_glossary/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Distillery Glossary
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../mash_tun/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Mash Tun
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../fermentation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Fermentation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../distillation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Distillation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Refinement
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Refinement
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#overview" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Overview
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-problem-refinement-solves" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The Problem Refinement Solves
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#input-contract" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Input Contract
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#core-transformations" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Core Transformations
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Core Transformations">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#1-duplicate-detection-collapsing" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. Duplicate Detection &amp; Collapsing
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2-record-merging-strategy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. Record Merging Strategy
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#3-deduplication-flagging-tracking" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. Deduplication Flagging &amp; Tracking
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#4-enrichment-cross-reference-addition" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4. Enrichment &amp; Cross-Reference Addition
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#5-shape-validation-shex-schema-conformance" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5. Shape Validation (ShEx, Schema Conformance)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#output-contract" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Output Contract
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#angels-share-schema-deviations" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Angel's Share (Schema Deviations)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#configuration-decisions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Configuration &amp; Decisions
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Configuration &amp; Decisions">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#1-deduplication-strategy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. Deduplication Strategy
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2-enrichment-profile" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. Enrichment Profile
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#3-validation-schemas" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. Validation Schemas
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#a-worked-example" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        A Worked Example
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#supporting-systems" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Supporting Systems
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Supporting Systems">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#schema-registry" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Schema Registry
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#spirit-safe-validation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Spirit Safe (Validation)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#barrel-provenance" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Barrel (Provenance)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#relationship-to-other-stages" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Relationship to Other Stages
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#common-patterns" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Common Patterns
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Common Patterns">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#pattern-1-i-have-lots-of-duplicates-from-multiple-sources" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Pattern 1: "I have lots of duplicates from multiple sources"
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pattern-2-i-need-to-preserve-all-contributing-sources" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Pattern 2: "I need to preserve all contributing sources"
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pattern-3-i-want-to-enrich-with-wikidata-data" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Pattern 3: "I want to enrich with Wikidata data"
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#reference" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Reference
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#github-issues-development" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        GitHub Issues &amp; Development
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../proofing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Proofing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../blending/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Blending
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../bottling/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Bottling
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_2_5" id="__nav_2_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Barrel Schemas
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Barrel Schemas
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../barrel_schemas/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../barrel_schemas/wikidata_entityschemas/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Wikidata EntitySchemas
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../barrel_schemas/commons_schemas/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Wikimedia Commons
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../barrel_schemas/wikipedia_infoboxes/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Wikipedia Infoboxes
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../barrel_schemas/osm_tagging/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    OpenStreetMap Tagging
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_6" >
+        
+          
+          <label class="md-nav__link" for="__nav_2_6" id="__nav_2_6_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Schema Forward Approach
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2_6">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Schema Forward Approach
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../mapping_format_migration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Mapping Format Migration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_7" >
+        
+          
+          <label class="md-nav__link" for="__nav_2_7" id="__nav_2_7_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Wikidata
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_7_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2_7">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Wikidata
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../item_creation_approach/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Item Creation Approach
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../claims_map_builder/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Claims Map Builder
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reference_qualifier_patterns/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reference/Qualifier Patterns
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../date_time_handling/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Date/Time Handling
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_7_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_2_7_5" id="__nav_2_7_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Sitelinks
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_2_7_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2_7_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Sitelinks
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../sitelinks_usage/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Sitelinks Usage
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../sitelinks_validation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Sitelinks Validation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_8" >
+        
+          
+          <label class="md-nav__link" for="__nav_2_8" id="__nav_2_8_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Utilities and Tools
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_8_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2_8">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Utilities and Tools
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../sparql_queries/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SPARQL Queries
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../sparql_quick_reference/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SPARQL Quick Reference
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api/sparql/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SPARQL API Documentation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_9" >
+        
+          
+          <label class="md-nav__link" for="__nav_2_9" id="__nav_2_9_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Development
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_9_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2_9">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Development
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../CI_CD/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CI/CD
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../RELEASE/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Release Process
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../copilot/COLLABORATION_GUIDELINES/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Collaboration Guidelines
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_9_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_2_9_4" id="__nav_2_9_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Co-development Notes
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_2_9_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2_9_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Co-development Notes
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../copilot/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../copilot/CI_CD_VERIFICATION/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CI/CD Verification
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../copilot/DATE_TIME_ENHANCEMENT/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Date/Time Enhancement
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../copilot/SITELINKS_IMPLEMENTATION/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Sitelinks Implementation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../copilot/SITELINKS_VALIDATION_IMPLEMENTATION/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Sitelinks Validation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../copilot/SPARQL_IMPLEMENTATION/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SPARQL Implementation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../copilot/SPARQL_IMPLEMENTATION_COMPLETE/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SPARQL Complete
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API Reference
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#overview" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Overview
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-problem-refinement-solves" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The Problem Refinement Solves
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#input-contract" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Input Contract
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#core-transformations" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Core Transformations
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Core Transformations">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#1-duplicate-detection-collapsing" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. Duplicate Detection &amp; Collapsing
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2-record-merging-strategy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. Record Merging Strategy
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#3-deduplication-flagging-tracking" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. Deduplication Flagging &amp; Tracking
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#4-enrichment-cross-reference-addition" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4. Enrichment &amp; Cross-Reference Addition
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#5-shape-validation-shex-schema-conformance" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5. Shape Validation (ShEx, Schema Conformance)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#output-contract" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Output Contract
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#angels-share-schema-deviations" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Angel's Share (Schema Deviations)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#configuration-decisions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Configuration &amp; Decisions
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Configuration &amp; Decisions">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#1-deduplication-strategy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. Deduplication Strategy
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2-enrichment-profile" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. Enrichment Profile
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#3-validation-schemas" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. Validation Schemas
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#a-worked-example" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        A Worked Example
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#supporting-systems" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Supporting Systems
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Supporting Systems">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#schema-registry" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Schema Registry
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#spirit-safe-validation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Spirit Safe (Validation)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#barrel-provenance" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Barrel (Provenance)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#relationship-to-other-stages" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Relationship to Other Stages
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#common-patterns" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Common Patterns
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Common Patterns">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#pattern-1-i-have-lots-of-duplicates-from-multiple-sources" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Pattern 1: "I have lots of duplicates from multiple sources"
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pattern-2-i-need-to-preserve-all-contributing-sources" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Pattern 2: "I need to preserve all contributing sources"
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pattern-3-i-want-to-enrich-with-wikidata-data" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Pattern 3: "I want to enrich with Wikidata data"
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#reference" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Reference
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#github-issues-development" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        GitHub Issues &amp; Development
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="refinement-deduplication-enrichment">Refinement: Deduplication &amp; Enrichment</h1>
+<h2 id="overview">Overview</h2>
+<p><strong>Refinement</strong> is where reconciled data gets polished and consolidated. After Distillation links records to canonical entities, Refinement handles the messy follow-up: identifying duplicates, consolidating variants, enriching with cross-references, and validating against shape constraints. It's the "curation" step—ensuring data is coherent and complete before quality assessment.</p>
+<table>
+<thead>
+<tr>
+<th>Aspect</th>
+<th>Details</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Input</strong></td>
+<td>Linked records from Distillation with confidence scores</td>
+</tr>
+<tr>
+<td><strong>What Happens</strong></td>
+<td>Duplicate detection &amp; collapsing, enrichment, shape validation, relationship mapping</td>
+</tr>
+<tr>
+<td><strong>Output</strong></td>
+<td>Deduplicated, enriched records conforming to target schemas (ShEx, etc.)</td>
+</tr>
+<tr>
+<td><strong>Best For</strong></td>
+<td>Handling multiple source records of the same entity, adding relationships, validating structure</td>
+</tr>
+<tr>
+<td><strong>Typical Duration</strong></td>
+<td>Hours, depending on dataset size and enrichment strategy</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="the-problem-refinement-solves">The Problem Refinement Solves</h2>
+<p>Linked data is still messy:</p>
+<ul>
+<li><strong>Duplicates</strong>: Same entity matched by Distillation from multiple sources (or multiple times within a source)</li>
+<li><strong>Variant values</strong>: Different attribute values for the same entity across records ("New York" vs. "New York City")</li>
+<li><strong>Missing relationships</strong>: Canonical entities may need sitelinks, relationships to other entities, or semantic typing</li>
+<li><strong>Schema deviations</strong>: Records don't conform to target shape (Wikidata properties, OSM tags, etc.)</li>
+<li><strong>Incomplete enrichment</strong>: Data lacks context that would be added by cross-referencing related entities</li>
+</ul>
+<p><strong>The cost of skipping Refinement</strong>: Duplicate records flow downstream; batch loads have conflicts; Wikidata quality claims fail validation.</p>
+<hr />
+<h2 id="input-contract">Input Contract</h2>
+<p>Records entering Refinement should be:</p>
+<ol>
+<li><strong>Linked</strong> — Have _wikidata_qid or equivalent from Distillation</li>
+<li><strong>Confidence-scored</strong> — Have _match_confidence</li>
+<li><strong>Schema-conformant</strong> — From Fermentation; all fields have expected types</li>
+</ol>
+<p>Targets should include:
+- <strong>Dedup rules</strong> — How to identify duplicates and which to keep
+- <strong>Enrichment catalogs</strong> — Which cross-references are relevant
+- <strong>Target schemas</strong> — ShEx, Wikidata entity schemas, etc.</p>
+<hr />
+<h2 id="core-transformations">Core Transformations</h2>
+<h3 id="1-duplicate-detection-collapsing">1. Duplicate Detection &amp; Collapsing</h3>
+<p><strong>Goal</strong>: Find multiple records referring to the same entity; consolidate them.</p>
+<div class="highlight"><pre><span></span><code><span class="c1"># Strategy A: Group by matched canonical ID</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">collections</span><span class="w"> </span><span class="kn">import</span> <span class="n">defaultdict</span>
+<span class="n">by_wikidata_id</span> <span class="o">=</span> <span class="n">defaultdict</span><span class="p">(</span><span class="nb">list</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">record</span> <span class="ow">in</span> <span class="n">records</span><span class="p">:</span>
+    <span class="k">if</span> <span class="n">record</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;_wikidata_qid&quot;</span><span class="p">):</span>
+        <span class="n">by_wikidata_id</span><span class="p">[</span><span class="n">record</span><span class="p">[</span><span class="s2">&quot;_wikidata_qid&quot;</span><span class="p">]]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">record</span><span class="p">)</span>
+
+<span class="c1"># For each group of duplicates, keep best and merge</span>
+<span class="n">deduplicated</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="k">for</span> <span class="n">qid</span><span class="p">,</span> <span class="n">group</span> <span class="ow">in</span> <span class="n">by_wikidata_id</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">group</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="n">deduplicated</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">group</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="c1"># Multiple records for same entity: merge</span>
+        <span class="n">merged</span> <span class="o">=</span> <span class="n">merge_records</span><span class="p">(</span><span class="n">group</span><span class="p">,</span> <span class="n">strategy</span><span class="o">=</span><span class="s2">&quot;high_confidence_first&quot;</span><span class="p">)</span>
+        <span class="n">merged</span><span class="p">[</span><span class="s2">&quot;_duplicate_count&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">group</span><span class="p">)</span>
+        <span class="n">merged</span><span class="p">[</span><span class="s2">&quot;_duplicate_record_ids&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="n">r</span><span class="p">[</span><span class="s2">&quot;source_id&quot;</span><span class="p">]</span> <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">group</span><span class="p">]</span>
+        <span class="n">deduplicated</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">merged</span><span class="p">)</span>
+
+<span class="c1"># Strategy B: Fuzzy matching for near-duplicates</span>
+<span class="k">for</span> <span class="n">rec1</span> <span class="ow">in</span> <span class="n">records</span><span class="p">:</span>
+    <span class="k">for</span> <span class="n">rec2</span> <span class="ow">in</span> <span class="n">records</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">rec1</span><span class="p">[</span><span class="s2">&quot;source_id&quot;</span><span class="p">]</span> <span class="o">&lt;</span> <span class="n">rec2</span><span class="p">[</span><span class="s2">&quot;source_id&quot;</span><span class="p">]:</span>  <span class="c1"># Avoid double-checking</span>
+            <span class="n">score</span> <span class="o">=</span> <span class="n">calculate_duplicate_score</span><span class="p">(</span><span class="n">rec1</span><span class="p">,</span> <span class="n">rec2</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">score</span> <span class="o">&gt;</span> <span class="mf">0.9</span><span class="p">:</span>  <span class="c1"># High similarity</span>
+                <span class="c1"># Mark as duplicate pair</span>
+                <span class="n">rec2</span><span class="p">[</span><span class="s2">&quot;_duplicate_of&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">rec1</span><span class="p">[</span><span class="s2">&quot;source_id&quot;</span><span class="p">]</span>
+</code></pre></div>
+<p><strong>Decision Point</strong>:
+- Is an exact matched QID enough to declare duplicates, or require additional confirmation?
+- For near-duplicates (high similarity but no shared QID), what's the threshold?
+- When duplicates exist, keep which one? (Highest confidence? Most recent? Most complete?)
+- Merge values or choose one? (For conflict: "Smith" vs. "SMITH")</p>
+<hr />
+<h3 id="2-record-merging-strategy">2. Record Merging Strategy</h3>
+<p><strong>Goal</strong>: Consolidate duplicate records coherently, tracking provenance.</p>
+<div class="highlight"><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">merge_records</span><span class="p">(</span><span class="n">group</span><span class="p">,</span> <span class="n">strategy</span><span class="o">=</span><span class="s2">&quot;highest_confidence&quot;</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Merge multiple records of same entity.</span>
+
+<span class="sd">    Strategies:</span>
+<span class="sd">    - highest_confidence: Keep values from highest-confidence record</span>
+<span class="sd">    - most_complete: Prefer records with fewer nulls</span>
+<span class="sd">    - reconcile: Intelligently merge non-conflicting values</span>
+<span class="sd">    - first_wins: Keep first record, use others for gaps</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">if</span> <span class="n">strategy</span> <span class="o">==</span> <span class="s2">&quot;reconcile&quot;</span><span class="p">:</span>
+        <span class="n">merged</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">field</span> <span class="ow">in</span> <span class="n">all_fields</span><span class="p">:</span>
+            <span class="n">field_values</span> <span class="o">=</span> <span class="p">[</span><span class="n">r</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">field</span><span class="p">)</span> <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">group</span> <span class="k">if</span> <span class="n">r</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">field</span><span class="p">)</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">]</span>
+
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">field_values</span><span class="p">:</span>
+                <span class="n">merged</span><span class="p">[</span><span class="n">field</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="k">elif</span> <span class="nb">len</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">field_values</span><span class="p">))</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="c1"># All same value</span>
+                <span class="n">merged</span><span class="p">[</span><span class="n">field</span><span class="p">]</span> <span class="o">=</span> <span class="n">field_values</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="c1"># Conflicting values: flag for manual review</span>
+                <span class="n">merged</span><span class="p">[</span><span class="n">field</span><span class="p">]</span> <span class="o">=</span> <span class="n">field_values</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>  <span class="c1"># Use first, but flag</span>
+                <span class="n">merged</span><span class="p">[</span><span class="s2">&quot;_conflicts&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">({</span>
+                    <span class="s2">&quot;field&quot;</span><span class="p">:</span> <span class="n">field</span><span class="p">,</span>
+                    <span class="s2">&quot;values&quot;</span><span class="p">:</span> <span class="n">field_values</span><span class="p">,</span>
+                    <span class="s2">&quot;sources&quot;</span><span class="p">:</span> <span class="p">[</span><span class="n">r</span><span class="p">[</span><span class="s2">&quot;source_id&quot;</span><span class="p">]</span> <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">group</span><span class="p">]</span>
+                <span class="p">})</span>
+        <span class="k">return</span> <span class="n">merged</span>
+</code></pre></div>
+<p><strong>Decision Point</strong>:
+- Reconcile conflicting values or flag for review?
+- Should merged records track all contributing sources?
+- For numeric fields (publication count), sum or take max?
+- For dates (birth date), allow flexibility or require exact match?</p>
+<hr />
+<h3 id="3-deduplication-flagging-tracking">3. Deduplication Flagging &amp; Tracking</h3>
+<p><strong>Goal</strong>: Document what was deduplicated for downstream transparency.</p>
+<div class="highlight"><pre><span></span><code><span class="c1"># Mark merged records</span>
+<span class="n">merged_record</span><span class="p">[</span><span class="s2">&quot;_deduplicated&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+<span class="n">merged_record</span><span class="p">[</span><span class="s2">&quot;_duplicate_count&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">original_group</span><span class="p">)</span>
+<span class="n">merged_record</span><span class="p">[</span><span class="s2">&quot;_duplicate_sources&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">r</span><span class="p">[</span><span class="s2">&quot;_source&quot;</span><span class="p">]</span> <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">original_group</span><span class="p">))</span>
+<span class="n">merged_record</span><span class="p">[</span><span class="s2">&quot;_duplicate_record_ids&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="n">r</span><span class="p">[</span><span class="s2">&quot;source_id&quot;</span><span class="p">]</span> <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">original_group</span><span class="p">]</span>
+
+<span class="c1"># Track merging decisions made</span>
+<span class="n">merged_record</span><span class="p">[</span><span class="s2">&quot;_refinement_merges&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="p">{</span>
+        <span class="s2">&quot;field&quot;</span><span class="p">:</span> <span class="s2">&quot;name&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;original_values&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;John Smith&quot;</span><span class="p">,</span> <span class="s2">&quot;John SMITH&quot;</span><span class="p">],</span>
+        <span class="s2">&quot;merged_value&quot;</span><span class="p">:</span> <span class="s2">&quot;John Smith&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;decision&quot;</span><span class="p">:</span> <span class="s2">&quot;case_normalize&quot;</span>
+    <span class="p">}</span>
+<span class="p">]</span>
+</code></pre></div>
+<p><strong>Decision Point</strong>:
+- How detailed to track merging decisions?
+- Should Barrel store full merge logs for audit trail?</p>
+<hr />
+<h3 id="4-enrichment-cross-reference-addition">4. Enrichment &amp; Cross-Reference Addition</h3>
+<p><strong>Goal</strong>: Link merged records to related entities and add derived properties.</p>
+<div class="highlight"><pre><span></span><code><span class="c1"># Add relationship fields</span>
+<span class="n">enriched</span> <span class="o">=</span> <span class="n">enrich_from_wikidata</span><span class="p">(</span><span class="n">merged_record</span><span class="p">)</span>  <span class="c1"># Fetch biography, website, etc.</span>
+<span class="n">enriched</span><span class="p">[</span><span class="s2">&quot;_wikidata_data_fetched&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+
+<span class="c1"># Add sitelinks (Wikipedia, Commons, etc.)</span>
+<span class="n">enriched</span><span class="p">[</span><span class="s2">&quot;_sitelinks&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">fetch_sitelinks</span><span class="p">(</span><span class="n">record</span><span class="p">[</span><span class="s2">&quot;_wikidata_qid&quot;</span><span class="p">])</span>
+<span class="c1"># Example: {&quot;en&quot;: &quot;Alice_Johnson&quot;, &quot;fr&quot;: &quot;Alice_Johnson_(physicienne)&quot;}</span>
+
+<span class="c1"># Add related entities</span>
+<span class="n">enriched</span><span class="p">[</span><span class="s2">&quot;employer_qid&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">extract_employer_from_wikidata</span><span class="p">(</span><span class="n">record</span><span class="p">[</span><span class="s2">&quot;_wikidata_qid&quot;</span><span class="p">])</span>
+<span class="n">enriched</span><span class="p">[</span><span class="s2">&quot;location_qid&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">extract_birthplace_from_wikidata</span><span class="p">(</span><span class="n">record</span><span class="p">[</span><span class="s2">&quot;_wikidata_qid&quot;</span><span class="p">])</span>
+
+<span class="c1"># Add confidence and quality hints</span>
+<span class="n">enriched</span><span class="p">[</span><span class="s2">&quot;_wikidata_completeness&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.75</span>  <span class="c1"># Percentage of common properties filled</span>
+<span class="n">enriched</span><span class="p">[</span><span class="s2">&quot;_sitelink_count&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">enriched</span><span class="p">[</span><span class="s2">&quot;_sitelinks&quot;</span><span class="p">])</span>
+</code></pre></div>
+<p><strong>Decision Point</strong>:
+- Which enrichments are essential vs. optional?
+- Fetch full Wikidata item or just key properties?
+- Should enrichment errors cause record failure, or just flag?
+- Cache enriched data or re-fetch on demand?</p>
+<hr />
+<h3 id="5-shape-validation-shex-schema-conformance">5. Shape Validation (ShEx, Schema Conformance)</h3>
+<p><strong>Goal</strong>: Validate records against target schema requirements.</p>
+<div class="highlight"><pre><span></span><code><span class="c1"># Validate against ShEx</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pyshex</span><span class="w"> </span><span class="kn">import</span> <span class="n">evaluate_cli</span>
+
+<span class="n">shex_schema</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">EXTRA p:P31</span>
+<span class="s2">&lt;PersonShape&gt; {</span>
+<span class="s2">  p:P31 [wd:Q5] ;</span>
+<span class="s2">  rdfs:label xsd:string ? ;</span>
+<span class="s2">  p:P580 xsd:gYear ? ;</span>
+<span class="s2">  p:P569 xsd:gYear ? ;</span>
+<span class="s2">  p:P19 IRI ? ;</span>
+<span class="s2">  p:P27 IRI ? ;</span>
+<span class="s2">  p:P106 IRI ? ;  # occupation</span>
+<span class="s2">}</span>
+<span class="s2">&quot;&quot;&quot;</span>
+
+<span class="n">result</span> <span class="o">=</span> <span class="n">evaluate_cli</span><span class="p">(</span><span class="n">record</span><span class="p">,</span> <span class="n">shex_schema</span><span class="p">,</span> <span class="n">focus</span><span class="o">=</span><span class="s2">&quot;Q12345678&quot;</span><span class="p">)</span>
+<span class="k">if</span> <span class="n">result</span><span class="o">.</span><span class="n">conforms</span><span class="p">:</span>
+    <span class="n">record</span><span class="p">[</span><span class="s2">&quot;_shape_valid&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+<span class="k">else</span><span class="p">:</span>
+    <span class="n">record</span><span class="p">[</span><span class="s2">&quot;_shape_valid&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="n">record</span><span class="p">[</span><span class="s2">&quot;_shape_errors&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">result</span><span class="o">.</span><span class="n">errors</span>
+    <span class="n">record</span><span class="p">[</span><span class="s2">&quot;_refinement_flags&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;shape_validation_failed&quot;</span><span class="p">)</span>
+
+<span class="c1"># Or validate against simpler property checklist</span>
+<span class="n">required_properties</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;name&quot;</span><span class="p">,</span> <span class="s2">&quot;birth_year&quot;</span><span class="p">,</span> <span class="s2">&quot;nationality&quot;</span><span class="p">]</span>
+<span class="n">missing</span> <span class="o">=</span> <span class="p">[</span><span class="n">p</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">required_properties</span> <span class="k">if</span> <span class="ow">not</span> <span class="n">record</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">p</span><span class="p">)]</span>
+<span class="k">if</span> <span class="n">missing</span><span class="p">:</span>
+    <span class="n">record</span><span class="p">[</span><span class="s2">&quot;_refinement_flags&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;missing_required_properties: </span><span class="si">{</span><span class="n">missing</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</code></pre></div>
+<p><strong>Decision Point</strong>:
+- Strict shape validation (fail record) or permissive (flag and continue)?
+- Which shapes are mandatory vs. optional?
+- Should validation be at Wikidata/OSM schema or custom schema level?</p>
+<hr />
+<h2 id="output-contract">Output Contract</h2>
+<p>Records exiting Refinement should:</p>
+<ol>
+<li><strong>Be deduplicated</strong> — No duplicate records for same entity</li>
+<li><strong>Be enriched</strong> — Include relevant cross-references and relationships</li>
+<li><strong>Be shape-validated</strong> — Conform to target schemas (ShEx, etc.)</li>
+<li><strong>Have flags</strong> — Any conflicts, missing properties, or validation failures noted</li>
+<li><strong>Be traceable</strong> — Merging and enrichment decisions tracked for audit</li>
+</ol>
+<p><strong>Example output record:</strong>
+<div class="highlight"><pre><span></span><code><span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;source_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;researchers_csv:R001&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;researchers_api:external_A1&quot;</span><span class="p">],</span>
+<span class="w">  </span><span class="nt">&quot;name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Alice Johnson&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;birth_year&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">1987</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;field_of_study&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Physics&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;publication_count&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">50</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;_wikidata_qid&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Q12345678&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;_match_confidence&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.98</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;_deduplicated&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;_duplicate_count&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">2</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;_duplicate_sources&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;researchers_csv&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;researchers_api&quot;</span><span class="p">],</span>
+<span class="w">  </span><span class="nt">&quot;_sitelinks&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;en&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Alice_Johnson&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;fr&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Alice_Johnson_(physicienne)&quot;</span>
+<span class="w">  </span><span class="p">},</span>
+<span class="w">  </span><span class="nt">&quot;_employer_qid&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Q567890&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;_wikidata_completeness&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.8</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;_shape_valid&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;_refinement_flags&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[]</span>
+<span class="p">}</span>
+</code></pre></div></p>
+<hr />
+<h2 id="angels-share-schema-deviations">Angel's Share (Schema Deviations)</h2>
+<p>Refinement often uncovers fields or relationships that fall outside the current target schema. Preserve them as <strong>Angel's Share</strong> data with deviation notes so they can be evaluated for future schema expansion or different publication targets.</p>
+<hr />
+<h2 id="configuration-decisions">Configuration &amp; Decisions</h2>
+<p>Before running Refinement, define:</p>
+<h3 id="1-deduplication-strategy">1. Deduplication Strategy</h3>
+<ul>
+<li>How to identify duplicates? (By QID? Fuzzy matching? Both?)</li>
+<li>When duplicates exist, which to keep?</li>
+<li>How to merge conflicting values?</li>
+</ul>
+<h3 id="2-enrichment-profile">2. Enrichment Profile</h3>
+<ul>
+<li>Which fields to enrich? (Sitelinks? Related entities? Completeness scores?)</li>
+<li>Fetch from external systems or use cached data?</li>
+<li>Fail on enrichment errors or flag and continue?</li>
+</ul>
+<h3 id="3-validation-schemas">3. Validation Schemas</h3>
+<ul>
+<li>Which shapes to validate against? (ShEx? Wikidata type? Custom?)</li>
+<li>Strict or lenient validation?</li>
+<li>Which missing properties cause failure vs. warning?</li>
+</ul>
+<hr />
+<h2 id="a-worked-example">A Worked Example</h2>
+<p><strong>Scenario</strong>: Two sources had records for the same physicist; Distillation matched both to Q12345678.</p>
+<p><strong>Before Refinement (two duplicate records):</strong>
+<div class="highlight"><pre><span></span><code><span class="p">[</span>
+<span class="w">  </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;source_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;researchers_csv:R001&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Alice Johnson&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;birth_year&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">1987</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;publication_count&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">42</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;_wikidata_qid&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Q12345678&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;_match_confidence&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.98</span>
+<span class="w">  </span><span class="p">},</span>
+<span class="w">  </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;source_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;researchers_api:external_A1&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Alice Johnson&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;birth_year&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">1987</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;publication_count&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">50</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;_wikidata_qid&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Q12345678&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;_match_confidence&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.95</span>
+<span class="w">  </span><span class="p">}</span>
+<span class="p">]</span>
+</code></pre></div></p>
+<p><strong>Refinement config:</strong>
+<div class="highlight"><pre><span></span><code><span class="n">config</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">&quot;dedup_strategy&quot;</span><span class="p">:</span> <span class="s2">&quot;reconcile&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;merge_strategy&quot;</span><span class="p">:</span> <span class="s2">&quot;highest_confidence&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;enrich&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;sitelinks&quot;</span><span class="p">,</span> <span class="s2">&quot;related_entities&quot;</span><span class="p">,</span> <span class="s2">&quot;completeness&quot;</span><span class="p">],</span>
+    <span class="s2">&quot;validate_schema&quot;</span><span class="p">:</span> <span class="s2">&quot;wikidata_person&quot;</span>
+<span class="p">}</span>
+</code></pre></div></p>
+<p><strong>After Refinement (one merged record):</strong>
+<div class="highlight"><pre><span></span><code><span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;source_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;researchers_csv:R001&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;researchers_api:external_A1&quot;</span><span class="p">],</span>
+<span class="w">  </span><span class="nt">&quot;name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Alice Johnson&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;birth_year&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">1987</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;publication_count&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">50</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;_wikidata_qid&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Q12345678&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;_match_confidence&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.98</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;_deduplicated&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;_duplicate_count&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">2</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;_duplicate_sources&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;researchers_csv&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;researchers_api&quot;</span><span class="p">],</span>
+<span class="w">  </span><span class="nt">&quot;_duplicate_record_ids&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;researchers_csv:R001&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;researchers_api:external_A1&quot;</span><span class="p">],</span>
+<span class="w">  </span><span class="nt">&quot;_sitelinks&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;en&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Alice_Johnson&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;de&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Alice_Johnson_(Physikerin)&quot;</span>
+<span class="w">  </span><span class="p">},</span>
+<span class="w">  </span><span class="nt">&quot;_wikidata_completeness&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.82</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;_shape_valid&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;_refinement_merges&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">      </span><span class="nt">&quot;field&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;publication_count&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;original_values&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="mi">42</span><span class="p">,</span><span class="w"> </span><span class="mi">50</span><span class="p">],</span>
+<span class="w">      </span><span class="nt">&quot;merged_value&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">50</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;decision&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;max_from_sources&quot;</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="w">  </span><span class="p">],</span>
+<span class="w">  </span><span class="nt">&quot;_refinement_flags&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[]</span>
+<span class="p">}</span>
+</code></pre></div></p>
+<hr />
+<h2 id="supporting-systems">Supporting Systems</h2>
+<h3 id="schema-registry">Schema Registry</h3>
+<p>Refinement uses:
+- Deduplication rules and decision trees
+- Enrichment source catalogs
+- Target shape schemas (ShEx, Wikidata types, OSM, etc.)</p>
+<h3 id="spirit-safe-validation">Spirit Safe (Validation)</h3>
+<p>Validates:
+- Shape conformance
+- Required property presence
+- Relationship integrity</p>
+<h3 id="barrel-provenance">Barrel (Provenance)</h3>
+<p>Stores:
+- Merge decisions and conflict logs
+- Enrichment source data (for reproducibility)
+- Shape validation results</p>
+<hr />
+<h2 id="relationship-to-other-stages">Relationship to Other Stages</h2>
+<p><strong>Before</strong>: <a href="../distillation/">Distillation</a> links records to canonical entities</p>
+<p><strong>After</strong>: <a href="../proofing/">Proofing</a> scores quality and fitness; <a href="../blending/">Blending</a> merges multiple refined datasets</p>
+<hr />
+<h2 id="common-patterns">Common Patterns</h2>
+<h3 id="pattern-1-i-have-lots-of-duplicates-from-multiple-sources">Pattern 1: "I have lots of duplicates from multiple sources"</h3>
+<p>Use reconcile strategy: merge all values intelligently, flag conflicts, let downstream stages decide.</p>
+<h3 id="pattern-2-i-need-to-preserve-all-contributing-sources">Pattern 2: "I need to preserve all contributing sources"</h3>
+<p>Track source provenance in deduplicated records. Use Barrel to store full merge logs. Enables traceability.</p>
+<h3 id="pattern-3-i-want-to-enrich-with-wikidata-data">Pattern 3: "I want to enrich with Wikidata data"</h3>
+<p>Fetch sitelinks, related entities, and property completeness scores during Refinement. Cache in Barrel. Needed before export to Wikidata (avoids importing redundant data).</p>
+<hr />
+<h2 id="reference">Reference</h2>
+<ul>
+<li><strong>Configuration File Format</strong>: (Link to refinement config schema)</li>
+<li><strong>API Reference</strong>: (Link to Refiner class)</li>
+<li><strong>Deduplication Algorithms</strong>: (Blocking, clustering, merging strategies)</li>
+<li><strong>Enrichment Sources</strong>: (Wikidata, OSM, custom catalogs)</li>
+<li><strong>ShEx Validation</strong>: (Shape expression tutorials and schemas)</li>
+<li><strong>Related</strong>: <a href="../distillation/">Distillation</a> | <a href="../proofing/">Proofing</a> | Spirit Safe</li>
+</ul>
+<hr />
+<h2 id="github-issues-development">GitHub Issues &amp; Development</h2>
+<p>Work on the Refinement stage is tracked under the <a href="https://github.com/skybristol/gkc/issues?q=label%3Arefine"><code>refine</code> label</a>. Issues represent deduplication strategies, enrichment integrations, and shape validation improvements.</p>
+<p><strong>Other Workflow Stages:</strong>
+- <a href="https://github.com/skybristol/gkc/issues?q=label%3Amash"><code>mash</code></a> — Data Ingestion
+- <a href="https://github.com/skybristol/gkc/issues?q=label%3Aferment"><code>ferment</code></a> — Cleaning &amp; Normalization
+- <a href="https://github.com/skybristol/gkc/issues?q=label%3Adistill"><code>distill</code></a> — Reconciliation &amp; Linking
+- <a href="https://github.com/skybristol/gkc/issues?q=label%3Aproof"><code>proof</code></a> — Quality Assurance
+- <a href="https://github.com/skybristol/gkc/issues?q=label%3Ablend"><code>blend</code></a> — Multi-Source Merging
+- <a href="https://github.com/skybristol/gkc/issues?q=label%3Abottle"><code>bottle</code></a> — Format &amp; Export</p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.instant", "navigation.sections", "navigation.top", "toc.follow"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.79ae519e.min.js"></script>
+      
+        <script src="https://unpkg.com/mermaid@10.6.1/dist/mermaid.min.js"></script>
+      
+        <script src="../../javascripts/mermaid-init.js"></script>
+      
+    
+  </body>
+</html>
