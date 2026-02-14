@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   build-and-deploy:
@@ -30,29 +30,34 @@ jobs:
       - name: Build docs
         run: poetry run mkdocs build --strict
 
-      - name: Checkout dd repository
-        uses: actions/checkout@v4
-        with:
-          repository: skybristol/dd
-          token: ${{ secrets.DD_PAT }}
-          path: dd
-
-      - name: Sync site to dd root
+      - name: Deploy to datadistillery branch
         run: |
-          rsync -a --delete site/ dd/
-
-      - name: Commit and push changes
-        working-directory: ./dd
-        env:
-          GITHUB_TOKEN: ${{ secrets.DD_PAT }}
-        run: |
+          # Configure git
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add -A
-          if git diff --cached --quiet; then
-            echo "No changes to publish."
+          
+          # Fetch datadistillery branch if it exists, otherwise create orphan
+          if git rev-parse --verify origin/datadistillery >/dev/null 2>&1; then
+            git fetch origin datadistillery
+            git checkout datadistillery
           else
-            git commit -m "Update Data Distillery site from GKC docs"
-            # Install gh CLI for secure push
-            git push https://x-access-token:${GITHUB_TOKEN}@github.com/skybristol/dd.git main
+            git checkout --orphan datadistillery
+          fi
+          
+          # Remove all existing files except .git
+          find . -mindepth 1 -maxdepth 1 ! -name '.git' -exec rm -rf {} +
+          
+          # Copy the built site to the site directory
+          mkdir -p site
+          cp -r ../site/* site/
+          
+          # Commit and push if there are changes
+          git add -A
+          if ! git diff --cached --quiet; then
+            COMMIT_MSG="Deploy docs from main: $(git rev-parse --short HEAD~0)"
+            git commit -m "$COMMIT_MSG"
+            git push -u origin datadistillery
+            echo "✅ Deployed to datadistillery branch - site at /site/"
+          else
+            echo "📝 No changes to deploy"
           fi
