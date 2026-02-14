@@ -44,8 +44,8 @@ jobs:
           if git rev-parse --verify origin/datadistillery >/dev/null 2>&1; then
             git fetch origin datadistillery
             git checkout datadistillery
-            # Pull to get the latest before making changes
-            git pull origin datadistillery
+            # Reset to remote state to avoid merge conflicts
+            git reset --hard origin/datadistillery
           else
             git checkout --orphan datadistillery
           fi
@@ -62,7 +62,8 @@ jobs:
           if ! git diff --cached --quiet; then
             COMMIT_MSG="Deploy docs from main build"
             git commit -m "$COMMIT_MSG"
-            git push -u origin datadistillery
+            # Use --force-with-lease for safe force push on deployment branch
+            git push --force-with-lease origin datadistillery
             echo "✅ Deployed to datadistillery branch - site at /site/"
           else
             echo "📝 No changes to deploy"
