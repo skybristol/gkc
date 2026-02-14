@@ -50,6 +50,9 @@ jobs:
             git checkout --orphan datadistillery
           fi
           
+          # Fetch again before push to update remote-tracking reference
+          git fetch origin datadistillery
+          
           # Remove all existing files except .git
           find . -mindepth 1 -maxdepth 1 ! -name '.git' -exec rm -rf {} +
           
