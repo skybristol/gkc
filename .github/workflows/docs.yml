@@ -44,6 +44,8 @@ jobs:
           if git rev-parse --verify origin/datadistillery >/dev/null 2>&1; then
             git fetch origin datadistillery
             git checkout datadistillery
+            # Pull to get the latest before making changes
+            git pull origin datadistillery
           else
             git checkout --orphan datadistillery
           fi
