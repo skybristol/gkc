@@ -42,8 +42,8 @@ jobs:
           rsync -a --delete site/ dd/
 
       - name: Commit and push changes
+        working-directory: ./dd
         run: |
-          cd dd
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add -A
@@ -51,5 +51,7 @@ jobs:
             echo "No changes to publish."
           else
             git commit -m "Update Data Distillery site from GKC docs"
+            # Update remote to use DD_PAT for authentication
+            git remote set-url origin https://x-access-token:${{ secrets.DD_PAT }}@github.com/skybristol/dd.git
             git push origin main
           fi

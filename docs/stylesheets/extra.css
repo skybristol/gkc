@@ -1,3 +1,13 @@
+/* Background Image */
+body {
+    background-image: url('../img/Laphroaig10YO.jpeg');
+    background-attachment: fixed;
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    filter: brightness(0.2);
+}
+
 /* Mermaid Diagram Font Sizing */
 .mermaid svg text {
     font-size: 18px !important;
