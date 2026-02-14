@@ -32,6 +32,10 @@ jobs:
 
       - name: Deploy to datadistillery branch
         run: |
+          # Save the site directory to a temp location
+          SITE_BACKUP=$(mktemp -d)
+          cp -r site/* "$SITE_BACKUP/"
+          
           # Configure git
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
@@ -47,14 +51,14 @@ jobs:
           # Remove all existing files except .git
           find . -mindepth 1 -maxdepth 1 ! -name '.git' -exec rm -rf {} +
           
-          # Copy the built site to the site directory
+          # Create site directory and copy the built site
           mkdir -p site
-          cp -r ../site/* site/
+          cp -r "$SITE_BACKUP"/* site/
           
           # Commit and push if there are changes
           git add -A
           if ! git diff --cached --quiet; then
-            COMMIT_MSG="Deploy docs from main: $(git rev-parse --short HEAD~0)"
+            COMMIT_MSG="Deploy docs from main build"
             git commit -m "$COMMIT_MSG"
             git push -u origin datadistillery
             echo "✅ Deployed to datadistillery branch - site at /site/"
