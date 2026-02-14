@@ -70,15 +70,18 @@ class TestWikiverseAuth:
         auth = WikiverseAuth()
         assert auth.api_url == "https://custom.example.com/w/api.php"
 
-    def test_init_partial_credentials(self):
+    def test_init_partial_credentials(self, monkeypatch):
         """Test initialization with partial credentials."""
+        monkeypatch.delenv("WIKIVERSE_PASSWORD", raising=False)
         auth = WikiverseAuth(username="testuser@testbot")
         assert auth.username == "testuser@testbot"
         assert auth.password is None
         assert not auth.is_authenticated()
 
-    def test_init_no_credentials(self):
+    def test_init_no_credentials(self, monkeypatch):
         """Test initialization without credentials."""
+        monkeypatch.delenv("WIKIVERSE_USERNAME", raising=False)
+        monkeypatch.delenv("WIKIVERSE_PASSWORD", raising=False)
         auth = WikiverseAuth()
         assert not auth.is_authenticated()
 
@@ -100,8 +103,10 @@ class TestWikiverseAuth:
         auth = WikiverseAuth(username="alice", password="pass")
         assert auth.get_bot_name() is None
 
-    def test_get_bot_name_no_username(self):
+    def test_get_bot_name_no_username(self, monkeypatch):
         """Test get_bot_name with no username."""
+        monkeypatch.delenv("WIKIVERSE_USERNAME", raising=False)
+        monkeypatch.delenv("WIKIVERSE_PASSWORD", raising=False)
         auth = WikiverseAuth()
         assert auth.get_bot_name() is None
 
@@ -115,8 +120,10 @@ class TestWikiverseAuth:
         auth = WikiverseAuth(username="alice", password="pass")
         assert auth.get_account_name() is None
 
-    def test_get_account_name_no_username(self):
+    def test_get_account_name_no_username(self, monkeypatch):
         """Test get_account_name with no username."""
+        monkeypatch.delenv("WIKIVERSE_USERNAME", raising=False)
+        monkeypatch.delenv("WIKIVERSE_PASSWORD", raising=False)
         auth = WikiverseAuth()
         assert auth.get_account_name() is None
 
@@ -176,8 +183,10 @@ class TestWikiverseAuth:
         assert "Failed" in str(exc_info.value)
         assert not auth.is_logged_in()
 
-    def test_login_without_credentials(self):
+    def test_login_without_credentials(self, monkeypatch):
         """Test login without credentials."""
+        monkeypatch.delenv("WIKIVERSE_USERNAME", raising=False)
+        monkeypatch.delenv("WIKIVERSE_PASSWORD", raising=False)
         auth = WikiverseAuth()
 
         with pytest.raises(AuthenticationError) as exc_info:
@@ -255,15 +264,18 @@ class TestOpenStreetMapAuth:
         assert auth.password == "envpass"
         assert auth.is_authenticated()
 
-    def test_init_partial_credentials(self):
+    def test_init_partial_credentials(self, monkeypatch):
         """Test initialization with partial credentials."""
+        monkeypatch.delenv("OPENSTREETMAP_PASSWORD", raising=False)
         auth = OpenStreetMapAuth(username="testuser")
         assert auth.username == "testuser"
         assert auth.password is None
         assert not auth.is_authenticated()
 
-    def test_init_no_credentials(self):
+    def test_init_no_credentials(self, monkeypatch):
         """Test initialization without credentials."""
+        monkeypatch.delenv("OPENSTREETMAP_USERNAME", raising=False)
+        monkeypatch.delenv("OPENSTREETMAP_PASSWORD", raising=False)
         auth = OpenStreetMapAuth()
         assert not auth.is_authenticated()
 
