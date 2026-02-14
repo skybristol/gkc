@@ -1,8 +1,10 @@
-site_name: GKC - Global Knowledge Commons
-site_description: Documentation for the GKC Python package
-site_url: https://datadistillery.org/gkc/
+site_name: Data Distillery
+site_description: Data Distillery - A framework for data distillation toward the Global Knowledge Commons
+site_url: https://datadistillery.org/
 repo_url: https://github.com/skybristol/gkc
 repo_name: skybristol/gkc
+docs_dir: docs
+site_dir: site
 
 theme:
   name: material
@@ -11,6 +13,7 @@ theme:
     - navigation.sections
     - navigation.top
     - toc.follow
+  custom_dir: docs
 
 plugins:
   - search
@@ -30,46 +33,51 @@ markdown_extensions:
           class: mermaid
           format: !!python/name:pymdownx.superfences.fence_code_format
 
+extra_css:
+  - stylesheets/extra.css
+
 nav:
   - Home: index.md
-  - Background: background.md
-  - Getting Started:
-    - Setup and Orientation: setup.md
-    - Authentication: authentication.md
-  - Data Distillery Workflow:
-    - Pipeline Overview: pipeline_overview.md
-    - Distillery Glossary: distillery_glossary.md
-    - Mash Tun: mash_tun.md
-    - Fermentation: fermentation.md
-    - Distillation: distillation.md
-    - Refinement: refinement.md
-    - Proofing: proofing.md
-    - Blending: blending.md
-    - Bottling: bottling.md
-  - Schema Forward Approach:
-    - Mapping Format Migration: mapping_format_migration.md
-  - Wikidata:
-    - Item Creation Approach: item_creation_approach.md
-    - Claims Map Builder: claims_map_builder.md
-    - Reference/Qualifier Patterns: reference_qualifier_patterns.md
-    - Date/Time Handling: date_time_handling.md
-    - Sitelinks:
-      - Sitelinks Usage: sitelinks_usage.md
-      - Sitelinks Validation: sitelinks_validation.md
-  - Utilities and Tools:
-    - SPARQL Queries: sparql_queries.md
-    - SPARQL Quick Reference: sparql_quick_reference.md
-    - SPARQL API Documentation: api/sparql.md
-  - Development:
-    - CI/CD: CI_CD.md
-    - Release Process: RELEASE.md
-    - Collaboration Guidelines: copilot/COLLABORATION_GUIDELINES.md
-    - Co-development Notes:
-      - Overview: copilot/index.md
-      - CI/CD Verification: copilot/CI_CD_VERIFICATION.md
-      - Date/Time Enhancement: copilot/DATE_TIME_ENHANCEMENT.md
-      - Sitelinks Implementation: copilot/SITELINKS_IMPLEMENTATION.md
-      - Sitelinks Validation: copilot/SITELINKS_VALIDATION_IMPLEMENTATION.md
-      - SPARQL Implementation: copilot/SPARQL_IMPLEMENTATION.md
-      - SPARQL Complete: copilot/SPARQL_IMPLEMENTATION_COMPLETE.md
-  - API Reference: api/index.md
+  - GKC Documentation:
+    - Home: gkc/index.md
+    - Background: gkc/background.md
+    - Getting Started:
+      - Setup and Orientation: gkc/setup.md
+      - Authentication: gkc/authentication.md
+    - Data Distillery Workflow:
+      - Pipeline Overview: gkc/pipeline_overview.md
+      - Distillery Glossary: gkc/distillery_glossary.md
+      - Mash Tun: gkc/mash_tun.md
+      - Fermentation: gkc/fermentation.md
+      - Distillation: gkc/distillation.md
+      - Refinement: gkc/refinement.md
+      - Proofing: gkc/proofing.md
+      - Blending: gkc/blending.md
+      - Bottling: gkc/bottling.md
+    - Schema Forward Approach:
+      - Mapping Format Migration: gkc/mapping_format_migration.md
+    - Wikidata:
+      - Item Creation Approach: gkc/item_creation_approach.md
+      - Claims Map Builder: gkc/claims_map_builder.md
+      - Reference/Qualifier Patterns: gkc/reference_qualifier_patterns.md
+      - Date/Time Handling: gkc/date_time_handling.md
+      - Sitelinks:
+        - Sitelinks Usage: gkc/sitelinks_usage.md
+        - Sitelinks Validation: gkc/sitelinks_validation.md
+    - Utilities and Tools:
+      - SPARQL Queries: gkc/sparql_queries.md
+      - SPARQL Quick Reference: gkc/sparql_quick_reference.md
+      - SPARQL API Documentation: gkc/api/sparql.md
+    - Development:
+      - CI/CD: gkc/CI_CD.md
+      - Release Process: gkc/RELEASE.md
+      - Collaboration Guidelines: gkc/copilot/COLLABORATION_GUIDELINES.md
+      - Co-development Notes:
+        - Overview: gkc/copilot/index.md
+        - CI/CD Verification: gkc/copilot/CI_CD_VERIFICATION.md
+        - Date/Time Enhancement: gkc/copilot/DATE_TIME_ENHANCEMENT.md
+        - Sitelinks Implementation: gkc/copilot/SITELINKS_IMPLEMENTATION.md
+        - Sitelinks Validation: gkc/copilot/SITELINKS_VALIDATION_IMPLEMENTATION.md
+        - SPARQL Implementation: gkc/copilot/SPARQL_IMPLEMENTATION.md
+        - SPARQL Complete: gkc/copilot/SPARQL_IMPLEMENTATION_COMPLETE.md
+    - API Reference: gkc/api/index.md

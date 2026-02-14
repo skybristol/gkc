@@ -14,9 +14,17 @@ If you do not yet have credentials, you can still explore the workflow locally u
 
 ---
 
-## 2. Install the Package (Development Mode)
+## 2. Install the Package
 
-This project currently focuses on documentation and architecture. When the install workflow is finalized, this section will expand.
+### Option A: Install from PyPI (Recommended)
+
+```bash
+pip install gkc
+```
+
+### Option B: Install from Source (Development Mode)
+
+If you want to contribute or work with the latest development version:
 
 ```bash
 # Clone the repo
@@ -74,12 +82,14 @@ Then dive into each stage as needed:
 
 ## 6. What to Expect Next
 
-As implementation work progresses, this setup guide will include:
+As implementation work progresses, this setup guide will continue to expand with:
 
 - A quickstart example with real data
 - Configuration file templates for each stage
 - CLI usage patterns
 - How to run a full pipeline end-to-end
+
+Check back as new releases are published to PyPI.
 
 ---
 

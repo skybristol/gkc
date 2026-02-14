@@ -5,6 +5,7 @@ The Data Distillery Workflow transforms raw, disconnected data into refined, lin
 ## The End-to-End Vision
 
 ```mermaid
+%%{init: {'flowchart': {'nodeSpacing': 100, 'rankSpacing': 100, 'htmlLabels': true, 'primaryTextColor': '#333'}, 'fontSize': 18}}%%
 graph TD
     subgraph sources["🥔 Raw Ingredients"]
         CSV["CSV Files"]
