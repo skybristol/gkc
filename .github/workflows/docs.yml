@@ -43,6 +43,8 @@ jobs:
 
       - name: Commit and push changes
         working-directory: ./dd
+        env:
+          GITHUB_TOKEN: ${{ secrets.DD_PAT }}
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
@@ -51,7 +53,6 @@ jobs:
             echo "No changes to publish."
           else
             git commit -m "Update Data Distillery site from GKC docs"
-            # Update remote to use DD_PAT for authentication
-            git remote set-url origin https://x-access-token:${{ secrets.DD_PAT }}@github.com/skybristol/dd.git
-            git push origin main
+            # Install gh CLI for secure push
+            git push https://x-access-token:${GITHUB_TOKEN}@github.com/skybristol/dd.git main
           fi
