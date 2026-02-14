@@ -8,15 +8,20 @@ Wikidata, Wikipedia, Wikimedia Commons, and OpenStreetMap.
 
 GKC uses a two-schema design to enable multi-system data distribution:
 
-1. **Unified Still Schema** (meta schema) - Canonical, system-agnostic data model
-2. **Barrel Schemas** - Target system schemas (Wikidata EntitySchemas, OSM tagging, etc.)
+1. **Unified Still Schema** (meta schema) - Canonical, system-agnostic
+   data model
+2. **Barrel Schemas** - Target system schemas (Wikidata EntitySchemas,
+   OSM tagging, etc.)
 
-Data flows: Source → Still Recipe → Unified Still Schema → Barrel Recipe → Barrel Schema → Target
+Data flows: Source → Still Recipe → Unified Still Schema → Barrel Recipe
+→ Barrel Schema → Target
 
 ## Key Components
 
-- **Cooperage** - Manages Barrel Schemas from target systems (EntitySchemas, tagging schemes, etc.)
-- **Recipe Builder** - Generates Barrel Recipes (transformation specs) from Barrel Schemas
+- **Cooperage** - Manages Barrel Schemas from target systems
+  (EntitySchemas, tagging schemes, etc.)
+- **Recipe Builder** - Generates Barrel Recipes (transformation specs)
+  from Barrel Schemas
 - **Spirit Safe** - Validates data against Barrel Schemas before bottling
 - **Bottler** - Transforms and exports data using Barrel Recipes
 

@@ -237,7 +237,8 @@ class PropertyCatalog:
 
 class RecipeBuilder:
     """
-    Wikidata Barrel Recipe Builder - generates transformation recipes from EntitySchemas.
+    Wikidata Barrel Recipe Builder - generates transformation recipes from
+    EntitySchemas.
 
     Builds **Wikidata Barrel Recipes** by combining:
     1. Wikidata's Barrel Schema (EntitySchemas in ShEx + property constraints)
@@ -341,7 +342,8 @@ class RecipeBuilder:
             claim_mapping = {
                 "property": prop_id,
                 "comment": self._format_comment(shex_info, prop_data),
-                "source_field": f"{prop_id.lower()}_value",  # TODO: Map to Still Schema field names
+                # TODO: Map to Still Schema field names
+                "source_field": f"{prop_id.lower()}_value",
                 "datatype": prop_data.datatype if prop_data else "unknown",
                 "required": shex_info["cardinality"].get("required", False),
             }
@@ -444,20 +446,24 @@ class RecipeBuilder:
                 ],
                 "aliases": [
                     {
-                        "source_field": "aliases",  # TODO: Map to Still Schema field
+                        # TODO: Map to Still Schema field
+                        "source_field": "aliases",
                         "language": "en",
                         "separator": ";",
                         "required": False,
-                        "comment": "Aliases - UPDATE source_field to match Still Schema",
+                        "comment": "Aliases - UPDATE source_field to match"
+                        " Still Schema",
                     }
                 ],
                 "descriptions": [
                     {
-                        "source_field": "description",  # TODO: Map to Still Schema field
+                        # TODO: Map to Still Schema field
+                        "source_field": "description",
                         "language": "en",
                         "required": False,
                         "comment": (
-                            "Description - UPDATE source_field to match Still Schema"
+                            "Description - UPDATE source_field to match"
+                            " Still Schema"
                         ),
                     }
                 ],
