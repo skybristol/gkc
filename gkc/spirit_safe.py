@@ -10,7 +10,7 @@ Currently supports validation against:
 
 Future support planned for:
 - Wikimedia Commons Barrel Schema
-- Wikipedia infobox Barrel Schema  
+- Wikipedia infobox Barrel Schema
 - OpenStreetMap tagging Barrel Schema
 
 The Spirit Safe ensures data meets target system requirements before delivery,

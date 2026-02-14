@@ -25,10 +25,10 @@ from gkc.spirit_safe import SpiritSafeValidator
 
 class PropertyProfile:
     """Container for Wikidata property metadata from the Cooperage.
-    
+
     Part of Wikidata's Barrel Schema - provides property definitions,
     datatypes, labels, and descriptions fetched from Wikidata.
-    
+
     Formerly known as PropertyInfo.
     """
 
@@ -54,12 +54,12 @@ class PropertyProfile:
 
 class SpecificationExtractor:
     """Extracts property information from ShExC EntitySchema specifications.
-    
+
     Parses Wikidata's Barrel Schema (EntitySchemas written in ShEx) to extract:
     - Property IDs and their contexts (statement, qualifier, reference)
     - Cardinality constraints (required, optional, multiple)
     - Inline documentation from comments
-    
+
     Formerly known as ShExPropertyExtractor.
     """
 
@@ -178,10 +178,10 @@ class SpecificationExtractor:
 
 class PropertyCatalog:
     """Fetches and caches property metadata from Wikidata API.
-    
+
     Part of the Cooperage - manages access to Wikidata's Barrel Schema
     by fetching property definitions, datatypes, and constraints.
-    
+
     Formerly known as WikidataPropertyFetcher.
     """
 
@@ -248,7 +248,7 @@ class RecipeBuilder:
     The generated Barrel Recipe maps from Unified Still Schema fields to
     Wikidata claims, enabling data distribution from the canonical Still Schema
     to Wikidata's specific format.
-    
+
     Formerly known as ClaimsMapBuilder.
 
     Plain meaning: Design Wikidata transformation blueprints from EntitySchemas.
@@ -462,8 +462,7 @@ class RecipeBuilder:
                         "language": "en",
                         "required": False,
                         "comment": (
-                            "Description - UPDATE source_field to match"
-                            " Still Schema"
+                            "Description - UPDATE source_field to match" " Still Schema"
                         ),
                     }
                 ],
