@@ -1,12 +1,31 @@
 """
 GKC - Global Knowledge Commons
 
-A Python package for working with the Global Knowledge Commons including
+A Python package for distributing data across the Global Knowledge Commons including
 Wikidata, Wikipedia, Wikimedia Commons, and OpenStreetMap.
 
-The package is organized around stages of the distillation metaphor: taking
-messy input ingredients and distilling them to produce more usable, linked,
-and validated content.
+## Two-Schema Architecture
+
+GKC uses a two-schema design to enable multi-system data distribution:
+
+1. **Unified Still Schema** (meta schema) - Canonical, system-agnostic
+   data model
+2. **Barrel Schemas** - Target system schemas (Wikidata EntitySchemas,
+   OSM tagging, etc.)
+
+Data flows: Source → Still Recipe → Unified Still Schema → Barrel Recipe
+→ Barrel Schema → Target
+
+## Key Components
+
+- **Cooperage** - Manages Barrel Schemas from target systems
+  (EntitySchemas, tagging schemes, etc.)
+- **Recipe Builder** - Generates Barrel Recipes (transformation specs)
+  from Barrel Schemas
+- **Spirit Safe** - Validates data against Barrel Schemas before bottling
+- **Bottler** - Transforms and exports data using Barrel Recipes
+
+See documentation at: https://datadistillery.org/
 """
 
 __version__ = "0.1.0"
@@ -24,7 +43,7 @@ from gkc.bottler import (
     SnakBuilder,
 )
 
-# Cooperage (schema and reference management)
+# Cooperage (Barrel Schema and reference management)
 from gkc.cooperage import (
     CooperageError,
     fetch_entity_rdf,
@@ -33,7 +52,7 @@ from gkc.cooperage import (
     validate_entity_reference,
 )
 
-# Recipe (transformation blueprint design)
+# Recipe (Wikidata Barrel Recipe Builder)
 from gkc.recipe import (
     PropertyCatalog,
     PropertyProfile,
@@ -56,7 +75,7 @@ from gkc.sparql import (
     execute_sparql_to_dataframe,
 )
 
-# Spirit Safe (validation and quality gates)
+# Spirit Safe (Barrel Schema validation and quality gates)
 from gkc.spirit_safe import SpiritSafeValidationError, SpiritSafeValidator
 
 # Backwards compatibility aliases (deprecated - old names for legacy code)

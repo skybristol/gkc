@@ -1,15 +1,22 @@
 """
-Spirit Safe: Validation and quality gates for distilled data.
+Spirit Safe: Validation against Barrel Schemas and quality gates.
 
-The Spirit Safe is where the distillery's output is inspected against strict
-quality standards. Only products meeting the specification pass through. Named
-after the locked cabinet in traditional distilleries where the best product is
-held safely and inspected.
+The Spirit Safe validates transformed data against **Barrel Schemas** before
+bottling for delivery to target systems. Named after the locked cabinet in
+traditional distilleries where the best product is inspected and held securely.
 
-This module validates Wikidata entities and other data structures against
-Shape Expression (ShEx) schemas, particularly EntitySchemas defined in Wikidata.
+Currently supports validation against:
+- Wikidata Barrel Schema (EntitySchemas in ShEx format + property constraints)
 
-Plain meaning: Validate data against shape and quality constraints.
+Future support planned for:
+- Wikimedia Commons Barrel Schema
+- Wikipedia infobox Barrel Schema
+- OpenStreetMap tagging Barrel Schema
+
+The Spirit Safe ensures data meets target system requirements before delivery,
+preventing malformed data from reaching production systems.
+
+Plain meaning: Validate data against target system schemas and quality rules.
 """
 
 from pathlib import Path
@@ -33,15 +40,20 @@ class SpiritSafeValidationError(Exception):
 
 class SpiritSafeValidator:
     """
-    Spirit Safe Validator: Validate RDF data against Shape Expression schemas.
+    Spirit Safe Validator: Validate RDF data against Barrel Schemas.
 
-    This validator ensures distilled data meets quality and shape constraints.
-    It supports multiple input sources for both RDF and schemas.
+    Validates transformed data against target system Barrel Schemas before
+    bottling. Currently supports Wikidata EntitySchemas (ShEx); future support
+    planned for other target systems.
 
-    Plain meaning: Check if data matches the required structure and rules.
+    This validator ensures distilled data in the Unified Still Schema has been
+    correctly transformed via Barrel Recipes and meets the target Barrel Schema
+    requirements before delivery.
+
+    Plain meaning: Check if data matches target system structure and rules.
 
     Example:
-        >>> # Validate a Wikidata item against an EntitySchema
+        >>> # Validate a Wikidata item against its Barrel Schema (EntitySchema)
         >>> validator = SpiritSafeValidator(qid='Q42', eid='E502')
         >>> result = validator.check()
         >>> print(result.results)
@@ -77,11 +89,11 @@ class SpiritSafeValidator:
         Args:
             qid: Wikidata entity ID (e.g., 'Q42'). Optional if rdf_text or
                 rdf_file provided.
-            eid: EntitySchema ID (e.g., 'E502'). Optional if schema_text or
-                schema_file provided.
+            eid: EntitySchema ID for Wikidata Barrel Schema (e.g., 'E502').
+                Optional if schema_text or schema_file provided.
             user_agent: Custom user agent for Wikidata requests.
-            schema_text: ShExC schema as a string (alternative to eid).
-            schema_file: Path to file containing ShExC schema (alternative to eid).
+            schema_text: Barrel Schema as ShExC string (alternative to eid).
+            schema_file: Path to file containing Barrel Schema (alternative to eid).
             rdf_text: RDF data as a string (alternative to qid).
             rdf_file: Path to file containing RDF data (alternative to qid).
         """
@@ -99,9 +111,9 @@ class SpiritSafeValidator:
 
     def load_specification(self) -> "SpiritSafeValidator":
         """
-        Load the schema specification from configured source.
+        Load the Barrel Schema specification from configured source.
 
-        Tries sources in order: schema_text, schema_file, eid (from Wikidata).
+        Tries sources in order: schema_text, schema_file, eid (fetch from Wikidata).
 
         Returns:
             Self for method chaining
@@ -191,7 +203,7 @@ class SpiritSafeValidator:
 
     def evaluate(self) -> "SpiritSafeValidator":
         """
-        Evaluate RDF data against the schema specification.
+        Evaluate RDF data against the Barrel Schema specification.
 
         Must call load_specification() and load_rdf() first, or use check().
 

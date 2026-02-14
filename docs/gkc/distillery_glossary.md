@@ -2,7 +2,34 @@
 
 This document defines the core vocabulary used throughout the GKC package, organized by concept. Each term includes its technical meaning and plain-language explanation.
 
-## Core Processing Stages
+## Schema Architecture
+
+### Barrel Schema
+**Plain meaning:** A target system's schema or constraint specification.
+
+The shape, structure, and validation rules defined by a specific target knowledge system. Each barrel (target system) has its own way of encoding what data should look like. Examples include Wikidata EntitySchemas (ShEx) coupled with property constraints, Wikimedia Commons schemas, Wikipedia infobox template parameters, and OpenStreetMap tagging schemes. Barrel Schemas define what constitutes valid, well-formed data for that particular system.
+
+### Barrel Recipe
+**Plain meaning:** Instructions for transforming data into a specific target system's format.
+
+A transformation specification that maps from source data (or the Unified Still Schema) to a specific Barrel Schema's requirements. Each target system needs its own Barrel Recipe. A Wikidata Barrel Recipe transforms data into Wikidata claims, qualifiers, and references. An OSM Barrel Recipe transforms data into OSM features and tags. Barrel Recipes are often generated semi-automatically from Barrel Schemas.
+
+### Unified Still Schema
+**Plain meaning:** A canonical, system-agnostic data model for the distillery.
+
+The meta schema that sits between source data and all target systems. Rather than mapping sources directly to each Barrel Schema separately, the distillery transforms source data into the Unified Still Schema once, then distributes from there to multiple target systems. This promotes cases where the same data gets pushed to Wikidata, OSM, Wikimedia Commons, and Wikipedia (versions of infobox templates at least) simultaneously. The Still Schema is the "common language" of the distillery.
+
+### Still Recipe
+**Plain meaning:** Instructions for transforming source data into the Unified Still Schema.
+
+A transformation specification that maps raw source data fields to the canonical Unified Still Schema. This is typically the first transformation step, converting heterogeneous sources (CSV, JSON, API dumps) into a consistent internal representation. Each data source needs its own Still Recipe, but once transformed, the data can flow to any target system.
+
+### Mash Bill
+**Plain meaning:** The recipe for preparing and standardizing heterogeneous raw sources.
+
+The specification that defines how to read, parse, and interpret diverse raw data sources during the Mash stage. Just as a distillery's mash bill specifies the mix of grains, proportions, and preparation methods before fermentation, the GKC Mash Bill defines how to handle variety in source formats, field names, encodings, and structures. It's the recipe that makes sense of the raw ingredients before they enter the transformation pipeline - often the most source-specific part of the entire process.
+
+## Core Processing StagesGuided by the Mash Bill, this stage handles the diversity of source formats and structures. 
 
 ### Mash
 **Plain meaning:** Initial data ingestion and parsing.
@@ -12,7 +39,7 @@ The raw input layer where heterogeneous data sources (CSV, JSON, spreadsheets, A
 ### Ferment
 **Plain meaning:** Cleaning, normalization, and schema alignment.
 
-The transformation layer where data is sanitized (whitespace, type coercion, encoding), normalized to a consistent overarching schema, informed by target ontologies (Wikidata entity schemas, OSM tags). This is where messy becomes workable.
+The transformation layer where data is sanitized (whitespace, type coercion, encoding) and normalized to a consistent structure. Using insights from both the Mash Bill and target Barrel Schemas, this stage transforms the prepared ingredients into something ready for distillation. This is where messy becomes workable.
 
 ### Distill
 **Plain meaning:** Core extraction and entity reconciliation.
@@ -41,10 +68,10 @@ The output serialization layer where distilled, validated, and blended data is f
 
 ## Supporting Concepts
 
-### Barrel
+### Barrel (Storage)
 **Plain meaning:** Cache, snapshot, and provenance storage.
 
-The persistent storage layer for intermediate results, caches, versioned snapshots, and complete provenance trails. Allows reuse, rollback, and audit trails without re-computation.
+The persistent storage layer for intermediate results, caches, versioned snapshots, and complete provenance trails. Allows reuse, rollback, and audit trails without re-computation. Note: Distinct from "Barrel Schema" (target system specification) – this is the storage container metaphor.
 
 ### Cut
 **Plain meaning:** Filtering rules and heuristics that select the best data.
@@ -52,9 +79,9 @@ The persistent storage layer for intermediate results, caches, versioned snapsho
 A decision criterion or filter that separates high-quality results ("the heart") from noise ("heads and tails"). Applied at multiple stages to trim low-confidence matches or invalid records.
 
 ### Spirit Safe
-**Plain meaning:** Validation and reference checking.
+**Plain meaning:** Validation against Barrel Schemas and reference checking.
 
-The quality gate that ensures data meets reference and integrity constraints before proceeding downstream. Named after the locked cabinet in traditional distilleries where the best product is held.
+The quality gate that ensures data meets the shape, structure, and integrity constraints defined by Barrel Schemas before being bottled for delivery. Validates that transformed data conforms to target system schemas (e.g., checking Wikidata items against EntitySchemas, validating OSM features against tagging schemes). Named after the locked cabinet in traditional distilleries where the best product is inspected and held securely.
 
 ### Barrel Notes
 **Plain meaning:** Metadata about data lineage and transformation.
@@ -96,7 +123,9 @@ Reconciliation and entity linking engine.
 Validation and constraints engine.
 
 ### The Cooperage
-Schema, property dictionary, and reference management.
+Barrel Schema management, property metadata, and reference data repository.
+
+Maintains the collection of Barrel Schemas from various target systems, fetches and caches property definitions and constraints, and manages reference lookups. The cooperage provides the specifications and metadata needed to build Barrel Recipes and validate against target system requirements.
 
 ### The Barrel Room (or Rickhouse)
 Caching, provenance, and versioning storage.
