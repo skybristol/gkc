@@ -36,6 +36,10 @@ markdown_extensions:
 extra_css:
   - stylesheets/extra.css
 
+extra_javascript:
+  - https://unpkg.com/mermaid@10.6.1/dist/mermaid.min.js
+  - javascripts/mermaid-init.js
+
 nav:
   - Home: index.md
   - GKC Documentation:
@@ -54,6 +58,12 @@ nav:
       - Proofing: gkc/proofing.md
       - Blending: gkc/blending.md
       - Bottling: gkc/bottling.md
+    - Barrel Schemas:
+      - Overview: gkc/barrel_schemas/index.md
+      - Wikidata EntitySchemas: gkc/barrel_schemas/wikidata_entityschemas.md
+      - Wikimedia Commons: gkc/barrel_schemas/commons_schemas.md
+      - Wikipedia Infoboxes: gkc/barrel_schemas/wikipedia_infoboxes.md
+      - OpenStreetMap Tagging: gkc/barrel_schemas/osm_tagging.md
     - Schema Forward Approach:
       - Mapping Format Migration: gkc/mapping_format_migration.md
     - Wikidata:

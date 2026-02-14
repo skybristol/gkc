@@ -1,12 +1,16 @@
 """
-Cooperage: Schema, property metadata, and reference management.
+Cooperage: Barrel Schema management, property metadata, and reference data.
 
-The cooperage manages the "barrels"—the structured schemas, property definitions,
-and reference data that give shape and consistency to the distillery's output.
-Think of it as the toolkit for barrel-making: spec management, entity resolution
-infrastructure, and reference lookups.
+The Cooperage manages **Barrel Schemas** - the structured schemas, property
+definitions, and constraints from target knowledge systems (Wikidata, OSM,
+Commons, Wikipedia). It provides the specifications needed to build Barrel
+Recipes and validate data against target system requirements.
 
-Plain meaning: Schema specification and reference data repository.
+Think of it as the toolkit for barrel-making: fetching schema specifications,
+caching property metadata, managing validation rules, and providing reference
+lookups.
+
+Plain meaning: Central repository for target system schemas and metadata.
 """
 
 from typing import Optional
@@ -17,7 +21,7 @@ DEFAULT_USER_AGENT = "GKC-Python-Client/0.1 (https://github.com/skybristol/gkc)"
 
 
 class CooperageError(Exception):
-    """Raised when cooperage operations (schema/reference management) fail."""
+    """Raised when Cooperage operations (Barrel Schema/reference management) fail."""
 
     pass
 
@@ -66,9 +70,13 @@ def fetch_entity_rdf(
 
 def fetch_schema_specification(eid: str, user_agent: Optional[str] = None) -> str:
     """
-    Fetch ShExC schema specification for a Wikidata EntitySchema.
+    Fetch Wikidata Barrel Schema (EntitySchema in ShExC format).
 
-    Plain meaning: Retrieve the shape/structure specification for validation.
+    Retrieves a Wikidata EntitySchema specification from Wikidata. EntitySchemas
+    define the shape and structure constraints that form part of Wikidata's
+    Barrel Schema (along with property constraints).
+
+    Plain meaning: Get the shape/structure specification for Wikidata entities.
 
     Args:
         eid: EntitySchema ID (e.g., 'E502')
@@ -81,7 +89,7 @@ def fetch_schema_specification(eid: str, user_agent: Optional[str] = None) -> st
         CooperageError: If fetch fails
 
     Example:
-        >>> schema = fetch_schema_specification('E502')  # Schema for organisms
+        >>> schema = fetch_schema_specification('E502')  # Barrel Schema for tribes
     """
     if not eid:
         raise ValueError("EntitySchema ID (eid) is required")

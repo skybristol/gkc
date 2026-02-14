@@ -9,11 +9,20 @@ Welcome to the documentation for GKC (Global Knowledge Commons), a Python packag
 - [Background](background.md) - read about where the project came from and its motivations
 - [Distillery glossary](distillery_glossary.md) - terminology for stages, components, and key concepts
 
+## Schema Architecture
+
+GKC uses a two-schema architecture to enable multi-system data distribution:
+
+- [Pipeline Overview](pipeline_overview.md) — Understand the end-to-end workflow with visual diagram and stage descriptions
+- [Barrel Schemas](barrel_schemas/index.md) — Target system schemas and constraints
+  - [Wikidata EntitySchemas](barrel_schemas/wikidata_entityschemas.md) — ShEx schemas and Barrel Recipe Builder ✅
+  - [Wikimedia Commons](barrel_schemas/commons_schemas.md) — Commons structured data schemas 🚧
+  - [Wikipedia Infoboxes](barrel_schemas/wikipedia_infoboxes.md) — Infobox template parameters 🚧
+  - [OpenStreetMap Tagging](barrel_schemas/osm_tagging.md) — OSM tagging schemes 🚧
+
 ## Data Distillery Workflow
 
 The following sections lay out the extract, transform and load (ETL) workflow the GKC package is designed to support - messy and disconnected data in to refined and linked open data out.
-
-**Start here:** [Pipeline Overview](pipeline_overview.md) — Understand the end-to-end workflow with visual diagram and stage descriptions.
 
 ### Data Ingestion (mash tun)
 
@@ -38,7 +47,6 @@ The following sections lay out the extract, transform and load (ETL) workflow th
 
 ## Older Documentation for Examination
 
-- [Claims Map Builder](claims_map_builder.md)
 - [Item Creation Approach](item_creation_approach.md)
 - [Mapping Format Migration](mapping_format_migration.md)
 - [Reference/Qualifier Patterns](reference_qualifier_patterns.md)
@@ -47,6 +55,7 @@ The following sections lay out the extract, transform and load (ETL) workflow th
 - [Sitelinks Validation](sitelinks_validation.md)
 - [SPARQL queries](sparql_queries.md)
 - [SPARQL quick reference](sparql_quick_reference.md)
+- [Claims Map Builder](claims_map_builder.md) - (Legacy: see [Wikidata Barrel Recipe Builder](barrel_schemas/wikidata_entityschemas.md))
 
 ## Development Notes
 
