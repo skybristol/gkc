@@ -117,9 +117,7 @@ def fetch_schema_specification(eid: str, user_agent: Optional[str] = None) -> st
         ) from e
 
 
-def fetch_entity_schema_json(
-    eid: str, user_agent: Optional[str] = None
-) -> dict:
+def fetch_entity_schema_json(eid: str, user_agent: Optional[str] = None) -> dict:
     """
     Fetch the JSON content for a Wikidata EntitySchema.
 
@@ -147,9 +145,7 @@ def fetch_entity_schema_json(
         response.raise_for_status()
         data = response.json()
         if not isinstance(data, dict):
-            raise CooperageError(
-                f"Unexpected EntitySchema JSON content for {eid}"
-            )
+            raise CooperageError(f"Unexpected EntitySchema JSON content for {eid}")
         return data
     except requests.RequestException as e:
         raise CooperageError(

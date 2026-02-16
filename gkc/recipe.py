@@ -18,10 +18,8 @@ import re
 from datetime import datetime
 from typing import Any, Optional
 
-import requests
-
 from gkc.cooperage import DEFAULT_USER_AGENT, fetch_entity_schema_metadata
-from gkc.sparql import execute_sparql, SPARQLError
+from gkc.sparql import SPARQLError, execute_sparql
 from gkc.spirit_safe import SpiritSafeValidator
 
 
@@ -42,7 +40,7 @@ class ConstraintLedgerEntry:
         constraint_type_label: str,
         constraint_value: Optional[Any] = None,
         regex_pattern: Optional[str] = None,
-        description: Optional[str] = None
+        description: Optional[str] = None,
     ):
         """
         Initialize a constraint ledger entry.
@@ -75,20 +73,29 @@ class PropertyLedgerEntry:
     """Container for Wikidata property metadata from the Cooperage.
 
     Part of Wikidata's Barrel Schema - provides property definitions,
-    datatypes, labels, descriptions, and property constraints fetched from Wikidata.
+    datatypes, labels, descriptions, and property constraints fetched from
+    Wikidata.
 
-    Property constraints are fetched via P2302 statements on the property item in Wikidata.
-    These constraints define type checking, format validation, and other constraints that
-    apply to claims using this property.
+    Property constraints are fetched via P2302 statements on the property
+    item in Wikidata. These constraints define type checking, format
+    validation, and other constraints that apply to claims using this
+    property.
     """
 
-    def __init__(self, property_id: str, data: dict, constraints: Optional[list] = None, formatter_url: Optional[str] = None):
+    def __init__(
+        self,
+        property_id: str,
+        data: dict,
+        constraints: Optional[list] = None,
+        formatter_url: Optional[str] = None,
+    ):
         self.property_id = property_id
         self.datatype = data.get("datatype", "unknown")
         self.labels = data.get("labels", {})
         self.descriptions = data.get("descriptions", {})
         self.aliases = data.get("aliases", {})
-        # Property constraints from P2302 statements (type checking, format validation, etc.)
+        # Property constraints from P2302 statements
+        # (type checking, format validation, etc.)
         self.constraints = constraints or []
         # Formatter URL (P1630) for URL extraction patterns
         self.formatter_url = formatter_url
@@ -107,7 +114,7 @@ class PropertyLedgerEntry:
 
     def get_constraints(self) -> list:
         """Get property constraints (P2302 statements).
-        
+
         Returns:
             List of constraint dictionaries with details about type checking,
             format validation, and other constraints applicable to this property.
@@ -116,9 +123,10 @@ class PropertyLedgerEntry:
 
     def get_formatter_url(self) -> Optional[str]:
         """Get formatter URL pattern (P1630).
-        
+
         Returns:
-            Formatter URL pattern for extracting or formatting values, or None if not set.
+            Formatter URL pattern for extracting or formatting values,
+            or None if not set.
         """
         return self.formatter_url
 
@@ -139,17 +147,20 @@ class PropertyLedgerEntry:
         for raw_constraint in self.constraints:
             constraint_type = raw_constraint.get("constraint_type")
 
-            # Process ONLY format constraints (Q21502404) with regex patterns
-            # These are actionable in data transformations outside Wikidata infrastructure
+            # Process ONLY format constraints (Q21502404) with regex
+            # patterns. These are actionable in data transformations outside
+            # Wikidata infrastructure
             if constraint_type == "Q21502404":
                 regex_pattern = raw_constraint.get("regex")
 
                 # Only add if regex pattern exists (actionable)
                 if regex_pattern:
                     description = raw_constraint.get("note")
-                    
+
                     # Build human-readable description
-                    human_desc = f"Format constraint: Must match pattern '{regex_pattern}'"
+                    human_desc = (
+                        f"Format constraint: Must match pattern '{regex_pattern}'"
+                    )
                     if description:
                         human_desc += f" ({description})"
 
@@ -157,12 +168,11 @@ class PropertyLedgerEntry:
                         constraint_type=constraint_type,
                         constraint_type_label="Format Constraint",
                         regex_pattern=regex_pattern,
-                        description=human_desc
+                        description=human_desc,
                     )
                     constraint_ledger.append(entry)
 
         return constraint_ledger
-
 
 
 class ItemLedgerEntry:
@@ -259,7 +269,6 @@ class SpecificationExtractor:
             Set of item IDs found, or empty set if PyShEx parsing fails
         """
         try:
-            from ShExJSG import ShExJ
             from pyshex.utils.schema_loader import SchemaLoader
         except Exception:
             return set()
@@ -465,8 +474,8 @@ class SpecificationExtractor:
             True if ShExJ parsing succeeded, False otherwise
         """
         try:
-            from ShExJSG import ShExJ
             from pyshex.utils.schema_loader import SchemaLoader
+            from ShExJSG import ShExJ
         except Exception:
             return False
 
@@ -553,7 +562,11 @@ class SpecificationExtractor:
             if local_match:
                 local = local_match.group(1)
                 for key, shape in shape_map.items():
-                    if key.endswith(local) or key.endswith(f"/{local}") or key.endswith(f"#{local}"):
+                    if (
+                        key.endswith(local)
+                        or key.endswith(f"/{local}")
+                        or key.endswith(f"#{local}")
+                    ):
                         return shape
             return None
 
@@ -702,12 +715,12 @@ class SpecificationExtractor:
 # Constraint types useful for Barrel Recipe preparation
 # These constraints provide explicit guidance on data validation and shaping
 USEFUL_CONSTRAINT_TYPES = {
-    "Q21502404": "format_constraint",        # Format constraint - regex patterns for strings
-    "Q52558054": "format_constraint_alt",    # Alternative format constraint (less common)
-    "Q21510851": "allowed_entity_types",    # Allowed entity types - what types allowed
-    "Q21502838": "allowed_qualifiers",      # Allowed qualifiers - what qualifiers can be used
-    "Q21502410": "forbidden_qualifiers",    # Forbidden qualifiers - what qualifiers can't be used
-    "Q21503250": "range_constraint",        # Range constraint - min/max for numeric values
+    "Q21502404": "format_constraint",  # Format constraint - regex patterns
+    "Q52558054": "format_constraint_alt",  # Alternative format (less common)
+    "Q21510851": "allowed_entity_types",  # Allowed entity types
+    "Q21502838": "allowed_qualifiers",  # Allowed qualifiers
+    "Q21502410": "forbidden_qualifiers",  # Forbidden qualifiers
+    "Q21503250": "range_constraint",  # Range constraint - min/max
 }
 
 
@@ -721,16 +734,23 @@ class EntityCatalog:
     constraints, replacing multiple REST API calls with a single query.
     """
 
-    def __init__(self, user_agent: Optional[str] = None, max_entities: int = 50, process_constraints: bool = False):
+    def __init__(
+        self,
+        user_agent: Optional[str] = None,
+        max_entities: int = 50,
+        process_constraints: bool = False,
+    ):
         """
         Initialize the entity catalog.
 
         Args:
             user_agent: Custom user agent for API requests
-            max_entities: Maximum number of entities to fetch (default 50, SPARQL query limit)
-            process_constraints: Whether to fetch and process property constraints (default False)
-                                Constraints are useful for contributor notifications but not for
-                                core recipe transformation logic.
+            max_entities: Maximum number of entities to fetch (default 50,
+                         SPARQL query limit)
+            process_constraints: Whether to fetch and process property
+                                constraints (default False). Constraints are
+                                useful for contributor notifications but not
+                                for core recipe transformation logic.
         """
         self.user_agent = user_agent or DEFAULT_USER_AGENT
         self.max_entities = max_entities
@@ -738,7 +758,9 @@ class EntityCatalog:
         self._property_cache = {}
         self._item_cache = {}
 
-    def fetch_properties(self, property_ids: list[str]) -> dict[str, PropertyLedgerEntry]:
+    def fetch_properties(
+        self, property_ids: list[str]
+    ) -> dict[str, PropertyLedgerEntry]:
         """
         Fetch metadata for multiple properties from Wikidata via SPARQL.
 
@@ -758,13 +780,13 @@ class EntityCatalog:
             )
 
         # Filter out cached properties
-        uncached_ids = [f"wd:{pid}" for pid in property_ids if pid not in self._property_cache]
+        uncached_ids = [
+            f"wd:{pid}" for pid in property_ids if pid not in self._property_cache
+        ]
 
         if uncached_ids:
             self._fetch_via_sparql(
-                uncached_ids, 
-                entity_type="property",
-                original_ids=property_ids
+                uncached_ids, entity_type="property", original_ids=property_ids
             )
 
         return {
@@ -797,9 +819,7 @@ class EntityCatalog:
 
         if uncached_ids:
             self._fetch_via_sparql(
-                uncached_ids,
-                entity_type="item",
-                original_ids=item_ids
+                uncached_ids, entity_type="item", original_ids=item_ids
             )
 
         return {
@@ -807,10 +827,7 @@ class EntityCatalog:
         }
 
     def _fetch_via_sparql(
-        self, 
-        entity_iris: list[str], 
-        entity_type: str,
-        original_ids: list[str]
+        self, entity_iris: list[str], entity_type: str, original_ids: list[str]
     ):
         """Fetch entity metadata via SPARQL query.
 
@@ -822,16 +839,14 @@ class EntityCatalog:
         try:
             # Build SPARQL query
             query = self._build_entity_query(entity_iris, entity_type)
-            
+
             # Execute SPARQL query
             results = execute_sparql(query)
-            
+
             # Parse and cache results
             if "results" in results and "bindings" in results["results"]:
                 self._parse_sparql_results(
-                    results["results"]["bindings"],
-                    entity_type,
-                    original_ids
+                    results["results"]["bindings"], entity_type, original_ids
                 )
         except SPARQLError as e:
             print(f"Warning: SPARQL query failed for {entity_type}: {e}")
@@ -850,7 +865,7 @@ class EntityCatalog:
         """
         # Build VALUES clause with entity IRIs
         entity_list = " ".join(entity_iris)
-        
+
         # Build simplified query if constraints not needed
         if not self.process_constraints:
             query = f"""
@@ -867,7 +882,8 @@ class EntityCatalog:
                     FILTER(LANG(?description) = "en")
                 }}
                 
-                # Get formatter URL (P1630) for properties - used for URL extraction patterns
+                # Get formatter URL (P1630) for properties
+                # (used for URL extraction patterns)
                 OPTIONAL {{
                     ?entityId wdt:P1630 ?formatterUrl .
                 }}
@@ -880,17 +896,17 @@ class EntityCatalog:
             }}
             """
             return query
-        
+
         # Build full query with constraints
-        constraint_filter = " || ".join([
-            f'?constraintType = wd:{cid}'
-            for cid in USEFUL_CONSTRAINT_TYPES.keys()
-        ])
-        
+        constraint_filter = " || ".join(
+            [f"?constraintType = wd:{cid}" for cid in USEFUL_CONSTRAINT_TYPES.keys()]
+        )
+
         query = f"""
         SELECT DISTINCT ?entityId ?label ?description ?datatype ?formatterUrl
                ?constraintType ?constraintTypeLabel
-               ?constraintScope ?constraintException ?constraintNote ?constraintRegex ?constraintRegexAlt
+               ?constraintScope ?constraintException ?constraintNote
+               ?constraintRegex ?constraintRegexAlt
         WHERE {{
             VALUES ?entityId {{ {entity_list} }}
             
@@ -903,7 +919,8 @@ class EntityCatalog:
                 FILTER(LANG(?description) = "en")
             }}
             
-            # Get formatter URL (P1630) for properties - used for URL extraction patterns
+            # Get formatter URL (P1630) for properties
+            # (used for URL extraction patterns)
             OPTIONAL {{
                 ?entityId wdt:P1630 ?formatterUrl .
             }}
@@ -934,14 +951,11 @@ class EntityCatalog:
             }}
         }}
         """
-        
+
         return query
 
     def _parse_sparql_results(
-        self,
-        bindings: list[dict],
-        entity_type: str,
-        original_ids: list[str]
+        self, bindings: list[dict], entity_type: str, original_ids: list[str]
     ):
         """Parse SPARQL results and populate caches.
 
@@ -952,15 +966,15 @@ class EntityCatalog:
         """
         # Group results by entity to handle multiple constraints per entity
         entities_data = {}
-        
+
         for binding in bindings:
             entity_iri = binding.get("entityId", {}).get("value", "")
             # Extract ID from IRI (e.g., "P31" from "http://www.wikidata.org/entity/P31")
             entity_id = entity_iri.split("/")[-1] if entity_iri else None
-            
+
             if not entity_id:
                 continue
-            
+
             if entity_id not in entities_data:
                 entities_data[entity_id] = {
                     "entity_id": entity_id,
@@ -970,40 +984,42 @@ class EntityCatalog:
                     "formatter_url": binding.get("formatterUrl", {}).get("value"),
                     "constraints": [],
                 }
-            
+
             # Add constraint if present
             constraint_type_iri = binding.get("constraintType", {}).get("value", "")
             if constraint_type_iri:
                 constraint_id = constraint_type_iri.split("/")[-1]
-                constraint_label = binding.get("constraintTypeLabel", {}).get("value", constraint_id)
-                
+                constraint_label = binding.get("constraintTypeLabel", {}).get(
+                    "value", constraint_id
+                )
+
                 constraint_info = {
                     "constraint_type": constraint_id,
                     "constraint_type_label": constraint_label,
                 }
-                
+
                 # Add optional constraint details
                 if binding.get("constraintScope", {}).get("value"):
                     value_iri = binding["constraintScope"]["value"]
                     constraint_info["value"] = value_iri.split("/")[-1]
-                
+
                 if binding.get("constraintException", {}).get("value"):
                     exc_iri = binding["constraintException"]["value"]
                     constraint_info["exception"] = exc_iri.split("/")[-1]
-                
+
                 if binding.get("constraintNote", {}).get("value"):
                     constraint_info["note"] = binding["constraintNote"]["value"]
-                
+
                 # Use P1793 (format as regex) if present, otherwise use P2306
                 if binding.get("constraintRegex", {}).get("value"):
                     constraint_info["regex"] = binding["constraintRegex"]["value"]
                 elif binding.get("constraintRegexAlt", {}).get("value"):
                     constraint_info["regex"] = binding["constraintRegexAlt"]["value"]
-                
+
                 # Only add if constraint has more than just the type
                 if len(constraint_info) > 2:
                     entities_data[entity_id]["constraints"].append(constraint_info)
-        
+
         # Create ledger entries and cache them
         for entity_id, data in entities_data.items():
             if entity_type == "property":
@@ -1018,7 +1034,7 @@ class EntityCatalog:
                     entity_id,
                     ledger_data,
                     constraints=data["constraints"],
-                    formatter_url=data["formatter_url"]
+                    formatter_url=data["formatter_url"],
                 )
             else:
                 # Prepare data for ItemLedgerEntry
@@ -1042,7 +1058,6 @@ class PropertyCatalog(EntityCatalog):
         super().__init__(user_agent=user_agent, max_entities=50)
         # Redirect old cache to new property cache for backward compatibility
         self._cache = self._property_cache
-
 
 
 class RecipeBuilder:
@@ -1080,9 +1095,11 @@ class RecipeBuilder:
             schema_file: Path to ShExC schema file
             user_agent: Custom user agent for API requests
             max_entities: Maximum entities to fetch from Wikidata (default 50)
-            process_constraints: Whether to fetch and process property constraints (default False)
-                                Constraints are "thick" and designed for Wikidata bots/contributor
-                                notifications, not for core data transformation logic.
+            process_constraints: Whether to fetch and process property
+                                constraints (default False). Constraints are
+                                "thick" and designed for Wikidata bots/
+                                contributor notifications, not for core data
+                                transformation logic.
         """
         self.validator = SpiritSafeValidator(
             eid=eid, schema_text=schema_text, schema_file=schema_file
@@ -1091,8 +1108,10 @@ class RecipeBuilder:
         self.schema_text: Optional[str] = None
         self.max_entities = max_entities
         self.process_constraints = process_constraints
-        self.entity_catalog = EntityCatalog(user_agent, max_entities, process_constraints)
-        
+        self.entity_catalog = EntityCatalog(
+            user_agent, max_entities, process_constraints
+        )
+
         # Ledgers for entity metadata
         self.property_ledger: dict[str, PropertyLedgerEntry] = {}
         self.item_ledger: dict[str, ItemLedgerEntry] = {}
@@ -1133,9 +1152,7 @@ class RecipeBuilder:
 
         # Fetch property metadata
         if property_ids:
-            self.property_ledger = self.entity_catalog.fetch_properties(
-                property_ids
-            )
+            self.property_ledger = self.entity_catalog.fetch_properties(property_ids)
 
         # Fetch item metadata
         if item_ids:
@@ -1243,7 +1260,9 @@ class RecipeBuilder:
             return {}
 
         # Fetch property metadata from Wikidata
-        property_info = self.entity_catalog.fetch_properties(list(reference_props.keys()))
+        property_info = self.entity_catalog.fetch_properties(
+            list(reference_props.keys())
+        )
 
         # Build reference configurations keyed by meaningful names
         references = {}
@@ -1252,9 +1271,7 @@ class RecipeBuilder:
 
             # Generate unique config name
             config_name = self._generate_config_name(
-                prop_id, 
-                shex_info.get("comment", ""),
-                shex_info.get("shapes", [])
+                prop_id, shex_info.get("comment", ""), shex_info.get("shapes", [])
             )
 
             references[config_name] = {
@@ -1290,20 +1307,20 @@ class RecipeBuilder:
             return {}
 
         # Fetch property metadata from Wikidata
-        property_info = self.entity_catalog.fetch_properties(list(qualifier_props.keys()))
+        property_info = self.entity_catalog.fetch_properties(
+            list(qualifier_props.keys())
+        )
 
         # Build qualifier configurations keyed by meaningful names
         qualifiers = {}
         used_names: set[str] = set()
-        
+
         for prop_id, shex_info in qualifier_props.items():
             prop_data = property_info.get(prop_id)
 
             # Generate unique config name
             config_name = self._generate_config_name(
-                prop_id,
-                shex_info.get("comment", ""),
-                shex_info.get("shapes", [])
+                prop_id, shex_info.get("comment", ""), shex_info.get("shapes", [])
             )
 
             # Handle name collisions
@@ -1321,38 +1338,54 @@ class RecipeBuilder:
         return qualifiers
 
     @staticmethod
-    def _generate_config_name(prop_id: str, comment: str, shape_names: list[str]) -> str:
+    def _generate_config_name(
+        prop_id: str, comment: str, shape_names: list[str]
+    ) -> str:
         """
         Generate a unique configuration name from property, comment, and shapes.
-        
+
         Args:
             prop_id: Property ID (e.g., "P248")
             comment: Inline comment/description from ShEx
             shape_names: List of shape names used for this property
-            
+
         Returns:
             A readable, unique configuration name
         """
         import re
-        
+
         # Extract meaningful words from comment
         comment_words = comment.lower().replace(":", "").split()
-        stop_words = {"of", "or", "in", "at", "the", "on", "a", "an", "with", 
-                     "must", "have", "least", "one", "required"}
+        stop_words = {
+            "of",
+            "or",
+            "in",
+            "at",
+            "the",
+            "on",
+            "a",
+            "an",
+            "with",
+            "must",
+            "have",
+            "least",
+            "one",
+            "required",
+        }
         meaningful = [w for w in comment_words if w not in stop_words and len(w) > 2]
-        
+
         if meaningful:
             # Take first few meaningful words
             name_suffix = "_".join(meaningful[:2])
             name_suffix = re.sub(r"[^a-z0-9_]", "", name_suffix)
             return f"{prop_id.lower()}_{name_suffix}"
-        
+
         # Fall back to property ID + first shape part if available
         if shape_names and shape_names[0]:
             shape = shape_names[0]
             shape_part = re.sub(r"(?<!^)(?=[A-Z])", "_", shape).lower()
             return f"{prop_id.lower()}_{shape_part}"
-        
+
         return prop_id.lower()
 
     def finalize_recipe(self, entity_type: Optional[str] = None) -> dict[str, Any]:
@@ -1409,14 +1442,20 @@ class RecipeBuilder:
         schema_source = schema_metadata.get("source", "")
 
         if schema_label:
-            recipe_name = f"GKC Barrel Recipe derived from Wikidata Entity Schema {schema_label}"
+            recipe_name = (
+                f"GKC Barrel Recipe derived from Wikidata Entity Schema {schema_label}"
+            )
         else:
-            recipe_name = f"GKC Barrel Recipe derived from Wikidata Entity Schema {self.validator.eid or 'unknown'}"
+            recipe_name = (
+                f"GKC Barrel Recipe derived from Wikidata Entity Schema "
+                f"{self.validator.eid or 'unknown'}"
+            )
 
         if schema_description:
             recipe_description = (
-                f"Mapping schema for validating and building items conforming to the "
-                f"specifications in a Wikidata Entity Schema described as {schema_description}"
+                f"Mapping schema for validating and building items conforming "
+                f"to the specifications in a Wikidata Entity Schema described "
+                f"as {schema_description}"
             )
         else:
             recipe_description = (
@@ -1543,7 +1582,9 @@ class RecipeBuilder:
         return []
 
     @staticmethod
-    def _format_comment(shex_info: dict, prop_data: Optional[PropertyLedgerEntry]) -> str:
+    def _format_comment(
+        shex_info: dict, prop_data: Optional[PropertyLedgerEntry]
+    ) -> str:
         """Format a comment for a property from ShEx and metadata."""
         parts = []
         if shex_info.get("comment"):

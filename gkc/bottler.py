@@ -417,4 +417,3 @@ class Distillate:
                 result.append(text)
 
         return result
-
