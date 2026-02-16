@@ -38,20 +38,20 @@ A mapping configuration connects source data fields to Wikidata properties and d
 
 #### Auto-Generation from ShEx
 
-Rather than manually creating mapping configurations, you can **auto-generate** them from EntitySchemas using the `ClaimsMapBuilder`:
+Rather than manually creating mapping configurations, you can **auto-generate** them from EntitySchemas using the `RecipeBuilder`:
 
 ```python
-from gkc import ClaimsMapBuilder
+from gkc import RecipeBuilder
 
 # Generate mapping from EntitySchema E502
-builder = ClaimsMapBuilder(eid="E502")
-mapping = builder.build_complete_mapping(entity_type="Q7840353")
+builder = RecipeBuilder(eid="E502")
+mapping = builder.finalize_recipe(entity_type="Q7840353")
 
 # This fetches live property data from Wikidata to ensure
 # accurate datatypes, labels, and descriptions
 ```
 
-See [Claims Map Builder documentation](claims_map_builder.md) for details.
+See [Recipe Builder documentation](claims_map_builder.md) for details.
 
 #### Separator Support for Multi-Value Fields
 
@@ -315,12 +315,12 @@ The Wikidata API expects a specific JSON structure for item creation:
 
 ### Core Classes
 
-#### 1. `PropertyMapper`
+#### 1. `Distillate`
 Handles the mapping configuration and transformation logic.
 
 ```python
-class PropertyMapper:
-    """Manages property mappings from source data to Wikidata format."""
+class Distillate:
+  """Transforms source data to Wikidata format using a recipe config."""
     
     def __init__(self, mapping_config: dict):
         """Load mapping configuration."""
@@ -368,18 +368,18 @@ class WikidataItemBuilder:
         return self.item_data
 ```
 
-#### 3. `ItemCreator`
-Orchestrates the entire creation process.
+#### 3. `WikidataSubmitter` (Planned)
+Orchestrates the submission process (not yet implemented in the codebase).
 
 ```python
-class ItemCreator:
-    """Creates Wikidata items from source data using ShEx validation."""
+class WikidataSubmitter:
+  """Submits Wikidata items from source data using validation."""
     
     def __init__(
         self, 
         auth: WikiverseAuth,
-        mapper: PropertyMapper,
-        validator: ShExValidator = None
+        distillate: Distillate,
+        validator: SpiritSafeValidator = None
     ):
         """Initialize with authentication, mapper, and optional validator."""
         
@@ -407,14 +407,14 @@ class ItemCreator:
 ### Step 1: Define Mapping Configuration
 Create a mapping file that connects source data to Wikidata properties:
 ```python
-from gkc import PropertyMapper
+from gkc import Distillate
 
 mapping_config = {
     "schema": {"entity_schema_id": "E502"},
     "mappings": [...]  # See mapping structure above
 }
 
-mapper = PropertyMapper(mapping_config)
+distillate = Distillate(mapping_config)
 ```
 
 ### Step 2: Load Source Data
@@ -430,13 +430,13 @@ source_data = [
 
 ### Step 3: Transform and Validate
 ```python
-from gkc import ItemCreator, WikiverseAuth, ShExValidator
+from gkc import WikiverseAuth, SpiritSafeValidator
 
 auth = WikiverseAuth()
 auth.login()
 
-validator = ShExValidator(eid="E502")
-creator = ItemCreator(auth=auth, mapper=mapper, validator=validator)
+validator = SpiritSafeValidator(eid="E502")
+# Submission client is not yet implemented; use your own submission workflow.
 
 # Transform source record to Wikidata JSON
 for record in source_data:
@@ -445,8 +445,8 @@ for record in source_data:
         # 1. Transform source data to Wikidata JSON
         # 2. Validate against ShEx schema
         # 3. Submit to Wikidata
-        qid = creator.create_item(record, validate=True)
-        print(f"Created item: {qid}")
+        _ = distillate.transform_to_wikidata(record)
+        print("Transformed record to Wikidata JSON")
     except ValidationError as e:
         print(f"Validation failed: {e}")
     except WikidataAPIError as e:
@@ -495,28 +495,28 @@ for record in source_data:
 ## Example Usage Pattern
 
 ```python
-from gkc import WikiverseAuth, PropertyMapper, ItemCreator, ShExValidator
+from gkc import WikiverseAuth, Distillate, SpiritSafeValidator
 
 # 1. Setup authentication
 auth = WikiverseAuth()
 auth.login()
 
 # 2. Load mapping configuration
-mapper = PropertyMapper.from_file("mappings/tribe_mapping.json")
+distillate = Distillate.from_file("mappings/tribe_mapping.json")
 
 # 3. Setup validator (optional but recommended)
-validator = ShExValidator(eid="E502")
+validator = SpiritSafeValidator(eid="E502")
 
 # 4. Create the item creator
-creator = ItemCreator(auth=auth, mapper=mapper, validator=validator)
+# Submission client is not yet implemented; use your own submission workflow.
 
 # 5. Load your source data
 import csv
 with open("tribes.csv") as f:
     reader = csv.DictReader(f)
     for row in reader:
-        qid = creator.create_item(row, validate=True)
-        print(f"Created {row['tribe_name']} as {qid}")
+        _ = distillate.transform_to_wikidata(row)
+        print(f"Transformed {row['tribe_name']} to Wikidata JSON")
 
 # 6. Cleanup
 auth.logout()

@@ -55,7 +55,7 @@ from gkc.cooperage import (
 # Recipe (Wikidata Barrel Recipe Builder)
 from gkc.recipe import (
     PropertyCatalog,
-    PropertyProfile,
+    PropertyLedgerEntry,
     RecipeBuilder,
     SpecificationExtractor,
 )
@@ -78,19 +78,6 @@ from gkc.sparql import (
 # Spirit Safe (Barrel Schema validation and quality gates)
 from gkc.spirit_safe import SpiritSafeValidationError, SpiritSafeValidator
 
-# Backwards compatibility aliases (deprecated - old names for legacy code)
-fetch_entity_schema = fetch_schema_specification  # noqa: F401
-validate_entity_id = validate_entity_reference  # noqa: F401
-WikidataFetchError = CooperageError  # noqa: F401
-
-ClaimsMapBuilder = RecipeBuilder  # noqa: F401
-PropertyInfo = PropertyProfile  # noqa: F401
-ShExPropertyExtractor = SpecificationExtractor  # noqa: F401
-WikidataPropertyFetcher = PropertyCatalog  # noqa: F401
-ShExValidator = SpiritSafeValidator  # noqa: F401
-ShExValidationError = SpiritSafeValidationError  # noqa: F401
-PropertyMapper = Distillate  # noqa: F401
-
 __all__ = [
     # Authentication
     "AuthenticationError",
@@ -109,7 +96,7 @@ __all__ = [
     "validate_entity_reference",
     # Recipe (new names)
     "PropertyCatalog",
-    "PropertyProfile",
+    "PropertyLedgerEntry",
     "RecipeBuilder",
     "SpecificationExtractor",
     # Sitelinks
@@ -124,15 +111,4 @@ __all__ = [
     # Spirit Safe (new names)
     "SpiritSafeValidationError",
     "SpiritSafeValidator",
-    # Backwards compatibility (deprecated, old names)
-    "ClaimsMapBuilder",
-    "PropertyInfo",
-    "PropertyMapper",
-    "ShExPropertyExtractor",
-    "ShExValidationError",
-    "ShExValidator",
-    "WikidataFetchError",
-    "WikidataPropertyFetcher",
-    "fetch_entity_schema",
-    "validate_entity_id",
 ]

@@ -108,19 +108,6 @@ graph TD
     style STILLSCHEMA fill:#ffd700,stroke:#ff8c00,stroke-width:3px
     style BARRELSCHEMA fill:#dda0dd,stroke:#9370db,stroke-width:2px
 ```
-    BLEND -.-> ANGEL
-    BOTTLE -.-> ANGEL
-
-    style recipes fill:#c8b4e4
-    style support fill:#f0f0f0
-    style STILLSCHEMA fill:#ffd700,stroke:#ff8c00,stroke-width:3px
-    style BARRELSCHEMA fill:#dda0dd,stroke:#9370db,stroke-width:2px
-    style ingestion fill:#e8d4c4
-    style transform fill:#dfc0b0
-    style delivery fill:#d4a89c
-    style outputs fill:#4a90e2
-    style support fill:#f0f0f0
-```
 
 ## Stage Index (Quick Links)
 

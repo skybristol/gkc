@@ -259,7 +259,7 @@ class ClaimBuilder:
 
 class Distillate:
     """
-    Distillate: Final product of the distillation process (formerly PropertyMapper).
+    Distillate: Final product of the distillation process.
 
     A Distillate is the fully configured transformer ready to convert source data
     into Wikidata claims. It knows how to handle properties, qualifiers, references,
@@ -418,6 +418,3 @@ class Distillate:
 
         return result
 
-
-# Backwards compatibility aliases (deprecated; will be removed)
-PropertyMapper = Distillate

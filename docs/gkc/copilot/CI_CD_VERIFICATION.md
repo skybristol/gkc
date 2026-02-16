@@ -10,7 +10,7 @@ All CI/CD configuration has been verified and is ready for production use.
 - **88 tests passing** across all modules
 - Coverage: 32% overall
   - Core modules well-tested (auth: 85%, shex: 95%, wd: 100%)
-  - Production-verified modules (item_creator, mapping_builder, sitelinks) work in production
+  - Production-verified modules (bottler, recipe, sitelinks) work in production
 - Test matrix: Python 3.9, 3.10, 3.11, 3.12
 
 ### 2. Code Quality ✅
@@ -162,8 +162,8 @@ User must complete ONE-TIME PyPI setup:
 - ✅ `.github/workflows/publish.yml` - Already correct
 
 ### Code Files (Formatting/Linting Fixes)
-- ✅ `gkc/item_creator.py` - Added TYPE_CHECKING, fixed line lengths
-- ✅ `gkc/mapping_builder.py` - Fixed line lengths in comments
+- ✅ `gkc/bottler.py` - Added TYPE_CHECKING, fixed line lengths
+- ✅ `gkc/recipe.py` - Fixed line lengths in comments
 - ✅ `gkc/sitelinks.py` - Fixed docstring formatting
 
 ### New Files

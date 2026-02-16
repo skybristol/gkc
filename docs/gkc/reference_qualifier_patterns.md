@@ -138,7 +138,7 @@ Mix explicit library and inline named in the same mapping:
 
 ## How It Works
 
-1. **Initialization:** PropertyMapper scans all claims and extracts inline named references/qualifiers
+1. **Initialization:** Distillate scans all claims and extracts inline named references/qualifiers
 2. **Merging:** Inline named patterns are merged into the library
 3. **Precedence:** Explicit library entries take precedence if names collide
 4. **Resolution:** During transformation, all string references resolve from the combined library

@@ -1,10 +1,10 @@
-# Claims Map Builder
+# Recipe Builder
 
 Auto-generate mapping configurations from ShEx EntitySchemas by combining schema analysis with live Wikidata property metadata.
 
 ## Overview
 
-The `ClaimsMapBuilder` utility helps you create mapping configurations by:
+The `RecipeBuilder` utility helps you create mapping configurations by:
 
 1. **Parsing ShEx schemas** to extract property requirements, cardinality, and comments
 2. **Fetching live property data** from Wikidata to get accurate datatypes, labels, and descriptions
@@ -24,13 +24,13 @@ The `ClaimsMapBuilder` utility helps you create mapping configurations by:
 ### Generate Mapping from EntitySchema
 
 ```python
-from gkc import ClaimsMapBuilder
+from gkc import RecipeBuilder
 
 # Load EntitySchema from Wikidata
-builder = ClaimsMapBuilder(eid="E502")
+builder = RecipeBuilder(eid="E502")
 
 # Generate complete mapping configuration
-mapping = builder.build_complete_mapping(entity_type="Q7840353")
+mapping = builder.finalize_recipe(entity_type="Q7840353")
 
 # Export to JSON file
 import json
@@ -38,23 +38,23 @@ with open("my_mapping.json", "w") as f:
     json.dump(mapping, f, indent=2)
 ```
 
-### Use Directly with PropertyMapper
+### Use Directly with Distillate
 
 You can use the generated mapping immediately without saving to a file:
 
 ```python
-from gkc import ClaimsMapBuilder
-from gkc.item_creator import PropertyMapper
+from gkc import RecipeBuilder
+from gkc.bottler import Distillate
 
 # Generate mapping
-builder = ClaimsMapBuilder(eid="E502")
+builder = RecipeBuilder(eid="E502")
 
-# Create PropertyMapper directly
-mapper = PropertyMapper.from_claims_builder(builder, entity_type="Q7840353")
+# Create Distillate directly
+distillate = Distillate.from_recipe(builder, entity_type="Q7840353")
 
 # Now use mapper to transform your data
 sample_data = {"label": "Example", "p31_value": "Q7840353"}
-wikidata_json = mapper.transform_to_wikidata(sample_data)
+wikidata_json = distillate.transform_to_wikidata(sample_data)
 ```
 
 **Note:** Auto-generated mappings use field names like `p31_value`, `p2124_value`, etc. You'll want to customize these to match your actual data fields. See the customization workflow below.
@@ -62,11 +62,11 @@ wikidata_json = mapper.transform_to_wikidata(sample_data)
 ### Analyze Schema First
 
 ```python
-from gkc import ClaimsMapBuilder
+from gkc import RecipeBuilder
 
 # Load and analyze
-builder = ClaimsMapBuilder(eid="E502")
-builder.load_schema()
+builder = RecipeBuilder(eid="E502")
+builder.load_specification()
 
 # Print detailed analysis
 builder.print_summary()
@@ -85,20 +85,20 @@ Output shows:
 For quick prototyping and testing:
 
 ```python
-from gkc import ClaimsMapBuilder
-from gkc.item_creator import PropertyMapper, ItemCreator
+from gkc import RecipeBuilder
+from gkc.bottler import Distillate
 from gkc import WikiverseAuth
 
 # Generate and use mapping directly
-builder = ClaimsMapBuilder(eid="E502")
-mapper = PropertyMapper.from_claims_builder(builder, entity_type="Q7840353")
+builder = RecipeBuilder(eid="E502")
+distillate = Distillate.from_recipe(builder, entity_type="Q7840353")
 
 # Use for dry-run testing
 auth = WikiverseAuth()
-creator = ItemCreator(auth=auth, mapper=mapper, dry_run=True)
+_ = auth
 
 sample_data = {"label": "Test", ...}  # Use auto-generated field names
-creator.create_item(sample_data)
+distillate.transform_to_wikidata(sample_data)
 ```
 
 ### Workflow 2: Customized Mapping (Recommended)
@@ -106,13 +106,13 @@ creator.create_item(sample_data)
 For production use with your actual data:
 
 ```python
-from gkc import ClaimsMapBuilder
-from gkc.item_creator import PropertyMapper
+from gkc import RecipeBuilder
+from gkc.bottler import Distillate
 import json
 
 # 1. Generate mapping
-builder = ClaimsMapBuilder(eid="E502")
-mapping = builder.build_complete_mapping(entity_type="Q7840353")
+builder = RecipeBuilder(eid="E502")
+mapping = builder.finalize_recipe(entity_type="Q7840353")
 
 # 2. Save to file
 with open("my_mapping.json", "w") as f:
@@ -123,11 +123,11 @@ with open("my_mapping.json", "w") as f:
 #    To:     "source_field": "member_count"
 
 # 4. Load customized mapping
-mapper = PropertyMapper.from_file("my_mapping.json")
+distillate = Distillate.from_file("my_mapping.json")
 
 # 5. Use with your actual data
 your_data = {"tribe_name": "Cherokee", "member_count": 450000}
-wikidata_json = mapper.transform_to_wikidata(your_data)
+wikidata_json = distillate.transform_to_wikidata(your_data)
 ```
 
 ### Workflow 3: Programmatic Customization
@@ -135,12 +135,12 @@ wikidata_json = mapper.transform_to_wikidata(your_data)
 For advanced programmatic customization:
 
 ```python
-from gkc import ClaimsMapBuilder
-from gkc.item_creator import PropertyMapper
+from gkc import RecipeBuilder
+from gkc.bottler import Distillate
 
 # Generate mapping
-builder = ClaimsMapBuilder(eid="E502")
-mapping = builder.build_complete_mapping(entity_type="Q7840353")
+builder = RecipeBuilder(eid="E502")
+mapping = builder.finalize_recipe(entity_type="Q7840353")
 
 # Customize in code
 field_name_map = {
@@ -160,21 +160,21 @@ mapping["mappings"]["labels"][0]["source_field"] = "name"
 mapping["mappings"]["descriptions"][0]["source_field"] = "description"
 
 # Use customized mapping
-mapper = PropertyMapper(mapping)
+distillate = Distillate(mapping)
 ```
 
 ### Use Local ShEx File
 
 ```python
-builder = ClaimsMapBuilder(schema_file="path/to/schema.shex")
-mapping = builder.build_complete_mapping()
+builder = RecipeBuilder(schema_file="path/to/schema.shex")
+mapping = builder.finalize_recipe()
 ```
 
 ## How It Works
 
 ### 1. ShEx Parsing
 
-The `ShExPropertyExtractor` parses ShEx text to extract:
+The `SpecificationExtractor` parses ShEx text to extract:
 
 ```shex
 <FederallyRecognizedTribe> {
@@ -192,7 +192,7 @@ Extracted information:
 
 ### 2. Property Metadata Fetching
 
-The `WikidataPropertyFetcher` queries the Wikidata API:
+The `PropertyCatalog` queries the Wikidata API:
 
 ```python
 GET https://www.wikidata.org/w/api.php?action=wbgetentities&ids=P31|P30|P2124
@@ -331,8 +331,8 @@ The builder auto-generates transform hints based on Wikidata datatypes:
 ### Analyze Datatype Coverage
 
 ```python
-builder = ClaimsMapBuilder(eid="E502")
-claims_map = builder.build_claims_map()
+builder = RecipeBuilder(eid="E502")
+claims_map = builder.assemble_recipe()
 
 # Group by datatype
 by_datatype = {}
@@ -354,8 +354,8 @@ with open("manual_mapping.json") as f:
     manual = json.load(f)
 
 # Generate auto mapping
-builder = ClaimsMapBuilder(eid="E502")
-auto = builder.build_complete_mapping()
+builder = RecipeBuilder(eid="E502")
+auto = builder.finalize_recipe()
 
 # Find missing properties
 manual_props = {c["property"] for c in manual["mappings"]["claims"]}
@@ -368,7 +368,7 @@ print(f"Properties in ShEx but not in manual mapping: {missing}")
 ### Custom User Agent
 
 ```python
-builder = ClaimsMapBuilder(
+builder = RecipeBuilder(
     eid="E502",
     user_agent="MyBot/1.0 (myemail@example.com)"
 )
@@ -376,7 +376,7 @@ builder = ClaimsMapBuilder(
 
 ## API Reference
 
-### ClaimsMapBuilder
+### RecipeBuilder
 
 Main class for building mapping configurations.
 
@@ -385,21 +385,21 @@ Main class for building mapping configurations.
 - **`__init__(eid=None, schema_text=None, schema_file=None, user_agent=None)`**
   - Initialize with ShEx source (choose one of eid, schema_text, or schema_file)
 
-- **`load_schema()`**
+- **`load_specification()`**
   - Load the ShEx schema (returns self for chaining)
 
-- **`build_claims_map(include_qualifiers=True, include_references=True)`**
+- **`assemble_recipe(include_qualifiers=True, include_references=True)`**
   - Build just the claims mapping section
   - Returns: List of claim mapping dictionaries
 
-- **`build_complete_mapping(entity_type=None)`**
+- **`finalize_recipe(entity_type=None)`**
   - Build complete mapping configuration
   - Returns: Complete mapping dictionary
 
 - **`print_summary()`**
   - Print detailed analysis of the ShEx schema
 
-### WikidataPropertyFetcher
+### PropertyCatalog
 
 Fetches property metadata from Wikidata API.
 
@@ -408,9 +408,9 @@ Fetches property metadata from Wikidata API.
 - **`fetch_properties(property_ids)`**
   - Fetch metadata for multiple properties
   - Args: List of property IDs (e.g., `['P31', 'P571']`)
-  - Returns: Dictionary mapping IDs to `PropertyInfo` objects
+  - Returns: Dictionary mapping IDs to `PropertyLedgerEntry` objects
 
-### ShExPropertyExtractor
+### SpecificationExtractor
 
 Parses ShEx schema text to extract property information.
 
@@ -422,7 +422,7 @@ Parses ShEx schema text to extract property information.
 
 ## Examples
 
-See [mapping_builder_example.py](https://github.com/skybristol/gkc/blob/main/examples/mapping_builder_example.py) for complete working examples:
+See [docs/gkc/examples/wikidata_barrel_recipe_from_entityschema.ipynb](https://github.com/skybristol/gkc/blob/main/docs/gkc/examples/wikidata_barrel_recipe_from_entityschema.ipynb) for complete working examples:
 
 1. **Analyze Schema** - Parse and analyze ShEx structure
 2. **Build Claims Map** - Generate just the claims section

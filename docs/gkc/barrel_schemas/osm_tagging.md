@@ -73,11 +73,11 @@ from gkc import OSMRecipeBuilder
 builder = OSMRecipeBuilder(feature_type="amenity=restaurant")
 
 # Generate Barrel Recipe
-recipe = builder.build_complete_mapping()
+recipe = builder.finalize_recipe()
 
-# Use with PropertyMapper
-mapper = PropertyMapper.from_osm_builder(builder)
-osm_tags = mapper.transform_to_osm(still_schema_data)
+# Use with Distillate
+distillate = Distillate.from_osm_builder(builder)
+osm_tags = distillate.transform_to_osm(still_schema_data)
 ```
 
 ## Expected Features

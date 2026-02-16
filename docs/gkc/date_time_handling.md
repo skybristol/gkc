@@ -17,7 +17,7 @@ Wikidata's time datatype includes a **precision** field that indicates the granu
 GKC automatically detects the appropriate precision based on the input format:
 
 ```python
-from gkc.item_creator import DataTypeTransformer
+from gkc.bottler import DataTypeTransformer
 
 transformer = DataTypeTransformer()
 
@@ -213,7 +213,7 @@ GKC accepts various input formats from your CSV/JSON data:
 ## Complete Example
 
 ```python
-from gkc.item_creator import PropertyMapper
+from gkc.bottler import Distillate
 
 mapping_config = {
     "version": "1.0",
@@ -253,7 +253,7 @@ mapping_config = {
     }
 }
 
-mapper = PropertyMapper(mapping_config)
+distillate = Distillate(mapping_config)
 
 source_record = {
     "name": "Example Organization",

@@ -29,7 +29,7 @@ Enhanced the `DataTypeTransformer.to_time()` method to:
 
 ## Changes Made
 
-### 1. Enhanced `DataTypeTransformer.to_time()` ([gkc/item_creator.py](https://github.com/skybristol/gkc/blob/main/gkc/item_creator.py#L41-L107))
+### 1. Enhanced `DataTypeTransformer.to_time()` ([gkc/bottler.py](https://github.com/skybristol/gkc/blob/main/gkc/bottler.py#L41-L107))
 
 **Before:**
 ```python
@@ -62,7 +62,7 @@ def to_time(date_input: str | int, precision: int | None = None, calendar: str =
     # ... handle explicit precision
 ```
 
-### 2. Updated `SnakBuilder.create_snak()` ([gkc/item_creator.py](https://github.com/skybristol/gkc/blob/main/gkc/item_creator.py#L118-L147))
+### 2. Updated `SnakBuilder.create_snak()` ([gkc/bottler.py](https://github.com/skybristol/gkc/blob/main/gkc/bottler.py#L118-L147))
 
 **Before:**
 ```python
@@ -81,7 +81,7 @@ elif datatype == "time":
     datavalue = self.transformer.to_time(value, precision)
 ```
 
-### 3. Enhanced Qualifier Resolution ([gkc/item_creator.py](https://github.com/skybristol/gkc/blob/main/gkc/item_creator.py#L531-L565))
+### 3. Enhanced Qualifier Resolution ([gkc/bottler.py](https://github.com/skybristol/gkc/blob/main/gkc/bottler.py#L531-L565))
 
 Added support for:
 - `"current_date"` special value (auto-inserts today's date)
@@ -111,7 +111,7 @@ elif "value" in qual_config:
 
 ## Files Modified
 
-- [`gkc/item_creator.py`](https://github.com/skybristol/gkc/blob/main/gkc/item_creator.py) - Core transformation logic
+- [`gkc/bottler.py`](https://github.com/skybristol/gkc/blob/main/gkc/bottler.py) - Core transformation logic
 - [Date/Time Handling](../date_time_handling.md) - Comprehensive documentation
 - `examples/date_handling_test.py` - Test suite (new)
 - `examples/README.md` - Updated with date handling example
@@ -125,7 +125,7 @@ Created comprehensive test suite (`examples/date_handling_test.py`) verifying:
 ✅ Year-month: `"2005-01"` → `+2005-01-00T00:00:00Z` (precision 10)  
 ✅ Full date: `"2005-01-15"` → `+2005-01-15T00:00:00Z` (precision 11)  
 ✅ Explicit precision override works correctly  
-✅ Integration with PropertyMapper and qualifiers  
+✅ Integration with Distillate and qualifiers  
 ✅ Multiple date formats in mapping configurations  
 
 ## Usage Examples

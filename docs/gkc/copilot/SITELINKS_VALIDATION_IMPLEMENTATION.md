@@ -126,7 +126,7 @@ df_clean = df[df["wikipedia_valid"].notna()]
     - Filtering sitelinks dictionaries
     - DataFrame workflow integration
     - Advanced validation settings
-    - PropertyMapper integration
+    - Distillate integration
 
 - **`examples/README.md`**
   - Added sitelinks_validation_example.py section
@@ -175,11 +175,11 @@ All tests passed successfully.
 
 The validation module is now available for:
 - Standalone CSV data cleaning workflows
-- Integration into ItemCreator validation (future)
+- Integration into submission workflow validation (future)
 - Pre-submission batch validation
 - Custom validation pipelines
 
 Users can now validate sitelinks at any stage:
 1. **Before transformation** - Clean CSV data
 2. **After transformation** - Filter Wikidata JSON
-3. **During creation** - Future ItemCreator integration
+3. **During creation** - Future submission workflow integration

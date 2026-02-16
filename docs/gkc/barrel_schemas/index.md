@@ -44,7 +44,7 @@ OSM uses tagging schemes documented in the OSM wiki. Tags have conventions, valu
 
 A **Barrel Recipe** transforms data from the Unified Still Schema to a specific Barrel Schema's format. The Cooperage provides tools to build these recipes:
 
-- **Wikidata Barrel Recipe Builder** - Generates transformation specs from EntitySchemas (formerly ClaimsMapBuilder)
+- **Wikidata Barrel Recipe Builder** - Generates transformation specs from EntitySchemas
 - **Commons Barrel Recipe Builder** - Coming soon
 - **Wikipedia Barrel Recipe Builder** - Coming soon  
 - **OSM Barrel Recipe Builder** - Coming soon

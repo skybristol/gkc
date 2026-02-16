@@ -41,19 +41,19 @@ Fixtures are automatically available via pytest fixtures defined in `conftest.py
 ```python
 def test_with_fixtures(schema_file, valid_rdf_file):
     """Test using fixture file paths."""
-    validator = ShExValidator(
+    validator = SpiritSafeValidator(
         schema_file=str(schema_file),
         rdf_file=str(valid_rdf_file)
     )
-    validator.validate()
+    validator.check()
     assert validator.is_valid()
 
 def test_with_loaded_data(schema_text, valid_rdf_text):
     """Test using loaded fixture content."""
-    validator = ShExValidator(
+    validator = SpiritSafeValidator(
         schema_text=schema_text,
         rdf_text=valid_rdf_text
     )
-    validator.validate()
+    validator.check()
     assert validator.is_valid()
 ```

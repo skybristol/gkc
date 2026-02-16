@@ -106,12 +106,12 @@ Convenience function to validate and filter a sitelinks dictionary.
 
 **Example:**
 ```python
-from gkc.item_creator import PropertyMapper
+from gkc.bottler import Distillate
 from gkc import validate_sitelink_dict
 
 # Get sitelinks from transformation
-mapper = PropertyMapper.from_file("mapping.json")
-wikidata_json = mapper.transform_to_wikidata(record)
+distillate = Distillate.from_file("mapping.json")
+wikidata_json = distillate.transform_to_wikidata(record)
 sitelinks = wikidata_json.get('sitelinks', {})
 
 # Validate and filter
@@ -251,12 +251,12 @@ print(f"Kept {len(df_clean)}/{len(df)} records with valid Wikipedia pages")
 ### Workflow 2: Validate After Transformation
 
 ```python
-from gkc.item_creator import PropertyMapper
+from gkc.bottler import Distillate
 from gkc import validate_sitelink_dict
 
 # Transform record
-mapper = PropertyMapper.from_file("mapping.json")
-wikidata_json = mapper.transform_to_wikidata(record)
+distillate = Distillate.from_file("mapping.json")
+wikidata_json = distillate.transform_to_wikidata(record)
 
 # Extract and validate sitelinks
 sitelinks = wikidata_json.get('sitelinks', {})
@@ -357,7 +357,7 @@ results = validator.validate_sitelinks(sitelinks, delay_between_checks=0)
 ```python
 import pandas as pd
 from gkc import SitelinkValidator, WikiverseAuth
-from gkc.item_creator import PropertyMapper, ItemCreator
+from gkc.bottler import Distillate
 
 # 1. Load and validate source data
 df = pd.read_csv("tribes.csv")
@@ -369,14 +369,14 @@ df['wiki_valid'] = df['wikipedia_en'].apply(
 )
 
 # 2. Transform to Wikidata JSON
-mapper = PropertyMapper.from_file("mapping.json")
+distillate = Distillate.from_file("mapping.json")
 auth = WikiverseAuth()
-creator = ItemCreator(auth=auth, mapper=mapper)
+_ = auth
 
 # 3. Process records with validation
 for idx, record in df.iterrows():
     # Transform
-    wikidata_json = mapper.transform_to_wikidata(record)
+    wikidata_json = distillate.transform_to_wikidata(record)
     
     # Validate sitelinks
     sitelinks = wikidata_json.get('sitelinks', {})
@@ -385,11 +385,7 @@ for idx, record in df.iterrows():
         wikidata_json['sitelinks'] = valid_sitelinks
     
     # Create item (now safe from sitelink errors)
-    try:
-        qid = creator._submit_to_wikidata(wikidata_json)
-        print(f"✓ Created {qid}")
-    except Exception as e:
-        print(f"✗ Failed: {e}")
+    # Submit with your own Wikidata client here.
 ```
 
 ## See Also

@@ -85,9 +85,11 @@ nav:
       - Co-development Notes:
         - Overview: gkc/copilot/index.md
         - CI/CD Verification: gkc/copilot/CI_CD_VERIFICATION.md
+        - Constraint Processing Decision: gkc/copilot/PROPERTY_CONSTRAINTS.md
         - Date/Time Enhancement: gkc/copilot/DATE_TIME_ENHANCEMENT.md
         - Sitelinks Implementation: gkc/copilot/SITELINKS_IMPLEMENTATION.md
         - Sitelinks Validation: gkc/copilot/SITELINKS_VALIDATION_IMPLEMENTATION.md
         - SPARQL Implementation: gkc/copilot/SPARQL_IMPLEMENTATION.md
         - SPARQL Complete: gkc/copilot/SPARQL_IMPLEMENTATION_COMPLETE.md
+        - Property Constraints: gkc/copilot/PROPERTY_CONSTRAINTS.md
     - API Reference: gkc/api/index.md
