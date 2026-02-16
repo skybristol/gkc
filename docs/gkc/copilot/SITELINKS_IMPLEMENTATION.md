@@ -5,9 +5,9 @@ Added comprehensive sitelinks support to the GKC mapping and transformation syst
 
 ## Changes Made
 
-### 1. Core Implementation (`gkc/item_creator.py`)
+### 1. Core Implementation (`gkc/bottler.py`)
 
-#### `PropertyMapper.transform_to_wikidata()`
+#### `Distillate.transform_to_wikidata()`
 - Added `"sitelinks": {}` to the item structure
 - Implemented sitelinks processing loop after descriptions and before claims
 - Features:
@@ -28,9 +28,9 @@ Added comprehensive sitelinks support to the GKC mapping and transformation syst
 }
 ```
 
-### 2. Mapping Builder (`gkc/mapping_builder.py`)
+### 2. Recipe Builder (`gkc/recipe.py`)
 
-#### `ClaimsMapBuilder.build_complete_mapping()`
+#### `RecipeBuilder.finalize_recipe()`
 - Added default sitelinks section to generated mappings
 - Includes English Wikipedia (`enwiki`) as example
 - Updated notes with sitelinks guidance
@@ -66,7 +66,7 @@ Comprehensive documentation covering:
 - Empty value handling
 - API submission notes
 - Validation guidance
-- Auto-generation with ClaimsMapBuilder
+- Auto-generation with RecipeBuilder
 - Troubleshooting tips
 
 #### Updated: `examples/README.md`
@@ -122,7 +122,7 @@ Verified with `examples/sitelinks_example.py`:
 ## Usage Example
 
 ```python
-from gkc.item_creator import PropertyMapper
+from gkc.bottler import Distillate
 
 # Configure mapping with sitelinks
 mapping_config = {
@@ -139,8 +139,8 @@ mapping_config = {
     }
 }
 
-mapper = PropertyMapper(mapping_config)
-item_json = mapper.transform_to_wikidata({
+distillate = Distillate(mapping_config)
+item_json = distillate.transform_to_wikidata({
     "name": "Example",
     "wikipedia_title": "Example Article"
 })
@@ -180,8 +180,8 @@ The generated sitelinks structure is fully compatible with Wikidata's `wbeditent
 
 ## Files Modified
 
-- [`gkc/item_creator.py`](https://github.com/skybristol/gkc/blob/main/gkc/item_creator.py) - Core transformation logic
-- [`gkc/mapping_builder.py`](https://github.com/skybristol/gkc/blob/main/gkc/mapping_builder.py) - Auto-generation support
+- [`gkc/bottler.py`](https://github.com/skybristol/gkc/blob/main/gkc/bottler.py) - Core transformation logic
+- [`gkc/recipe.py`](https://github.com/skybristol/gkc/blob/main/gkc/recipe.py) - Auto-generation support
 - `docs/sitelinks_usage.md` - Comprehensive documentation (new)
 - `examples/sitelinks_example.py` - Working examples (new)
 - `examples/csv_to_wikidata_dryrun.ipynb` - Interactive demo updates

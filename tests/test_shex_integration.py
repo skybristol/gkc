@@ -11,7 +11,7 @@ from pathlib import Path
 
 import pytest
 
-from gkc import ShExValidator
+from gkc import SpiritSafeValidator
 
 
 class TestShExIntegration:
@@ -31,13 +31,13 @@ class TestShExIntegration:
             pytest.skip("Test data files not found. See tests/fixtures/README.md")
 
         # Create validator using file paths from fixtures
-        validator = ShExValidator(
+        validator = SpiritSafeValidator(
             schema_file=str(organism_schema_file),
             rdf_file=str(valid_organism_rdf_file),
         )
 
         # Perform validation
-        result = validator.validate()
+        result = validator.check()
 
         # Verify the validation result
         assert result.is_valid()
@@ -56,12 +56,12 @@ class TestShExIntegration:
             pytest.skip("Test data files not found. See tests/fixtures/README.md")
 
         # Create validator using text loaded by fixtures
-        validator = ShExValidator(
+        validator = SpiritSafeValidator(
             schema_text=organism_schema_text,
             rdf_text=valid_organism_rdf_text,
         )
 
-        result = validator.validate()
+        result = validator.check()
         assert result.is_valid()
 
     def test_invalid_organism_fails_validation(
@@ -77,12 +77,12 @@ class TestShExIntegration:
         if not organism_schema_file.exists() or not invalid_organism_rdf_file.exists():
             pytest.skip("Test data files not found. See tests/fixtures/README.md")
 
-        validator = ShExValidator(
+        validator = SpiritSafeValidator(
             schema_file=str(organism_schema_file),
             rdf_file=str(invalid_organism_rdf_file),
         )
 
-        result = validator.validate()
+        result = validator.check()
 
         # This should fail validation - Q736809 is a city,
         # not a federally recognized tribe
@@ -102,11 +102,11 @@ class TestShExIntegration:
             pytest.skip("Test data files not found. See tests/fixtures/README.md")
 
         # Create validator and load data step by step
-        validator = ShExValidator(
+        validator = SpiritSafeValidator(
             schema_file=str(organism_schema_file),
             rdf_file=str(valid_organism_rdf_file),
         )
-        validator.load_schema()
+        validator.load_specification()
         validator.load_rdf()
 
         result = validator.evaluate()
@@ -133,18 +133,18 @@ class TestShExIntegration:
             pytest.skip("Test data files not found. See tests/fixtures/README.md")
 
         # Validate using file paths
-        validator_file = ShExValidator(
+        validator_file = SpiritSafeValidator(
             schema_file=str(organism_schema_file),
             rdf_file=str(valid_organism_rdf_file),
         )
-        result_file = validator_file.validate()
+        result_file = validator_file.check()
 
         # Validate using loaded text
-        validator_text = ShExValidator(
+        validator_text = SpiritSafeValidator(
             schema_text=organism_schema_text,
             rdf_text=valid_organism_rdf_text,
         )
-        result_text = validator_text.validate()
+        result_text = validator_text.check()
 
         # Results should be the same
         assert result_file.is_valid() == result_text.is_valid()
@@ -165,12 +165,12 @@ class TestFetchFromWikidata:
         """
         # Use a known valid tribe: Wanapum (Q14708404)
         # against tribe schema (E502)
-        validator = ShExValidator(
+        validator = SpiritSafeValidator(
             eid="E502",  # Tribe schema
             qid="Q14708404",  # Wanapum tribe
         )
 
-        result = validator.validate()
+        result = validator.check()
 
         # Note: This may fail if the Wikidata entity or schema changes
         # or if there are network issues
@@ -199,12 +199,12 @@ class TestFetchFromWikidata:
         rdf_file.write_text(rdf_text)
 
         # Now validate using the saved files
-        validator = ShExValidator(
+        validator = SpiritSafeValidator(
             schema_file=str(schema_file),
             rdf_file=str(rdf_file),
         )
 
-        result = validator.validate()
+        result = validator.check()
         assert result.is_valid()
 
         # Files are now in tmp_path and can be copied to tests/fixtures/

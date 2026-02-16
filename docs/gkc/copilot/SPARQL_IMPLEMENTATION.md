@@ -188,8 +188,8 @@ results = executor.query(url)
 ## Integration Points
 
 The SPARQL module integrates with existing GKC modules:
-- Can complement [`gkc.wd`](https://github.com/skybristol/gkc/blob/main/gkc/wd.py) for low-level entity access
-- Works with [`gkc.mapping_builder`](https://github.com/skybristol/gkc/blob/main/gkc/mapping_builder.py) for property queries
+- Can complement [`gkc.cooperage`](https://github.com/skybristol/gkc/blob/main/gkc/cooperage.py) for low-level entity access
+- Works with [`gkc.recipe`](https://github.com/skybristol/gkc/blob/main/gkc/recipe.py) for property queries
 - Provides alternative query method compared to direct API calls
 
 ## Next Steps (Optional)

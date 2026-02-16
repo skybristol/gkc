@@ -52,11 +52,11 @@ from gkc import WikipediaRecipeBuilder
 builder = WikipediaRecipeBuilder(template="Infobox university")
 
 # Generate Barrel Recipe
-recipe = builder.build_complete_mapping()
+recipe = builder.finalize_recipe()
 
-# Use with PropertyMapper
-mapper = PropertyMapper.from_wikipedia_builder(builder)
-infobox_wikitext = mapper.transform_to_infobox(still_schema_data)
+# Use with Distillate
+distillate = Distillate.from_wikipedia_builder(builder)
+infobox_wikitext = distillate.transform_to_infobox(still_schema_data)
 ```
 
 ## Expected Features

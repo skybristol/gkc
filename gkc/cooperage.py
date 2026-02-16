@@ -94,6 +94,16 @@ def fetch_schema_specification(eid: str, user_agent: Optional[str] = None) -> st
     if not eid:
         raise ValueError("EntitySchema ID (eid) is required")
 
+    # Prefer the EntitySchema JSON content (action=raw), which includes schemaText
+    try:
+        schema_json = fetch_entity_schema_json(eid, user_agent=user_agent)
+        schema_text = schema_json.get("schemaText")
+        if isinstance(schema_text, str) and schema_text.strip():
+            return schema_text
+    except CooperageError:
+        # Fall back to the Special:EntitySchemaText endpoint
+        pass
+
     url = f"https://www.wikidata.org/wiki/Special:EntitySchemaText/{eid}"
     headers = {"User-Agent": user_agent or DEFAULT_USER_AGENT}
 
@@ -104,6 +114,125 @@ def fetch_schema_specification(eid: str, user_agent: Optional[str] = None) -> st
     except requests.RequestException as e:
         raise CooperageError(
             f"Failed to fetch EntitySchema {eid} from {url}: {str(e)}"
+        ) from e
+
+
+def fetch_entity_schema_json(eid: str, user_agent: Optional[str] = None) -> dict:
+    """
+    Fetch the JSON content for a Wikidata EntitySchema.
+
+    Uses the MediaWiki raw action endpoint to retrieve the full EntitySchema
+    JSON, which includes labels, descriptions, aliases, and schemaText.
+
+    Args:
+        eid: EntitySchema ID (e.g., 'E502')
+        user_agent: Custom user agent string
+
+    Returns:
+        Parsed JSON dictionary for the EntitySchema
+
+    Raises:
+        CooperageError: If fetch or parsing fails
+    """
+    if not eid:
+        raise ValueError("EntitySchema ID (eid) is required")
+
+    url = f"https://www.wikidata.org/wiki/EntitySchema:{eid}?action=raw"
+    headers = {"User-Agent": user_agent or DEFAULT_USER_AGENT}
+
+    try:
+        response = requests.get(url, headers=headers, timeout=30)
+        response.raise_for_status()
+        data = response.json()
+        if not isinstance(data, dict):
+            raise CooperageError(f"Unexpected EntitySchema JSON content for {eid}")
+        return data
+    except requests.RequestException as e:
+        raise CooperageError(
+            f"Failed to fetch EntitySchema JSON for {eid} from {url}: {str(e)}"
+        ) from e
+    except ValueError as e:
+        raise CooperageError(
+            f"Failed to parse EntitySchema JSON for {eid}: {str(e)}"
+        ) from e
+
+
+def fetch_entity_schema_metadata(
+    eid: str, language: str = "en", user_agent: Optional[str] = None
+) -> dict:
+    """
+    Fetch metadata for a Wikidata EntitySchema.
+
+    Retrieves label, description, and aliases for an EntitySchema via the
+    Wikidata JSON API.
+
+    Args:
+        eid: EntitySchema ID (e.g., 'E502')
+        language: Language code (default: 'en')
+        user_agent: Custom user agent string
+
+    Returns:
+        Dictionary with keys:
+        - label: EntitySchema label (str, empty if not present)
+        - description: EntitySchema description (str, empty if not present)
+        - aliases: List of alias strings (empty list if none)
+        - source: Full URL to the EntitySchema on Wikidata
+
+    Raises:
+        CooperageError: If fetch fails
+
+    Example:
+        >>> metadata = fetch_entity_schema_metadata('E502')
+        >>> print(metadata['label'])
+        >>> print(metadata['source'])
+    """
+    if not eid:
+        raise ValueError("EntitySchema ID (eid) is required")
+
+    def _extract_lang_value(value):
+        if isinstance(value, dict):
+            return value.get("value", "")
+        if isinstance(value, str):
+            return value
+        return ""
+
+    def _extract_alias_list(value):
+        if isinstance(value, list):
+            alias_list = []
+            for item in value:
+                if isinstance(item, dict):
+                    alias_list.append(item.get("value", ""))
+                elif isinstance(item, str):
+                    alias_list.append(item)
+            return [a for a in alias_list if a]
+        if isinstance(value, str):
+            return [value]
+        return []
+
+    try:
+        data = fetch_entity_schema_json(eid, user_agent=user_agent)
+
+        labels = data.get("labels", {})
+        descriptions = data.get("descriptions", {})
+        aliases = data.get("aliases", {})
+
+        label = _extract_lang_value(labels.get(language, ""))
+        description = _extract_lang_value(descriptions.get(language, ""))
+        if isinstance(aliases, dict):
+            alias_list = _extract_alias_list(aliases.get(language, []))
+        else:
+            alias_list = _extract_alias_list(aliases)
+
+        return {
+            "label": label,
+            "description": description,
+            "aliases": alias_list,
+            "source": f"https://www.wikidata.org/wiki/EntitySchema:{eid}",
+        }
+
+    except CooperageError as e:
+        raise CooperageError(
+            f"Failed to fetch metadata for EntitySchema {eid}: {str(e)}"
         ) from e
 
 

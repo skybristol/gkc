@@ -43,11 +43,11 @@ from gkc import CommonsRecipeBuilder
 builder = CommonsRecipeBuilder(category="Images of scientific specimens")
 
 # Generate Barrel Recipe
-recipe = builder.build_complete_mapping()
+recipe = builder.finalize_recipe()
 
-# Use with PropertyMapper
-mapper = PropertyMapper.from_commons_builder(builder)
-commons_data = mapper.transform_to_commons(still_schema_data)
+# Use with Distillate
+distillate = Distillate.from_commons_builder(builder)
+commons_data = distillate.transform_to_commons(still_schema_data)
 ```
 
 ## Expected Features

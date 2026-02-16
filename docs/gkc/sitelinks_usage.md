@@ -193,10 +193,10 @@ The sitelinks processor automatically:
 ## Usage in Code
 
 ```python
-from gkc.item_creator import PropertyMapper
+from gkc.bottler import Distillate
 
 # Load mapping with sitelinks
-mapper = PropertyMapper.from_file("mapping.json")
+distillate = Distillate.from_file("mapping.json")
 
 # Transform source record
 source_record = {
@@ -204,7 +204,7 @@ source_record = {
     "wikipedia_title": "Example Item"
 }
 
-item_json = mapper.transform_to_wikidata(source_record)
+item_json = distillate.transform_to_wikidata(source_record)
 
 # item_json now includes:
 # {
@@ -239,14 +239,14 @@ Before submitting to Wikidata:
 
 ## Auto-Generation
 
-When using `ClaimsMapBuilder`, sitelinks configuration is automatically added:
+When using `RecipeBuilder`, sitelinks configuration is automatically added:
 
 ```python
-from gkc import ClaimsMapBuilder
-from gkc.item_creator import PropertyMapper
+from gkc import RecipeBuilder
+from gkc.bottler import Distillate
 
-builder = ClaimsMapBuilder(eid="E502")
-mapper = PropertyMapper.from_claims_builder(builder, entity_type="Q7840353")
+builder = RecipeBuilder(eid="E502")
+distillate = Distillate.from_recipe(builder, entity_type="Q7840353")
 
 # Generated mapping includes stub sitelinks section
 # Edit source_field values to match your data

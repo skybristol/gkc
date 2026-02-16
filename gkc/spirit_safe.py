@@ -146,13 +146,6 @@ class SpiritSafeValidator:
 
         return self
 
-    def load_schema(self) -> "SpiritSafeValidator":
-        """
-        Deprecated: Use load_specification() instead.
-        For backwards compatibility during migration.
-        """
-        return self.load_specification()
-
     def load_rdf(self) -> "SpiritSafeValidator":
         """
         Load RDF data from configured source.
@@ -257,13 +250,6 @@ class SpiritSafeValidator:
         self.load_rdf()
         self.evaluate()
         return self
-
-    def validate(self) -> "SpiritSafeValidator":
-        """
-        Deprecated: Use check() instead.
-        For backwards compatibility during migration.
-        """
-        return self.check()
 
     def is_valid(self) -> bool:
         """
