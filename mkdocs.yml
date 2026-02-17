@@ -67,13 +67,14 @@ nav:
     - Schema Forward Approach:
       - Mapping Format Migration: gkc/mapping_format_migration.md
     - Wikidata:
-      - Item Creation Approach: gkc/item_creation_approach.md
-      - Claims Map Builder: gkc/claims_map_builder.md
-      - Reference/Qualifier Patterns: gkc/reference_qualifier_patterns.md
-      - Date/Time Handling: gkc/date_time_handling.md
+      - Overview: gkc/wikidata/index.md
+      - Item Creation Approach: gkc/wikidata/item_creation_approach.md
+      - Claims Map Builder: gkc/wikidata/claims_map_builder.md
+      - Reference/Qualifier Patterns: gkc/wikidata/reference_qualifier_patterns.md
+      - Date/Time Handling: gkc/wikidata/date_time_handling.md
       - Sitelinks:
-        - Sitelinks Usage: gkc/sitelinks_usage.md
-        - Sitelinks Validation: gkc/sitelinks_validation.md
+        - Sitelinks Usage: gkc/wikidata/sitelinks_usage.md
+        - Sitelinks Validation: gkc/wikidata/sitelinks_validation.md
     - Utilities and Tools:
       - SPARQL Queries: gkc/sparql_queries.md
       - SPARQL Quick Reference: gkc/sparql_quick_reference.md
