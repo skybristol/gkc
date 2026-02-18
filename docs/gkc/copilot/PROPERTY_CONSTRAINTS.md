@@ -41,36 +41,27 @@ Example issue: A format constraint on P856 might have multiple regex patterns fo
 
 ## Decision
 
-**Constraint processing is now OPTIONAL and DISABLED by default.**
+**Constraint processing has been removed from the active codebase.**
 
 ### Implementation
 
-Added `process_constraints` parameter to both `RecipeBuilder` and `EntityCatalog`:
+Entity metadata now focuses on labels, descriptions, and aliases by default,
+with optional property-only details (datatype, formatter URL) controlled by
+`fetch_property_details`:
 
 ```python
-# Default: constraints are NOT fetched (simpler, faster SPARQL queries)
-builder = RecipeBuilder(eid="E502")
+# Default: metadata only (labels, descriptions, aliases)
+catalog = EntityCatalog()
 
-# Explicit opt-in: constraints ARE fetched
-builder = RecipeBuilder(eid="E502", process_constraints=True)
+# Optional: include property datatype + formatter URL
+catalog = EntityCatalog(fetch_property_details=True)
 ```
-
-When `process_constraints=False` (default):
-- SPARQL query is simplified to fetch only essential metadata (labels, descriptions, datatypes, formatter URLs)
-- No constraint statements (P2302) are fetched from Wikidata
-- Property ledger entries have empty constraint lists
-- Query execution is faster and results are smaller
-
-When `process_constraints=True`:
-- Full SPARQL query fetches all constraint types from `USEFUL_CONSTRAINT_TYPES`
-- Constraint ledger processing is available via `PropertyLedgerEntry.get_constraint_ledger()`
-- Format constraints (Q21502404) with regex patterns are processed into `ConstraintLedgerEntry` objects
 
 ## Rationale
 
-### Why Keep the Functionality?
+### Why Remove the Functionality?
 
-While constraints don't serve our *current* use case (data transformation), they may be valuable in the *future* for:
+While constraints might be valuable in the *future* for:
 
 1. **Contributor Notifications**: If we build tooling to notify contributors about data quality issues (similar to Wikidata bots)
 2. **Quality Dashboards**: Showing constraint violations in administrative interfaces
@@ -80,44 +71,22 @@ While constraints don't serve our *current* use case (data transformation), they
 
 1. **Performance**: Fetching constraints significantly increases SPARQL query complexity and result size
 2. **Irrelevance**: Most barrel recipe use cases don't need constraint validation
-3. **Clarity**: Makes it explicit when constraint processing is needed vs. when it's just overhead
+3. **Clarity**: Keeping the API focused on essential metadata keeps usage simple
 
 ### Query Complexity Comparison
 
-**Without constraints (default)**:
+**Current query pattern (default)**:
 ```sparql
-SELECT DISTINCT ?entityId ?label ?description ?datatype ?formatterUrl
-WHERE {
-    VALUES ?entityId { wd:P31 wd:P856 ... }
-    OPTIONAL { ?entityId wikibase:propertyType ?datatype . }
-    OPTIONAL { ?entityId schema:description ?description. FILTER(LANG(?description) = "en") }
-    OPTIONAL { ?entityId wdt:P1630 ?formatterUrl . }
-    SERVICE wikibase:label { bd:serviceParam wikibase:language "en". }
-}
-```
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
+PREFIX schema: <http://schema.org/>
 
-**With constraints (opt-in)**:
-```sparql
-SELECT DISTINCT ?entityId ?label ?description ?datatype ?formatterUrl
-               ?constraintType ?constraintTypeLabel
-               ?constraintScope ?constraintException ?constraintNote 
-               ?constraintRegex ?constraintRegexAlt
+SELECT DISTINCT ?entityId ?label ?labelLang ?alias ?aliasLang ?desc ?descLang
 WHERE {
     VALUES ?entityId { wd:P31 wd:P856 ... }
-    OPTIONAL { ?entityId wikibase:propertyType ?datatype . }
-    OPTIONAL { ?entityId schema:description ?description. FILTER(LANG(?description) = "en") }
-    OPTIONAL { ?entityId wdt:P1630 ?formatterUrl . }
-    OPTIONAL {
-        ?entityId p:P2302 ?constraintStatement.
-        ?constraintStatement ps:P2302 ?constraintType.
-        FILTER(?constraintType = wd:Q21502404 || ?constraintType = wd:Q52558054 || ...)
-        OPTIONAL { ?constraintStatement pq:P2308 ?constraintScope . }
-        OPTIONAL { ?constraintStatement pq:P2303 ?constraintException . }
-        OPTIONAL { ?constraintStatement pq:P1004 ?constraintNote . }
-        OPTIONAL { ?constraintStatement pq:P1793 ?constraintRegex . }
-        OPTIONAL { ?constraintStatement pq:P2306 ?constraintRegexAlt . }
-    }
-    SERVICE wikibase:label { bd:serviceParam wikibase:language "en". }
+    OPTIONAL { ?entityId rdfs:label ?label . BIND(LANG(?label) AS ?labelLang) }
+    OPTIONAL { ?entityId skos:altLabel ?alias . BIND(LANG(?alias) AS ?aliasLang) }
+    OPTIONAL { ?entityId schema:description ?desc . BIND(LANG(?desc) AS ?descLang) }
 }
 ```
 
@@ -132,13 +101,12 @@ WHERE {
 
 ### Negative
 
-- Additional parameter adds slight API complexity
-- Constraint processing code remains in codebase even though rarely used
-- Documentation must explain when to enable constraints
+- Constraint data is no longer directly available via the recipe builder
 
 ### Migration Impact
 
-Since this is a new feature and constraints were never used in production barrel recipes, there is NO breaking change. Existing code continues to work as-is, and new code gets simpler defaults.
+Constraint-related APIs were removed. Any callers using `process_constraints` or
+constraint-specific methods must migrate to the new metadata-only approach.
 
 ## Lessons Learned
 
@@ -150,9 +118,6 @@ Since this is a new feature and constraints were never used in production barrel
 ## Related Documentation
 
 - [Property Constraints on Wikidata](https://www.wikidata.org/wiki/Help:Property_constraints_portal)
-- **ConstraintLedgerEntry class** - Processing architecture for constraints (see `gkc/recipe.py`)
-- **PropertyLedgerEntry.get_constraint_ledger()** - Constraint processing method (see `gkc/recipe.py`)
-- **USEFUL_CONSTRAINT_TYPES** - Filtered constraint types (see `gkc/recipe.py`)
 
 ## Future Considerations
 
@@ -165,7 +130,7 @@ If we implement contributor notifications or quality dashboards:
 
 ## Status
 
-**IMPLEMENTED** - `process_constraints` parameter added to `RecipeBuilder` and `EntityCatalog`, defaulting to `False`.
+**REMOVED** - Constraint processing was removed in favor of simplified metadata fetching.
 
 ## Contributors
 

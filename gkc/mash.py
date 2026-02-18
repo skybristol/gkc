@@ -59,13 +59,13 @@ class DataTemplate(Protocol):
 
 
 def fetch_property_labels(
-    property_ids: list[str], language: str = "en"
+    property_ids: list[str], language: Optional[str] = None
 ) -> dict[str, str]:
     """Fetch human-readable labels for Wikidata properties using EntityCatalog.
 
     Args:
         property_ids: List of property IDs (e.g., ['P31', 'P21']).
-        language: Language code for labels (default: 'en').
+        language: Language code for labels (defaults to package configuration).
 
     Returns:
         Dict mapping property IDs to their labels (e.g., {'P31': 'instance of'}).
@@ -74,9 +74,19 @@ def fetch_property_labels(
     """
     if not property_ids:
         return {}
+    if language is None:
+        import gkc
+
+        languages = gkc.get_languages()
+        if languages == "all":
+            language = "en"
+        elif isinstance(languages, str):
+            language = languages
+        else:
+            language = languages[0] if languages else "en"
     catalog = EntityCatalog()
-    results = catalog.fetch_entities(property_ids, descriptions=False)
-    return {pid: data["label"] for pid, data in results.items() if "label" in data}
+    results = catalog.fetch_entities(property_ids)
+    return {pid: entry.get_label(language) for pid, entry in results.items()}
 
 
 @dataclass

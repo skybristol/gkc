@@ -55,12 +55,7 @@ from gkc.cooperage import (
 )
 
 # Recipe (Wikidata Barrel Recipe Builder)
-from gkc.recipe import (
-    PropertyCatalog,
-    PropertyLedgerEntry,
-    RecipeBuilder,
-    SpecificationExtractor,
-)
+from gkc.recipe import PropertyLedgerEntry, RecipeBuilder, SpecificationExtractor
 
 # Sitelinks (cross-reference validation)
 from gkc.sitelinks import (
@@ -137,7 +132,6 @@ __all__ = [
     "get_entity_uri",
     "validate_entity_reference",
     # Recipe (new names)
-    "PropertyCatalog",
     "PropertyLedgerEntry",
     "RecipeBuilder",
     "SpecificationExtractor",

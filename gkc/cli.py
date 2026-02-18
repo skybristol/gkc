@@ -10,6 +10,7 @@ import json
 import sys
 from typing import Any, Optional
 
+import gkc
 from gkc.auth import AuthenticationError, OpenStreetMapAuth, WikiverseAuth
 from gkc.mash import WikidataLoader
 from gkc.mash_formatters import JSONFormatter, QSV1Formatter
@@ -352,13 +353,17 @@ def _handle_mash_qid(args: argparse.Namespace) -> dict[str, Any]:
                 if entity_ids:
                     try:
                         catalog = EntityCatalog()
-                        results = catalog.fetch_entities(
-                            list(entity_ids), descriptions=False
-                        )
+                        languages = gkc.get_languages()
+                        if languages == "all":
+                            language = "en"
+                        elif isinstance(languages, str):
+                            language = languages
+                        else:
+                            language = languages[0] if languages else "en"
+                        results = catalog.fetch_entities(list(entity_ids))
                         entity_labels = {
-                            eid: data["label"]
-                            for eid, data in results.items()
-                            if "label" in data
+                            eid: entry.get_label(language)
+                            for eid, entry in results.items()
                         }
                     except Exception as exc:
                         raise CLIError(
