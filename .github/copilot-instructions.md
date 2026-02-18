@@ -1,48 +1,78 @@
 # Project Overview
 The GKC python package supports a data integration workflow that transforms raw data from various sources into linked open data distributed across systems like Wikidata, Wikimedia Commons, Wikipedia, and OpenStreetMap. The project uses a distillery metaphor to describe its architecture and processes.
 
-## Coding Style
+## Who's who
+- Architect: Sky
+- Engineer: Copilot (with oversight and guidance from Sky)
 
-- Use clear, descriptive names for classes, functions, and variables that reflect their purpose in the distillery workflow (e.g., Cooperage, RecipeBuilder, SpiritSafeValidator)
-- Write docstrings for all public classes and functions, including a "Plain meaning:" section to explain complex concepts in simple terms
-- Maintain consistency in terminology across code and documentation, especially regarding the Barrel Schema/Recipe metaphor
-- When refactoring or renaming, maintain backwards compatibility with old names as aliases and update tests to ensure both paths work
-- Use type hints for function signatures to improve readability and catch type-related issues early
-- Follow PEP 8 style guidelines for Python code formatting, and use Black for automatic formatting
-- Write modular code with single responsibility functions and classes to improve maintainability and testability
-- Include comments for any non-obvious logic or decisions, especially when implementing complex transformations or handling edge cases in data processing
+## Protocol
+- The architect will create issues in GitHub to outline specific tasks or features to be developed, along with any necessary context or requirements.
+- The architect will start work on an issue by creating a new branch.
+- The architect may ask the engineer to evaluate the issue by reading the issue description and any related documentation, and then writing a response comment in the GitHub issue with their understanding of the task and any questions or clarifications needed. (Note: GitHub issues and pull request comments are a primary channel for communication and documentation of design decisions in this project, so it's important to use them consistently and effectively.)
+- The architect will review the approach and provide feedback or additional guidance as needed with further comments in the GitHub issue before the engineer begins writing code.
+- The architect will ask the engineer to write code for the issue, and the engineer will write code in the branch created for that issue, following the guidance and requirements outlined in the issue description and any related documentation.
+- The engineer will write code that is clear, maintainable, and well-documented, following the coding style and architectural patterns established in the project.
+- The engineer will write tests for the code they create, ensuring that the code is robust and that functionality is verified.
+- The engineer will run tests frequently during development to catch issues early, and will use the provided pre-merge check script to run all CI checks locally to resolve as many issues as possible before handoff to the architect.
+- The engineer will include documentation in their workflow with both docstrings in the code and markdown files in the `/docs/gkc/` directory as appropriate.
+- The architect will review the code, tests, and documentation written by the engineer, providing feedback in the GitHub issue and requesting changes as needed to ensure that the code meets the project's standards for quality and maintainability.
+- Once the code is approved, the architect will merge the branch into the main codebase, and delete the branch.
 
-## File + Module Structure
-- Core package: `/gkc/` - Contains main modules for cooperage, recipe building, validation, and property catalog
-- Documentation: `/docs/gkc/` - MkDocs documentation with sections for pipeline overview, glossary, barrel schemas, and examples
-- Tests: `/tests/` - pytest test suite covering all public APIs and key functionality
-- Examples: `/docs/gkc/examples/` - Canonical user-facing examples in Jupyter notebooks, using real-world data to demonstrate package functionality
-- Temp directory: `/temp/` - Staging area for development artifacts, iterative examples, and draft documentation before moving to permanent locations
+### Code Quality Standards
+- The engineer will use the provided pre-merge check script frequently during development (after each major component, not just at the end)
+- The engineer will prioritize mypy type checking and aim for zero type errors in new code
+- Type annotations should be included in initial code, not added as an afterthought
+- The engineer will verify code imports and runs without syntax errors before committing
+- When writing new functions/classes, examine existing patterns in the codebase for consistency in typing and style
 
-## How Copilot should assist
-- When generating code, prioritize clarity and maintainability over cleverness or brevity
-- When writing documentation, focus on providing actionable instructions and concrete examples rather than generic advice
-- When refactoring, ensure that changes are well-documented and that backwards compatibility is maintained where appropriate
-- When working with structured data (e.g., RDF), use appropriate libraries and techniques rather than resorting to text parsing or regex, unless specifically instructed to do so
-- When generating examples, prefer Jupyter notebooks that set things up for the user to leverage real-world data to exercise the full functionality of the package
+### Development Workflow Checkpoint
+Before considering work complete:
+1. Run `./scripts/pre-merge-check.sh` and ensure all checks pass
+2. Do not commit code that produces mypy errors
+3. If type errors exist, investigate the root cause
 
-## Documentation rules
-- Write draft documentation for large architectural directions or complex concepts in the `/temp/` directory for review before moving to permanent locations
-- Use markdown formatting for all documentation, including docstrings and MkDocs content
-- Link to specific examples from the codebase when describing patterns or conventions rather than making something up that doesn't yet exist
-- Reference key files or directories that exemplify important patterns (e.g., `gkc/cooperage.py` for Barrel Schema management)
-- Avoid generic advice and focus on documenting the specific approaches and patterns used in this project
-- List build and test commands explicitly in the documentation, as agents will attempt to run these automatically
+### Escalation Checkpoints
+The engineer should escalate to the architect if any of these conditions are met:
 
-## Testing expectations
-- Use pytest for all testing, with a focus on testing public APIs and key functionality
-- Run tests frequently during development to catch issues early
-- Use the provided pre-merge check script to run all CI checks locally before committing or creating a pull request
-- Write tests for both new code and any refactored code to ensure that functionality is maintained and that backwards compatibility is preserved where appropriate
-- Generate coverage reports to identify untested areas and improve test coverage over time
+**1. Pre-Merge Check Failures (after each component):**
+- More than 10 mypy errors in new/modified code
+- More than 5 consecutive failed test runs on the same component
+- Ruff/Black failures that can't be resolved with auto-fix
+- *Action:* Stop, commit current state, and describe the issue in GitHub
 
-## Things copilot should avoid
-- Avoid making assumptions about project conventions or patterns that haven't been explicitly documented or exemplified in the codebase
-- Avoid making changes to Ipython notebooks in `docs/gkc/examples/` unless specifically instructed to do so, as these are being used by the lead developer to work through real-world data and provide examples for users
-- Avoid worrying about maintaining backwards compatibility with old names for classes and functions unless specifically instructed to do so, as the code is still highly experimental and we want to avoid cluttering it with legacy names
-- Avoid using rudimentary techniques like text parsing and regex when working with structured data formats like RDF, unless specifically instructed to do so, as there are appropriate libraries and techniques that should be used for these tasks to ensure robustness and maintainability
+**2. Complexity Growth:**
+- A task that was estimated as "small" is now touching >5 files
+- Need to refactor existing code extensively to support new code (suggests wrong approach)
+- Generated code is >1.5x the size of existing analogous code in the project
+- *Action:* Pause and review approach with architect before continuing
+
+**3. Iterative Failure Pattern:**
+- The same test fails for >3 attempts with different fixes
+- Same mypy error re-appears after being "fixed" in a different way
+- Fix for one issue creates errors in previously passing code
+- *Action:* This signals fundamental misunderstanding; escalate before proceeding
+
+**4. Type Safety Regression:**
+- Adding new code reduces the mypy pass rate of the module
+- Spreading `Any` types instead of improving specificity
+- Adding `# type: ignore` comments as a workaround
+- *Action:* Do not commit; investigate root cause with architect
+
+**5. Testing Coverage:**
+- New code has <60% test coverage
+- Tests pass but don't actually exercise new code paths
+- *Action:* Expand tests or escalate if coverage is legitimately difficult
+
+**6. Documentation Debt:**
+- New functions lack docstrings or have minimal ones
+- No API documentation added to `/docs/gkc/`
+- Type hints are unclear or use `Any` without explanation
+- *Action:* Complete documentation before marking as ready
+
+### Issue Design Guidelines (for Architect)
+Each issue should:
+- Have a single, clearly defined goal
+- List explicit success criteria (X tests pass, Y mypy errors resolved, etc.)
+- Include links to existing code patterns to follow
+- Specify which files/components will be modified
+- Estimate scope (touching N files suggests scope creep if it grows)

@@ -103,13 +103,13 @@ class PropertyLedgerEntry:
     def get_label(self, language: str = "en") -> str:
         """Get property label in specified language."""
         if language in self.labels:
-            return self.labels[language].get("value", self.property_id)
+            return str(self.labels[language].get("value", self.property_id))
         return self.property_id
 
     def get_description(self, language: str = "en") -> str:
         """Get property description in specified language."""
         if language in self.descriptions:
-            return self.descriptions[language].get("value", "")
+            return str(self.descriptions[language].get("value", ""))
         return ""
 
     def get_constraints(self) -> list:
@@ -191,13 +191,13 @@ class ItemLedgerEntry:
     def get_label(self, language: str = "en") -> str:
         """Get item label in specified language."""
         if language in self.labels:
-            return self.labels[language].get("value", self.item_id)
+            return str(self.labels[language].get("value", self.item_id))
         return self.item_id
 
     def get_description(self, language: str = "en") -> str:
         """Get item description in specified language."""
         if language in self.descriptions:
-            return self.descriptions[language].get("value", "")
+            return str(self.descriptions[language].get("value", ""))
         return ""
 
 
@@ -229,10 +229,10 @@ class SpecificationExtractor:
 
     def __init__(self, schema_text: str):
         self.schema_text = schema_text
-        self.properties = {}
-        self.shape_comments = {}
-        self.instance_of_constraints = []
-        self.subclass_of_constraints = []
+        self.properties: dict[str, dict] = {}
+        self.shape_comments: dict[str, str] = {}
+        self.instance_of_constraints: list[str] = []
+        self.subclass_of_constraints: list[str] = []
         self.start_shape_id: Optional[str] = None
 
     def extract(self) -> dict[str, dict]:
@@ -679,9 +679,9 @@ class SpecificationExtractor:
                         self.properties[prop_id]["shapes"] = []
                     self.properties[prop_id]["shapes"].append(shape_name)
 
-    def _extract_cardinality(self, line: str) -> dict:
+    def _extract_cardinality(self, line: str) -> dict[str, Any]:
         """Extract cardinality information from a property line."""
-        cardinality = {"min": 1, "max": 1}  # Default: exactly one
+        cardinality: dict[str, Any] = {"min": 1, "max": 1}  # Default: exactly one
 
         # Check for cardinality indicators
         if line.strip().endswith(";"):
@@ -755,8 +755,54 @@ class EntityCatalog:
         self.user_agent = user_agent or DEFAULT_USER_AGENT
         self.max_entities = max_entities
         self.process_constraints = process_constraints
-        self._property_cache = {}
-        self._item_cache = {}
+        self._property_cache: dict[str, PropertyLedgerEntry] = {}
+        self._item_cache: dict[str, ItemLedgerEntry] = {}
+
+    def fetch_entities(
+        self, entity_ids: list[str], descriptions: bool = False
+    ) -> dict[str, dict[str, str]]:
+        """
+        Fetch labels (and optionally descriptions) for properties or items.
+
+        Args:
+            entity_ids: List of entity IDs (e.g., ['P31', 'Q5'])
+            descriptions: Whether to include descriptions (default: False)
+
+        Returns:
+            Dictionary mapping entity IDs to dicts with 'label'
+            (and 'description' if requested)
+
+        Example:
+            >>> catalog = EntityCatalog()
+            >>> results = catalog.fetch_entities(['P31', 'P21'], descriptions=False)
+            >>> results
+            {'P31': {'label': 'instance of'}, 'P21': {'label': 'sex or gender'}}
+        """
+        # Separate properties and items
+        prop_ids = [eid for eid in entity_ids if eid.startswith("P")]
+        item_ids = [eid for eid in entity_ids if eid.startswith("Q")]
+
+        result: dict[str, dict[str, str]] = {}
+
+        # Fetch properties
+        if prop_ids:
+            props = self.fetch_properties(prop_ids)
+            for pid, prop in props.items():
+                entry: dict[str, str] = {"label": prop.get_label()}
+                if descriptions:
+                    entry["description"] = prop.get_description()
+                result[pid] = entry
+
+        # Fetch items
+        if item_ids:
+            items = self.fetch_items(item_ids)
+            for qid, item in items.items():
+                entry = {"label": item.get_label()}
+                if descriptions:
+                    entry["description"] = item.get_description()
+                result[qid] = entry
+
+        return result
 
     def fetch_properties(
         self, property_ids: list[str]
@@ -1142,6 +1188,9 @@ class RecipeBuilder:
         if not self.schema_text:
             self.load_specification()
 
+        if not self.schema_text:
+            raise ValueError("Schema text could not be loaded")
+
         # Extract all property IDs (P-IDs) using RDF-aware extraction
         extractor = SpecificationExtractor(self.schema_text)
         shex_properties = extractor.extract()
@@ -1178,6 +1227,9 @@ class RecipeBuilder:
         """
         if not self.schema_text:
             self.load_specification()
+
+        if not self.schema_text:
+            raise ValueError("Schema text could not be loaded")
 
         # Extract properties from ShExC
         extractor = SpecificationExtractor(self.schema_text)
@@ -1246,6 +1298,9 @@ class RecipeBuilder:
         if not self.schema_text:
             self.load_specification()
 
+        if not self.schema_text:
+            raise ValueError("Schema text could not be loaded")
+
         extractor = SpecificationExtractor(self.schema_text)
         shex_properties = extractor.extract()
 
@@ -1292,6 +1347,9 @@ class RecipeBuilder:
         """
         if not self.schema_text:
             self.load_specification()
+
+        if not self.schema_text:
+            raise ValueError("Schema text could not be loaded")
 
         extractor = SpecificationExtractor(self.schema_text)
         shex_properties = extractor.extract()
@@ -1426,6 +1484,9 @@ class RecipeBuilder:
                 }
 
         # Extract classification constraints from schema (P31 and P279)
+        if not self.schema_text:
+            raise ValueError("Schema text could not be loaded")
+
         extractor = SpecificationExtractor(self.schema_text)
         instance_of_qids = extractor.get_instance_of_constraints()
         subclass_of_qids = extractor.get_subclass_of_constraints()
@@ -1464,7 +1525,7 @@ class RecipeBuilder:
             )
 
         # Build metadata structure with EntitySchema and classification info
-        metadata = {
+        metadata: dict[str, Any] = {
             "name": recipe_name,
             "description": recipe_description,
             "entity_schema_id": self.validator.eid or "unknown",

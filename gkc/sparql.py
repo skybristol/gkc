@@ -6,7 +6,7 @@ or custom SPARQL endpoints, with support for both Wikidata Query Service URL for
 and raw query strings.
 """
 
-from typing import Any, Optional
+from typing import Any, Optional, overload
 from urllib.parse import unquote, urlparse
 
 import requests
@@ -121,6 +121,22 @@ class SPARQLQuery:
 
         return query
 
+    @overload
+    def query(
+        self,
+        query: str,
+        format: str,
+        raw: bool = True,
+    ) -> str: ...
+
+    @overload
+    def query(
+        self,
+        query: str,
+        format: str = "json",
+        raw: bool = False,
+    ) -> dict[str, Any]: ...
+
     def query(
         self,
         query: str,
@@ -212,7 +228,7 @@ class SPARQLQuery:
         results = self.query(query, format="json", raw=False)
 
         # Extract bindings
-        bindings = results.get("results", {}).get("bindings", [])
+        bindings = results.get("results", {}).get("bindings", [])  # type: ignore[attr-defined]
 
         # Convert to DataFrame
         data = []
@@ -247,7 +263,7 @@ class SPARQLQuery:
             ...     print(row)
         """
         results = self.query(query, format="json", raw=False)
-        bindings = results.get("results", {}).get("bindings", [])
+        bindings = results.get("results", {}).get("bindings", [])  # type: ignore[attr-defined]
 
         data = []
         for binding in bindings:

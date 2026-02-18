@@ -84,7 +84,7 @@ class SitelinkValidator:
 
     def check_page_exists(
         self, title: str, site_code: str, allow_redirects: bool = False
-    ) -> tuple[bool, Optional[str]]:
+    ) -> tuple[bool, str]:
         """
         Check if a Wikipedia/Wikimedia page exists and optionally check for redirects.
 
@@ -94,8 +94,8 @@ class SitelinkValidator:
             allow_redirects: If False, return False for redirect pages
 
         Returns:
-            Tuple of (exists: bool, message: Optional[str])
-            - (True, None): Page exists and is valid
+            Tuple of (exists: bool, message: str)
+            - (True, ""): Page exists and is valid
             - (False, reason): Page doesn't exist or is invalid, with reason
         """
         if not title or not title.strip():
@@ -129,7 +129,7 @@ class SitelinkValidator:
             for page_id, page_info in pages.items():
                 if int(page_id) > 0:
                     # Page exists (positive page ID)
-                    return (True, None)
+                    return (True, "")
                 else:
                     # Page doesn't exist (negative page ID)
                     return (False, "Page does not exist")
@@ -145,7 +145,7 @@ class SitelinkValidator:
 
     def validate_sitelinks(
         self, sitelinks: dict[str, dict], delay_between_checks: float = 0.1
-    ) -> dict[str, tuple[bool, Optional[str]]]:
+    ) -> dict[str, tuple[bool, str]]:
         """
         Validate multiple sitelinks at once.
 
@@ -157,7 +157,7 @@ class SitelinkValidator:
                 (rate limiting)
 
         Returns:
-            Dictionary mapping site codes to (valid: bool, message: Optional[str])
+            Dictionary mapping site codes to (valid: bool, message: str)
 
         Example:
             >>> validator = SitelinkValidator()
@@ -168,7 +168,7 @@ class SitelinkValidator:
             >>> results = validator.validate_sitelinks(sitelinks)
             >>> results
             {
-                "enwiki": (True, None),
+                "enwiki": (True, ""),
                 "frwiki": (False, "Page does not exist")
             }
         """

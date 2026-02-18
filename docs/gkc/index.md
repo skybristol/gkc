@@ -45,18 +45,6 @@ The following sections lay out the extract, transform and load (ETL) workflow th
 - Commons contributor - create new items and add properties on existing items in Wikimedia Commons
 - OSM mapping & tagging - create new features or add to existing features with OSM tags
 
-## Older Documentation for Examination
-
-- [Item Creation Approach](item_creation_approach.md)
-- [Mapping Format Migration](mapping_format_migration.md)
-- [Reference/Qualifier Patterns](reference_qualifier_patterns.md)
-- [Date/Time Handling](date_time_handling.md)
-- [Sitelinks Usage](sitelinks_usage.md)
-- [Sitelinks Validation](sitelinks_validation.md)
-- [SPARQL queries](sparql_queries.md)
-- [SPARQL quick reference](sparql_quick_reference.md)
-- [Claims Map Builder](claims_map_builder.md) - (Legacy: see [Wikidata Barrel Recipe Builder](barrel_schemas/wikidata_entityschemas.md))
-
 ## Development Notes
 
 - [Implementation Notes](copilot/index.md) - Detailed technical documentation from feature development sessions

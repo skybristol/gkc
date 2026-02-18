@@ -75,6 +75,7 @@ nav:
       - Sitelinks:
         - Sitelinks Usage: gkc/wikidata/sitelinks_usage.md
         - Sitelinks Validation: gkc/wikidata/sitelinks_validation.md
+    - Command Line Interface: gkc/cli.md
     - Utilities and Tools:
       - SPARQL Queries: gkc/sparql_queries.md
       - SPARQL Quick Reference: gkc/sparql_quick_reference.md
@@ -93,4 +94,8 @@ nav:
         - SPARQL Implementation: gkc/copilot/SPARQL_IMPLEMENTATION.md
         - SPARQL Complete: gkc/copilot/SPARQL_IMPLEMENTATION_COMPLETE.md
         - Property Constraints: gkc/copilot/PROPERTY_CONSTRAINTS.md
+        - Constraints Analysis: gkc/copilot/CONSTRAINTS_ANALYSIS.md
+        - Initial CLI Design: gkc/copilot/INITIAL_CLI_DESIGN.md
+        - Mash Wikidata Item Source: gkc/copilot/MASH_WIKIDATA_ITEM_SOURCE.md
+        - Write to Commons: gkc/copilot/WRITE_TO_COMMONS.md
     - API Reference: gkc/api/index.md

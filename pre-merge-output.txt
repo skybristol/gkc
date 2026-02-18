@@ -1,0 +1,28 @@
+==================================
+Running Pre-Merge Checks
+==================================
+
+✓ Poetry found
+
+📦 Ensuring dependencies are installed...
+Installing dependencies from lock file
+
+No dependencies to install or update
+
+Installing the current project: gkc (0.1.0)
+
+🔍 Running ruff linter...
+All checks passed!
+✓ Ruff checks passed
+
+🎨 Checking code formatting with black...
+would reformat /Users/sky/code/gkc/tests/test_exporter.py
+would reformat /Users/sky/code/gkc/gkc/mash_formatters.py
+would reformat /Users/sky/code/gkc/tests/test_mash.py
+would reformat /Users/sky/code/gkc/tests/test_mash_formatters.py
+would reformat /Users/sky/code/gkc/gkc/exporter.py
+would reformat /Users/sky/code/gkc/gkc/mash.py
+would reformat /Users/sky/code/gkc/gkc/cli.py
+
+Oh no! 💥 💔 💥
+7 files would be reformatted, 17 files would be left unchanged.

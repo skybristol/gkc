@@ -135,10 +135,10 @@ The GKC package provides comprehensive support for working with Wikidata across 
 
 ### SPARQL Querying
 
-**[SPARQL Queries](sparql_queries.md)** - Query Wikidata's knowledge graph to inform transformations
+**[SPARQL Queries](../sparql_queries.md)** - Query Wikidata's knowledge graph to inform transformations
 - Reconcile source records by matching on properties and constraints
 - Retrieve existing item structures to guide mapping decisions
-- **[SPARQL Quick Reference](sparql_quick_reference.md)** - Common patterns and query templates
+- **[SPARQL Quick Reference](../sparql_quick_reference.md)** - Common patterns and query templates
 
 ## EntitySchemas as Barrel Schemas
 
@@ -203,7 +203,7 @@ Once data is in Wikidata, extending to Wikipedia (infoboxes), Commons (media met
 - **New to Wikidata?** Start with the [Item Creation Approach](item_creation_approach.md) to understand the end-to-end workflow
 - **Building mappings?** Use the [RecipeBuilder](claims_map_builder.md) to auto-generate configurations from EntitySchemas
 - **Working with time data?** See [Date/Time Handling](date_time_handling.md) for robust temporal transformations
-- **Need to query Wikidata?** Check out the [SPARQL Quick Reference](sparql_quick_reference.md) for common patterns
+- **Need to query Wikidata?** Check out the [SPARQL Quick Reference](../sparql_quick_reference.md) for common patterns
 - **Linking to Wikipedia?** Review [Sitelinks Usage](sitelinks_usage.md) for best practices
 
 ---
