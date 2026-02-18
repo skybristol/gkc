@@ -25,7 +25,7 @@ Plain meaning: Load an existing Wikidata item as a template, modify it, and outp
 ```
 Wikidata API (qid via Cooperage)
     ↓
-Mash Loader (fetch + normalize item)
+Wikidata Loader (fetch + normalize item)
     ↓
 Mash Editor (filter/modify fields)
     ↓
@@ -42,13 +42,13 @@ Plain meaning: Fetch a template, optionally transform it, then emit it in the fo
 - Already fetches RDF/JSON from Wikidata via `fetch_entity_rdf()`.
 - Will be used to load the template item.
 
-**MashLoader:**
+**WikidataLoader:**
 - Accepts a QID and optional API URL.
 - Fetches the item via Cooperage.
 - Normalizes the item to an intermediate format (plain Python dict with labels, descriptions, claims).
-- Returns a `MashTemplate` object.
+- Returns a `WikidataTemplate` object.
 
-**MashTemplate:**
+**WikidataTemplate:**
 - Represents a loaded Wikidata item in intermediate form.
 - Provides methods to filter/modify claims, labels, descriptions.
 - Can be serialized to multiple output formats.
@@ -62,11 +62,11 @@ Plain meaning: Fetch a template, optionally transform it, then emit it in the fo
 - `gkc mash qid Q... --output=qsv1`
 - Orchestrates loader and formatter.
 
-## MashTemplate data model
+## WikidataTemplate data model
 
 ```python
 @dataclass
-class MashTemplate:
+class WikidataTemplate:
     """An extracted Wikidata item ready for modification and export."""
     qid: str
     labels: dict[str, str]
@@ -121,7 +121,7 @@ Output the item's structure as an EntitySchema template that could be refined an
 
 ### JSON (debugging)
 
-Pretty-print the `MashTemplate` for inspection and scripting.
+Pretty-print the `WikidataTemplate` for inspection and scripting.
 
 ## Mash command in CLI
 
@@ -139,8 +139,8 @@ Plain meaning: a set of options to extract, filter, and export template items.
 
 ### Phase 1: MVP (now)
 
-- `MashLoader` fetches QID via Cooperage.
-- `MashTemplate` represents the item.
+- `WikidataLoader` fetches QID via Cooperage.
+- `WikidataTemplate` represents the item.
 - `QSV1Formatter` outputs QuickStatements V1 (for new items using LAST syntax).
 - `gkc mash qid` CLI command.
 - Basic tests.
@@ -160,7 +160,7 @@ Plain meaning: a set of options to extract, filter, and export template items.
 
 ## Design decisions
 
-- **Data model:** Use simple dict-based `MashTemplate` rather than full RDF to keep it accessible and testable.
+- **Data model:** Use simple dict-based `WikidataTemplate` rather than full RDF to keep it accessible and testable.
 - **Output format default:** Barebones summary - report labels, descriptions, aliases, and total statement count. Avoid expensive SPARQL lookups for property labels in v1.
 - **Default language:** Add a package-level default language variable (set to English) for consistent human-readable output.
 - **Property filtering:** Use `--exclude-properties` approach (blacklist). Start with support for this; `--filter-properties` can be added later if needed.

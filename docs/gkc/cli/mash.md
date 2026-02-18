@@ -8,6 +8,8 @@ The mash module in GKC handles the input of various data and information content
 
 The name "mash" comes from the distillery metaphor—like grain that's been milled and steeped to extract fermentable sugars, mashed items extract the essential structure and content from source data, readying the ingredients for further processing.
 
+**Current implementations:** The mash module currently supports loading Wikidata items as templates. Future versions will add support for CSV files, JSON APIs, and other data sources.
+
 ## Load Wikidata Item by QID
 
 ```bash
@@ -97,7 +99,7 @@ Exclude specific properties (e.g., exclude "instance of" and "sex or gender"):
 $ gkc mash qid Q42 --output qsv1 --exclude-properties P31,P21
 ```
 
-Exclude qualifiers and references to get cleaner output:
+Exclude qualifiers and references if not needed:
 
 ```bash
 $ gkc mash qid Q42 --output qsv1 --exclude-qualifiers --exclude-references

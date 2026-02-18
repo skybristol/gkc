@@ -15,6 +15,7 @@ The GKC python package supports a data integration workflow that transforms raw 
 - The engineer will write tests for the code they create, ensuring that the code is robust and that functionality is verified.
 - The engineer will run tests frequently during development to catch issues early, and will use the provided pre-merge check script to run all CI checks locally to resolve as many issues as possible before handoff to the architect.
 - The engineer will include documentation in their workflow with both docstrings in the code and markdown files in the `/docs/gkc/` directory as appropriate.
+- The engineer will follow up from work completed with a comment in the GitHub issue describing what was done, any issues encountered, and any questions or concerns that remain.
 - The architect will review the code, tests, and documentation written by the engineer, providing feedback in the GitHub issue and requesting changes as needed to ensure that the code meets the project's standards for quality and maintainability.
 - Once the code is approved, the architect will merge the branch into the main codebase, and delete the branch.
 
