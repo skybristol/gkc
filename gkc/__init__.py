@@ -28,6 +28,8 @@ Data flows: Source → Still Recipe → Unified Still Schema → Barrel Recipe
 See documentation at: https://datadistillery.org/
 """
 
+from typing import Union
+
 __version__ = "0.1.0"
 
 # Core imports organized by module
@@ -80,10 +82,10 @@ from gkc.spirit_safe import SpiritSafeValidationError, SpiritSafeValidator
 
 # Language Configuration
 # Package-level language settings for multilingual data handling
-_DEFAULT_LANGUAGES: str | list[str] = "en"
+_DEFAULT_LANGUAGES: Union[str, list[str]] = "en"
 
 
-def set_languages(languages: str | list[str]) -> None:
+def set_languages(languages: Union[str, list[str]]) -> None:
     """Set the package-wide language configuration.
 
     Args:
@@ -104,7 +106,7 @@ def set_languages(languages: str | list[str]) -> None:
     _DEFAULT_LANGUAGES = languages
 
 
-def get_languages() -> str | list[str]:
+def get_languages() -> Union[str, list[str]]:
     """Get the current language configuration.
 
     Returns:

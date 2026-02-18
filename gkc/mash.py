@@ -20,7 +20,7 @@ from __future__ import annotations
 
 import json
 from dataclasses import dataclass, field
-from typing import Any, Optional, Protocol
+from typing import Any, Optional, Protocol, Union
 
 import requests
 
@@ -141,7 +141,9 @@ class WikidataTemplate:
         for claim in self.claims:
             claim.references = []
 
-    def filter_languages(self, languages: Optional[str | list[str]] = None) -> None:
+    def filter_languages(
+        self, languages: Optional[Union[str, list[str]]] = None
+    ) -> None:
         """Filter labels, descriptions, and aliases to specified languages.
 
         Args:
