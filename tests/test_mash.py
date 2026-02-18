@@ -157,7 +157,8 @@ def test_wikidata_loader_snak_to_value_string():
     }
 
     value, metadata = MashLoader._snak_to_value(snak)
-    assert value == "test string"    assert metadata is None
+    assert value == "test string"
+    assert metadata is None
 
 
 def test_wikidata_loader_snak_to_value_novalue():
@@ -166,5 +167,3 @@ def test_wikidata_loader_snak_to_value_novalue():
     value, metadata = MashLoader._snak_to_value(snak)
     assert value == "[no value]"
     assert metadata is None
->>>>>>> Stashed changes=======
->>>>>>> 3988fbc (Fix class name references after merge conflict resolution)

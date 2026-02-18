@@ -99,7 +99,7 @@ def test_json_formatter_exclude_properties():
 
 def test_qsv1_formatter_with_entity_labels():
     """Format QS output with entity labels in comments."""
-    template = MashTemplate(
+    template = WikidataTemplate(
         qid="Q42",
         labels={"en": "Test"},
         descriptions={"en": "Test"},
@@ -137,7 +137,7 @@ def test_qsv1_formatter_with_entity_labels():
 
 def test_qsv1_formatter_with_qualifiers_and_labels():
     """Format QS output with qualifiers and labels in comments."""
-    template = MashTemplate(
+    template = WikidataTemplate(
         qid="Q42",
         labels={"en": "Test"},
         descriptions={"en": "Test"},
@@ -180,7 +180,7 @@ def test_qsv1_formatter_with_qualifiers_and_labels():
 
 def test_qsv1_formatter_without_entity_labels():
     """Format QS output without entity labels (no comments)."""
-    template = MashTemplate(
+    template = WikidataTemplate(
         qid="Q42",
         labels={"en": "Test"},
         descriptions={"en": "Test"},
@@ -205,7 +205,7 @@ def test_qsv1_formatter_without_entity_labels():
 
 def test_qsv1_formatter_with_string_values():
     """Format QS output with string values (not entity IDs)."""
-    template = MashTemplate(
+    template = WikidataTemplate(
         qid="Q42",
         labels={"en": "Test"},
         descriptions={"en": "Test"},
@@ -235,7 +235,7 @@ def test_qsv1_formatter_with_string_values():
 
 def test_qsv1_formatter_existing_item():
     """Format QS output for updating an existing item."""
-    template = MashTemplate(
+    template = WikidataTemplate(
         qid="Q42",
         labels={"en": "Test"},
         descriptions={"en": "Test"},
@@ -266,7 +266,7 @@ def test_qsv1_formatter_existing_item():
 
 def test_qsv1_formatter_with_date_precision():
     """Format QS output with date values that include precision."""
-    template = MashTemplate(
+    template = WikidataTemplate(
         qid="Q42",
         labels={"en": "Test"},
         descriptions={"en": "Test"},
@@ -302,7 +302,7 @@ def test_qsv1_formatter_with_date_precision():
 
 def test_qsv1_formatter_with_qualifier_date_precision():
     """Format QS output with date qualifiers that include precision."""
-    template = MashTemplate(
+    template = WikidataTemplate(
         qid="Q42",
         labels={"en": "Test"},
         descriptions={"en": "Test"},
