@@ -355,7 +355,7 @@ class MashLoader:
 
         # Extract main value
         mainsnak = statement.get("mainsnak", {})
-        value, value_metadata = WikidataLoader._snak_to_value(mainsnak)
+        value, value_metadata = MashLoader._snak_to_value(mainsnak)
 
         if value is None:
             return None
@@ -367,7 +367,7 @@ class MashLoader:
             if snaks:
                 # Extract value from the first snak of each qualifier property
                 snak = snaks[0]
-                qual_value, qual_metadata = WikidataLoader._snak_to_value(snak)
+                qual_value, qual_metadata = MashLoader._snak_to_value(snak)
                 if qual_value:
                     qualifier_dict = {"property": prop, "value": qual_value}
                     if qual_metadata:

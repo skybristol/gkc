@@ -135,7 +135,7 @@ def test_mash_loader_snak_to_value_entity():
         },
     }
 
-    value, metadata = WikidataLoader._snak_to_value(snak)
+    value, metadata = MashLoader._snak_to_value(snak)
     assert value == "Q5"
     assert metadata is None
 
@@ -150,7 +150,7 @@ def test_mash_loader_snak_to_value_string():
         },
     }
 
-    value, metadata = WikidataLoader._snak_to_value(snak)
+    value, metadata = MashLoader._snak_to_value(snak)
     assert value == "test string"
     assert metadata is None
 
@@ -158,101 +158,6 @@ def test_mash_loader_snak_to_value_string():
 def test_mash_loader_snak_to_value_novalue():
     """Test converting novalue snak."""
     snak = {"snaktype": "novalue"}
-    value, metadata = WikidataLoader._snak_to_value(snak)
+    value, metadata = MashLoader._snak_to_value(snak)
     assert value == "[no value]"
     assert metadata is None
-
-
-def test_wikidata_template_filter_languages_single():
-    """Test filtering to a single language."""
-    template = WikidataTemplate(
-        qid="Q42",
-        labels={"en": "Test", "fr": "Test FR", "es": "Test ES"},
-        descriptions={"en": "English", "fr": "Français", "es": "Español"},
-        aliases={"en": ["T"], "fr": ["T FR"], "es": ["T ES"]},
-        claims=[],
-    )
-
-    template.filter_languages("en")
-    assert list(template.labels.keys()) == ["en"]
-    assert template.labels["en"] == "Test"
-    assert list(template.descriptions.keys()) == ["en"]
-    assert list(template.aliases.keys()) == ["en"]
-
-
-def test_wikidata_template_filter_languages_multiple():
-    """Test filtering to multiple languages."""
-    template = WikidataTemplate(
-        qid="Q42",
-        labels={"en": "Test", "fr": "Test FR", "es": "Test ES", "de": "Test DE"},
-        descriptions={"en": "English", "fr": "Français", "es": "Español"},
-        aliases={"en": ["T"], "fr": ["T FR"]},
-        claims=[],
-    )
-
-    template.filter_languages(["en", "fr"])
-    assert set(template.labels.keys()) == {"en", "fr"}
-    assert set(template.descriptions.keys()) == {"en", "fr"}
-    assert set(template.aliases.keys()) == {"en", "fr"}
-    # Should not have es or de
-    assert "es" not in template.labels
-    assert "de" not in template.labels
-
-
-def test_wikidata_template_filter_languages_all():
-    """Test that 'all' keeps everything."""
-    template = WikidataTemplate(
-        qid="Q42",
-        labels={"en": "Test", "fr": "Test FR", "es": "Test ES"},
-        descriptions={"en": "English", "fr": "Français"},
-        aliases={"en": ["T"], "fr": ["T FR"]},
-        claims=[],
-    )
-
-    template.filter_languages("all")
-    # All languages should remain
-    assert len(template.labels) == 3
-    assert len(template.descriptions) == 2
-    assert len(template.aliases) == 2
-
-
-def test_wikidata_template_filter_languages_uses_package_config():
-    """Test that None uses package-level configuration."""
-    original_lang = gkc.get_languages()
-
-    try:
-        gkc.set_languages("fr")
-        template = WikidataTemplate(
-            qid="Q42",
-            labels={"en": "Test", "fr": "Test FR", "es": "Test ES"},
-            descriptions={"en": "English", "fr": "Français"},
-            aliases={"en": ["T"], "fr": ["T FR"]},
-            claims=[],
-        )
-
-        # Call without argument - should use package config
-        template.filter_languages()
-        assert list(template.labels.keys()) == ["fr"]
-        assert list(template.descriptions.keys()) == ["fr"]
-        assert list(template.aliases.keys()) == ["fr"]
-    finally:
-        # Reset to original
-        gkc.set_languages(original_lang)
-
-
-def test_wikidata_template_filter_languages_missing_language():
-    """Test filtering to a language that doesn't exist in the data."""
-    template = WikidataTemplate(
-        qid="Q42",
-        labels={"en": "Test", "fr": "Test FR"},
-        descriptions={"en": "English"},
-        aliases={"en": ["T"]},
-        claims=[],
-    )
-
-    # Filter to a language that's not in the data
-    template.filter_languages("es")
-    assert len(template.labels) == 0
-    assert len(template.descriptions) == 0
-    assert len(template.aliases) == 0
->>>>>>> Stashed changes
