@@ -28,6 +28,8 @@ Data flows: Source → Still Recipe → Unified Still Schema → Barrel Recipe
 See documentation at: https://datadistillery.org/
 """
 
+from typing import Union
+
 __version__ = "0.1.0"
 
 # Core imports organized by module
@@ -78,7 +80,47 @@ from gkc.sparql import (
 # Spirit Safe (Barrel Schema validation and quality gates)
 from gkc.spirit_safe import SpiritSafeValidationError, SpiritSafeValidator
 
+# Language Configuration
+# Package-level language settings for multilingual data handling
+_DEFAULT_LANGUAGES: Union[str, list[str]] = "en"
+
+
+def set_languages(languages: Union[str, list[str]]) -> None:
+    """Set the package-wide language configuration.
+
+    Args:
+        languages: Either:
+            - A single language code string (e.g., "en")
+            - A list of language codes (e.g., ["en", "es", "fr"])
+            - The string "all" for all available languages
+
+    Example:
+        >>> import gkc
+        >>> gkc.set_languages("en")  # Single language
+        >>> gkc.set_languages(["en", "fr"])  # Multiple languages
+        >>> gkc.set_languages("all")  # All languages
+
+    Plain meaning: Choose which languages to work with in the package.
+    """
+    global _DEFAULT_LANGUAGES
+    _DEFAULT_LANGUAGES = languages
+
+
+def get_languages() -> Union[str, list[str]]:
+    """Get the current language configuration.
+
+    Returns:
+        The current language setting (string or list of strings).
+
+    Plain meaning: Find out which languages are set for processing.
+    """
+    return _DEFAULT_LANGUAGES
+
+
 __all__ = [
+    # Language Configuration
+    "get_languages",
+    "set_languages",
     # Authentication
     "AuthenticationError",
     "OpenStreetMapAuth",

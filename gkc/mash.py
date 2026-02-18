@@ -1,45 +1,61 @@
 """
-Mash: Load Wikidata items as templates for bulk modification and export.
+Mash: Load data from various sources as templates for processing.
 
-The Mash stage loads existing Wikidata items as templates, allowing users to
-view, filter, and export them in formats like QuickStatements V1 for bulk
-creation of similar items.
+The Mash stage loads data from diverse sources (Wikidata items, CSV files,
+JSON APIs, dataframes, etc.) as templates, allowing users to view, filter,
+and export them in various formats for further processing.
 
-Plain meaning: Copy an existing item's structure and re-export it for
-creating new items.
+Current implementations:
+- Wikidata items: Load existing items as templates for bulk modification
+
+Future implementations:
+- CSV files: Parse CSV data into template format
+- JSON APIs: Fetch and transform API responses
+- Dataframes: Process in-memory data structures
+
+Plain meaning: Load source data and prepare it for distillery processing.
 """
 
 from __future__ import annotations
 
 import json
 from dataclasses import dataclass, field
-from typing import Any, Optional
+from typing import Any, Optional, Protocol, Union
 
 import requests
 
 from gkc.recipe import EntityCatalog
 
-# Package-level default language
-DEFAULT_LANGUAGE = "en"
 
+class DataTemplate(Protocol):
+    """Abstract interface for all data templates in the mash module.
 
-def set_default_language(lang: str) -> None:
-    """Set the package-wide default language for output.
+    All template types (Wikidata, CSV, JSON, etc.) should implement this
+    protocol to ensure consistent behavior across different data sources.
 
-    Plain meaning: Choose which language to use when displaying items.
+    This protocol defines the minimum interface that templates must provide:
+    - summary(): Return a dict with basic metadata about the template
+    - to_dict(): Serialize the template to a dictionary
+
+    Future template implementations should follow this pattern to ensure
+    compatibility with formatters and other downstream components.
+
+    Plain meaning: The blueprint that all data templates must follow.
     """
 
-    global DEFAULT_LANGUAGE
-    DEFAULT_LANGUAGE = lang
+    def summary(self) -> dict[str, Any]:
+        """Return a summary of the template for display.
 
+        Plain meaning: Get a quick overview without full details.
+        """
+        ...
 
-def get_default_language() -> str:
-    """Get the current default language.
+    def to_dict(self) -> dict[str, Any]:
+        """Serialize to a dictionary.
 
-    Plain meaning: Find out which language is set for output.
-    """
-
-    return DEFAULT_LANGUAGE
+        Plain meaning: Convert to a form suitable for JSON export.
+        """
+        ...
 
 
 def fetch_property_labels(
@@ -78,8 +94,10 @@ class ClaimSummary:
 
 
 @dataclass
-class MashTemplate:
+class WikidataTemplate:
     """An extracted Wikidata item ready for filtering and export.
+
+    This is the Wikidata-specific implementation of the DataTemplate protocol.
 
     Plain meaning: A loaded Wikidata item template ready for modification.
     """
@@ -123,6 +141,40 @@ class MashTemplate:
         for claim in self.claims:
             claim.references = []
 
+    def filter_languages(
+        self, languages: Optional[Union[str, list[str]]] = None
+    ) -> None:
+        """Filter labels, descriptions, and aliases to specified languages.
+
+        Args:
+            languages: Either:
+                - A single language code (e.g., "en")
+                - A list of language codes (e.g., ["en", "es", "fr"])
+                - The string "all" to keep all languages
+                - None to use the package-level language configuration
+
+        Plain meaning: Keep only the specified language versions.
+        """
+        import gkc
+
+        if languages is None:
+            languages = gkc.get_languages()
+
+        # If "all", don't filter anything
+        if languages == "all":
+            return
+
+        # Convert single string to list for uniform handling
+        if isinstance(languages, str):
+            languages = [languages]
+
+        # Filter each field
+        self.labels = {k: v for k, v in self.labels.items() if k in languages}
+        self.descriptions = {
+            k: v for k, v in self.descriptions.items() if k in languages
+        }
+        self.aliases = {k: v for k, v in self.aliases.items() if k in languages}
+
     def summary(self) -> dict[str, Any]:
         """Return a summary of the template for display.
 
@@ -161,8 +213,11 @@ class MashTemplate:
         }
 
 
-class MashLoader:
+class WikidataLoader:
     """Load a Wikidata item as a template for bulk modification.
+
+    This is the Wikidata-specific implementation of a data loader.
+    Future loaders for CSV, JSON APIs, etc. should follow a similar pattern.
 
     Plain meaning: Fetch and parse a Wikidata item into a usable template.
     """
@@ -180,14 +235,14 @@ class MashLoader:
 
         self.user_agent = user_agent
 
-    def load(self, qid: str) -> MashTemplate:
+    def load(self, qid: str) -> WikidataTemplate:
         """Load a Wikidata item and return it as a template.
 
         Args:
             qid: The Wikidata item ID (e.g., 'Q42').
 
         Returns:
-            MashTemplate with the item's structure.
+            WikidataTemplate with the item's structure.
 
         Raises:
             Exception: If the item cannot be fetched or parsed.
@@ -283,8 +338,10 @@ class MashLoader:
 
         return entity_data
 
-    def _build_template(self, qid: str, entity_data: dict[str, Any]) -> MashTemplate:
-        """Convert entity data to a MashTemplate.
+    def _build_template(
+        self, qid: str, entity_data: dict[str, Any]
+    ) -> WikidataTemplate:
+        """Convert entity data to a WikidataTemplate.
 
         Plain meaning: Transform API data into our simplified format.
         """
@@ -314,7 +371,7 @@ class MashLoader:
         # Extract claims
         claims = self._extract_claims(entity_data.get("claims", {}))
 
-        return MashTemplate(
+        return WikidataTemplate(
             qid=qid,
             labels=labels_dict,
             descriptions=descriptions_dict,
@@ -336,7 +393,7 @@ class MashLoader:
                 continue
 
             for statement in statements:
-                claim = MashLoader._statement_to_claim(prop_id, statement)
+                claim = WikidataLoader._statement_to_claim(prop_id, statement)
                 if claim:
                     claims.append(claim)
 
@@ -354,7 +411,7 @@ class MashLoader:
 
         # Extract main value
         mainsnak = statement.get("mainsnak", {})
-        value = MashLoader._snak_to_value(mainsnak)
+        value = WikidataLoader._snak_to_value(mainsnak)
 
         if value is None:
             return None
@@ -366,7 +423,7 @@ class MashLoader:
             if snaks:
                 # Extract value from the first snak of each qualifier property
                 snak = snaks[0]
-                qual_value = MashLoader._snak_to_value(snak)
+                qual_value = WikidataLoader._snak_to_value(snak)
                 if qual_value:
                     qualifiers_list.append({"property": prop, "value": qual_value})
 

@@ -1,15 +1,15 @@
-"""Formatters for converting MashTemplate to different output formats.
+"""Formatters for converting WikidataTemplate to different output formats.
 
 Plain meaning: Convert Wikidata templates to formats like QuickStatements V1.
 """
 
 from __future__ import annotations
 
-from gkc.mash import MashTemplate
+from gkc.mash import WikidataTemplate
 
 
 class QSV1Formatter:
-    """Format a MashTemplate as QuickStatements V1 syntax.
+    """Format a WikidataTemplate as QuickStatements V1 syntax.
 
     Plain meaning: Convert a template to bulk-edit format for Wikidata.
     """
@@ -38,11 +38,11 @@ class QSV1Formatter:
         self.exclude_references = exclude_references
         self.property_labels = property_labels or {}
 
-    def format(self, template: MashTemplate, for_new_item: bool = True) -> str:
+    def format(self, template: WikidataTemplate, for_new_item: bool = True) -> str:
         """Convert template to QuickStatements V1 format.
 
         Args:
-            template: The MashTemplate to format.
+            template: The WikidataTemplate to format.
             for_new_item: If True, use "CREATE" and "LAST" syntax for new items.
                          If False, use the QID and "P" syntax for updates.
 
@@ -132,14 +132,14 @@ class QSV1Formatter:
 
 
 class JSONFormatter:
-    """Format a MashTemplate as pretty JSON.
+    """Format a WikidataTemplate as pretty JSON.
 
     Plain meaning: Export the template as JSON for debugging or scripting.
     """
 
     def format(
         self,
-        template: MashTemplate,
+        template: WikidataTemplate,
         exclude_properties: list[str] | None = None,
         exclude_qualifiers: bool = False,
         exclude_references: bool = False,
@@ -147,7 +147,7 @@ class JSONFormatter:
         """Convert template to pretty JSON.
 
         Args:
-            template: The MashTemplate to format.
+            template: The WikidataTemplate to format.
             exclude_properties: List of property IDs to exclude.
             exclude_qualifiers: If True, omit qualifiers.
             exclude_references: If True, omit references.

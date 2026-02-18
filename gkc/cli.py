@@ -11,7 +11,7 @@ import sys
 from typing import Any, Optional
 
 from gkc.auth import AuthenticationError, OpenStreetMapAuth, WikiverseAuth
-from gkc.mash import MashLoader, fetch_property_labels
+from gkc.mash import WikidataLoader, fetch_property_labels
 from gkc.mash_formatters import JSONFormatter, QSV1Formatter
 
 
@@ -293,8 +293,11 @@ def _handle_mash_qid(args: argparse.Namespace) -> dict[str, Any]:
         exclude_properties = [p.strip() for p in args.exclude_properties.split(",")]
 
     try:
-        loader = MashLoader()
+        loader = WikidataLoader()
         template = loader.load(qid)
+
+        # Apply language filter (uses package-level config by default)
+        template.filter_languages()
 
         # Apply filters
         template.filter_properties(exclude_properties)

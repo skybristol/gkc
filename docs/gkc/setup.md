@@ -37,7 +37,39 @@ poetry install
 
 ---
 
-## 3. Configure Credentials (Optional for Now)
+## 3. Configure Language Settings (Optional)
+
+GKC provides nominal support for multilingual data processing. Right now, this only includes filtering Wikidata labels, descriptions, and aliases. By default, the package uses English (`"en"`), but you can configure it to work with other languages.
+
+### Setting the Language Configuration
+
+```python
+import gkc
+
+# Use a single language (default: "en")
+gkc.set_languages("en")
+
+# Use multiple languages
+gkc.set_languages(["en", "es", "fr"])
+
+# Work with all available languages
+gkc.set_languages("all")
+
+# Check current language setting
+current = gkc.get_languages()
+print(current)  # Returns: "en" or ["en", "es", "fr"] or "all"
+```
+
+**When to configure:**
+- Before loading Wikidata items if you need labels in specific languages
+- When working with multilingual datasets
+- When you want to filter or display data in languages other than English
+
+**Plain meaning:** Tell GKC which languages you want to work with so it can filter and display labels appropriately.
+
+---
+
+## 4. Configure Credentials (Optional for Now)
 
 If you intend to publish data to Wikidata, Wikimedia Commons, or OpenStreetMap, you will need credentials.
 
@@ -46,7 +78,7 @@ If you intend to publish data to Wikidata, Wikimedia Commons, or OpenStreetMap, 
 
 ---
 
-## 4. Choose a Starting Workflow
+## 5. Choose a Starting Workflow
 
 Most users begin with one of these paths:
 
@@ -64,7 +96,7 @@ Most users begin with one of these paths:
 
 ---
 
-## 5. Locate the Stage Docs
+## 6. Locate the Stage Docs
 
 Start here for the full pipeline:
 - [Pipeline Overview](pipeline_overview.md)
@@ -80,7 +112,7 @@ Then dive into each stage as needed:
 
 ---
 
-## 6. What to Expect Next
+## 7. What to Expect Next
 
 As implementation work progresses, this setup guide will continue to expand with:
 
@@ -93,7 +125,7 @@ Check back as new releases are published to PyPI.
 
 ---
 
-## 7. Need More Context?
+## 8. Need More Context?
 
 - [Background](background.md) explains the project goals and history
 - [Authentication](authentication.md) covers credentials and access

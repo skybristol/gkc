@@ -2,13 +2,13 @@
 
 import json
 
-from gkc.mash import ClaimSummary, MashTemplate
+from gkc.mash import ClaimSummary, WikidataTemplate
 from gkc.mash_formatters import JSONFormatter, QSV1Formatter
 
 
 def test_qsv1_formatter_new_item():
     """Format template for new item creation."""
-    template = MashTemplate(
+    template = WikidataTemplate(
         qid="Q42",
         labels={"en": "Test Item", "fr": "Élément de Test"},
         descriptions={"en": "A test item"},
@@ -29,7 +29,7 @@ def test_qsv1_formatter_new_item():
 
 def test_qsv1_formatter_exclude_properties():
     """Exclude properties from QS output."""
-    template = MashTemplate(
+    template = WikidataTemplate(
         qid="Q42",
         labels={"en": "Test"},
         descriptions={"en": "Test"},
@@ -51,7 +51,7 @@ def test_qsv1_formatter_exclude_properties():
 
 def test_json_formatter_basic():
     """Format template as JSON."""
-    template = MashTemplate(
+    template = WikidataTemplate(
         qid="Q42",
         labels={"en": "Test"},
         descriptions={"en": "Test"},
@@ -71,7 +71,7 @@ def test_json_formatter_basic():
 
 def test_json_formatter_exclude_properties():
     """Exclude properties from JSON output."""
-    template = MashTemplate(
+    template = WikidataTemplate(
         qid="Q42",
         labels={"en": "Test"},
         descriptions={"en": "Test"},
