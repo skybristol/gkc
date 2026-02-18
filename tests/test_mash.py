@@ -143,7 +143,8 @@ def test_wikidata_loader_snak_to_value_entity():
     }
 
     value, metadata = MashLoader._snak_to_value(snak)
-    assert value == "Q5"    assert metadata is None
+    assert value == "Q5"
+    assert metadata is None
 
 
 def test_wikidata_loader_snak_to_value_string():

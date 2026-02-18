@@ -424,7 +424,8 @@ class WikidataLoader:
                 # Extract value from the first snak of each qualifier property
                 snak = snaks[0]
                 qual_value, qual_metadata = MashLoader._snak_to_value(snak)
-                if qual_value:                    qualifier_dict = {"property": prop, "value": qual_value}
+                if qual_value:
+                    qualifier_dict = {"property": prop, "value": qual_value}
                     if qual_metadata:
                         qualifier_dict["metadata"] = qual_metadata
                     qualifiers_list.append(qualifier_dict)
