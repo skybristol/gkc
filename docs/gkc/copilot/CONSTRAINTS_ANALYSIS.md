@@ -1,14 +1,16 @@
 # Property Constraints Analysis (P2302)
 
 **Date:** February 15, 2026  
-**Status:** Implementation Complete - Analysis Ready  
+**Status:** Historical Reference - Constraint processing removed  
 **Location:** `/temp/working.ipynb`
 
 ## What Was Implemented
 
-Enhanced the GKC codebase to fetch and analyze Wikidata property constraints (P2302 statements) during the property metadata gathering process.
+This document reflects a historical implementation that fetched and analyzed
+Wikidata property constraints (P2302 statements). That functionality has since
+been removed from the active codebase in favor of simplified metadata fetching.
 
-### Code Changes
+### Code Changes (Historical)
 
 1. **PropertyProfile** (`gkc/recipe.py`)
    - Added `constraints` parameter to store P2302 statements
@@ -72,23 +74,15 @@ Enhanced the GKC codebase to fetch and analyze Wikidata property constraints (P2
    - Location properties (P17, P30, P625) use range + qualifier constraints
    - Reference properties use source requirements
 
-## Usage in Code
+## Usage in Code (Historical)
 
 ```python
 from gkc.recipe import RecipeBuilder
 
+# Constraint APIs were removed; use EntityCatalog metadata instead.
 builder = RecipeBuilder(eid="E502")
 builder.load_specification()
 builder.fetch_entity_metadata()
-
-# Access constraints for a property
-for prop_id, prop_profile in builder.property_dictionary.items():
-    constraints = prop_profile.get_constraints()
-    if constraints:
-        for constraint in constraints:
-            print(f"{prop_id}: {constraint['constraint_type']}")
-            if 'value' in constraint:
-                print(f"  Values: {constraint['value']}")
 ```
 
 ## Outstanding Questions for Integration

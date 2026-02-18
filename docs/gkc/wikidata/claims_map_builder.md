@@ -190,19 +190,16 @@ Extracted information:
 - **Comments**: Inline comments after `#`
 - **Context**: Statement property (`p:`), direct property (`wdt:`), qualifier (`pq:`), etc.
 
-### 2. Property Metadata Fetching
+### 2. Entity Metadata Fetching
 
-The `PropertyCatalog` queries the Wikidata API:
-
-```python
-GET https://www.wikidata.org/w/api.php?action=wbgetentities&ids=P31|P30|P2124
-```
+The `EntityCatalog` queries Wikidata via SPARQL (WDQS) and supports mixed
+property and item IDs in a single request.
 
 Returns:
-- **Datatype**: `wikibase-item`, `quantity`, `time`, etc.
 - **Labels**: "instance of", "continent", "member count"
 - **Descriptions**: Detailed explanations in multiple languages
 - **Aliases**: Alternative names for the property
+- **Datatype**: `wikibase-item`, `quantity`, `time`, etc. (properties only)
 
 ### 3. Combining Information
 
@@ -399,16 +396,16 @@ Main class for building mapping configurations.
 - **`print_summary()`**
   - Print detailed analysis of the ShEx schema
 
-### PropertyCatalog
+### EntityCatalog
 
-Fetches property metadata from Wikidata API.
+Fetches property and item metadata from Wikidata via SPARQL.
 
 #### Methods
 
-- **`fetch_properties(property_ids)`**
-  - Fetch metadata for multiple properties
-  - Args: List of property IDs (e.g., `['P31', 'P571']`)
-  - Returns: Dictionary mapping IDs to `PropertyLedgerEntry` objects
+- **`fetch_entities(entity_ids)`**
+  - Fetch metadata for mixed property and item IDs
+  - Args: List of entity IDs (e.g., `['P31', 'Q5']`)
+  - Returns: Dictionary mapping IDs to `PropertyLedgerEntry` or `ItemLedgerEntry` objects
 
 ### SpecificationExtractor
 
