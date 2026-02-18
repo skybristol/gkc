@@ -142,7 +142,7 @@ def test_wikidata_loader_snak_to_value_entity():
         },
     }
 
-    value, metadata = MashLoader._snak_to_value(snak)
+    value, metadata = WikidataLoader._snak_to_value(snak)
     assert value == "Q5"
     assert metadata is None
 
@@ -157,7 +157,7 @@ def test_wikidata_loader_snak_to_value_string():
         },
     }
 
-    value, metadata = MashLoader._snak_to_value(snak)
+    value, metadata = WikidataLoader._snak_to_value(snak)
     assert value == "test string"
     assert metadata is None
 
@@ -165,6 +165,6 @@ def test_wikidata_loader_snak_to_value_string():
 def test_wikidata_loader_snak_to_value_novalue():
     """Test converting novalue snak."""
     snak = {"snaktype": "novalue"}
-    value, metadata = MashLoader._snak_to_value(snak)
+    value, metadata = WikidataLoader._snak_to_value(snak)
     assert value == "[no value]"
     assert metadata is None
