@@ -75,7 +75,10 @@ nav:
       - Sitelinks:
         - Sitelinks Usage: gkc/wikidata/sitelinks_usage.md
         - Sitelinks Validation: gkc/wikidata/sitelinks_validation.md
-    - Command Line Interface: gkc/cli.md
+    - Command Line Interface:
+      - Overview: gkc/cli/index.md
+      - Authentication: gkc/cli/auth.md
+      - Mash: gkc/cli/mash.md
     - Utilities and Tools:
       - SPARQL Queries: gkc/sparql_queries.md
       - SPARQL Quick Reference: gkc/sparql_quick_reference.md
