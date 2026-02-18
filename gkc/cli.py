@@ -11,8 +11,8 @@ import sys
 from typing import Any, Optional
 
 from gkc.auth import AuthenticationError, OpenStreetMapAuth, WikiverseAuth
-from gkc.mash import WikidataLoaderfrom gkc.mash_formatters import JSONFormatter, QSV1Formatter
-from gkc.recipe import EntityCatalog
+from gkc.mash import MashLoader
+from gkc.mash_formatters import JSONFormatter, QSV1Formatterfrom gkc.recipe import EntityCatalog
 
 
 class CLIError(Exception):
