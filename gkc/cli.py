@@ -11,8 +11,8 @@ import sys
 from typing import Any, Optional
 
 from gkc.auth import AuthenticationError, OpenStreetMapAuth, WikiverseAuth
-from gkc.mash import WikidataLoader, fetch_property_labels
-from gkc.mash_formatters import JSONFormatter, QSV1Formatter
+from gkc.mash import WikidataLoaderfrom gkc.mash_formatters import JSONFormatter, QSV1Formatter
+from gkc.recipe import EntityCatalog
 
 
 class CLIError(Exception):
@@ -153,6 +153,12 @@ def _build_parser() -> argparse.ArgumentParser:
             Use CREATE/LAST syntax for new items 
             (default is edit mode for existing items)
         """,
+    )
+    mash_qid.add_argument(
+        "--no-entity-labels",
+        action="store_false",
+        dest="include_entity_labels",
+        help="Skip fetching entity labels for QuickStatements comments (faster)",
     )
     mash_qid.set_defaults(handler=_handle_mash_qid, command_path="mash.qid")
 
@@ -316,17 +322,54 @@ def _handle_mash_qid(args: argparse.Namespace) -> dict[str, Any]:
                 "details": summary,
             }
         elif output_format == "qsv1":
-            # Fetch property labels for comments in the output
-            property_ids = [claim.property_id for claim in template.claims]
-            property_labels = {}
-            if property_ids:
-                property_labels = fetch_property_labels(property_ids)
+            entity_labels = {}
+
+            # Fetch entity labels for comments if requested
+            if getattr(args, "include_entity_labels", True):
+                # Extract all entity IDs (properties and items)
+                entity_ids = set()
+
+                # Add property IDs from claims
+                for claim in template.claims:
+                    entity_ids.add(claim.property_id)
+
+                    # Add item IDs from claim values (if they're Q-IDs)
+                    if claim.value.startswith("Q") and claim.value[1:].isdigit():
+                        entity_ids.add(claim.value)
+
+                    # Add property and item IDs from qualifiers
+                    if not args.exclude_qualifiers:
+                        for qual in claim.qualifiers:
+                            qual_prop = qual.get("property", "")
+                            qual_val = qual.get("value", "")
+                            if qual_prop:
+                                entity_ids.add(qual_prop)
+                            if qual_val.startswith("Q") and qual_val[1:].isdigit():
+                                entity_ids.add(qual_val)
+
+                # Fetch labels for all entities
+                if entity_ids:
+                    try:
+                        catalog = EntityCatalog()
+                        results = catalog.fetch_entities(
+                            list(entity_ids), descriptions=False
+                        )
+                        entity_labels = {
+                            eid: data["label"]
+                            for eid, data in results.items()
+                            if "label" in data
+                        }
+                    except Exception as exc:
+                        raise CLIError(
+                            f"Failed to fetch entity labels: {str(exc)}. "
+                            f"Use --no-entity-labels to skip label fetching."
+                        ) from exc
 
             formatter = QSV1Formatter(
                 exclude_properties=exclude_properties,
                 exclude_qualifiers=args.exclude_qualifiers,
                 exclude_references=args.exclude_references,
-                property_labels=property_labels,
+                entity_labels=entity_labels,
             )
             for_new_item = getattr(args, "new", False)
             qs_text = formatter.format(template, for_new_item=for_new_item)

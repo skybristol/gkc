@@ -91,6 +91,7 @@ class ClaimSummary:
     qualifiers: list[dict] = field(default_factory=list)
     references: list[dict] = field(default_factory=list)
     rank: str = "normal"
+    value_metadata: Optional[dict[str, Any]] = None
 
 
 @dataclass
@@ -411,8 +412,7 @@ class WikidataLoader:
 
         # Extract main value
         mainsnak = statement.get("mainsnak", {})
-        value = WikidataLoader._snak_to_value(mainsnak)
-
+        value, value_metadata = WikidataLoader._snak_to_value(mainsnak)
         if value is None:
             return None
 
@@ -423,9 +423,11 @@ class WikidataLoader:
             if snaks:
                 # Extract value from the first snak of each qualifier property
                 snak = snaks[0]
-                qual_value = WikidataLoader._snak_to_value(snak)
-                if qual_value:
-                    qualifiers_list.append({"property": prop, "value": qual_value})
+                qual_value, qual_metadata = WikidataLoader._snak_to_value(snak)                if qual_value:
+                    qualifier_dict = {"property": prop, "value": qual_value}
+                    if qual_metadata:
+                        qualifier_dict["metadata"] = qual_metadata
+                    qualifiers_list.append(qualifier_dict)
 
         # Extract references
         references = statement.get("references", [])
@@ -439,57 +441,74 @@ class WikidataLoader:
             qualifiers=qualifiers_list,
             references=references_list,
             rank=rank,
+            value_metadata=value_metadata,
         )
 
     @staticmethod
-    def _snak_to_value(snak: dict[str, Any]) -> Optional[str]:
-        """Extract a human-readable value from a snak.
+    def _snak_to_value(
+        snak: dict[str, Any],
+    ) -> tuple[Optional[str], Optional[dict[str, Any]]]:
+        """Extract a human-readable value from a snak with metadata.
 
-        Plain meaning: Get a simple string representation of the value.
+        Returns:
+            Tuple of (value_string, metadata_dict) where metadata contains
+            things like precision for dates, units for quantities, etc.
+
+        Plain meaning: Get a simple string representation of the value plus metadata.
         """
 
         snaktype = snak.get("snaktype", "value")
 
         if snaktype == "novalue":
-            return "[no value]"
+            return "[no value]", None
         if snaktype == "somevalue":
-            return "[unknown value]"
+            return "[unknown value]", None
 
         datavalue = snak.get("datavalue")
         if not datavalue:
-            return None
+            return None, None
 
         dv_type = datavalue.get("type", "")
         dv_value = datavalue.get("value")
 
         if dv_type == "wikibase-entityid":
             if isinstance(dv_value, dict):
-                return dv_value.get("id", "[entity]")
-            return str(dv_value)
+                return dv_value.get("id", "[entity]"), None
+            return str(dv_value), None
 
         if dv_type == "quantity":
             if isinstance(dv_value, dict):
-                return dv_value.get("amount", "[quantity]")
-            return str(dv_value)
+                amount = dv_value.get("amount", "[quantity]")
+                unit = dv_value.get("unit")
+                metadata = {"unit": unit} if unit else None
+                return amount, metadata
+            return str(dv_value), None
 
         if dv_type == "time":
             if isinstance(dv_value, dict):
-                return dv_value.get("time", "[time]")
-            return str(dv_value)
+                time_str = dv_value.get("time", "[time]")
+                precision = dv_value.get("precision")
+                metadata = {"precision": precision} if precision is not None else None
+                return time_str, metadata
+            return str(dv_value), None
 
         if dv_type == "monolingualtext":
             if isinstance(dv_value, dict):
-                return dv_value.get("text", "[text]")
-            return str(dv_value)
+                return dv_value.get("text", "[text]"), None
+            return str(dv_value), None
 
         if dv_type == "string":
-            return str(dv_value)
+            return str(dv_value), None
 
         if dv_type == "globecoordinate":
             if isinstance(dv_value, dict):
                 lat = dv_value.get("latitude", "?")
                 lon = dv_value.get("longitude", "?")
-                return f"({lat}, {lon})"
-            return str(dv_value)
+                precision_val = dv_value.get("precision")
+                metadata = (
+                    {"precision": precision_val} if precision_val is not None else None
+                )
+                return f"({lat}, {lon})", metadata
+            return str(dv_value), None
 
-        return str(dv_value) if dv_value else None
+        return (str(dv_value), None) if dv_value else (None, None)

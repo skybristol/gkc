@@ -142,8 +142,8 @@ def test_wikidata_loader_snak_to_value_entity():
         },
     }
 
-    value = WikidataLoader._snak_to_value(snak)
-    assert value == "Q5"
+    value, metadata = WikidataLoader._snak_to_value(snak)    assert value == "Q5"
+    assert metadata is None
 
 
 def test_wikidata_loader_snak_to_value_string():
@@ -156,16 +156,16 @@ def test_wikidata_loader_snak_to_value_string():
         },
     }
 
-    value = WikidataLoader._snak_to_value(snak)
-    assert value == "test string"
+    value, metadata = WikidataLoader._snak_to_value(snak)    assert value == "test string"
+    assert metadata is None
 
 
 def test_wikidata_loader_snak_to_value_novalue():
     """Test converting novalue snak."""
     snak = {"snaktype": "novalue"}
-    value = WikidataLoader._snak_to_value(snak)
+    value, metadata = WikidataLoader._snak_to_value(snak)
     assert value == "[no value]"
-
+    assert metadata is None
 
 def test_wikidata_template_filter_languages_single():
     """Test filtering to a single language."""
@@ -259,3 +259,7 @@ def test_wikidata_template_filter_languages_missing_language():
     assert len(template.labels) == 0
     assert len(template.descriptions) == 0
     assert len(template.aliases) == 0
+<<<<<<< HEAD
+=======
+>>>>>>> Stashed changes
+>>>>>>> 15c16a5 (Fix QuickStatements V1 syntax and add metadata support)
