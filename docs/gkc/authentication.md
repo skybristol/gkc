@@ -2,6 +2,8 @@
 
 The GKC package provides authentication classes for Global Knowledge Commons services. You can provide credentials directly, via environment variables, or through interactive prompts.
 
+For detailed API documentation and examples, see the [Authentication API Reference](api/auth.md).
+
 ## Wikiverse (Wikidata, Wikipedia, Wikimedia Commons)
 
 The `WikiverseAuth` class provides unified authentication for all Wikimedia projects using **bot passwords**. The same credentials work across Wikidata, Wikipedia, and Wikimedia Commons due to Wikimedia's Single User Login (SUL) system.
@@ -47,6 +49,14 @@ auth = WikiverseAuth(
     username="User@Bot",
     password="secret",
     api_url="wikidata"  # or just omit for default
+)
+auth.login()
+
+# Wikidata Test Instance (for testing and development)
+auth = WikiverseAuth(
+    username="User@Bot",
+    password="secret",
+    api_url="wikidata_test"  # Points to test.wikidata.org
 )
 auth.login()
 
@@ -144,7 +154,7 @@ You can set the following environment variables for automatic authentication:
 
 - `WIKIVERSE_USERNAME` - Bot password username (format: Username@BotName)
 - `WIKIVERSE_PASSWORD` - Bot password
-- `WIKIVERSE_API_URL` - (Optional) MediaWiki API endpoint. Defaults to Wikidata. Can use shortcuts: "wikidata", "wikipedia", "commons"
+- `WIKIVERSE_API_URL` - (Optional) MediaWiki API endpoint. Defaults to Wikidata. Can use shortcuts: "wikidata", "wikidata_test", "wikipedia", "commons"
 
 ### OpenStreetMap
 
@@ -157,6 +167,11 @@ You can set the following environment variables for automatic authentication:
 # Wikidata (default)
 export WIKIVERSE_USERNAME="Alice@MyBot"
 export WIKIVERSE_PASSWORD="abc123def456ghi789"
+
+# Wikidata Test Instance (for development and testing)
+export WIKIVERSE_USERNAME="Alice@MyBot"
+export WIKIVERSE_PASSWORD="abc123def456ghi789"
+export WIKIVERSE_API_URL="wikidata_test"
 
 # Wikipedia
 export WIKIVERSE_USERNAME="Alice@MyBot"
@@ -202,6 +217,7 @@ Common errors and solutions:
 
 ## See Also
 
+- [Authentication API Reference](api/auth.md) - Complete API documentation with detailed examples
 - [Wikidata:Bots](https://www.wikidata.org/wiki/Wikidata:Bots) - Wikidata bot policy
 - [Special:BotPasswords](https://www.wikidata.org/wiki/Special:BotPasswords) - Create bot passwords
 - [MediaWiki API](https://www.mediawiki.org/wiki/API:Main_page) - MediaWiki API documentation

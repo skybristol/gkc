@@ -26,6 +26,7 @@ import requests
 # Default MediaWiki API endpoints for common Wikimedia projects
 DEFAULT_WIKIMEDIA_APIS = {
     "wikidata": "https://www.wikidata.org/w/api.php",
+    "wikidata_test": "https://test.wikidata.org/w/api.php",
     "wikipedia": "https://en.wikipedia.org/w/api.php",
     "commons": "https://commons.wikimedia.org/w/api.php",
 }
