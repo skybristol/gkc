@@ -82,7 +82,11 @@ nav:
     - Utilities and Tools:
       - SPARQL Queries: gkc/sparql_queries.md
       - SPARQL Quick Reference: gkc/sparql_quick_reference.md
-      - SPARQL API Documentation: gkc/api/sparql.md
+    - API Reference:
+      - Overview: gkc/api/index.md
+      - Mash: gkc/api/mash.md
+      - Mash Formatters: gkc/api/mash_formatters.md
+      - SPARQL: gkc/api/sparql.md
     - Development:
       - CI/CD: gkc/CI_CD.md
       - Release Process: gkc/RELEASE.md
@@ -101,4 +105,3 @@ nav:
         - Initial CLI Design: gkc/copilot/INITIAL_CLI_DESIGN.md
         - Mash Wikidata Item Source: gkc/copilot/MASH_WIKIDATA_ITEM_SOURCE.md
         - Write to Commons: gkc/copilot/WRITE_TO_COMMONS.md
-    - API Reference: gkc/api/index.md

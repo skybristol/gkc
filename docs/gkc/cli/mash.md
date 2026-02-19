@@ -130,6 +130,112 @@ $ gkc --json mash qid Q42 --output summary
 }
 ```
 
+---
+
+## Library Usage
+
+To accomplish these same tasks using the Python library:
+
+### Summary Output
+
+```python
+from gkc.mash import WikidataLoader
+
+loader = WikidataLoader()
+template = loader.load("Q42")
+template.filter_languages()  # Uses package language config
+
+summary = template.summary()
+print(summary)
+```
+
+### QuickStatements V1 Format
+
+```python
+from gkc.mash import WikidataLoader
+from gkc.mash_formatters import QSV1Formatter
+
+loader = WikidataLoader()
+template = loader.load("Q42")
+
+# For new items (CREATE/LAST syntax)
+formatter = QSV1Formatter()
+qs_text = formatter.format(template, for_new_item=True)
+print(qs_text)
+
+# For updates (QID syntax)
+qs_text = formatter.format(template, for_new_item=False)
+print(qs_text)
+```
+
+### JSON Format
+
+```python
+from gkc.mash import WikidataLoader, strip_entity_identifiers
+import json
+
+loader = WikidataLoader()
+
+# Raw entity data
+entity_data = loader.load_entity_data("Q42")
+print(json.dumps(entity_data, indent=2))
+
+# Strip identifiers for new item creation
+new_item_data = strip_entity_identifiers(entity_data)
+print(json.dumps(new_item_data, indent=2))
+```
+
+### Filtering Properties
+
+```python
+from gkc.mash import WikidataLoader
+
+loader = WikidataLoader()
+template = loader.load("Q42")
+
+# Exclude specific properties
+template.filter_properties(["P31", "P21"])
+
+# Exclude qualifiers and references
+template.filter_qualifiers()
+template.filter_references()
+
+# Get filtered summary
+summary = template.summary()
+```
+
+### With Property Label Comments
+
+```python
+from gkc.mash import WikidataLoader
+from gkc.mash_formatters import QSV1Formatter
+from gkc.recipe import EntityCatalog
+
+loader = WikidataLoader()
+template = loader.load("Q42")
+
+# Collect entity IDs
+entity_ids = set()
+for claim in template.claims:
+    entity_ids.add(claim.property_id)
+    if claim.value.startswith("Q"):
+        entity_ids.add(claim.value)
+
+# Fetch labels
+catalog = EntityCatalog()
+results = catalog.fetch_entities(list(entity_ids))
+entity_labels = {eid: entry.get_label("en") for eid, entry in results.items()}
+
+# Format with comments
+formatter = QSV1Formatter(entity_labels=entity_labels)
+qs_text = formatter.format(template, for_new_item=True)
+print(qs_text)
+```
+
+See the [Mash API documentation](../api/mash.md) for complete details on all available methods and options.
+
+---
+
 ## Output Format Details
 
 ### Summary Format
