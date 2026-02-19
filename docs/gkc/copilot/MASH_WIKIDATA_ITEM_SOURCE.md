@@ -56,7 +56,7 @@ Plain meaning: Fetch a template, optionally transform it, then emit it in the fo
 **Output formatters:**
 - `QSV1Formatter`: Convert to QuickStatements V1 syntax.
 - `ShExFormatter`: Convert to ShEx schema (future).
-- `JSONFormatter`: Pretty JSON (for debugging/UI).
+- JSON output: Raw Wikidata entity JSON (for debugging/UI and downstream tooling).
 
 **CLIcommand:**
 - `gkc mash qid Q... --output=qsv1`
@@ -121,7 +121,7 @@ Output the item's structure as an EntitySchema template that could be refined an
 
 ### JSON (debugging)
 
-Pretty-print the `WikidataTemplate` for inspection and scripting.
+Emit the raw Wikidata entity JSON for inspection and scripting.
 
 ## Mash command in CLI
 
@@ -129,7 +129,7 @@ New subcommand tree:
 
 - `gkc mash qid <QID>` - fetch and display template
 - `gkc mash qid <QID> --output=qsv1` - output as QuickStatements V1
-- `gkc mash qid <QID> --output=json` - output as JSON
+- `gkc mash qid <QID> --output=json` - output raw Wikidata JSON
 - `gkc mash qid <QID> --api-url=<URL>` - use custom Wikidata API
 - `gkc mash qid <QID> --filter-properties=<list>` - include only specific properties
 

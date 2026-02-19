@@ -5,6 +5,7 @@ from gkc.mash import (
     ClaimSummary,
     WikidataLoader,
     WikidataTemplate,
+    strip_entity_identifiers,
 )
 
 
@@ -130,6 +131,72 @@ def test_wikidata_template_to_dict():
     assert data["qid"] == "Q42"
     assert len(data["claims"]) == 1
     assert data["claims"][0]["property_id"] == "P31"
+
+
+def test_strip_entity_identifiers_removes_ids():
+    """Strip entity and statement identifiers for new-item JSON."""
+    entity_data = {
+        "id": "Q42",
+        "pageid": 123,
+        "lastrevid": 456,
+        "modified": "2024-01-01T00:00:00Z",
+        "ns": 0,
+        "labels": {"en": {"value": "Douglas Adams"}},
+        "claims": {
+            "P31": [
+                {
+                    "id": "Q42$ABC",
+                    "mainsnak": {
+                        "hash": "main123",
+                        "datavalue": {"value": "Q5"},
+                    },
+                    "qualifiers": {
+                        "P580": [{"hash": "abc123", "datavalue": {"value": "test"}}]
+                    },
+                    "references": [
+                        {
+                            "hash": "def456",
+                            "snaks": {
+                                "P248": [
+                                    {"hash": "ghi789", "datavalue": {"value": "Q123"}}
+                                ]
+                            },
+                        }
+                    ],
+                },
+                {"mainsnak": {"datavalue": {"value": "Q215627"}}},
+            ]
+        },
+    }
+
+    cleaned = strip_entity_identifiers(entity_data)
+
+    # Item-level identifiers should be removed
+    assert cleaned.get("id") is None
+    assert cleaned.get("pageid") is None
+    assert cleaned.get("lastrevid") is None
+    assert cleaned.get("modified") is None
+    # ns should be preserved
+    assert cleaned.get("ns") == 0
+
+    # Statement ID should be removed
+    assert cleaned["claims"]["P31"][0].get("id") is None
+
+    # Mainsnak hash should be removed
+    assert cleaned["claims"]["P31"][0]["mainsnak"].get("hash") is None
+
+    # Qualifier hash should be removed
+    assert cleaned["claims"]["P31"][0]["qualifiers"]["P580"][0].get("hash") is None
+
+    # Reference hashes should be removed
+    assert cleaned["claims"]["P31"][0]["references"][0].get("hash") is None
+    ref_snaks = cleaned["claims"]["P31"][0]["references"][0]["snaks"]["P248"][0]
+    assert ref_snaks.get("hash") is None
+
+    # Original should be unchanged
+    assert "id" in entity_data
+    assert entity_data["claims"]["P31"][0]["id"] == "Q42$ABC"
+    assert entity_data["claims"]["P31"][0]["qualifiers"]["P580"][0]["hash"] == "abc123"
 
 
 def test_wikidata_loader_snak_to_value_entity():

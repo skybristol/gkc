@@ -24,7 +24,7 @@ Load a Wikidata item by its QID (e.g., Q42) and output it in the specified forma
 **Output Format Options:**
 - `--output summary`: (default) Human-readable summary of the item
 - `--output qsv1`: QuickStatements V1 format for bulk operations
-- `--output json`: Structured JSON representation
+- `--output json`: Raw Wikidata entity JSON
 
 **Filtering Options:**
 - `--exclude-properties <P1,P2,...>`: Comma-separated list of property IDs to exclude (e.g., P31,P21)
@@ -32,7 +32,8 @@ Load a Wikidata item by its QID (e.g., Q42) and output it in the specified forma
 - `--exclude-references`: Omit all references from the output
 
 **Item Creation Mode:**
-- `--new`: Use CREATE/LAST syntax for creating new items (default is edit mode for existing items)
+- `--update`: Retain identifiers for updates (default)
+- `--new`: Use CREATE/LAST syntax for new items and strip identifiers from JSON
 
 ### Examples
 
@@ -75,21 +76,26 @@ LAST|P31|Q5  /* instance of: human */
 
 #### JSON Format
 
-Export structured JSON for programmatic use:
+Export raw Wikidata entity JSON for programmatic use:
 
 ```bash
 $ gkc mash qid Q42 --output json
 {
-  "qid": "Q42",
+  "id": "Q42",
   "labels": {
-    "en": "Douglas Adams"
+    "en": {"language": "en", "value": "Douglas Adams"}
   },
   "descriptions": {
-    "en": "English science fiction writer"
+    "en": {"language": "en", "value": "English science fiction writer"}
   },
-  "claims": [...]
+  "claims": {...}
 }
 ```
+
+Use `--new` to strip identifiers for new-item creation. This removes:
+- Item-level: `id`, `pageid`, `lastrevid`, `modified`
+- Statement-level: `id` (statement GUID)
+- Snak-level: `hash` (in mainsnak, qualifiers, and references)
 
 #### Filtering Properties
 
@@ -153,12 +159,12 @@ Property labels are automatically fetched and included as comments (`/* property
 
 ### JSON Format
 
-The JSON format provides a complete structured representation suitable for:
+The JSON format provides the raw Wikidata entity JSON suitable for:
 - Programmatic processing
 - Integration with other tools
 - Detailed inspection of item structure
 
-The JSON includes all labels, descriptions, aliases, and claims with their qualifiers and references (unless filtered).
+The JSON includes all labels, descriptions, aliases, and claims with their qualifiers and references as provided by Wikidata. Use `--new` to strip identifiers when preparing JSON for new-item creation.
 
 ## Typical Workflows
 

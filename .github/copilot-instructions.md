@@ -70,10 +70,17 @@ The engineer should escalate to the architect if any of these conditions are met
 - Type hints are unclear or use `Any` without explanation
 - *Action:* Complete documentation before marking as ready
 
-### Issue Design Guidelines (for Architect)
+## Issue Design Guidelines (for Architect)
 Each issue should:
 - Have a single, clearly defined goal
 - List explicit success criteria (X tests pass, Y mypy errors resolved, etc.)
 - Include links to existing code patterns to follow
 - Specify which files/components will be modified
 - Estimate scope (touching N files suggests scope creep if it grows)
+
+## Software Design Guidelines (for Engineer)
+- Always produce both library and CLI compatible infrastructure when implementing new features
+- Follow existing code patterns for consistency in style and architecture
+- Prioritize type safety and maintainability over quick fixes
+- Write tests that are robust and cover edge cases, not just the happy path
+- Document code with clear docstrings and maintain up-to-date API documentation in `/docs/gkc
