@@ -1,9 +1,7 @@
 """Tests for Mash formatters."""
 
-import json
-
 from gkc.mash import ClaimSummary, WikidataTemplate
-from gkc.mash_formatters import JSONFormatter, QSV1Formatter
+from gkc.mash_formatters import QSV1Formatter
 
 
 def test_qsv1_formatter_new_item():
@@ -52,49 +50,6 @@ def test_qsv1_formatter_exclude_properties():
 
     assert "P31" not in qs_text
     assert "P21" in qs_text
-
-
-def test_json_formatter_basic():
-    """Format template as JSON."""
-    template = WikidataTemplate(
-        qid="Q42",
-        labels={"en": "Test"},
-        descriptions={"en": "Test"},
-        aliases={},
-        claims=[
-            ClaimSummary(property_id="P31", value="Q5", qualifiers=[], references=[]),
-        ],
-    )
-
-    formatter = JSONFormatter()
-    json_text = formatter.format(template)
-
-    data = json.loads(json_text)
-    assert data["qid"] == "Q42"
-    assert len(data["claims"]) == 1
-
-
-def test_json_formatter_exclude_properties():
-    """Exclude properties from JSON output."""
-    template = WikidataTemplate(
-        qid="Q42",
-        labels={"en": "Test"},
-        descriptions={"en": "Test"},
-        aliases={},
-        claims=[
-            ClaimSummary(property_id="P31", value="Q5", qualifiers=[], references=[]),
-            ClaimSummary(
-                property_id="P21", value="Q6581097", qualifiers=[], references=[]
-            ),
-        ],
-    )
-
-    formatter = JSONFormatter()
-    json_text = formatter.format(template, exclude_properties=["P31"])
-
-    data = json.loads(json_text)
-    assert len(data["claims"]) == 1
-    assert data["claims"][0]["property_id"] == "P21"
 
 
 def test_qsv1_formatter_with_entity_labels():

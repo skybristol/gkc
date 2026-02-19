@@ -12,8 +12,8 @@ from typing import Any, Optional
 
 import gkc
 from gkc.auth import AuthenticationError, OpenStreetMapAuth, WikiverseAuth
-from gkc.mash import WikidataLoader
-from gkc.mash_formatters import JSONFormatter, QSV1Formatter
+from gkc.mash import WikidataLoader, strip_entity_identifiers
+from gkc.mash_formatters import QSV1Formatter
 from gkc.recipe import EntityCatalog
 
 
@@ -148,13 +148,22 @@ def _build_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="Omit references from output",
     )
-    mash_qid.add_argument(
+    mode_group = mash_qid.add_mutually_exclusive_group()
+    mode_group.add_argument(
         "--new",
-        action="store_true",
+        action="store_const",
+        dest="mash_mode",
+        const="new",
         help="""
-            Use CREATE/LAST syntax for new items 
-            (default is edit mode for existing items)
+            Use CREATE/LAST syntax for new items and strip identifiers from JSON
         """,
+    )
+    mode_group.add_argument(
+        "--update",
+        action="store_const",
+        dest="mash_mode",
+        const="update",
+        help="Retain identifiers for updates (default)",
     )
     mash_qid.add_argument(
         "--no-entity-labels",
@@ -162,7 +171,11 @@ def _build_parser() -> argparse.ArgumentParser:
         dest="include_entity_labels",
         help="Skip fetching entity labels for QuickStatements comments (faster)",
     )
-    mash_qid.set_defaults(handler=_handle_mash_qid, command_path="mash.qid")
+    mash_qid.set_defaults(
+        handler=_handle_mash_qid,
+        command_path="mash.qid",
+        mash_mode="update",
+    )
 
     return parser
 
@@ -295,6 +308,7 @@ def _handle_osm_status(args: argparse.Namespace) -> dict[str, Any]:
 def _handle_mash_qid(args: argparse.Namespace) -> dict[str, Any]:
     qid = args.qid
     output_format = args.output
+    mash_mode = getattr(args, "mash_mode", "update")
     exclude_properties = []
 
     if args.exclude_properties:
@@ -302,6 +316,19 @@ def _handle_mash_qid(args: argparse.Namespace) -> dict[str, Any]:
 
     try:
         loader = WikidataLoader()
+
+        if output_format == "json":
+            entity_data = loader.load_entity_data(qid)
+            if mash_mode == "new":
+                entity_data = strip_entity_identifiers(entity_data)
+            print(json.dumps(entity_data, indent=2))
+            return {
+                "command": args.command_path,
+                "ok": True,
+                "message": f"JSON output for {qid}",
+                "details": {"format": "json", "mode": mash_mode},
+            }
+
         template = loader.load(qid)
 
         # Apply language filter (uses package-level config by default)
@@ -377,7 +404,7 @@ def _handle_mash_qid(args: argparse.Namespace) -> dict[str, Any]:
                 exclude_references=args.exclude_references,
                 entity_labels=entity_labels,
             )
-            for_new_item = getattr(args, "new", False)
+            for_new_item = mash_mode == "new"
             qs_text = formatter.format(template, for_new_item=for_new_item)
             print(qs_text)
             return {
@@ -386,21 +413,9 @@ def _handle_mash_qid(args: argparse.Namespace) -> dict[str, Any]:
                 "message": f"QuickStatements V1 output for {qid}",
                 "details": {"format": "qsv1", "lines": len(qs_text.split("\n"))},
             }
-        elif output_format == "json":
-            formatter = JSONFormatter()
-            json_text = formatter.format(
-                template,
-                exclude_properties=exclude_properties,
-                exclude_qualifiers=args.exclude_qualifiers,
-                exclude_references=args.exclude_references,
-            )
-            print(json_text)
-            return {
-                "command": args.command_path,
-                "ok": True,
-                "message": f"JSON output for {qid}",
-                "details": {"format": "json"},
-            }
+
+        # This should never be reached due to choices validation
+        raise CLIError(f"Unsupported output format: {output_format}")
     except Exception as exc:
         raise CLIError(f"Failed to load item {qid}: {str(exc)}") from exc
 

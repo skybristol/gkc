@@ -52,7 +52,7 @@ Load a Wikidata item as a template:
 gkc mash qid Q42 --output summary
 ```
 
-Get JSON output for scripting:
+Get raw Wikidata JSON output for scripting:
 ```bash
 gkc --json mash qid Q42 --output json
 ```

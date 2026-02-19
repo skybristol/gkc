@@ -18,6 +18,7 @@ Plain meaning: Load source data and prepare it for distillery processing.
 
 from __future__ import annotations
 
+import copy
 import json
 from dataclasses import dataclass, field
 from typing import Any, Optional, Protocol, Union
@@ -87,6 +88,66 @@ def fetch_property_labels(
     catalog = EntityCatalog()
     results = catalog.fetch_entities(property_ids)
     return {pid: entry.get_label(language) for pid, entry in results.items()}
+
+
+def strip_entity_identifiers(entity_data: dict[str, Any]) -> dict[str, Any]:
+    """Return a copy of entity data with identifiers stripped for new-item use.
+
+    Removes fields that prevent using the JSON as a new item template:
+    - Item-level: id, pageid, lastrevid, modified
+    - Statement-level: id (statement GUID)
+    - Snak-level: hash (in mainsnak, qualifiers, and references)
+
+    Plain meaning: Remove IDs that prevent using the JSON as a new item template.
+    """
+
+    cleaned = copy.deepcopy(entity_data)
+
+    # Remove item-level identifiers and metadata
+    cleaned.pop("id", None)
+    cleaned.pop("pageid", None)
+    cleaned.pop("lastrevid", None)
+    cleaned.pop("modified", None)
+
+    # Remove statement-level identifiers and hashes
+    claims = cleaned.get("claims")
+    if isinstance(claims, dict):
+        for statements in claims.values():
+            if not isinstance(statements, list):
+                continue
+            for statement in statements:
+                if isinstance(statement, dict):
+                    statement.pop("id", None)
+
+                    # Remove hash from mainsnak
+                    mainsnak = statement.get("mainsnak")
+                    if isinstance(mainsnak, dict):
+                        mainsnak.pop("hash", None)
+
+                    # Remove hash from qualifiers
+                    qualifiers = statement.get("qualifiers")
+                    if isinstance(qualifiers, dict):
+                        for qualifier_snaks in qualifiers.values():
+                            if isinstance(qualifier_snaks, list):
+                                for snak in qualifier_snaks:
+                                    if isinstance(snak, dict):
+                                        snak.pop("hash", None)
+
+                    # Remove hash from references
+                    references = statement.get("references")
+                    if isinstance(references, list):
+                        for reference in references:
+                            if isinstance(reference, dict):
+                                reference.pop("hash", None)
+                                ref_snaks = reference.get("snaks")
+                                if isinstance(ref_snaks, dict):
+                                    for ref_snak_list in ref_snaks.values():
+                                        if isinstance(ref_snak_list, list):
+                                            for snak in ref_snak_list:
+                                                if isinstance(snak, dict):
+                                                    snak.pop("hash", None)
+
+    return cleaned
 
 
 @dataclass
@@ -261,17 +322,25 @@ class WikidataLoader:
         Plain meaning: Retrieve the item and return it ready for use.
         """
 
-        # Fetch the item via Special:EntityData endpoint which returns JSON
-        # This is equivalent to wbgetentities but simpler for single-item fetches
-        json_text = self._fetch_entity_json(qid)
-
-        # Parse the JSON response from Wikidata
-        entity_data = self._parse_wikidata_json(json_text, qid)
+        entity_data = self.load_entity_data(qid)
 
         # Convert to MashTemplate
         template = self._build_template(qid, entity_data)
 
         return template
+
+    def load_entity_data(self, qid: str) -> dict[str, Any]:
+        """Load raw Wikidata entity data.
+
+        Plain meaning: Return the entity JSON as provided by Wikidata.
+        """
+
+        # Fetch the item via Special:EntityData endpoint which returns JSON
+        # This is equivalent to wbgetentities but simpler for single-item fetches
+        json_text = self._fetch_entity_json(qid)
+
+        # Parse the JSON response from Wikidata
+        return self._parse_wikidata_json(json_text, qid)
 
     def _fetch_entity_json(self, qid: str) -> str:
         """Fetch a single Wikidata entity as JSON.
@@ -334,7 +403,7 @@ class WikidataLoader:
 
         # Special:EntityData wraps data in an "entities" key
         entities = response.get("entities", {})
-        entity_data = entities.get(qid, {})
+        entity_data: dict[str, Any] = entities.get(qid, {})
 
         # Check for API error
         if "error" in entity_data:
