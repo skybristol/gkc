@@ -26,6 +26,19 @@ The GKC python package supports a data integration workflow that transforms raw 
 - The engineer will verify code imports and runs without syntax errors before committing
 - When writing new functions/classes, examine existing patterns in the codebase for consistency in typing and style
 
+### Documentation Guidelines
+
+- Use the standard Python package documentation structure: Overview → Examples → API Reference → CLI Reference → Notes.
+- Every public function/class must include: purpose, parameters, return values, side effects, error conditions, and at least one real-world example.
+- Every CLI command must include: description, usage block, flags/options, and two examples (minimal + realistic).
+- Document the Python API first, then the CLI as a thin wrapper.
+- Use the distillery metaphor consistently (Mash Bill, Still, Spirit Safe, Bottling).
+- Each module should begin with a high-level description and a list of its main functions.
+- Prefer task-oriented examples using realistic Wikidata data.
+- All public functionality must be documented; no undocumented parameters or return types.
+- Keep documentation concise, explicit, and example-driven.
+- Add “See also” links between related modules and commands.
+
 ### Development Workflow Checkpoint
 Before considering work complete:
 1. Run `./scripts/pre-merge-check.sh` and ensure all checks pass
