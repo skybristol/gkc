@@ -83,4 +83,4 @@ Each issue should:
 - Follow existing code patterns for consistency in style and architecture
 - Prioritize type safety and maintainability over quick fixes
 - Write tests that are robust and cover edge cases, not just the happy path
-- Document code with clear docstrings and maintain up-to-date API documentation in `/docs/gkc
+- Document code with clear docstrings and maintain up-to-date API documentation in `/docs/gkc`
