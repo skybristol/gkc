@@ -135,6 +135,10 @@ def _build_parser() -> argparse.ArgumentParser:
         help="Output format (default: summary)",
     )
     mash_qid.add_argument(
+        "--include-properties",
+        help="Comma-separated list of properties to include (e.g., P31,P21)",
+    )
+    mash_qid.add_argument(
         "--exclude-properties",
         help="Comma-separated list of properties to exclude (e.g., P31,P21)",
     )
@@ -309,16 +313,30 @@ def _handle_mash_qid(args: argparse.Namespace) -> dict[str, Any]:
     qid = args.qid
     output_format = args.output
     mash_mode = getattr(args, "mash_mode", "update")
+    include_properties = []
     exclude_properties = []
 
+    if args.include_properties:
+        include_properties = [p.strip() for p in args.include_properties.split(",")]
     if args.exclude_properties:
         exclude_properties = [p.strip() for p in args.exclude_properties.split(",")]
 
     try:
         loader = WikidataLoader()
 
+        template = loader.load(qid)
+
         if output_format == "json":
-            entity_data = loader.load_entity_data(qid)
+            template.filter_properties(
+                include_properties=include_properties,
+                exclude_properties=exclude_properties,
+            )
+            if args.exclude_qualifiers:
+                template.filter_qualifiers()
+            if args.exclude_references:
+                template.filter_references()
+
+            entity_data = template.to_dict()
             if mash_mode == "new":
                 entity_data = strip_entity_identifiers(entity_data)
             print(json.dumps(entity_data, indent=2))
@@ -329,13 +347,14 @@ def _handle_mash_qid(args: argparse.Namespace) -> dict[str, Any]:
                 "details": {"format": "json", "mode": mash_mode},
             }
 
-        template = loader.load(qid)
-
         # Apply language filter (uses package-level config by default)
         template.filter_languages()
 
         # Apply filters
-        template.filter_properties(exclude_properties)
+        template.filter_properties(
+            include_properties=include_properties,
+            exclude_properties=exclude_properties,
+        )
         if args.exclude_qualifiers:
             template.filter_qualifiers()
         if args.exclude_references:
