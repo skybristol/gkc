@@ -1,0 +1,3560 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Data Distillery - A framework for data distillation toward the Global Knowledge Commons">
+      
+      
+      
+        <link rel="canonical" href="https://datadistillery.org/gkc/pipeline_overview/">
+      
+      
+        <link rel="prev" href="../authentication/">
+      
+      
+        <link rel="next" href="../distillery_glossary/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.1">
+    
+    
+      
+        <title>Pipeline Overview - Data Distillery</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.484c7ddc.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/_mkdocstrings.css">
+    
+      <link rel="stylesheet" href="../../stylesheets/extra.css">
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    <body dir="ltr">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#gkc-pipeline-overview" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="Data Distillery" class="md-header__button md-logo" aria-label="Data Distillery" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            Data Distillery
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Pipeline Overview
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/skybristol/gkc" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    skybristol/gkc
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="Data Distillery" class="md-nav__button md-logo" aria-label="Data Distillery" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    Data Distillery
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/skybristol/gkc" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    skybristol/gkc
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    GKC Documentation
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    GKC Documentation
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../background/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Background
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_2_3" id="__nav_2_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Getting Started
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Getting Started
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../setup/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Setup and Orientation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../authentication/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Authentication
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_4" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_2_4" id="__nav_2_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Data Distillery Workflow
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_4_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_2_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Data Distillery Workflow
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Pipeline Overview
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Pipeline Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#the-end-to-end-vision" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The End-to-End Vision
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#stage-index-quick-links" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Stage Index (Quick Links)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#schema-architecture-overview" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Schema Architecture Overview
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#inputs-and-outputs-at-a-glance" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Inputs and Outputs at a Glance
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#stage-by-stage-breakdown" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Stage-by-Stage Breakdown
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Stage-by-Stage Breakdown">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#stage-1-data-ingestion" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Stage 1: Data Ingestion 🥔
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#stage-2-data-integration" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Stage 2: Data Integration ⚙️
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Stage 2: Data Integration ⚙️">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#fermentransform-records-toward-the-unified-still-schema-guided-by-still-recipes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        **Fermentransform records toward the Unified Still Schema guided by Still Recipes.
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#distillation-reconciliation-entity-linking" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Distillation — Reconciliation &amp; Entity Linking
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#refinement-deduplication-enrichment" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Refinement — Deduplication &amp; Enrichment
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#proofing-quality-assurance-confidence-scoring" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Proofing — Quality Assurance &amp; Confidence Scoring
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#blending-multi-source-merging-conflict-resolution" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Blending — Multi-Source Merging &amp; Conflict Resolution
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#stagstill-schema-data-into-target-specific-formats-using-barrel-recipes-validate-against-barrel-schemas" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        **StagStill Schema data into target-specific formats using Barrel Recipes, validate against Barrel Schemas.
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#cooperage-barrel-schema-management" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Cooperage (Barrel Schema Management)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#spirit-safe-validation-quality-gates" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Spirit Safe (Validation &amp; Quality Gates)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#stage-artifacts-and-decision-checkpoints" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Stage Artifacts and Decision Checkpoints
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-schema-flow-source-to-target" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The Schema Flow: Source to Target
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="The Schema Flow: Source to Target">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#phase-1-source-ingestion-mash-bill" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Phase 1: Source Ingestion (Mash Bill)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#phase-2-canonical-transformation-still-recipe-unified-still-schema" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Phase 2: Canonical Transformation (Still Recipe → Unified Still Schema)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#phase-3-target-distribution-barrel-recipes-barrel-schemas" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Phase 3: Target Distribution (Barrel Recipes → Barrel Schemas)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#why-this-architecture" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Why This Architecture?
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#key-principles" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Key Principles
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#common-workflows" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Common Workflows
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Common Workflows">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#simple-case-link-my-data-to-wikidata" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Simple Case: "Link my data to Wikidata"
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#multi-target-case-push-to-wikidata-osm-and-wikipedia" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Multi-Target Case: "Push to Wikidata, OSM, and Wikipedia"
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#complex-case-integrate-three-datasets-then-export-to-multiple-targets" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Complex Case: "Integrate three datasets, then export to multiple targets"
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#quality-first-case-ensure-high-confidence-data-only" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Quality-First Case: "Ensure high-confidence data only"
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#next-steps" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Next Steps
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Next Steps">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#understanding-the-architecture" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Understanding the Architecture
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#stage-documentation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Stage Documentation
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#key-components" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Key Components
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#current-implementation-status" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Current Implementation Status
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../distillery_glossary/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Distillery Glossary
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../mash_tun/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Mash Tun
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../fermentation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Fermentation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../distillation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Distillation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../refinement/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Refinement
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../proofing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Proofing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../blending/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Blending
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../bottling/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Bottling
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../shipping/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Shipping
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_2_5" id="__nav_2_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Barrel Schemas
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Barrel Schemas
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../barrel_schemas/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../barrel_schemas/wikidata_entityschemas/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Wikidata EntitySchemas
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../barrel_schemas/commons_schemas/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Wikimedia Commons
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../barrel_schemas/wikipedia_infoboxes/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Wikipedia Infoboxes
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../barrel_schemas/osm_tagging/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    OpenStreetMap Tagging
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_6" >
+        
+          
+          <label class="md-nav__link" for="__nav_2_6" id="__nav_2_6_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Schema Forward Approach
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2_6">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Schema Forward Approach
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../mapping_format_migration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Mapping Format Migration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_7" >
+        
+          
+          <label class="md-nav__link" for="__nav_2_7" id="__nav_2_7_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Wikidata
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_7_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2_7">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Wikidata
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../wikidata/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../wikidata/item_creation_approach/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Item Creation Approach
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../wikidata/claims_map_builder/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Claims Map Builder
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../wikidata/reference_qualifier_patterns/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reference/Qualifier Patterns
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../wikidata/date_time_handling/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Date/Time Handling
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_7_6" >
+        
+          
+          <label class="md-nav__link" for="__nav_2_7_6" id="__nav_2_7_6_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Sitelinks
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_2_7_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2_7_6">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Sitelinks
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../wikidata/sitelinks_usage/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Sitelinks Usage
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../wikidata/sitelinks_validation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Sitelinks Validation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_8" >
+        
+          
+          <label class="md-nav__link" for="__nav_2_8" id="__nav_2_8_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Command Line Interface
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_8_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2_8">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Command Line Interface
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../cli/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../cli/auth/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Authentication
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../cli/mash/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Mash
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_9" >
+        
+          
+          <label class="md-nav__link" for="__nav_2_9" id="__nav_2_9_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Utilities and Tools
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_9_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2_9">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Utilities and Tools
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../sparql_queries/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SPARQL Queries
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../sparql_quick_reference/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SPARQL Quick Reference
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_10" >
+        
+          
+          <label class="md-nav__link" for="__nav_2_10" id="__nav_2_10_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API Reference
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_10_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2_10">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    API Reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api/auth/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Authentication
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api/mash/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Mash
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api/mash_formatters/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Mash Formatters
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api/shipper/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Shipper
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api/sparql/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SPARQL
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_11" >
+        
+          
+          <label class="md-nav__link" for="__nav_2_11" id="__nav_2_11_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Development
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_11_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2_11">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Development
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../CI_CD/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CI/CD
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../RELEASE/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Release Process
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#the-end-to-end-vision" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The End-to-End Vision
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#stage-index-quick-links" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Stage Index (Quick Links)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#schema-architecture-overview" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Schema Architecture Overview
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#inputs-and-outputs-at-a-glance" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Inputs and Outputs at a Glance
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#stage-by-stage-breakdown" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Stage-by-Stage Breakdown
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Stage-by-Stage Breakdown">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#stage-1-data-ingestion" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Stage 1: Data Ingestion 🥔
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#stage-2-data-integration" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Stage 2: Data Integration ⚙️
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Stage 2: Data Integration ⚙️">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#fermentransform-records-toward-the-unified-still-schema-guided-by-still-recipes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        **Fermentransform records toward the Unified Still Schema guided by Still Recipes.
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#distillation-reconciliation-entity-linking" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Distillation — Reconciliation &amp; Entity Linking
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#refinement-deduplication-enrichment" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Refinement — Deduplication &amp; Enrichment
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#proofing-quality-assurance-confidence-scoring" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Proofing — Quality Assurance &amp; Confidence Scoring
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#blending-multi-source-merging-conflict-resolution" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Blending — Multi-Source Merging &amp; Conflict Resolution
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#stagstill-schema-data-into-target-specific-formats-using-barrel-recipes-validate-against-barrel-schemas" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        **StagStill Schema data into target-specific formats using Barrel Recipes, validate against Barrel Schemas.
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#cooperage-barrel-schema-management" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Cooperage (Barrel Schema Management)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#spirit-safe-validation-quality-gates" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Spirit Safe (Validation &amp; Quality Gates)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#stage-artifacts-and-decision-checkpoints" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Stage Artifacts and Decision Checkpoints
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-schema-flow-source-to-target" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The Schema Flow: Source to Target
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="The Schema Flow: Source to Target">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#phase-1-source-ingestion-mash-bill" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Phase 1: Source Ingestion (Mash Bill)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#phase-2-canonical-transformation-still-recipe-unified-still-schema" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Phase 2: Canonical Transformation (Still Recipe → Unified Still Schema)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#phase-3-target-distribution-barrel-recipes-barrel-schemas" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Phase 3: Target Distribution (Barrel Recipes → Barrel Schemas)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#why-this-architecture" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Why This Architecture?
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#key-principles" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Key Principles
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#common-workflows" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Common Workflows
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Common Workflows">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#simple-case-link-my-data-to-wikidata" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Simple Case: "Link my data to Wikidata"
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#multi-target-case-push-to-wikidata-osm-and-wikipedia" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Multi-Target Case: "Push to Wikidata, OSM, and Wikipedia"
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#complex-case-integrate-three-datasets-then-export-to-multiple-targets" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Complex Case: "Integrate three datasets, then export to multiple targets"
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#quality-first-case-ensure-high-confidence-data-only" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Quality-First Case: "Ensure high-confidence data only"
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#next-steps" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Next Steps
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Next Steps">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#understanding-the-architecture" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Understanding the Architecture
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#stage-documentation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Stage Documentation
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#key-components" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Key Components
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#current-implementation-status" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Current Implementation Status
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="gkc-pipeline-overview">GKC Pipeline Overview</h1>
+<p>The Data Distillery Workflow transforms raw, disconnected data into refined, linked open data through a series of intentional stages. Each stage adds value: cleaning, linking, validating, and ultimately preparing data for contribution to open knowledge sources.</p>
+<p>At the heart of this workflow is a <strong>two-schema architecture</strong>: source data is first mapped to a <strong>Unified Still Schema</strong> (meta schema), which then enables distribution after distillation to multiple target systems via <strong>Barrel Schemas</strong> and <strong>Barrel Recipes</strong>. This design promotes simultaneous contribution to Wikidata, OSM, Commons, and Wikipedia from a single transformation pipeline.</p>
+<h2 id="the-end-to-end-vision">The End-to-End Vision</h2>
+<pre class="mermaid"><code>%%{init: {'flowchart': {'nodeSpacing': 100, 'rankSpacing': 100, 'htmlLabels': true, 'primaryTextColor': '#333'}, 'fontSize': 18}}%%
+graph TD
+    subgraph sources["🥔 Raw Ingredients"]
+        CSV["CSV Files"]
+        JSON["JSON APIs"]
+        SHEETS["Spreadsheets"]
+        RDF["RDF/Linked Data"]
+        OSM["OSM Extracts"]
+    end
+
+    subgraph ingestion["Stage 1: Data Ingestion"]
+        MASHBILL["&lt;b&gt;Mash Bill&lt;/b&gt;&lt;br/&gt;Source Specs&lt;br/&gt;━━━━━━━━━━━━&lt;br/&gt;Format definitions&lt;br/&gt;Field mappings&lt;br/&gt;Parse rules"]
+        MASH["&lt;b&gt;Mash Tun&lt;/b&gt;&lt;br/&gt;Parse &amp; Structure&lt;br/&gt;━━━━━━━━━━━━&lt;br/&gt;Read diverse formats&lt;br/&gt;Apply Mash Bill&lt;br/&gt;Initial enrichment"]
+    end
+
+    subgraph transform["Stage 2: Data Integration"]
+        STILLRECIPE["&lt;b&gt;Still Recipe&lt;/b&gt;&lt;br/&gt;Transform Spec&lt;br/&gt;━━━━━━━━━━━━&lt;br/&gt;Source→Still mapping"]
+        STILLSCHEMA["&lt;b&gt;🏺 Unified Still Schema&lt;/b&gt;&lt;br/&gt;Meta Schema&lt;br/&gt;━━━━━━━━━━━━&lt;br/&gt;Canonical representation&lt;br/&gt;System-agnostic"]
+
+        FERMENT["&lt;b&gt;Fermentation&lt;/b&gt;&lt;br/&gt;Clean &amp; Normalize&lt;br/&gt;━━━━━━━━━━━━&lt;br/&gt;Fix encoding, whitespace&lt;br/&gt;Type coercion&lt;br/&gt;Apply Still Recipe"]
+
+        DISTILL["&lt;b&gt;Distillation&lt;/b&gt;&lt;br/&gt;Reconcile &amp; Link&lt;br/&gt;━━━━━━━━━━━━&lt;br/&gt;Match to Wikidata items&lt;br/&gt;Find OSM features&lt;br/&gt;Transform to Still Schema"]
+
+        REFINE["&lt;b&gt;Refinement&lt;/b&gt;&lt;br/&gt;Dedup &amp; Enrich&lt;br/&gt;━━━━━━━━━━━━&lt;br/&gt;Collapse duplicates&lt;br/&gt;Add cross-references&lt;br/&gt;Shape validation"]
+
+        PROOF["&lt;b&gt;Proofing&lt;/b&gt;&lt;br/&gt;Quality Assurance&lt;br/&gt;━━━━━━━━━━━━&lt;br/&gt;Completeness metrics&lt;br/&gt;Confidence scoring&lt;br/&gt;Integrity checks"]
+
+        BLEND["&lt;b&gt;Blending&lt;/b&gt;&lt;br/&gt;Merge &amp; Unify&lt;br/&gt;━━━━━━━━━━━━&lt;br/&gt;Combine sources&lt;br/&gt;Resolve conflicts&lt;br/&gt;Build knowledge graph"]
+    end
+
+    subgraph recipes["Barrel Recipes &amp; Schemas"]
+        BARRELRECIPE["&lt;b&gt;Barrel Recipes&lt;/b&gt;&lt;br/&gt;Distribution Specs&lt;br/&gt;━━━━━━━━━━━━&lt;br/&gt;Still→Barrel transforms&lt;br/&gt;One per target system"]
+        BARRELSCHEMA["&lt;b&gt;Barrel Schemas&lt;/b&gt;&lt;br/&gt;Target Constraints&lt;br/&gt;━━━━━━━━━━━━&lt;br/&gt;Wikidata EntitySchemas&lt;br/&gt;OSM tagging schemes&lt;br/&gt;Commons/Wikipedia specs"]
+    end
+
+    subgraph delivery["Stage 3: Data Delivery"]
+        BOTTLE["&lt;b&gt;Bottling&lt;/b&gt;&lt;br/&gt;Format &amp; Export&lt;br/&gt;━━━━━━━━━━━━&lt;br/&gt;Apply Barrel Recipes&lt;br/&gt;Validate vs Barrel Schemas&lt;br/&gt;Batch uploads"]
+    end
+
+    subgraph outputs["🍷 Refined Output"]
+        WD["Wikidata&lt;br/&gt;New Items&lt;br/&gt;&amp; Claims"]
+        WIKI["Wikipedia&lt;br/&gt;Infobox&lt;br/&gt;Templates"]
+        COMMONS["Wikimedia&lt;br/&gt;Commons&lt;br/&gt;Items"]
+        OSM_OUT["OpenStreetMap&lt;br/&gt;Features &amp;&lt;br/&gt;Tags"]
+    end
+
+    subgraph support["🛞 Supporting Systems"]
+        BARREL["Barrel Storage&lt;br/&gt;Caching &amp; Provenance"]
+        COOPERAGE["Cooperage&lt;br/&gt;Barrel Schema Manager&lt;br/&gt;Property Metadata"]
+        SAFE["Spirit Safe&lt;br/&gt;Validation Gates"]
+        ANGEL["Angel's Share&lt;br/&gt;Schema Deviations"]
+    end
+
+    sources --&gt; MASH
+    MASHBILL -.guides.-&gt; MASH
+    MASH --&gt; FERMENT
+    STILLRECIPE -.guides.-&gt; FERMENT
+    FERMENT --&gt; DISTILL
+    STILLRECIPE -.guides.-&gt; DISTILL
+    DISTILL --&gt; STILLSCHEMA
+    STILLSCHEMA --&gt; REFINE
+    REFINE --&gt; PROOF
+    PROOF --&gt; BLEND
+    BLEND --&gt; BOTTLE
+    BARRELRECIPE -.guides.-&gt; BOTTLE
+    BOTTLE --&gt; WD
+    BOTTLE --&gt; WIKI
+    BOTTLE --&gt; COMMONS
+    BOTTLE --&gt; OSM_OUT
+
+    MASH -.-&gt; BARREL
+    DISTILL -.-&gt; BARREL
+    PROOF -.-&gt; BARREL
+
+    FERMENT -.-&gt; COOPERAGE
+    DISTILL -.-&gt; COOPERAGE
+    BOTTLE -.-&gt; COOPERAGE
+
+    COOPERAGE -.provides.-&gt; BARRELSCHEMA
+    BARRELSCHEMA -.informs.-&gt; BARRELRECIPE
+
+    REFINE -.-&gt; SAFE
+    PROOF -.-&gt; SAFE
+    BOTTLE -.-&gt; SAFE
+
+    FERMENT -.-&gt; ANGEL
+    REFINE -.-&gt; ANGEL
+    PROOF -.-&gt; ANGEL
+    BLEND -.-&gt; ANGEL
+    BOTTLE -.-&gt; ANGEL
+
+    style sources fill:#f4d4a8
+    style ingestion fill:#e8d4c4
+    style transform fill:#dfc0b0
+    style delivery fill:#d4a89c
+    style outputs fill:#4a90e2
+    style recipes fill:#c8b4e4
+    style support fill:#f0f0f0
+    style STILLSCHEMA fill:#ffd700,stroke:#ff8c00,stroke-width:3px
+    style BARRELSCHEMA fill:#dda0dd,stroke:#9370db,stroke-width:2px</code></pre>
+<h2 id="stage-index-quick-links">Stage Index (Quick Links)</h2>
+<ul>
+<li><a href="../mash_tun/">Mash Tun</a> — Data ingestion and parsing (uses Mash Bill)</li>
+<li><a href="../fermentation/">Fermentation</a> — Cleaning and normalization (applies Still Recipe)</li>
+<li><a href="../distillation/">Distillation</a> — Reconciliation and entity linking (transforms to Unified Still Schema)</li>
+<li><a href="../refinement/">Refinement</a> — Deduplication and enrichment</li>
+<li><a href="../proofing/">Proofing</a> — Quality assurance and confidence scoring</li>
+<li><a href="../blending/">Blending</a> — Multi-source merging and conflict resolution</li>
+<li><a href="../bottling/">Bottling</a> — Format and export (applies Barrel Recipes, validates vs Barrel Schemas)</li>
+</ul>
+<h2 id="schema-architecture-overview">Schema Architecture Overview</h2>
+<p>The GKC distillery uses a <strong>two-schema architecture</strong> to separate data acquisition concerns from multi-system distribution:</p>
+<div class="highlight"><pre><span></span><code>Heterogeneous Sources
+        ↓
+    Mash Bill (per-source parsing rules)
+        ↓
+    Raw Parsed Data
+        ↓
+    Still Recipe (source → canonical transformation)
+        ↓
+🏺 Unified Still Schema (meta schema - system agnostic)
+        ↓
+    Barrel Recipes (canonical → target transformations)
+        ↓
+    Barrel Schemas (target system constraints)
+        ↓
+Multiple Knowledge Outlets (Wikidata, OSM, Commons, Wikipedia)
+</code></pre></div>
+<p><strong>Key Benefits:</strong>
+- <strong>Transform once, distribute many</strong>: Map source data to Still Schema once, then flow to all targets
+- <strong>Separation of concerns</strong>: Source complexity (Mash Bill) separate from target complexity (Barrel Recipes)
+- <strong>Target flexibility</strong>: Add new target systems without remapping sources
+- <strong>Consistency</strong>: All targets receive data from the same canonical representation</p>
+<hr />
+<h2 id="inputs-and-outputs-at-a-glance">Inputs and Outputs at a Glance</h2>
+<table>
+<thead>
+<tr>
+<th>Stage</th>
+<th>Primary Inputs</th>
+<th>Primary Outputs</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Mash Tun</strong></td>
+<td>Raw files + Mash Bill specs</td>
+<td>Parsed records with canonical fields and provenance</td>
+</tr>
+<tr>
+<td><strong>Fermentation</strong></td>
+<td>Parsed records + Still Recipe</td>
+<td>Clean, typed records in Still Schema format</td>
+</tr>
+<tr>
+<td><strong>Distillation</strong></td>
+<td>Clean records</td>
+<td>Linked entities in Unified Still Schema representation</td>
+</tr>
+<tr>
+<td><strong>Refinement</strong></td>
+<td>Still Schema records</td>
+<td>Deduplicated, enriched, shape-validated records</td>
+</tr>
+<tr>
+<td><strong>Proofing</strong></td>
+<td>Refined records</td>
+<td>Quality scores, pass/review/fail status</td>
+</tr>
+<tr>
+<td><strong>Blending</strong></td>
+<td>Proofed datasets</td>
+<td>Unified dataset with merged provenance</td>
+</tr>
+<tr>
+<td><strong>Bottling</strong></td>
+<td>Blended dataset + Barrel Recipes</td>
+<td>Target-specific exports validated vs Barrel Schemas</td>
+</tr>
+<tr>
+<td><strong>Shipping</strong></td>
+<td>Final distilled and bottled product</td>
+<td>API packages delivered to open knowledge systems</td>
+</tr>
+</tbody>
+</table>
+<h2 id="stage-by-stage-breakdown">Stage-by-Stage Breakdown</h2>
+<h3 id="stage-1-data-ingestion"><strong>Stage 1: Data Ingestion</strong> 🥔</h3>
+<p><strong>Mash Bill &amp; Mash Tun</strong> — Define how to read heterogeneous sources, then parse them into standardized format.</p>
+<table>
+<thead>
+<tr>
+<th>Aspect</th>
+<th>Details</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Input</strong></td>
+<td>CSV, JSON, spreadsheets, API dumps, RDF, databases</td>
+</tr>
+<tr>
+<td><strong>Recipe</strong></td>
+<td>Mash Bill defines format-specific parsing rules, field mappings, encodings</td>
+</tr>
+<tr>
+<td><strong>Core Task</strong></td>
+<td>Structural parsing, encoding normalization, basic type detection</td>
+</tr>
+<tr>
+<td><strong>Key Decision</strong></td>
+<td>Which fields/properties matter? How to handle format quirks?</td>
+</tr>
+<tr>
+<td><strong>Output</strong></td>
+<td>Standardized records with identified fields, ready for transformation</td>
+</tr>
+<tr>
+<td><strong>User Focus</strong></td>
+<td>"How do I ingest my data source reliably?"</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h3 id="stage-2-data-integration"><strong>Stage 2: Data Integration</strong> ⚙️</h3>
+<p>This is where the real work happens—transforming messy data into something that can be reliably matched, enriched, and validated.</p>
+<h4 id="fermentransform-records-toward-the-unified-still-schema-guided-by-still-recipes">**Fermentransform records toward the Unified Still Schema guided by Still Recipes.</h4>
+<table>
+<thead>
+<tr>
+<th>Aspect</th>
+<th>Details</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Input</strong></td>
+<td>Parsed records from Mash Tun</td>
+</tr>
+<tr>
+<td><strong>Recipe</strong></td>
+<td>Still Recipe defines source field → Still Schema transformations</td>
+</tr>
+<tr>
+<td><strong>Core Task</strong></td>
+<td>Whitespace trimming, type coercion, encoding fixes, missing value handling</td>
+</tr>
+<tr>
+<td><strong>Quality Check</strong></td>
+<td>Do all records align with Still Schema? Are there obvious typos or encoding issues?</td>
+</tr>
+<tr>
+<td><strong>Output</strong></td>
+<td>Clean records, moving toward Still Schema representation</td>
+</tr>
+<tr>
+<td><strong>Decision Point</strong></td>
+<td>How strict? Should unknown values be dropped, kept, or flagged?</td>
+</tr>
+</tbody>
+</table>
+<h4 id="distillation-reconciliation-entity-linking"><strong>Distillation</strong> — Reconciliation &amp; Entity Linking</h4>
+<p>Link source records to authoritative systems and finalize transformation to Unified Still Schema.</p>
+<table>
+<thead>
+<tr>
+<th>Aspect</th>
+<th>Details</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Input</strong></td>
+<td>Clean, normalized records</td>
+</tr>
+<tr>
+<td><strong>Core Task</strong></td>
+<td>Match to Wikidata QIDs, OSM IDs, authority files; complete Still Schema transformation</td>
+</tr>
+<tr>
+<td><strong>Methods</strong></td>
+<td>String matching, heuristics, external authority lookups, manual overrides</td>
+</tr>
+<tr>
+<td><strong>Output</strong></td>
+<td>Records in Unified Still Schema with explicit links to canonical entities + confidence</td>
+</tr>
+<tr>
+<td><strong>Decision Point</strong></td>
+<td>What confidence threshold? When to mark ambiguous vs. high-confidence?</td>
+</tr>
+<tr>
+<td><strong>Key Milestone</strong></td>
+<td><strong>Data now in system-agnostic Still Schema - ready for any target system</strong></td>
+</tr>
+<tr>
+<td><strong>Decision Point</strong></td>
+<td>What confidence threshold? When to mark ambiguous vs. high-confidence?</td>
+</tr>
+</tbody>
+</table>
+<h4 id="refinement-deduplication-enrichment"><strong>Refinement</strong> — Deduplication &amp; Enrichment</h4>
+<p>Collapse duplicate matches, enrich with cross-references, validate against schemas (ShEx).</p>
+<table>
+<thead>
+<tr>
+<th>Aspect</th>
+<th>Details</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Input</strong></td>
+<td>Reconciled records with entity links</td>
+</tr>
+<tr>
+<td><strong>Core Task</strong></td>
+<td>Deduplicate variants, add relationships/sitelinks, run shape constraints</td>
+</tr>
+<tr>
+<td><strong>Output</strong></td>
+<td>Deduplicated, enriched records meeting all shape requirements</td>
+</tr>
+<tr>
+<td><strong>Decision Point</strong></td>
+<td>Which version of a duplicate to keep? How to handle conflicts?</td>
+</tr>
+</tbody>
+</table>
+<h4 id="proofing-quality-assurance-confidence-scoring"><strong>Proofing</strong> — Quality Assurance &amp; Confidence Scoring</h4>
+<p>Score each record against multi-dimensional quality metrics and assign fitness scores for downstream use.</p>
+<table>
+<thead>
+<tr>
+<th>Aspect</th>
+<th>Details</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Input</strong></td>
+<td>Refined, deduplicated records</td>
+</tr>
+<tr>
+<td><strong>Core Task</strong></td>
+<td>Run quality metrics: completeness, consistency, confidence, internal coherence</td>
+</tr>
+<tr>
+<td><strong>Output</strong></td>
+<td>Records with quality scores, flags, and audit trails</td>
+</tr>
+<tr>
+<td><strong>Decision Point</strong></td>
+<td>What quality threshold? What's acceptable for each downstream destination?</td>
+</tr>
+</tbody>
+</table>
+<h4 id="blending-multi-source-merging-conflict-resolution"><strong>Blending</strong> — Multi-Source Merging &amp; Conflict Resolution</h4>
+<p>Combine cleaned/reconciled datasets from multiple sources into a unified knowledge graph.</p>
+<table>
+<thead>
+<tr>
+<th>Aspect</th>
+<th>Details</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Input</strong></td>
+<td>Multiple proofed datasets</td>
+</tr>
+<tr>
+<td><strong>Core Task</strong></td>
+<td>Merge entity records, resolve value conflicts, build cross-source relationships</td>
+</tr>
+<tr>
+<td><strong>Output</strong></td>
+<td>Unified, deduplicated dataset with provenance tracking</td>
+</tr>
+<tr>
+<td><strong>Decision Point</strong></td>
+<td>Which source takes precedence when values conflict? How to weight different signals?</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h3 id="stagstill-schema-data-into-target-specific-formats-using-barrel-recipes-validate-against-barrel-schemas">**StagStill Schema data into target-specific formats using Barrel Recipes, validate against Barrel Schemas.</h3>
+<table>
+<thead>
+<tr>
+<th>Aspect</th>
+<th>Details</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Input</strong></td>
+<td>Final blended dataset in Unified Still Schema</td>
+</tr>
+<tr>
+<td><strong>Recipes</strong></td>
+<td>Barrel Recipes transform Still Schema → target formats (one per system)</td>
+</tr>
+<tr>
+<td><strong>Schemas</strong></td>
+<td>Barrel Schemas define target constraints (EntitySchemas, tagging schemes, etc.)</td>
+</tr>
+<tr>
+<td><strong>Outputs</strong></td>
+<td>Validated formats for each target: Wikidata JSON, OSM tags, Commons metadata, infoboxes</td>
+</tr>
+<tr>
+<td><strong>Validation</strong></td>
+<td>Spirit Safe validates output against each Barrel Schema before delivery</td>
+</tr>
+<tr>
+<td><strong>Delivery</strong></td>
+<td>Batch exports, API readiness, upload staging</td>
+</tr>
+<tr>
+<td><strong>Decision Point</strong></td>
+<td>Which targets? Batch size? Validation strictness? Dry-run vs. publish</td>
+</tr>
+<tr>
+<td><strong>Formats</strong></td>
+<td>Wikidata JSON, infobox templates, Commons metadata, OSM tags</td>
+</tr>
+<tr>
+<td><strong>Delivery</strong></td>
+<td>Batch exports, API readiness, upload staging</td>
+</tr>
+<tr>
+<td><strong>Decision Point</strong></td>
+<td>Which format for which destination? Batch size? Validation before upload?</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<p>Storage** (Caching &amp; Provenance)
+- Persistent storage of intermediate results and snapshots
+- Complete provenance trail (what was filtered, why, when)
+- Enables rollback and reuse without re-computation
+- Audit trail for regulatory/transparency needs
+- Note: "Barrel" here refers to storage, distinct from "Barrel Schema" (target system constraints)</p>
+<h3 id="cooperage-barrel-schema-management"><strong>Cooperage</strong> (Barrel Schema Management)</h3>
+<ul>
+<li>Manages the collection of Barrel Schemas from all target systems</li>
+<li>Fetches and caches property metadata (Wikidata properties, OSM tag definitions)</li>
+<li>Maintains entity schemas, property constraints, and validation rules</li>
+<li>Provides specifications needed to build Barrel Recipes</li>
+<li>Central repository for all target system requirements</li>
+</ul>
+<h3 id="spirit-safe-validation-quality-gates"><strong>Spirit Safe</strong> (Validation &amp; Quality Gates)</h3>
+<ul>
+<li>Validates data against Barrel Schemas throughout the pipeline</li>
+<li>Shape constraints (ShEx validation for Wikidata EntitySchemas)</li>
+<li>Reference integrity checks and business rule enforcement</li>
+<li>"Pass/fail" decision points, especially before bottling</li>
+<li>Ensures output meets target system requirements</li>
+<li>Shape constraints (ShEx validation)</li>
+<li>Reference integrity checks</li>
+<li>Business rule enforcement</li>
+<li>"Pass/fail" decision points throughout the pipeline</li>
+</ul>
+<hr />
+<h2 id="stage-artifacts-and-decision-checkpoints">Stage Artifacts and Decision Checkpoints</h2>
+<p>Each stage produces tangible artifacts that make progress visible and reviewable.</p>
+<table>
+<thead>
+<tr>
+<th>Stage</th>
+<th>Typical Artifacts</th>
+<th>Decision Checkpoints</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Mash Bill</strong></td>
+<td>Format specifications, field mapping docs, parser configs</td>
+<td>Source structure understood? Edge cases handled?</td>
+</tr>
+<tr>
+<td><strong>Mash Tun</strong></td>
+<td>Parsed records, source mappings, ingestion logs</td>
+<td>Source field mapping accepted? Missing columns tolerated?</td>
+</tr>
+<tr>
+<td><strong>Still Recipe</strong></td>
+<td>Transformation rules, field mappings, type conversions</td>
+<td>Source → Still Schema mappings complete? Entity reconciliation strategy?</td>
+</tr>
+<tr>
+<td><strong>Fermentation</strong></td>
+<td>Cleaned records, coercion logs, language/character flags</td>
+<td>Strict or lenient parsing? Missing data policy?</td>
+</tr>
+<tr>
+<td><strong>Distillation</strong></td>
+<td>Still Schema records, match candidates, confidence scores, link audit logs</td>
+<td>Confidence thresholds? Manual review queue? Still Schema complete?</td>
+</tr>
+<tr>
+<td><strong>Refinement</strong></td>
+<td>Merge logs, dedup reports, schema validation output</td>
+<td>Conflict strategy? Enrichment depth?</td>
+</tr>
+<tr>
+<td><strong>Proofing</strong></td>
+<td>Quality scores, review queue, anomaly flags</td>
+<td>Pass/review/fail thresholds? Outlier policy?</td>
+</tr>
+<tr>
+<td><strong>Blending</strong></td>
+<td>Merge decisions, provenance map, conflict summaries</td>
+<td>Source priority rules? Alternate value handling?</td>
+</tr>
+<tr>
+<td><strong>Barrel Recipe</strong></td>
+<td>Still → Barrel transformation rules, per-target configs</td>
+<td>Recipe covers all Still Schema fields? Target-specific quirks handled?</td>
+</tr>
+<tr>
+<td><strong>Barrel Schema</strong></td>
+<td>Target constraint specifications, validation rules</td>
+<td>EntitySchemas current? Property constraints accurate?</td>
+</tr>
+<tr>
+<td><strong>Bottling</strong></td>
+<td>Export batches, validation reports, preview artifacts</td>
+<td>Dry-run vs. publish? Batch size limits? Barrel Schema validation passes?</td>
+</tr>
+<tr>
+<td><strong>Shipping</strong></td>
+<td>JSON documents or other serializations</td>
+<td>When to ship? What to ship? What to do with receipts?</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="the-schema-flow-source-to-target">The Schema Flow: Source to Target</h2>
+<p>Understanding the schema architecture is key to understanding how GKC enables multi-system data distribution:</p>
+<h3 id="phase-1-source-ingestion-mash-bill">Phase 1: Source Ingestion (Mash Bill)</h3>
+<p><strong>Challenge</strong>: Every data source has its own format, field names, encodings, and quirks.</p>
+<p><strong>Solution</strong>: The <strong>Mash Bill</strong> captures source-specific parsing logic:
+- CSV column mappings
+- JSON path expressions<br />
+- API response structures
+- Encoding and delimiter specifications</p>
+<p><strong>Result</strong>: Raw data standardized into workable records.</p>
+<h3 id="phase-2-canonical-transformation-still-recipe-unified-still-schema">Phase 2: Canonical Transformation (Still Recipe → Unified Still Schema)</h3>
+<p><strong>Challenge</strong>: Need a common representation that isn't tied to any specific target system.</p>
+<p><strong>Solution</strong>: The <strong>Still Recipe</strong> transforms source records into the <strong>Unified Still Schema</strong>:
+- Source-specific field names → canonical field names
+- Source data types → canonical data types
+- Entity reconciliation (match to QIDs, OSM IDs)
+- The Still Schema is the "meta schema" - system-agnostic</p>
+<p><strong>Result</strong>: Data in canonical form, ready for any target system.</p>
+<h3 id="phase-3-target-distribution-barrel-recipes-barrel-schemas">Phase 3: Target Distribution (Barrel Recipes → Barrel Schemas)</h3>
+<p><strong>Challenge</strong>: Each target system has different requirements, constraints, and formats.</p>
+<p><strong>Solution</strong>: <strong>Barrel Recipes</strong> transform from Still Schema to target formats:
+- Wikidata Barrel Recipe: Still Schema → Wikidata claims/qualifiers/references
+- OSM Barrel Recipe: Still Schema → OSM features/tags
+- Commons Barrel Recipe: Still Schema → Commons structured data
+- Wikipedia Barrel Recipe: Still Schema → Infobox templates</p>
+<p><strong>Validation</strong>: <strong>Barrel Schemas</strong> define target constraints:
+- Wikidata: EntitySchemas (ShEx) + property constraints
+- OSM: Tagging schemes and wiki documentation
+- Commons: Structured data schemas
+- Wikipedia: Infobox template parameters</p>
+<p><strong>Result</strong>: Data formatted for each target, validated before delivery.</p>
+<h3 id="why-this-architecture">Why This Architecture?</h3>
+<ol>
+<li><strong>Transform once, distribute many</strong>: Map messy sources → Still Schema once, then flow to all targets</li>
+<li><strong>Add targets without remapping</strong>: New target? Write one Barrel Recipe, don't touch sources</li>
+<li><strong>Consistency across targets</strong>: All systems receive data from the same canonical representation</li>
+<li><strong>Separation of concerns</strong>: Source complexity (Mash Bill) separate from target complexity (Barrel Recipes)</li>
+<li><strong>Testable at each stage</strong>: Validate Still Schema transformation separate from target formatting</li>
+</ol>
+<hr />
+<h2 id="key-principles">Key Principles</h2>
+<ol>
+<li><strong>Two-schema architecture</strong>: Sources → Still Schema → Barrel Schemas enables multi-system distribution</li>
+<li><strong>Each stage is a decision point</strong>: Users configure how their data moves through the pipeline</li>
+<li><strong>Provenance is built-in</strong>: Every transformation logged; nothing disappears without trace</li>
+<li><strong>Multiple paths out</strong>: The same Still Schema data can be distributed to Wikidata, Wikipedia, Commons, and OSM</li>
+<li><strong>Schema-driven</strong>: Mash Bills, Still Recipes, and Barrel Recipes formalize transformations</li>
+<li><strong>Flexible depth</strong>: Users can stop at any stage or skip stages if not needed</li>
+<li><strong>Quality over speed</strong>: Better to catch issues early (fermentation/distillation) than late (proofing)</li>
+<li><strong>Angel's Share is preserved</strong>: Schema deviations are retained with notes for future schema expansion or alternate endpoints</li>
+<li><strong>Cooperage manages Barrel Schemas</strong>: Central repository for all target system constraints and metadata</li>
+</ol>
+<hr />
+<h2 id="common-workflows">Common Workflows</h2>
+<h3 id="simple-case-link-my-data-to-wikidata">Simple Case: "Link my data to Wikidata"</h3>
+<p><strong>Mash</strong> (with Mash Bill) → <strong>Ferment</strong> (with Still Recipe) → <strong>Distill</strong> (to Still Schema) → <strong>Bottle</strong> (with Wikidata Barrel Recipe, validated vs EntitySchema)</p>
+<h3 id="multi-target-case-push-to-wikidata-osm-and-wikipedia">Multi-Target Case: "Push to Wikidata, OSM, and Wikipedia"</h3>
+<p><strong>Mash</strong> → <strong>Ferment</strong> → <strong>Distill</strong> (to Still Schema) → <strong>Refine</strong> → <strong>Proof</strong> → <strong>Bottle</strong> (×3 using Wikidata, OSM, and Wikipedia Barrel Recipes)</p>
+<p>The beauty: Transform to Still Schema once, then bottling applies three different Barrel Recipes to distribute the same canonical data.</p>
+<h3 id="complex-case-integrate-three-datasets-then-export-to-multiple-targets">Complex Case: "Integrate three datasets, then export to multiple targets"</h3>
+<p><strong>Mash</strong> (×3, each with own Mash Bill) → <strong>Ferment</strong> (×3, with Still Recipes) → <strong>Distill</strong> (×3, all to Still Schema) → <strong>Refine</strong> (×3) → <strong>Proof</strong> (×3) → <strong>Blend</strong> → <strong>Bottle</strong> (×4 formats using Barrel Recipes)</p>
+<h3 id="quality-first-case-ensure-high-confidence-data-only">Quality-First Case: "Ensure high-confidence data only"</h3>
+<p><strong>Mash</strong> → <strong>Ferment</strong> → <strong>Distill</strong> (to Still Schema) → <strong>Refine</strong> → <strong>Proof</strong> (high-confidence filter) → <strong>Bottle</strong> (with Barrel Recipe validation)</p>
+<hr />
+<h2 id="next-steps">Next Steps</h2>
+<h3 id="understanding-the-architecture">Understanding the Architecture</h3>
+<ul>
+<li><a href="../distillery_glossary/">Distillery Glossary</a> — Complete terminology reference including schema architecture</li>
+<li>Schema Architecture (this page) — See "Schema Architecture Overview" and "The Schema Flow" sections above</li>
+</ul>
+<h3 id="stage-documentation">Stage Documentation</h3>
+<p>Visit the relevant stage documentation for:
+- Detailed API reference
+- Configuration examples
+- Real use cases walking through decisions
+- Troubleshooting and common patterns</p>
+<h3 id="key-components">Key Components</h3>
+<ul>
+<li><strong>Cooperage</strong> — Learn about Barrel Schema management and property metadata</li>
+<li><strong>Spirit Safe</strong> — Understand validation against Barrel Schemas</li>
+<li><strong>Recipe Builders</strong> — Tools for creating Mash Bills, Still Recipes, and Barrel Recipes</li>
+</ul>
+<h3 id="current-implementation-status">Current Implementation Status</h3>
+<ul>
+<li>✅ <strong>Wikidata Barrel Schemas</strong>: EntitySchemas (ShEx) support implemented</li>
+<li>✅ <strong>Wikidata Barrel Recipe Builder</strong>: Available (see Claims Map Builder documentation)</li>
+<li>🚧 <strong>Unified Still Schema</strong>: In development (Issue #9)</li>
+<li>🚧 <strong>OSM Barrel Schemas</strong>: Planned</li>
+<li>🚧 <strong>Commons/Wikipedia Barrel Schemas</strong>: Planned</li>
+</ul>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.instant", "navigation.sections", "navigation.top", "toc.follow"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.79ae519e.min.js"></script>
+      
+        <script src="https://unpkg.com/mermaid@10.6.1/dist/mermaid.min.js"></script>
+      
+        <script src="../../javascripts/mermaid-init.js"></script>
+      
+    
+  </body>
+</html>

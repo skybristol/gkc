@@ -1,0 +1,3673 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Data Distillery - A framework for data distillation toward the Global Knowledge Commons">
+      
+      
+      
+        <link rel="canonical" href="https://datadistillery.org/gkc/barrel_schemas/wikidata_entityschemas/">
+      
+      
+        <link rel="prev" href="../">
+      
+      
+        <link rel="next" href="../commons_schemas/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.1">
+    
+    
+      
+        <title>Wikidata EntitySchemas - Data Distillery</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../../assets/stylesheets/main.484c7ddc.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../../../assets/_mkdocstrings.css">
+    
+      <link rel="stylesheet" href="../../../stylesheets/extra.css">
+    
+    <script>__md_scope=new URL("../../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    <body dir="ltr">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#wikidata-entityschemas-barrel-recipe-builder" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../../.." title="Data Distillery" class="md-header__button md-logo" aria-label="Data Distillery" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            Data Distillery
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Wikidata EntitySchemas
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/skybristol/gkc" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    skybristol/gkc
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../../.." title="Data Distillery" class="md-nav__button md-logo" aria-label="Data Distillery" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    Data Distillery
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/skybristol/gkc" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    skybristol/gkc
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    GKC Documentation
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    GKC Documentation
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../background/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Background
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_2_3" id="__nav_2_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Getting Started
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Getting Started
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../setup/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Setup and Orientation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../authentication/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Authentication
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_2_4" id="__nav_2_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Data Distillery Workflow
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Data Distillery Workflow
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../pipeline_overview/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Pipeline Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../distillery_glossary/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Distillery Glossary
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../mash_tun/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Mash Tun
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../fermentation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Fermentation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../distillation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Distillation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../refinement/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Refinement
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../proofing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Proofing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../blending/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Blending
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../bottling/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Bottling
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../shipping/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Shipping
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_5" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_2_5" id="__nav_2_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Barrel Schemas
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_5_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_2_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Barrel Schemas
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Wikidata EntitySchemas
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Wikidata EntitySchemas
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#understanding-wikidatas-barrel-schema" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Understanding Wikidata's Barrel Schema
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Understanding Wikidata&#39;s Barrel Schema">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#1-entityschemas-shex" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. EntitySchemas (ShEx)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2-property-constraints" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. Property Constraints
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#barrel-recipe-builder-overview" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Barrel Recipe Builder Overview
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#key-benefits" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Key Benefits
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#quick-start" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Quick Start
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Quick Start">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#generate-barrel-recipe-from-entityschema" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Generate Barrel Recipe from EntitySchema
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#use-directly-with-distillate" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Use Directly with Distillate
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#analyze-entityschema-first" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Analyze EntitySchema First
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#recommended-workflows" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Recommended Workflows
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Recommended Workflows">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#workflow-1-quick-testing-direct-use" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Workflow 1: Quick Testing (Direct Use)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#workflow-2-customized-barrel-recipe-recommended" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Workflow 2: Customized Barrel Recipe (Recommended)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#workflow-3-programmatic-customization" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Workflow 3: Programmatic Customization
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#use-local-shex-file" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Use Local ShEx File
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#how-it-works" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        How It Works
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="How It Works">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#1-shex-parsing" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. ShEx Parsing
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2-entity-metadata-fetching" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. Entity Metadata Fetching
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#3-combining-information" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. Combining Information
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#generated-output-structure" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Generated Output Structure
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Generated Output Structure">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#complete-barrel-recipe-configuration" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Complete Barrel Recipe Configuration
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#what-you-need-to-update" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What You Need to Update
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#datatype-transform-hints" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Datatype Transform Hints
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Datatype Transform Hints">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#timedate" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Time/Date
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#quantity" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Quantity
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#globe-coordinate" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Globe Coordinate
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#monolingualtext" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Monolingualtext
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#advanced-usage" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Advanced Usage
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Advanced Usage">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#analyze-datatype-coverage" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Analyze Datatype Coverage
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#compare-with-manual-recipe" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Compare with Manual Recipe
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#custom-user-agent" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Custom User Agent
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#api-reference" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        API Reference
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="API Reference">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#recipebuilder" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        RecipeBuilder
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="RecipeBuilder">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#methods" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Methods
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#entitycatalog" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        EntityCatalog
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="EntityCatalog">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#methods_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Methods
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#specificationextractor" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        SpecificationExtractor
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="SpecificationExtractor">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#methods_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Methods
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#examples" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Examples
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#validation-with-spirit-safe" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Validation with Spirit Safe
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#limitations" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Limitations
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Limitations">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#current" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Current
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#future-improvements" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Future Improvements
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#related-documentation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Related Documentation
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../commons_schemas/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Wikimedia Commons
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../wikipedia_infoboxes/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Wikipedia Infoboxes
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../osm_tagging/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    OpenStreetMap Tagging
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_6" >
+        
+          
+          <label class="md-nav__link" for="__nav_2_6" id="__nav_2_6_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Schema Forward Approach
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2_6">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Schema Forward Approach
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../mapping_format_migration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Mapping Format Migration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_7" >
+        
+          
+          <label class="md-nav__link" for="__nav_2_7" id="__nav_2_7_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Wikidata
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_7_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2_7">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Wikidata
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../wikidata/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../wikidata/item_creation_approach/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Item Creation Approach
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../wikidata/claims_map_builder/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Claims Map Builder
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../wikidata/reference_qualifier_patterns/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reference/Qualifier Patterns
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../wikidata/date_time_handling/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Date/Time Handling
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_7_6" >
+        
+          
+          <label class="md-nav__link" for="__nav_2_7_6" id="__nav_2_7_6_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Sitelinks
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_2_7_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2_7_6">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Sitelinks
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../wikidata/sitelinks_usage/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Sitelinks Usage
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../wikidata/sitelinks_validation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Sitelinks Validation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_8" >
+        
+          
+          <label class="md-nav__link" for="__nav_2_8" id="__nav_2_8_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Command Line Interface
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_8_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2_8">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Command Line Interface
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../cli/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../cli/auth/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Authentication
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../cli/mash/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Mash
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_9" >
+        
+          
+          <label class="md-nav__link" for="__nav_2_9" id="__nav_2_9_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Utilities and Tools
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_9_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2_9">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Utilities and Tools
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../sparql_queries/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SPARQL Queries
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../sparql_quick_reference/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SPARQL Quick Reference
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_10" >
+        
+          
+          <label class="md-nav__link" for="__nav_2_10" id="__nav_2_10_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API Reference
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_10_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2_10">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    API Reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/auth/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Authentication
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/mash/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Mash
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/mash_formatters/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Mash Formatters
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/shipper/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Shipper
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/sparql/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SPARQL
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_11" >
+        
+          
+          <label class="md-nav__link" for="__nav_2_11" id="__nav_2_11_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Development
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_11_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2_11">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Development
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../CI_CD/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CI/CD
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../RELEASE/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Release Process
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#understanding-wikidatas-barrel-schema" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Understanding Wikidata's Barrel Schema
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Understanding Wikidata&#39;s Barrel Schema">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#1-entityschemas-shex" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. EntitySchemas (ShEx)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2-property-constraints" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. Property Constraints
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#barrel-recipe-builder-overview" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Barrel Recipe Builder Overview
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#key-benefits" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Key Benefits
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#quick-start" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Quick Start
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Quick Start">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#generate-barrel-recipe-from-entityschema" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Generate Barrel Recipe from EntitySchema
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#use-directly-with-distillate" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Use Directly with Distillate
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#analyze-entityschema-first" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Analyze EntitySchema First
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#recommended-workflows" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Recommended Workflows
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Recommended Workflows">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#workflow-1-quick-testing-direct-use" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Workflow 1: Quick Testing (Direct Use)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#workflow-2-customized-barrel-recipe-recommended" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Workflow 2: Customized Barrel Recipe (Recommended)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#workflow-3-programmatic-customization" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Workflow 3: Programmatic Customization
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#use-local-shex-file" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Use Local ShEx File
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#how-it-works" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        How It Works
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="How It Works">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#1-shex-parsing" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. ShEx Parsing
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2-entity-metadata-fetching" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. Entity Metadata Fetching
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#3-combining-information" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. Combining Information
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#generated-output-structure" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Generated Output Structure
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Generated Output Structure">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#complete-barrel-recipe-configuration" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Complete Barrel Recipe Configuration
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#what-you-need-to-update" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What You Need to Update
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#datatype-transform-hints" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Datatype Transform Hints
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Datatype Transform Hints">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#timedate" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Time/Date
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#quantity" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Quantity
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#globe-coordinate" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Globe Coordinate
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#monolingualtext" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Monolingualtext
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#advanced-usage" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Advanced Usage
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Advanced Usage">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#analyze-datatype-coverage" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Analyze Datatype Coverage
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#compare-with-manual-recipe" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Compare with Manual Recipe
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#custom-user-agent" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Custom User Agent
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#api-reference" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        API Reference
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="API Reference">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#recipebuilder" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        RecipeBuilder
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="RecipeBuilder">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#methods" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Methods
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#entitycatalog" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        EntityCatalog
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="EntityCatalog">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#methods_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Methods
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#specificationextractor" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        SpecificationExtractor
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="SpecificationExtractor">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#methods_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Methods
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#examples" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Examples
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#validation-with-spirit-safe" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Validation with Spirit Safe
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#limitations" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Limitations
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Limitations">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#current" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Current
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#future-improvements" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Future Improvements
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#related-documentation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Related Documentation
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="wikidata-entityschemas-barrel-recipe-builder">Wikidata EntitySchemas &amp; Barrel Recipe Builder</h1>
+<p>Wikidata uses <strong>EntitySchemas</strong> (written in ShEx/Shape Expression language) coupled with <strong>property constraints</strong> to define valid item structures. This Barrel Schema defines what constitutes well-formed Wikidata entities.</p>
+<p>The <strong>Wikidata Barrel Recipe Builder</strong> (implemented as <code>RecipeBuilder</code> in code) automatically generates transformation recipes from EntitySchemas, creating the mapping logic needed to transform <a href="../../pipeline_overview/#schema-architecture-overview">Unified Still Schema</a> data into valid Wikidata claims.</p>
+<h2 id="understanding-wikidatas-barrel-schema">Understanding Wikidata's Barrel Schema</h2>
+<p>Wikidata's Barrel Schema comes from two sources:</p>
+<h3 id="1-entityschemas-shex">1. EntitySchemas (ShEx)</h3>
+<p>Shape Expression schemas that define:
+- Required vs optional properties
+- Property cardinality (single vs multiple values)
+- Value constraints and relationships
+- Structural patterns for entity types</p>
+<p>Example: <a href="https://www.wikidata.org/wiki/EntitySchema:E502">E502</a> defines the schema for federally recognized tribes in the United States.</p>
+<h3 id="2-property-constraints">2. Property Constraints</h3>
+<p>Individual property definitions include:
+- Datatype specifications (item, quantity, time, etc.)
+- Value range constraints
+- Formatting requirements
+- Conflict detection rules</p>
+<h2 id="barrel-recipe-builder-overview">Barrel Recipe Builder Overview</h2>
+<p>The Barrel Recipe Builder helps you create <strong>Wikidata Barrel Recipes</strong> by:</p>
+<ol>
+<li><strong>Parsing EntitySchemas</strong> to extract property requirements, cardinality, and comments</li>
+<li><strong>Fetching live property data</strong> from Wikidata to get accurate datatypes, labels, and descriptions</li>
+<li><strong>Combining both sources</strong> to generate a well-documented transformation recipe skeleton</li>
+<li><strong>Providing sensible defaults</strong> for transform configurations based on datatypes</li>
+</ol>
+<h2 id="key-benefits">Key Benefits</h2>
+<ul>
+<li>✅ <strong>Accurate datatypes</strong> - Fetched directly from Wikidata property records</li>
+<li>✅ <strong>Rich documentation</strong> - Combines ShEx comments with Wikidata labels/descriptions</li>
+<li>✅ <strong>Cardinality detection</strong> - Identifies required vs. optional properties from ShEx</li>
+<li>✅ <strong>Transform hints</strong> - Auto-generates transform configurations for complex datatypes</li>
+<li>✅ <strong>Time-saving</strong> - No need to manually look up every property</li>
+</ul>
+<h2 id="quick-start">Quick Start</h2>
+<h3 id="generate-barrel-recipe-from-entityschema">Generate Barrel Recipe from EntitySchema</h3>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">gkc</span><span class="w"> </span><span class="kn">import</span> <span class="n">RecipeBuilder</span>
+
+<span class="c1"># Load EntitySchema from Wikidata</span>
+<span class="n">builder</span> <span class="o">=</span> <span class="n">RecipeBuilder</span><span class="p">(</span><span class="n">eid</span><span class="o">=</span><span class="s2">&quot;E502&quot;</span><span class="p">)</span>
+
+<span class="c1"># Generate complete Barrel Recipe (mapping configuration)</span>
+<span class="n">mapping</span> <span class="o">=</span> <span class="n">builder</span><span class="o">.</span><span class="n">finalize_recipe</span><span class="p">(</span><span class="n">entity_type</span><span class="o">=</span><span class="s2">&quot;Q7840353&quot;</span><span class="p">)</span>
+
+<span class="c1"># Export to JSON file</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">json</span>
+<span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="s2">&quot;wikidata_barrel_recipe.json&quot;</span><span class="p">,</span> <span class="s2">&quot;w&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+    <span class="n">json</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="n">mapping</span><span class="p">,</span> <span class="n">f</span><span class="p">,</span> <span class="n">indent</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+</code></pre></div>
+<h3 id="use-directly-with-distillate">Use Directly with Distillate</h3>
+<p>You can use the generated Barrel Recipe immediately without saving to a file:</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">gkc</span><span class="w"> </span><span class="kn">import</span> <span class="n">RecipeBuilder</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">gkc.bottler</span><span class="w"> </span><span class="kn">import</span> <span class="n">Distillate</span>
+
+<span class="c1"># Generate Barrel Recipe</span>
+<span class="n">builder</span> <span class="o">=</span> <span class="n">RecipeBuilder</span><span class="p">(</span><span class="n">eid</span><span class="o">=</span><span class="s2">&quot;E502&quot;</span><span class="p">)</span>
+
+<span class="c1"># Create Distillate directly</span>
+<span class="n">distillate</span> <span class="o">=</span> <span class="n">Distillate</span><span class="o">.</span><span class="n">from_recipe</span><span class="p">(</span><span class="n">builder</span><span class="p">,</span> <span class="n">entity_type</span><span class="o">=</span><span class="s2">&quot;Q7840353&quot;</span><span class="p">)</span>
+
+<span class="c1"># Now use mapper to transform your Still Schema data</span>
+<span class="n">sample_data</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;label&quot;</span><span class="p">:</span> <span class="s2">&quot;Example&quot;</span><span class="p">,</span> <span class="s2">&quot;p31_value&quot;</span><span class="p">:</span> <span class="s2">&quot;Q7840353&quot;</span><span class="p">}</span>
+<span class="n">wikidata_json</span> <span class="o">=</span> <span class="n">distillate</span><span class="o">.</span><span class="n">transform_to_wikidata</span><span class="p">(</span><span class="n">sample_data</span><span class="p">)</span>
+</code></pre></div>
+<p><strong>Note:</strong> Auto-generated recipes use field names like <code>p31_value</code>, <code>p2124_value</code>, etc. You'll want to customize these to match your actual Still Schema field names. See the customization workflow below.</p>
+<h3 id="analyze-entityschema-first">Analyze EntitySchema First</h3>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">gkc</span><span class="w"> </span><span class="kn">import</span> <span class="n">RecipeBuilder</span>
+
+<span class="c1"># Load and analyze</span>
+<span class="n">builder</span> <span class="o">=</span> <span class="n">RecipeBuilder</span><span class="p">(</span><span class="n">eid</span><span class="o">=</span><span class="s2">&quot;E502&quot;</span><span class="p">)</span>
+<span class="n">builder</span><span class="o">.</span><span class="n">load_specification</span><span class="p">()</span>
+
+<span class="c1"># Print detailed analysis</span>
+<span class="n">builder</span><span class="o">.</span><span class="n">print_summary</span><span class="p">()</span>
+</code></pre></div>
+<p>Output shows:
+- Properties grouped by context (direct, qualifier, reference)
+- Datatypes fetched from Wikidata
+- Required vs. optional status from ShEx cardinality
+- Labels and descriptions from both sources</p>
+<h2 id="recommended-workflows">Recommended Workflows</h2>
+<h3 id="workflow-1-quick-testing-direct-use">Workflow 1: Quick Testing (Direct Use)</h3>
+<p>For quick prototyping and testing:</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">gkc</span><span class="w"> </span><span class="kn">import</span> <span class="n">RecipeBuilder</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">gkc.bottler</span><span class="w"> </span><span class="kn">import</span> <span class="n">Distillate</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">gkc</span><span class="w"> </span><span class="kn">import</span> <span class="n">WikiverseAuth</span>
+
+<span class="c1"># Generate and use Barrel Recipe directly</span>
+<span class="n">builder</span> <span class="o">=</span> <span class="n">RecipeBuilder</span><span class="p">(</span><span class="n">eid</span><span class="o">=</span><span class="s2">&quot;E502&quot;</span><span class="p">)</span>
+<span class="n">distillate</span> <span class="o">=</span> <span class="n">Distillate</span><span class="o">.</span><span class="n">from_recipe</span><span class="p">(</span><span class="n">builder</span><span class="p">,</span> <span class="n">entity_type</span><span class="o">=</span><span class="s2">&quot;Q7840353&quot;</span><span class="p">)</span>
+
+<span class="c1"># Use for dry-run testing</span>
+<span class="n">auth</span> <span class="o">=</span> <span class="n">WikiverseAuth</span><span class="p">()</span>
+<span class="n">_</span> <span class="o">=</span> <span class="n">auth</span>
+
+<span class="n">sample_data</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;label&quot;</span><span class="p">:</span> <span class="s2">&quot;Test&quot;</span><span class="p">,</span> <span class="o">...</span><span class="p">}</span>  <span class="c1"># Use auto-generated field names</span>
+<span class="n">distillate</span><span class="o">.</span><span class="n">transform_to_wikidata</span><span class="p">(</span><span class="n">sample_data</span><span class="p">)</span>
+</code></pre></div>
+<h3 id="workflow-2-customized-barrel-recipe-recommended">Workflow 2: Customized Barrel Recipe (Recommended)</h3>
+<p>For production use with your actual Still Schema:</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">gkc</span><span class="w"> </span><span class="kn">import</span> <span class="n">RecipeBuilder</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">gkc.bottler</span><span class="w"> </span><span class="kn">import</span> <span class="n">Distillate</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">json</span>
+
+<span class="c1"># 1. Generate Barrel Recipe</span>
+<span class="n">builder</span> <span class="o">=</span> <span class="n">RecipeBuilder</span><span class="p">(</span><span class="n">eid</span><span class="o">=</span><span class="s2">&quot;E502&quot;</span><span class="p">)</span>
+<span class="n">mapping</span> <span class="o">=</span> <span class="n">builder</span><span class="o">.</span><span class="n">finalize_recipe</span><span class="p">(</span><span class="n">entity_type</span><span class="o">=</span><span class="s2">&quot;Q7840353&quot;</span><span class="p">)</span>
+
+<span class="c1"># 2. Save to file</span>
+<span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="s2">&quot;wikidata_barrel_recipe.json&quot;</span><span class="p">,</span> <span class="s2">&quot;w&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+    <span class="n">json</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="n">mapping</span><span class="p">,</span> <span class="n">f</span><span class="p">,</span> <span class="n">indent</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+
+<span class="c1"># 3. Edit wikidata_barrel_recipe.json to update source_field names:</span>
+<span class="c1">#    Change: &quot;source_field&quot;: &quot;p2124_value&quot;</span>
+<span class="c1">#    To:     &quot;source_field&quot;: &quot;member_count&quot;</span>
+<span class="c1">#    (These should match your Unified Still Schema field names)</span>
+
+<span class="c1"># 4. Load customized Barrel Recipe</span>
+<span class="n">distillate</span> <span class="o">=</span> <span class="n">Distillate</span><span class="o">.</span><span class="n">from_file</span><span class="p">(</span><span class="s2">&quot;wikidata_barrel_recipe.json&quot;</span><span class="p">)</span>
+
+<span class="c1"># 5. Use with your actual Still Schema data</span>
+<span class="n">your_data</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;tribe_name&quot;</span><span class="p">:</span> <span class="s2">&quot;Cherokee&quot;</span><span class="p">,</span> <span class="s2">&quot;member_count&quot;</span><span class="p">:</span> <span class="mi">450000</span><span class="p">}</span>
+<span class="n">wikidata_json</span> <span class="o">=</span> <span class="n">distillate</span><span class="o">.</span><span class="n">transform_to_wikidata</span><span class="p">(</span><span class="n">your_data</span><span class="p">)</span>
+</code></pre></div>
+<h3 id="workflow-3-programmatic-customization">Workflow 3: Programmatic Customization</h3>
+<p>For advanced programmatic customization:</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">gkc</span><span class="w"> </span><span class="kn">import</span> <span class="n">RecipeBuilder</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">gkc.bottler</span><span class="w"> </span><span class="kn">import</span> <span class="n">Distillate</span>
+
+<span class="c1"># Generate Barrel Recipe</span>
+<span class="n">builder</span> <span class="o">=</span> <span class="n">RecipeBuilder</span><span class="p">(</span><span class="n">eid</span><span class="o">=</span><span class="s2">&quot;E502&quot;</span><span class="p">)</span>
+<span class="n">mapping</span> <span class="o">=</span> <span class="n">builder</span><span class="o">.</span><span class="n">finalize_recipe</span><span class="p">(</span><span class="n">entity_type</span><span class="o">=</span><span class="s2">&quot;Q7840353&quot;</span><span class="p">)</span>
+
+<span class="c1"># Customize in code to match Still Schema field names</span>
+<span class="n">field_name_map</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">&quot;P2124&quot;</span><span class="p">:</span> <span class="s2">&quot;member_count&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;P571&quot;</span><span class="p">:</span> <span class="s2">&quot;established_date&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;P856&quot;</span><span class="p">:</span> <span class="s2">&quot;website&quot;</span><span class="p">,</span>
+    <span class="c1"># ... etc - map to your Still Schema fields</span>
+<span class="p">}</span>
+
+<span class="k">for</span> <span class="n">claim</span> <span class="ow">in</span> <span class="n">mapping</span><span class="p">[</span><span class="s2">&quot;mappings&quot;</span><span class="p">][</span><span class="s2">&quot;claims&quot;</span><span class="p">]:</span>
+    <span class="n">prop</span> <span class="o">=</span> <span class="n">claim</span><span class="p">[</span><span class="s2">&quot;property&quot;</span><span class="p">]</span>
+    <span class="k">if</span> <span class="n">prop</span> <span class="ow">in</span> <span class="n">field_name_map</span><span class="p">:</span>
+        <span class="n">claim</span><span class="p">[</span><span class="s2">&quot;source_field&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">field_name_map</span><span class="p">[</span><span class="n">prop</span><span class="p">]</span>
+
+<span class="c1"># Also update labels/descriptions</span>
+<span class="n">mapping</span><span class="p">[</span><span class="s2">&quot;mappings&quot;</span><span class="p">][</span><span class="s2">&quot;labels&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="s2">&quot;source_field&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;name&quot;</span>
+<span class="n">mapping</span><span class="p">[</span><span class="s2">&quot;mappings&quot;</span><span class="p">][</span><span class="s2">&quot;descriptions&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="s2">&quot;source_field&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;description&quot;</span>
+
+<span class="c1"># Use customized Barrel Recipe</span>
+<span class="n">distillate</span> <span class="o">=</span> <span class="n">Distillate</span><span class="p">(</span><span class="n">mapping</span><span class="p">)</span>
+</code></pre></div>
+<h3 id="use-local-shex-file">Use Local ShEx File</h3>
+<div class="highlight"><pre><span></span><code><span class="n">builder</span> <span class="o">=</span> <span class="n">RecipeBuilder</span><span class="p">(</span><span class="n">schema_file</span><span class="o">=</span><span class="s2">&quot;path/to/schema.shex&quot;</span><span class="p">)</span>
+<span class="n">mapping</span> <span class="o">=</span> <span class="n">builder</span><span class="o">.</span><span class="n">finalize_recipe</span><span class="p">()</span>
+</code></pre></div>
+<h2 id="how-it-works">How It Works</h2>
+<h3 id="1-shex-parsing">1. ShEx Parsing</h3>
+<p>The <code>SpecificationExtractor</code> parses ShEx text to extract:</p>
+<div class="highlight"><pre><span></span><code><span class="nl">&lt;FederallyRecognizedTribe&gt;</span> <span class="p">{</span>
+    <span class="nn">p</span><span class="p">:</span><span class="nt">P31</span> <span class="o">@</span><span class="nl">&lt;InstanceOfFedTribe&gt;</span> <span class="p">;</span>  <span class="c"># Must have exactly one P31</span>
+    <span class="nn">wdt</span><span class="p">:</span><span class="nt">P30</span> <span class="p">[</span> <span class="nn">wd</span><span class="p">:</span><span class="nt">Q49</span> <span class="p">]</span> <span class="p">;</span>           <span class="c"># Continent: North America  </span>
+    <span class="nn">p</span><span class="p">:</span><span class="nt">P2124</span> <span class="o">@</span><span class="nl">&lt;MemberCount&gt;</span> <span class="o">*</span> <span class="p">;</span>     <span class="c"># Member count (zero or more)</span>
+<span class="p">}</span>
+</code></pre></div>
+<p>Extracted information:
+- <strong>Property IDs</strong>: P31, P30, P2124
+- <strong>Cardinality</strong>: <code>;</code> = required, <code>*</code> = optional multiple, <code>?</code> = optional single
+- <strong>Comments</strong>: Inline comments after <code>#</code>
+- <strong>Context</strong>: Statement property (<code>p:</code>), direct property (<code>wdt:</code>), qualifier (<code>pq:</code>), etc.</p>
+<h3 id="2-entity-metadata-fetching">2. Entity Metadata Fetching</h3>
+<p>The <code>EntityCatalog</code> queries Wikidata via SPARQL (WDQS) and supports mixed
+property and item IDs in a single request.</p>
+<p>Returns:
+- <strong>Labels</strong>: "instance of", "continent", "member count"
+- <strong>Descriptions</strong>: Detailed explanations in multiple languages
+- <strong>Aliases</strong>: Alternative names for the property
+- <strong>Datatype</strong>: <code>wikibase-item</code>, <code>quantity</code>, <code>time</code>, etc. (properties only)</p>
+<h3 id="3-combining-information">3. Combining Information</h3>
+<p>For each property, the builder creates a Barrel Recipe entry:</p>
+<div class="highlight"><pre><span></span><code><span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;property&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;P2124&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;comment&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;member count - count of members of an organization&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;source_field&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;p2124_value&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;datatype&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;quantity&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;required&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">false</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;transform&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;number_to_quantity&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;unit&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;1&quot;</span>
+<span class="w">  </span><span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div>
+<p>The comment includes:
+- Property label from Wikidata
+- Inline comment from ShEx
+- Property description from Wikidata</p>
+<h2 id="generated-output-structure">Generated Output Structure</h2>
+<h3 id="complete-barrel-recipe-configuration">Complete Barrel Recipe Configuration</h3>
+<div class="highlight"><pre><span></span><code><span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;$schema&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;https://example.com/gkc/mapping-schema.json&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;version&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;1.0&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;metadata&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Auto-generated Wikidata Barrel Recipe&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;entity_schema_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;E502&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;target_entity_type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Q7840353&quot;</span>
+<span class="w">  </span><span class="p">},</span>
+<span class="w">  </span><span class="nt">&quot;mappings&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;labels&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="err">...</span><span class="p">],</span>
+<span class="w">    </span><span class="nt">&quot;aliases&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="err">...</span><span class="p">],</span>
+<span class="w">    </span><span class="nt">&quot;descriptions&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="err">...</span><span class="p">],</span>
+<span class="w">    </span><span class="nt">&quot;claims&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">      </span><span class="p">{</span>
+<span class="w">        </span><span class="nt">&quot;property&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;P2124&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">&quot;comment&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;member count - number of people/things in a group&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">&quot;source_field&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;p2124_value&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">&quot;datatype&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;quantity&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">&quot;required&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">false</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">&quot;transform&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">          </span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;number_to_quantity&quot;</span><span class="p">,</span>
+<span class="w">          </span><span class="nt">&quot;unit&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;1&quot;</span>
+<span class="w">        </span><span class="p">}</span>
+<span class="w">      </span><span class="p">}</span>
+<span class="w">    </span><span class="p">]</span>
+<span class="w">  </span><span class="p">},</span>
+<span class="w">  </span><span class="nt">&quot;notes&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">    </span><span class="s2">&quot;This Barrel Recipe was auto-generated from a Wikidata EntitySchema&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="s2">&quot;UPDATE all &#39;source_field&#39; values to match your Unified Still Schema&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="s2">&quot;REVIEW all &#39;transform&#39; configurations&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="s2">&quot;ADD appropriate references to claims&quot;</span>
+<span class="w">  </span><span class="p">]</span>
+<span class="p">}</span>
+</code></pre></div>
+<h3 id="what-you-need-to-update">What You Need to Update</h3>
+<p>The generated Barrel Recipe is a <strong>skeleton</strong> that you customize:</p>
+<ol>
+<li>✏️ <strong>source_field</strong> - Change from <code>p2124_value</code> to your Still Schema field names</li>
+<li>✏️ <strong>transform</strong> - Adjust precision, units, language codes, etc.</li>
+<li>✏️ <strong>qualifiers</strong> - Add qualifiers to appropriate claims</li>
+<li>✏️ <strong>references</strong> - Add reference configurations</li>
+<li>✏️ <strong>defaults</strong> - Move constant-value properties to the defaults section</li>
+</ol>
+<h2 id="datatype-transform-hints">Datatype Transform Hints</h2>
+<p>The builder auto-generates transform hints based on Wikidata datatypes:</p>
+<h3 id="timedate">Time/Date</h3>
+<div class="highlight"><pre><span></span><code><span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;datatype&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;time&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;transform&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;iso_date_to_wikidata_time&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;precision&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">11</span>
+<span class="w">  </span><span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div>
+<h3 id="quantity">Quantity</h3>
+<div class="highlight"><pre><span></span><code><span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;datatype&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;quantity&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;transform&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;number_to_quantity&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;unit&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;1&quot;</span>
+<span class="w">  </span><span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div>
+<h3 id="globe-coordinate">Globe Coordinate</h3>
+<div class="highlight"><pre><span></span><code><span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;datatype&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;globe-coordinate&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;transform&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;lat_lon_to_globe_coordinate&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;latitude_field&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;TODO_latitude&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;longitude_field&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;TODO_longitude&quot;</span>
+<span class="w">  </span><span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div>
+<h3 id="monolingualtext">Monolingualtext</h3>
+<div class="highlight"><pre><span></span><code><span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;datatype&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;monolingualtext&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;transform&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;monolingualtext&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;language&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;en&quot;</span>
+<span class="w">  </span><span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div>
+<h2 id="advanced-usage">Advanced Usage</h2>
+<h3 id="analyze-datatype-coverage">Analyze Datatype Coverage</h3>
+<div class="highlight"><pre><span></span><code><span class="n">builder</span> <span class="o">=</span> <span class="n">RecipeBuilder</span><span class="p">(</span><span class="n">eid</span><span class="o">=</span><span class="s2">&quot;E502&quot;</span><span class="p">)</span>
+<span class="n">claims_map</span> <span class="o">=</span> <span class="n">builder</span><span class="o">.</span><span class="n">assemble_recipe</span><span class="p">()</span>
+
+<span class="c1"># Group by datatype</span>
+<span class="n">by_datatype</span> <span class="o">=</span> <span class="p">{}</span>
+<span class="k">for</span> <span class="n">claim</span> <span class="ow">in</span> <span class="n">claims_map</span><span class="p">:</span>
+    <span class="n">dtype</span> <span class="o">=</span> <span class="n">claim</span><span class="p">[</span><span class="s2">&quot;datatype&quot;</span><span class="p">]</span>
+    <span class="k">if</span> <span class="n">dtype</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">by_datatype</span><span class="p">:</span>
+        <span class="n">by_datatype</span><span class="p">[</span><span class="n">dtype</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">by_datatype</span><span class="p">[</span><span class="n">dtype</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">claim</span><span class="p">[</span><span class="s2">&quot;property&quot;</span><span class="p">])</span>
+
+<span class="k">for</span> <span class="n">dtype</span><span class="p">,</span> <span class="n">props</span> <span class="ow">in</span> <span class="n">by_datatype</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">dtype</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">props</span><span class="p">)</span><span class="si">}</span><span class="s2"> properties&quot;</span><span class="p">)</span>
+</code></pre></div>
+<h3 id="compare-with-manual-recipe">Compare with Manual Recipe</h3>
+<div class="highlight"><pre><span></span><code><span class="c1"># Load manual Barrel Recipe</span>
+<span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="s2">&quot;manual_recipe.json&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+    <span class="n">manual</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+
+<span class="c1"># Generate auto Barrel Recipe</span>
+<span class="n">builder</span> <span class="o">=</span> <span class="n">RecipeBuilder</span><span class="p">(</span><span class="n">eid</span><span class="o">=</span><span class="s2">&quot;E502&quot;</span><span class="p">)</span>
+<span class="n">auto</span> <span class="o">=</span> <span class="n">builder</span><span class="o">.</span><span class="n">finalize_recipe</span><span class="p">()</span>
+
+<span class="c1"># Find missing properties</span>
+<span class="n">manual_props</span> <span class="o">=</span> <span class="p">{</span><span class="n">c</span><span class="p">[</span><span class="s2">&quot;property&quot;</span><span class="p">]</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">manual</span><span class="p">[</span><span class="s2">&quot;mappings&quot;</span><span class="p">][</span><span class="s2">&quot;claims&quot;</span><span class="p">]}</span>
+<span class="n">auto_props</span> <span class="o">=</span> <span class="p">{</span><span class="n">c</span><span class="p">[</span><span class="s2">&quot;property&quot;</span><span class="p">]</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">auto</span><span class="p">[</span><span class="s2">&quot;mappings&quot;</span><span class="p">][</span><span class="s2">&quot;claims&quot;</span><span class="p">]}</span>
+
+<span class="n">missing</span> <span class="o">=</span> <span class="n">auto_props</span> <span class="o">-</span> <span class="n">manual_props</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Properties in EntitySchema but not in manual recipe: </span><span class="si">{</span><span class="n">missing</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</code></pre></div>
+<h3 id="custom-user-agent">Custom User Agent</h3>
+<div class="highlight"><pre><span></span><code><span class="n">builder</span> <span class="o">=</span> <span class="n">RecipeBuilder</span><span class="p">(</span>
+    <span class="n">eid</span><span class="o">=</span><span class="s2">&quot;E502&quot;</span><span class="p">,</span>
+    <span class="n">user_agent</span><span class="o">=</span><span class="s2">&quot;MyBot/1.0 (myemail@example.com)&quot;</span>
+<span class="p">)</span>
+</code></pre></div>
+<h2 id="api-reference">API Reference</h2>
+<h3 id="recipebuilder">RecipeBuilder</h3>
+<p>Main class for building Wikidata Barrel Recipe configurations.</p>
+<h4 id="methods">Methods</h4>
+<ul>
+<li><strong><code>__init__(eid=None, schema_text=None, schema_file=None, user_agent=None)</code></strong></li>
+<li>
+<p>Initialize with ShEx source (choose one of eid, schema_text, or schema_file)</p>
+</li>
+<li>
+<p><strong><code>load_specification()</code></strong></p>
+</li>
+<li>
+<p>Load the ShEx schema (returns self for chaining)</p>
+</li>
+<li>
+<p><strong><code>assemble_recipe(include_qualifiers=True, include_references=True)</code></strong></p>
+</li>
+<li>Build just the claims mapping section</li>
+<li>
+<p>Returns: List of claim mapping dictionaries</p>
+</li>
+<li>
+<p><strong><code>finalize_recipe(entity_type=None)</code></strong></p>
+</li>
+<li>Build complete Barrel Recipe configuration</li>
+<li>
+<p>Returns: Complete mapping dictionary</p>
+</li>
+<li>
+<p><strong><code>print_summary()</code></strong></p>
+</li>
+<li>Print detailed analysis of the ShEx schema</li>
+</ul>
+<h3 id="entitycatalog">EntityCatalog</h3>
+<p>Fetches property and item metadata from Wikidata via SPARQL.</p>
+<h4 id="methods_1">Methods</h4>
+<ul>
+<li><strong><code>fetch_entities(entity_ids)</code></strong></li>
+<li>Fetch metadata for mixed property and item IDs</li>
+<li>Args: List of entity IDs (e.g., <code>['P31', 'Q5']</code>)</li>
+<li>Returns: Dictionary mapping IDs to <code>PropertyLedgerEntry</code> or <code>ItemLedgerEntry</code> objects</li>
+</ul>
+<h3 id="specificationextractor">SpecificationExtractor</h3>
+<p>Parses ShEx schema text to extract property information.</p>
+<h4 id="methods_2">Methods</h4>
+<ul>
+<li><strong><code>extract()</code></strong></li>
+<li>Extract all properties with context</li>
+<li>Returns: Dictionary mapping property IDs to their context info</li>
+</ul>
+<h2 id="examples">Examples</h2>
+<p>See <a href="https://github.com/skybristol/gkc/blob/main/docs/gkc/examples/wikidata_barrel_recipe_from_entityschema.ipynb">docs/gkc/examples/wikidata_barrel_recipe_from_entityschema.ipynb</a> for complete working examples:</p>
+<ol>
+<li><strong>Analyze Schema</strong> - Parse and analyze ShEx structure</li>
+<li><strong>Build Claims Map</strong> - Generate just the claims section</li>
+<li><strong>Complete Mapping</strong> - Generate full Barrel Recipe config</li>
+<li><strong>From File</strong> - Use local ShEx file</li>
+<li><strong>Export Mapping</strong> - Save to JSON file</li>
+<li><strong>Compare Mappings</strong> - Manual vs. auto-generated</li>
+<li><strong>Datatype Coverage</strong> - Analyze property datatypes</li>
+</ol>
+<h2 id="validation-with-spirit-safe">Validation with Spirit Safe</h2>
+<p>Once you've created a Wikidata Barrel Recipe and transformed your data, validate against the EntitySchema:</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">gkc</span><span class="w"> </span><span class="kn">import</span> <span class="n">SpiritSafeValidator</span>
+
+<span class="c1"># Validate a Wikidata item against EntitySchema</span>
+<span class="n">validator</span> <span class="o">=</span> <span class="n">SpiritSafeValidator</span><span class="p">(</span><span class="n">qid</span><span class="o">=</span><span class="s1">&#39;Q14708404&#39;</span><span class="p">,</span> <span class="n">eid</span><span class="o">=</span><span class="s1">&#39;E502&#39;</span><span class="p">)</span>
+<span class="n">validator</span><span class="o">.</span><span class="n">check</span><span class="p">()</span>
+
+<span class="k">if</span> <span class="n">validator</span><span class="o">.</span><span class="n">passes_inspection</span><span class="p">():</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Data conforms to Barrel Schema!&quot;</span><span class="p">)</span>
+<span class="k">else</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Validation failed - data doesn&#39;t meet schema requirements&quot;</span><span class="p">)</span>
+</code></pre></div>
+<p>See <a href="../../distillery_glossary/#spirit-safe">Spirit Safe documentation</a> for more on validation.</p>
+<h2 id="limitations">Limitations</h2>
+<h3 id="current">Current</h3>
+<ul>
+<li>Qualifier and reference associations are not yet parsed from ShEx structure</li>
+<li>Shape inheritance is not fully supported</li>
+<li>Complex ShEx patterns (AND, OR) are simplified</li>
+<li>Some edge-case cardinality patterns may not be detected</li>
+</ul>
+<h3 id="future-improvements">Future Improvements</h3>
+<ul>
+<li>Parse full ShEx structure to associate qualifiers with statements</li>
+<li>Support shape inheritance and composition</li>
+<li>Handle value constraints (e.g., <code>[ wd:Q30 ]</code> → default value Q30)</li>
+<li>Generate example source data from ShEx</li>
+<li>Detect duplicate/overlapping properties</li>
+<li>Integration with Unified Still Schema definitions</li>
+</ul>
+<h2 id="related-documentation">Related Documentation</h2>
+<ul>
+<li><a href="../../pipeline_overview/">Pipeline Overview</a> - See how Barrel Recipes fit into the workflow</li>
+<li><a href="../">Barrel Schemas Overview</a> - Understanding the schema architecture</li>
+<li><a href="../../distillery_glossary/">Distillery Glossary</a> - Complete terminology reference</li>
+<li><a href="../../distillery_glossary/#the-cooperage">Cooperage</a> - Schema management module</li>
+<li><a href="../../distillery_glossary/#spirit-safe">Spirit Safe</a> - Validation system</li>
+</ul>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../../..", "features": ["navigation.instant", "navigation.sections", "navigation.top", "toc.follow"], "search": "../../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../../assets/javascripts/bundle.79ae519e.min.js"></script>
+      
+        <script src="https://unpkg.com/mermaid@10.6.1/dist/mermaid.min.js"></script>
+      
+        <script src="../../../javascripts/mermaid-init.js"></script>
+      
+    
+  </body>
+</html>
