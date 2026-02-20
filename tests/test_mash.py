@@ -44,6 +44,7 @@ def test_wikidata_template_summary():
                 property_id="P31", value="Q36253", qualifiers=[], references=[]
             ),
         ],
+        entity_data={"id": "Q42", "labels": {}, "descriptions": {}, "claims": {}},
     )
 
     summary = template.summary()
@@ -66,11 +67,18 @@ def test_wikidata_template_filter_properties():
                 property_id="P21", value="Q6581097", qualifiers=[], references=[]
             ),
         ],
+        entity_data={
+            "id": "Q42",
+            "claims": {"P31": [{"mainsnak": {}}], "P21": [{"mainsnak": {}}]},
+        },
     )
 
-    template.filter_properties(["P31"])
+    template.filter_properties(
+        include_properties=["P31", "P21"], exclude_properties=["P31"]
+    )
     assert len(template.claims) == 1
     assert template.claims[0].property_id == "P21"
+    assert "P31" not in template.to_dict()["claims"]
 
 
 def test_wikidata_template_filter_qualifiers():
@@ -88,10 +96,15 @@ def test_wikidata_template_filter_qualifiers():
         descriptions={"en": "Test"},
         aliases={},
         claims=[claim],
+        entity_data={
+            "id": "Q42",
+            "claims": {"P31": [{"qualifiers": {"P580": [{"datavalue": {}}]}}]},
+        },
     )
 
     template.filter_qualifiers()
     assert len(template.claims[0].qualifiers) == 0
+    assert "qualifiers" not in template.to_dict()["claims"]["P31"][0]
 
 
 def test_wikidata_template_filter_references():
@@ -109,14 +122,56 @@ def test_wikidata_template_filter_references():
         descriptions={"en": "Test"},
         aliases={},
         claims=[claim],
+        entity_data={
+            "id": "Q42",
+            "claims": {"P31": [{"references": [{"snaks": {"P248": [{}]}}]}]},
+        },
     )
 
     template.filter_references()
     assert len(template.claims[0].references) == 0
+    assert "references" not in template.to_dict()["claims"]["P31"][0]
 
 
-def test_wikidata_template_to_dict():
-    """Test converting template to dictionary."""
+def test_wikidata_template_filter_languages_updates_entity_data():
+    """Filter languages should update round-trip JSON output."""
+    template = WikidataTemplate(
+        qid="Q42",
+        labels={"en": "Test", "fr": "Essai"},
+        descriptions={"en": "Test", "fr": "Essai"},
+        aliases={"en": ["T"], "fr": ["E"]},
+        claims=[],
+        entity_data={
+            "id": "Q42",
+            "labels": {
+                "en": {"language": "en", "value": "Test"},
+                "fr": {"language": "fr", "value": "Essai"},
+            },
+            "descriptions": {
+                "en": {"language": "en", "value": "Test"},
+                "fr": {"language": "fr", "value": "Essai"},
+            },
+            "aliases": {
+                "en": [{"language": "en", "value": "T"}],
+                "fr": [{"language": "fr", "value": "E"}],
+            },
+            "claims": {},
+        },
+    )
+
+    template.filter_languages("en")
+
+    data = template.to_dict()
+    assert template.labels == {"en": "Test"}
+    assert template.descriptions == {"en": "Test"}
+    assert template.aliases == {"en": ["T"]}
+    assert list(data["labels"].keys()) == ["en"]
+    assert list(data["descriptions"].keys()) == ["en"]
+    assert list(data["aliases"].keys()) == ["en"]
+
+
+def test_wikidata_template_to_dict_roundtrip():
+    """Test converting template to round-trip-safe dictionary."""
     template = WikidataTemplate(
         qid="Q42",
         labels={"en": "Test"},
@@ -125,12 +180,26 @@ def test_wikidata_template_to_dict():
         claims=[
             ClaimSummary(property_id="P31", value="Q5", qualifiers=[], references=[]),
         ],
+        entity_data={
+            "id": "Q42",
+            "labels": {"en": {"language": "en", "value": "Test"}},
+            "descriptions": {"en": {"language": "en", "value": "Test"}},
+            "aliases": {"en": [{"language": "en", "value": "T"}]},
+            "claims": {
+                "P31": [
+                    {
+                        "mainsnak": {"datavalue": {"type": "wikibase-entityid"}},
+                        "references": [{"snaks": {"P248": [{"datavalue": {}}]}}],
+                    }
+                ]
+            },
+        },
     )
 
     data = template.to_dict()
-    assert data["qid"] == "Q42"
-    assert len(data["claims"]) == 1
-    assert data["claims"][0]["property_id"] == "P31"
+    assert data["id"] == "Q42"
+    assert "P31" in data["claims"]
+    assert "references" in data["claims"]["P31"][0]
 
 
 def test_strip_entity_identifiers_removes_ids():

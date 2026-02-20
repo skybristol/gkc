@@ -14,6 +14,7 @@ def test_qsv1_formatter_new_item():
         claims=[
             ClaimSummary(property_id="P31", value="Q5", qualifiers=[], references=[]),
         ],
+        entity_data={"claims": {}},
     )
 
     formatter = QSV1Formatter()
@@ -43,6 +44,7 @@ def test_qsv1_formatter_exclude_properties():
                 property_id="P21", value="Q6581097", qualifiers=[], references=[]
             ),
         ],
+        entity_data={"claims": {}},
     )
 
     formatter = QSV1Formatter(exclude_properties=["P31"])
@@ -65,6 +67,7 @@ def test_qsv1_formatter_with_entity_labels():
                 property_id="P21", value="Q6581097", qualifiers=[], references=[]
             ),
         ],
+        entity_data={"claims": {}},
     )
 
     entity_labels = {
@@ -107,6 +110,7 @@ def test_qsv1_formatter_with_qualifiers_and_labels():
                 references=[],
             ),
         ],
+        entity_data={"claims": {}},
     )
 
     entity_labels = {
@@ -143,6 +147,7 @@ def test_qsv1_formatter_without_entity_labels():
         claims=[
             ClaimSummary(property_id="P31", value="Q5", qualifiers=[], references=[]),
         ],
+        entity_data={"claims": {}},
     )
 
     # No entity_labels provided
@@ -170,6 +175,7 @@ def test_qsv1_formatter_with_string_values():
                 property_id="P1476", value='"Test Title"', qualifiers=[], references=[]
             ),
         ],
+        entity_data={"claims": {}},
     )
 
     entity_labels = {
@@ -198,6 +204,7 @@ def test_qsv1_formatter_existing_item():
         claims=[
             ClaimSummary(property_id="P31", value="Q5", qualifiers=[], references=[]),
         ],
+        entity_data={"claims": {}},
     )
 
     entity_labels = {
@@ -235,6 +242,7 @@ def test_qsv1_formatter_with_date_precision():
                 value_metadata={"precision": 11},
             ),
         ],
+        entity_data={"claims": {}},
     )
 
     entity_labels = {
@@ -276,6 +284,7 @@ def test_qsv1_formatter_with_qualifier_date_precision():
                 references=[],
             ),
         ],
+        entity_data={"claims": {}},
     )
 
     entity_labels = {

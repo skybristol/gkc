@@ -94,9 +94,13 @@ class WikiverseAuth(AuthBase):
         ... )
         >>> auth.login()
 
-        >>> # Use authenticated session for API requests
-        >>> response = auth.session.get(auth.api_url, params={
-        ...     "action": "query",
+        >>> # IMPORTANT: Use auth.session for API requests to maintain authentication
+        >>> token = auth.get_csrf_token()
+        >>> response = auth.session.post(auth.api_url, data={
+        ...     "action": "edit",
+        ...     "title": "Test",
+        ...     "text": "content",
+        ...     "token": token,
         ...     "format": "json"
         ... })
     """
@@ -223,6 +227,12 @@ class WikiverseAuth(AuthBase):
 
             if result == "Success":
                 self._logged_in = True
+                # Verify we have session cookies
+                if not self.session.cookies:
+                    raise AuthenticationError(
+                        "Login reported success but no session cookies were set. "
+                        "This may indicate a network or API configuration issue."
+                    )
                 return True
             else:
                 # Provide detailed error message
@@ -287,6 +297,9 @@ class WikiverseAuth(AuthBase):
         """
         Get a CSRF token for making edits.
 
+        IMPORTANT: The token must be used with auth.session for requests.
+        The token alone is not sufficient - you need the authenticated session cookies.
+
         Returns:
             CSRF token string.
 
@@ -297,7 +310,14 @@ class WikiverseAuth(AuthBase):
             >>> auth = WikiverseAuth(username="User@Bot", password="secret")
             >>> auth.login()
             >>> token = auth.get_csrf_token()
-            >>> # Use token for edits
+            >>> # Use token with auth.session (not a new requests call)
+            >>> response = auth.session.post(auth.api_url, data={
+            ...     "action": "edit",
+            ...     "title": "Page",
+            ...     "text": "content",
+            ...     "token": token,
+            ...     "format": "json"
+            ... })
         """
         if not self.is_logged_in():
             raise AuthenticationError(
@@ -311,7 +331,8 @@ class WikiverseAuth(AuthBase):
                 "type": "csrf",
                 "format": "json",
             }
-            response = self.session.get(self.api_url, params=token_params)
+            # Use POST to ensure cookies are properly handled
+            response = self.session.post(self.api_url, data=token_params)
             response.raise_for_status()
             data = response.json()
 
@@ -366,6 +387,42 @@ class WikiverseAuth(AuthBase):
         if self.username and "@" in self.username:
             return self.username.split("@", 1)[0]
         return None
+
+    def test_authentication(self) -> dict:
+        """
+        Test authentication and return diagnostic information.
+
+        Returns:
+            Dictionary with authentication status, session details, and token info.
+
+        Example:
+            >>> auth = WikiverseAuth(username="User@Bot", password="secret")
+            >>> auth.login()
+            >>> info = auth.test_authentication()
+            >>> print(info)
+        """
+        info = {
+            "credentials_provided": self.is_authenticated(),
+            "logged_in": self.is_logged_in(),
+            "api_url": self.api_url,
+            "username": self.username,
+            "bot_name": self.get_bot_name(),
+            "session_cookies": list(self.session.cookies.keys()),
+            "csrf_token_retrieved": False,
+            "csrf_token_preview": None,
+            "error": None,
+        }
+
+        if self.is_logged_in():
+            try:
+                token = self.get_csrf_token()
+                info["csrf_token_retrieved"] = True
+                preview = token[:20] + "..." if len(token) > 20 else token
+                info["csrf_token_preview"] = preview
+            except Exception as e:
+                info["error"] = str(e)
+
+        return info
 
 
 class OpenStreetMapAuth(AuthBase):

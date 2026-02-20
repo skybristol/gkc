@@ -27,6 +27,7 @@ Load a Wikidata item by its QID (e.g., Q42) and output it in the specified forma
 - `--output json`: Raw Wikidata entity JSON
 
 **Filtering Options:**
+- `--include-properties <P1,P2,...>`: Comma-separated list of property IDs to include (e.g., P31,P21)
 - `--exclude-properties <P1,P2,...>`: Comma-separated list of property IDs to exclude (e.g., P31,P21)
 - `--exclude-qualifiers`: Omit all qualifiers from the output
 - `--exclude-references`: Omit all references from the output
@@ -92,6 +93,10 @@ $ gkc mash qid Q42 --output json
 }
 ```
 
+By default, JSON output preserves the full Wikidata structure so it can be
+mutated and sent back as an update payload. Filters only apply when you
+explicitly request them (include/exclude properties, qualifiers, references).
+
 Use `--new` to strip identifiers for new-item creation. This removes:
 - Item-level: `id`, `pageid`, `lastrevid`, `modified`
 - Statement-level: `id` (statement GUID)
@@ -103,6 +108,12 @@ Exclude specific properties (e.g., exclude "instance of" and "sex or gender"):
 
 ```bash
 $ gkc mash qid Q42 --output qsv1 --exclude-properties P31,P21
+```
+
+Include only specific properties:
+
+```bash
+$ gkc mash qid Q42 --output qsv1 --include-properties P31,P21
 ```
 
 Exclude qualifiers and references if not needed:
@@ -147,6 +158,14 @@ template.filter_languages()  # Uses package language config
 
 summary = template.summary()
 print(summary)
+
+# Optional: compact claim-centric structure
+simple_dict = template.to_simple_dict()
+print(simple_dict)
+
+# Round-trip JSON honors language filtering
+entity_data = template.to_dict()
+print(entity_data["labels"].keys())
 ```
 
 ### QuickStatements V1 Format
@@ -176,8 +195,9 @@ import json
 
 loader = WikidataLoader()
 
-# Raw entity data
-entity_data = loader.load_entity_data("Q42")
+# Raw entity data (round-trip safe)
+template = loader.load("Q42")
+entity_data = template.to_dict()
 print(json.dumps(entity_data, indent=2))
 
 # Strip identifiers for new item creation
@@ -194,7 +214,10 @@ loader = WikidataLoader()
 template = loader.load("Q42")
 
 # Exclude specific properties
-template.filter_properties(["P31", "P21"])
+template.filter_properties(exclude_properties=["P31", "P21"])
+
+# Include only specific properties
+template.filter_properties(include_properties=["P31", "P21"])
 
 # Exclude qualifiers and references
 template.filter_qualifiers()

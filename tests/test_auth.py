@@ -206,7 +206,7 @@ class TestWikiverseAuth:
         token_response.json.return_value = {
             "query": {"tokens": {"csrftoken": "csrf_test_token"}}
         }
-        mock_session.get.return_value = token_response
+        mock_session.post.return_value = token_response
 
         auth = WikiverseAuth(username="testuser@testbot", password="testpass")
         auth._logged_in = True  # Simulate logged in state

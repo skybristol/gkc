@@ -54,7 +54,7 @@ class DataTemplate(Protocol):
     def to_dict(self) -> dict[str, Any]:
         """Serialize to a dictionary.
 
-        Plain meaning: Convert to a form suitable for JSON export.
+        Plain meaning: Return the original entity JSON for round-trip safety.
         """
         ...
 
@@ -179,21 +179,43 @@ class WikidataTemplate:
     descriptions: dict[str, str]
     aliases: dict[str, list[str]]
     claims: list[ClaimSummary]
+    entity_data: dict[str, Any]
 
-    def filter_properties(self, exclude_properties: Optional[list[str]] = None) -> None:
-        """Remove specified properties from the template in-place.
+    def filter_properties(
+        self,
+        include_properties: Optional[list[str]] = None,
+        exclude_properties: Optional[list[str]] = None,
+    ) -> None:
+        """Filter properties from the template in-place.
 
-        Plain meaning: Delete certain claims to slim down the template.
+        Plain meaning: Keep only specified properties, then drop excluded ones.
         """
 
-        if not exclude_properties:
-            return
+        if include_properties:
+            include_set = set(include_properties)
+            self.claims = [
+                claim for claim in self.claims if claim.property_id in include_set
+            ]
+            claims = self.entity_data.get("claims")
+            if isinstance(claims, dict):
+                self.entity_data["claims"] = {
+                    prop_id: statements
+                    for prop_id, statements in claims.items()
+                    if prop_id in include_set
+                }
 
-        self.claims = [
-            claim
-            for claim in self.claims
-            if claim.property_id not in exclude_properties
-        ]
+        if exclude_properties:
+            exclude_set = set(exclude_properties)
+            self.claims = [
+                claim for claim in self.claims if claim.property_id not in exclude_set
+            ]
+            claims = self.entity_data.get("claims")
+            if isinstance(claims, dict):
+                self.entity_data["claims"] = {
+                    prop_id: statements
+                    for prop_id, statements in claims.items()
+                    if prop_id not in exclude_set
+                }
 
     def filter_qualifiers(self) -> None:
         """Remove all qualifiers from claims in-place.
@@ -204,6 +226,16 @@ class WikidataTemplate:
         for claim in self.claims:
             claim.qualifiers = []
 
+        claims = self.entity_data.get("claims")
+        if isinstance(claims, dict):
+            for statements in claims.values():
+                if not isinstance(statements, list):
+                    continue
+                for statement in statements:
+                    if isinstance(statement, dict):
+                        statement.pop("qualifiers", None)
+                        statement.pop("qualifiers-order", None)
+
     def filter_references(self) -> None:
         """Remove all references from claims in-place.
 
@@ -212,6 +244,15 @@ class WikidataTemplate:
 
         for claim in self.claims:
             claim.references = []
+
+        claims = self.entity_data.get("claims")
+        if isinstance(claims, dict):
+            for statements in claims.values():
+                if not isinstance(statements, list):
+                    continue
+                for statement in statements:
+                    if isinstance(statement, dict):
+                        statement.pop("references", None)
 
     def filter_languages(
         self, languages: Optional[Union[str, list[str]]] = None
@@ -247,6 +288,24 @@ class WikidataTemplate:
         }
         self.aliases = {k: v for k, v in self.aliases.items() if k in languages}
 
+        labels = self.entity_data.get("labels")
+        if isinstance(labels, dict):
+            self.entity_data["labels"] = {
+                lang: value for lang, value in labels.items() if lang in languages
+            }
+
+        descriptions = self.entity_data.get("descriptions")
+        if isinstance(descriptions, dict):
+            self.entity_data["descriptions"] = {
+                lang: value for lang, value in descriptions.items() if lang in languages
+            }
+
+        aliases = self.entity_data.get("aliases")
+        if isinstance(aliases, dict):
+            self.entity_data["aliases"] = {
+                lang: value for lang, value in aliases.items() if lang in languages
+            }
+
     def summary(self) -> dict[str, Any]:
         """Return a summary of the template for display.
 
@@ -265,6 +324,14 @@ class WikidataTemplate:
         """Serialize to a dictionary.
 
         Plain meaning: Convert to a form suitable for JSON export.
+        """
+
+        return copy.deepcopy(self.entity_data)
+
+    def to_simple_dict(self) -> dict[str, Any]:
+        """Serialize to a simplified dictionary.
+
+        Plain meaning: Convert to a compact summary structure.
         """
 
         return {
@@ -457,6 +524,7 @@ class WikidataLoader:
             descriptions=descriptions_dict,
             aliases=aliases_dict,
             claims=claims,
+            entity_data=copy.deepcopy(entity_data),
         )
 
     @staticmethod
