@@ -1,6 +1,6 @@
-"""Tests for exporter base classes and results."""
+"""Tests for shipper base classes and results."""
 
-from gkc.exporter import Exporter, WriteResult
+from gkc.shipper import Shipper, WriteResult
 
 
 def test_write_result_to_dict_and_json():
@@ -28,13 +28,13 @@ def test_write_result_to_dict_and_json():
     assert '"entity_id"' in as_json
 
 
-def test_exporter_write_raises():
-    """Ensure base exporter raises for unimplemented write."""
-    exporter = Exporter()
+def test_shipper_write_raises():
+    """Ensure base shipper raises for unimplemented write."""
+    shipper = Shipper()
 
     try:
-        exporter.write({})
+        shipper.write({})
     except NotImplementedError as exc:
-        assert "Exporter.write" in str(exc)
+        assert "Shipper.write" in str(exc)
     else:
-        raise AssertionError("Exporter.write should raise NotImplementedError")
+        raise AssertionError("Shipper.write should raise NotImplementedError")

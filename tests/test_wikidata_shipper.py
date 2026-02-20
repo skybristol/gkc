@@ -1,12 +1,12 @@
-"""Tests for Wikidata exporter."""
+"""Tests for Wikidata shipper."""
 
 from unittest.mock import Mock
 
-from gkc.exporter import WikidataExporter
+from gkc.shipper import WikidataShipper
 
 
 class FakeAuth:
-    """Minimal auth double for exporter tests."""
+    """Minimal auth double for shipper tests."""
 
     def __init__(self):
         self.api_url = "https://www.wikidata.org/w/api.php"
@@ -35,9 +35,9 @@ def _basic_payload() -> dict:
 def test_write_item_dry_run_does_not_post():
     """Dry run returns payload and skips network."""
     auth = FakeAuth()
-    exporter = WikidataExporter(auth=auth)
+    shipper = WikidataShipper(auth=auth)
 
-    result = exporter.write_item(
+    result = shipper.write_item(
         _basic_payload(),
         summary="Dry run",
         dry_run=True,
@@ -50,9 +50,9 @@ def test_write_item_dry_run_does_not_post():
 def test_write_item_validate_only_blocks_missing_labels():
     """Validation-only blocks writes without labels."""
     auth = FakeAuth()
-    exporter = WikidataExporter(auth=auth)
+    shipper = WikidataShipper(auth=auth)
 
-    result = exporter.write_item(
+    result = shipper.write_item(
         {"descriptions": {"en": {"language": "en", "value": "Desc"}}},
         summary="Validate only",
         validate_only=True,
@@ -66,7 +66,7 @@ def test_write_item_validate_only_blocks_missing_labels():
 def test_write_item_submit_posts_request():
     """Submit sends a wbeditentity request."""
     auth = FakeAuth()
-    exporter = WikidataExporter(auth=auth, dry_run_default=False)
+    shipper = WikidataShipper(auth=auth, dry_run_default=False)
 
     response = Mock()
     response.raise_for_status.return_value = None
@@ -75,7 +75,7 @@ def test_write_item_submit_posts_request():
     }
     auth.session.post.return_value = response
 
-    result = exporter.write_item(
+    result = shipper.write_item(
         _basic_payload(),
         summary="Submit",
         dry_run=False,

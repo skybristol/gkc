@@ -2,7 +2,7 @@
 
 ## Overview
 
-**Bottling** is the final stage: transforming refined, proofed, and blended data into concrete outputs for downstream systems. Bottling doesn't create new knowledge—it packages knowledge in the right formats for Wikidata, Wikipedia, Wikimedia Commons, OpenStreetMap, and other targets.
+**Bottling** is the stage that handles transforming refined, proofed, and blended data into concrete outputs for downstream systems. Bottling handles everything up to the point of submission (shipping)—it packages knowledge in the right formats for Wikidata, Wikipedia, Wikimedia Commons, OpenStreetMap, and other targets.
 
 | Aspect | Details |
 |--------|---------|
@@ -301,7 +301,7 @@ Filter by `_proofing_status == "pass"` or a minimum quality threshold.
 
 ## GitHub Issues & Development
 
-Work on the Bottling stage is tracked under the [`bottle` label](https://github.com/skybristol/gkc/issues?q=label%3Abottle). Issues represent exporter support, output validation rules, and target-specific packaging.
+Work on the Bottling stage is tracked under the [`bottle` label](https://github.com/skybristol/gkc/issues?q=label%3Abottle). Issues represent shipper support, output validation rules, and target-specific packaging.
 
 **Other Workflow Stages:**
 - [`mash`](https://github.com/skybristol/gkc/issues?q=label%3Amash) — Data Ingestion

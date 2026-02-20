@@ -1,10 +1,10 @@
 """
-Exporter: Deliver Bottler output to external systems.
+Shipper: Deliver Bottled output to external systems.
 
-This module defines exporters responsible for write operations to external
+This module defines shippers responsible for write operations to external
 systems such as Wikidata, Wikimedia Commons, and OpenStreetMap.
 
-Plain meaning: Send Bottler output to target APIs in a safe, testable way.
+Plain meaning: Send Bottled output to target APIs in a safe, testable way.
 """
 
 from __future__ import annotations
@@ -17,8 +17,8 @@ from typing import Any, Optional
 from gkc.auth import OpenStreetMapAuth, WikiverseAuth
 
 
-class ExporterError(Exception):
-    """Raised when an exporter operation fails.
+class ShipperError(Exception):
+    """Raised when a shipper operation fails.
 
     Plain meaning: A write or validation step failed.
     """
@@ -64,25 +64,25 @@ class WriteResult:
         return json.dumps(self.to_dict(), sort_keys=True)
 
 
-class Exporter:
-    """Base class for exporters.
+class Shipper:
+    """Base class for shippers.
 
-    Plain meaning: A shared interface for writing Bottler output to targets.
+    Plain meaning: A shared interface for writing Bottled output to targets.
     """
 
     def write(self, payload: dict, **kwargs: Any) -> WriteResult:
         """Write the payload to a target system.
 
-        Plain meaning: Deliver Bottler output to an external API.
+        Plain meaning: Deliver Bottled output to an external API.
         """
 
-        raise NotImplementedError("Exporter.write must be implemented by subclasses")
+        raise NotImplementedError("Shipper.write must be implemented by subclasses")
 
 
-class WikidataExporter(Exporter):
-    """Exporter for Wikidata write operations.
+class WikidataShipper(Shipper):
+    """Shipper for Wikidata write operations.
 
-    Plain meaning: Submit Bottler output to the Wikidata API.
+    Plain meaning: Submit Bottled output to the Wikidata API.
     """
 
     def __init__(
@@ -91,7 +91,7 @@ class WikidataExporter(Exporter):
         api_url: Optional[str] = None,
         dry_run_default: bool = True,
     ):
-        """Initialize the Wikidata exporter.
+        """Initialize the Wikidata shipper.
 
         Plain meaning: Store auth details and default write behavior.
         """
@@ -261,14 +261,14 @@ class WikidataExporter(Exporter):
         return f"API error {code}: {info}"
 
 
-class CommonsExporter(Exporter):
-    """Exporter scaffold for Wikimedia Commons.
+class CommonsShipper(Shipper):
+    """Shipper scaffold for Wikimedia Commons.
 
     Plain meaning: Reserved for future Commons write support.
     """
 
     def __init__(self, auth: WikiverseAuth, api_url: Optional[str] = None):
-        """Initialize the Commons exporter.
+        """Initialize the Commons shipper.
 
         Plain meaning: Store auth details for future Commons writes.
         """
@@ -282,17 +282,17 @@ class CommonsExporter(Exporter):
         Plain meaning: Placeholder for future Commons write support.
         """
 
-        raise NotImplementedError("CommonsExporter.write is not implemented yet")
+        raise NotImplementedError("CommonsShipper.write is not implemented yet")
 
 
-class OpenStreetMapExporter(Exporter):
-    """Exporter scaffold for OpenStreetMap.
+class OpenStreetMapShipper(Shipper):
+    """Shipper scaffold for OpenStreetMap.
 
     Plain meaning: Reserved for future OpenStreetMap write support.
     """
 
     def __init__(self, auth: OpenStreetMapAuth):
-        """Initialize the OpenStreetMap exporter.
+        """Initialize the OpenStreetMap shipper.
 
         Plain meaning: Store auth details for future OpenStreetMap writes.
         """
@@ -305,4 +305,4 @@ class OpenStreetMapExporter(Exporter):
         Plain meaning: Placeholder for future OpenStreetMap write support.
         """
 
-        raise NotImplementedError("OpenStreetMapExporter.write is not implemented yet")
+        raise NotImplementedError("OpenStreetMapShipper.write is not implemented yet")

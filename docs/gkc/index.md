@@ -47,8 +47,6 @@ The following sections lay out the extract, transform and load (ETL) workflow th
 
 ## Development Notes
 
-- [Implementation Notes](copilot/index.md) - Detailed technical documentation from feature development sessions
-
 ## CI/CD
 
 - [CI/CD](CI_CD.md)

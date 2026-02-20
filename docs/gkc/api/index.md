@@ -20,7 +20,7 @@ GKC modules are grouped by their role in the distillery pipeline:
 | | recipe | Build transformation recipes from EntitySchemas |
 | **Validation** | spirit_safe | Validate against Barrel Schemas |
 | **Transform** | bottler | Transform data into Wikidata format |
-| **Deliver** | exporter | Submit data to Wikidata |
+| **Deliver** | [shipper](shipper.md) | Submit data to Wikidata |
 | **Utilities** | auth | Authentication for Wikidata and OSM |
 | | sitelinks | Manage Wikipedia sitelinks |
 | | [sparql](sparql.md) | Query Wikidata with SPARQL |
@@ -173,14 +173,14 @@ Transform data into Wikidata item structure.
 
 _Documentation coming soon_
 
-### Exporter
+### [Shipper](shipper.md)
 
 Submit data to Wikidata via the API.
 
 **Key classes:**
-- `WikidataExporter` - Submit QuickStatements or JSON to Wikidata
-
-_Documentation coming soon_
+- `WikidataShipper` - Submit QuickStatements or JSON to Wikidata
+- `CommonsShipper` - Wikimedia Commons submission (planned)
+- `OpenStreetMapShipper` - OSM submission (planned)
 
 ---
 
