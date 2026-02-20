@@ -160,6 +160,7 @@ Multiple Knowledge Outlets (Wikidata, OSM, Commons, Wikipedia)
 | **Proofing** | Refined records | Quality scores, pass/review/fail status |
 | **Blending** | Proofed datasets | Unified dataset with merged provenance |
 | **Bottling** | Blended dataset + Barrel Recipes | Target-specific exports validated vs Barrel Schemas |
+| **Shipping** | Final distilled and bottled product | API packages delivered to open knowledge systems |
 
 ## Stage-by-Stage Breakdown
 
@@ -274,7 +275,6 @@ Combine cleaned/reconciled datasets from multiple sources into a unified knowled
 - Reference integrity checks and business rule enforcement
 - "Pass/fail" decision points, especially before bottling
 - Ensures output meets target system requirements
-### **Spirit Safe** (Validation & Quality Gates)
 - Shape constraints (ShEx validation)
 - Reference integrity checks
 - Business rule enforcement
@@ -299,6 +299,7 @@ Each stage produces tangible artifacts that make progress visible and reviewable
 | **Barrel Recipe** | Still → Barrel transformation rules, per-target configs | Recipe covers all Still Schema fields? Target-specific quirks handled? |
 | **Barrel Schema** | Target constraint specifications, validation rules | EntitySchemas current? Property constraints accurate? |
 | **Bottling** | Export batches, validation reports, preview artifacts | Dry-run vs. publish? Batch size limits? Barrel Schema validation passes? |
+| **Shipping** | JSON documents or other serializations | When to ship? What to ship? What to do with receipts? |
 
 ---
 

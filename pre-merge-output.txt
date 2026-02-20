@@ -16,13 +16,217 @@ All checks passed!
 ✓ Ruff checks passed
 
 🎨 Checking code formatting with black...
-would reformat /Users/sky/code/gkc/tests/test_exporter.py
-would reformat /Users/sky/code/gkc/gkc/mash_formatters.py
-would reformat /Users/sky/code/gkc/tests/test_mash.py
-would reformat /Users/sky/code/gkc/tests/test_mash_formatters.py
-would reformat /Users/sky/code/gkc/gkc/exporter.py
-would reformat /Users/sky/code/gkc/gkc/mash.py
-would reformat /Users/sky/code/gkc/gkc/cli.py
+All done! ✨ 🍰 ✨
+25 files would be left unchanged.
+✓ Black formatting verified
 
-Oh no! 💥 💔 💥
-7 files would be reformatted, 17 files would be left unchanged.
+🔎 Running type checking with mypy...
+gkc/sparql.py:15: error: Library stubs not installed for "pandas"  [import-untyped]
+gkc/sparql.py:15: note: Hint: "python3 -m pip install pandas-stubs"
+gkc/sparql.py:15: note: (or run "mypy --install-types" to install all missing stub packages)
+gkc/bottler.py:163: error: Incompatible default for argument "transform_config" (default has type "None", argument has type "dict[Any, Any]")  [assignment]
+gkc/bottler.py:163: note: PEP 484 prohibits implicit Optional. Accordingly, mypy has changed its default to no_implicit_optional=True
+gkc/bottler.py:163: note: Use https://github.com/hauntsaninja/no_implicit_optional to automatically upgrade your codebase
+gkc/bottler.py:209: error: Incompatible default for argument "transform_config" (default has type "None", argument has type "dict[Any, Any]")  [assignment]
+gkc/bottler.py:209: note: PEP 484 prohibits implicit Optional. Accordingly, mypy has changed its default to no_implicit_optional=True
+gkc/bottler.py:209: note: Use https://github.com/hauntsaninja/no_implicit_optional to automatically upgrade your codebase
+gkc/bottler.py:210: error: Incompatible default for argument "qualifiers" (default has type "None", argument has type "list[dict[Any, Any]]")  [assignment]
+gkc/bottler.py:210: note: PEP 484 prohibits implicit Optional. Accordingly, mypy has changed its default to no_implicit_optional=True
+gkc/bottler.py:210: note: Use https://github.com/hauntsaninja/no_implicit_optional to automatically upgrade your codebase
+gkc/bottler.py:211: error: Incompatible default for argument "references" (default has type "None", argument has type "list[dict[Any, Any]]")  [assignment]
+gkc/bottler.py:211: note: PEP 484 prohibits implicit Optional. Accordingly, mypy has changed its default to no_implicit_optional=True
+gkc/bottler.py:211: note: Use https://github.com/hauntsaninja/no_implicit_optional to automatically upgrade your codebase
+gkc/bottler.py:233: error: Argument 4 to "create_snak" of "SnakBuilder" has incompatible type "Optional[Any]"; expected "dict[Any, Any]"  [arg-type]
+gkc/bottler.py:235: error: Unsupported target for indexed assignment ("Collection[Any]")  [index]
+gkc/bottler.py:236: error: "Collection[Any]" has no attribute "append"  [attr-defined]
+gkc/bottler.py:253: error: "Collection[Any]" has no attribute "append"  [attr-defined]
+gkc/recipe.py:177: error: Skipping analyzing "pyshex.utils.schema_loader": module is installed, but missing library stubs or py.typed marker  [import-untyped]
+gkc/recipe.py:177: note: See https://mypy.readthedocs.io/en/stable/running_mypy.html#missing-imports
+gkc/recipe.py:383: error: Skipping analyzing "ShExJSG": module is installed, but missing library stubs or py.typed marker  [import-untyped]
+Found 11 errors in 3 files (checked 12 source files)
+⚠️  Type checking had issues (non-blocking)
+
+🧪 Running test suite...
+============================= test session starts ==============================
+platform darwin -- Python 3.12.2, pytest-8.4.2, pluggy-1.6.0 -- /Users/sky/code/gkc/.venv/bin/python
+cachedir: .pytest_cache
+rootdir: /Users/sky/code/gkc
+configfile: pyproject.toml
+testpaths: tests
+plugins: anyio-4.12.1, cov-6.3.0
+collecting ... collected 95 items
+
+tests/test_auth.py::TestWikiverseAuth::test_init_with_credentials PASSED [  1%]
+tests/test_auth.py::TestWikiverseAuth::test_init_from_environment PASSED [  2%]
+tests/test_auth.py::TestWikiverseAuth::test_init_with_custom_api_url PASSED [  3%]
+tests/test_auth.py::TestWikiverseAuth::test_init_with_api_url_shortcut_wikidata PASSED [  4%]
+tests/test_auth.py::TestWikiverseAuth::test_init_with_api_url_shortcut_wikipedia PASSED [  5%]
+tests/test_auth.py::TestWikiverseAuth::test_init_with_api_url_shortcut_commons PASSED [  6%]
+tests/test_auth.py::TestWikiverseAuth::test_default_api_url_is_wikidata PASSED [  7%]
+tests/test_auth.py::TestWikiverseAuth::test_api_url_from_environment PASSED [  8%]
+tests/test_auth.py::TestWikiverseAuth::test_init_partial_credentials PASSED [  9%]
+tests/test_auth.py::TestWikiverseAuth::test_init_no_credentials PASSED   [ 10%]
+tests/test_auth.py::TestWikiverseAuth::test_repr PASSED                  [ 11%]
+tests/test_auth.py::TestWikiverseAuth::test_get_bot_name PASSED          [ 12%]
+tests/test_auth.py::TestWikiverseAuth::test_get_bot_name_no_bot PASSED   [ 13%]
+tests/test_auth.py::TestWikiverseAuth::test_get_bot_name_no_username PASSED [ 14%]
+tests/test_auth.py::TestWikiverseAuth::test_get_account_name PASSED      [ 15%]
+tests/test_auth.py::TestWikiverseAuth::test_get_account_name_no_bot PASSED [ 16%]
+tests/test_auth.py::TestWikiverseAuth::test_get_account_name_no_username PASSED [ 17%]
+tests/test_auth.py::TestWikiverseAuth::test_login_success PASSED         [ 18%]
+tests/test_auth.py::TestWikiverseAuth::test_login_failure PASSED         [ 20%]
+tests/test_auth.py::TestWikiverseAuth::test_login_without_credentials PASSED [ 21%]
+tests/test_auth.py::TestWikiverseAuth::test_get_csrf_token PASSED        [ 22%]
+tests/test_auth.py::TestWikiverseAuth::test_get_csrf_token_not_logged_in PASSED [ 23%]
+tests/test_auth.py::TestWikiverseAuth::test_logout PASSED                [ 24%]
+tests/test_auth.py::TestOpenStreetMapAuth::test_init_with_credentials PASSED [ 25%]
+tests/test_auth.py::TestOpenStreetMapAuth::test_init_from_environment PASSED [ 26%]
+tests/test_auth.py::TestOpenStreetMapAuth::test_init_partial_credentials PASSED [ 27%]
+tests/test_auth.py::TestOpenStreetMapAuth::test_init_no_credentials PASSED [ 28%]
+tests/test_auth.py::TestOpenStreetMapAuth::test_repr PASSED              [ 29%]
+tests/test_cli.py::test_wikiverse_status_json PASSED                     [ 30%]
+tests/test_cli.py::test_wikiverse_token_redacted PASSED                  [ 31%]
+tests/test_cli.py::test_osm_status_json PASSED                           [ 32%]
+tests/test_docs_build.py::test_mkdocs_build_strict PASSED                [ 33%]
+tests/test_entity_catalog.py::test_entity_catalog_fetch_entities_parses_results PASSED [ 34%]
+tests/test_entity_catalog.py::test_entity_catalog_builds_language_filters PASSED [ 35%]
+tests/test_init.py::test_version PASSED                                  [ 36%]
+tests/test_init.py::test_auth_imports PASSED                             [ 37%]
+tests/test_init.py::test_spirit_safe_imports PASSED                      [ 38%]
+tests/test_init.py::test_cooperage_imports PASSED                        [ 40%]
+tests/test_init.py::test_recipe_imports PASSED                           [ 41%]
+tests/test_mash.py::test_language_configuration_getter PASSED            [ 42%]
+tests/test_mash.py::test_language_configuration_setter PASSED            [ 43%]
+tests/test_mash.py::test_wikidata_template_summary PASSED                [ 44%]
+tests/test_mash.py::test_wikidata_template_filter_properties PASSED      [ 45%]
+tests/test_mash.py::test_wikidata_template_filter_qualifiers PASSED      [ 46%]
+tests/test_mash.py::test_wikidata_template_filter_references PASSED      [ 47%]
+tests/test_mash.py::test_wikidata_template_to_dict PASSED                [ 48%]
+tests/test_mash.py::test_strip_entity_identifiers_removes_ids PASSED     [ 49%]
+tests/test_mash.py::test_wikidata_loader_snak_to_value_entity PASSED     [ 50%]
+tests/test_mash.py::test_wikidata_loader_snak_to_value_string PASSED     [ 51%]
+tests/test_mash.py::test_wikidata_loader_snak_to_value_novalue PASSED    [ 52%]
+tests/test_mash_formatters.py::test_qsv1_formatter_new_item PASSED       [ 53%]
+tests/test_mash_formatters.py::test_qsv1_formatter_exclude_properties PASSED [ 54%]
+tests/test_mash_formatters.py::test_qsv1_formatter_with_entity_labels PASSED [ 55%]
+tests/test_mash_formatters.py::test_qsv1_formatter_with_qualifiers_and_labels PASSED [ 56%]
+tests/test_mash_formatters.py::test_qsv1_formatter_without_entity_labels PASSED [ 57%]
+tests/test_mash_formatters.py::test_qsv1_formatter_with_string_values PASSED [ 58%]
+tests/test_mash_formatters.py::test_qsv1_formatter_existing_item PASSED  [ 60%]
+tests/test_mash_formatters.py::test_qsv1_formatter_with_date_precision PASSED [ 61%]
+tests/test_mash_formatters.py::test_qsv1_formatter_with_qualifier_date_precision PASSED [ 62%]
+tests/test_shex_integration.py::TestShExIntegration::test_validate_with_fixture_files PASSED [ 63%]
+tests/test_shex_integration.py::TestShExIntegration::test_validate_with_fixture_text PASSED [ 64%]
+tests/test_shex_integration.py::TestShExIntegration::test_invalid_organism_fails_validation PASSED [ 65%]
+tests/test_shex_integration.py::TestShExIntegration::test_fluent_api_with_fixtures PASSED [ 66%]
+tests/test_shex_integration.py::TestShExIntegration::test_compare_file_path_vs_text_loading PASSED [ 67%]
+tests/test_shex_integration.py::TestFetchFromWikidata::test_validate_entity_from_wikidata PASSED [ 68%]
+tests/test_shex_integration.py::TestFetchFromWikidata::test_fetch_and_save_for_offline_testing PASSED [ 69%]
+tests/test_shipper.py::test_write_result_to_dict_and_json PASSED         [ 70%]
+tests/test_shipper.py::test_shipper_write_raises PASSED                  [ 71%]
+tests/test_sparql.py::TestSPARQLQueryParseWikidataURL::test_parse_simple_wikidata_url PASSED [ 72%]
+tests/test_sparql.py::TestSPARQLQueryParseWikidataURL::test_parse_wikidata_url_with_newlines PASSED [ 73%]
+tests/test_sparql.py::TestSPARQLQueryParseWikidataURL::test_parse_wikidata_url_empty_fragment PASSED [ 74%]
+tests/test_sparql.py::TestSPARQLQueryParseWikidataURL::test_parse_non_wikidata_url PASSED [ 75%]
+tests/test_sparql.py::TestSPARQLQueryParseWikidataURL::test_parse_invalid_url PASSED [ 76%]
+tests/test_sparql.py::TestSPARQLQueryNormalize::test_normalize_plain_query PASSED [ 77%]
+tests/test_sparql.py::TestSPARQLQueryNormalize::test_normalize_wikidata_url PASSED [ 78%]
+tests/test_sparql.py::TestSPARQLQueryNormalize::test_normalize_query_with_whitespace PASSED [ 80%]
+tests/test_sparql.py::TestSPARQLQueryExecution::test_query_json_response PASSED [ 81%]
+tests/test_sparql.py::TestSPARQLQueryExecution::test_query_csv_response PASSED [ 82%]
+tests/test_sparql.py::TestSPARQLQueryExecution::test_query_with_url PASSED [ 83%]
+tests/test_sparql.py::TestSPARQLQueryExecution::test_query_timeout PASSED [ 84%]
+tests/test_sparql.py::TestSPARQLQueryExecution::test_query_connection_error PASSED [ 85%]
+tests/test_sparql.py::TestSPARQLQueryExecution::test_query_http_error PASSED [ 86%]
+tests/test_sparql.py::TestSPARQLToDataFrame::test_to_dataframe_with_pandas SKIPPED [ 87%]
+tests/test_sparql.py::TestSPARQLToDataFrame::test_to_dataframe_without_pandas PASSED [ 88%]
+tests/test_sparql.py::TestSPARQLToDictList::test_to_dict_list PASSED     [ 89%]
+tests/test_sparql.py::TestSPARQLToCSV::test_to_csv PASSED                [ 90%]
+tests/test_sparql.py::TestSPARQLToCSV::test_to_csv_with_file PASSED      [ 91%]
+tests/test_sparql.py::TestSPARQLConvenienceFunctions::test_execute_sparql PASSED [ 92%]
+tests/test_sparql.py::TestSPARQLConvenienceFunctions::test_execute_sparql_to_dataframe SKIPPED [ 93%]
+tests/test_sparql.py::TestSPARQLEndpointCustomization::test_custom_endpoint PASSED [ 94%]
+tests/test_sparql.py::TestSPARQLEndpointCustomization::test_custom_user_agent PASSED [ 95%]
+tests/test_sparql.py::TestSPARQLEndpointCustomization::test_custom_timeout PASSED [ 96%]
+tests/test_wikidata_shipper.py::test_write_item_dry_run_does_not_post PASSED [ 97%]
+tests/test_wikidata_shipper.py::test_write_item_validate_only_blocks_missing_labels PASSED [ 98%]
+tests/test_wikidata_shipper.py::test_write_item_submit_posts_request PASSED [100%]
+
+=============================== warnings summary ===============================
+.venv/lib/python3.12/site-packages/pyshexc/parser/ShExDocLexer.py:4
+  /Users/sky/code/gkc/.venv/lib/python3.12/site-packages/pyshexc/parser/ShExDocLexer.py:4: DeprecationWarning: typing.io is deprecated, import directly from typing instead. typing.io will be removed in Python 3.12.
+    from typing.io import TextIO
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+================================ tests coverage ================================
+_______________ coverage: platform darwin, python 3.12.2-final-0 _______________
+
+Name                     Stmts   Miss  Cover   Missing
+------------------------------------------------------
+gkc/__init__.py             15      0   100%
+gkc/auth.py                111     17    85%   132-142, 196, 217, 236, 279-281, 322-325, 415-417
+gkc/bottler.py             177    145    18%   25-26, 38, 62-117, 132, 140, 153, 160, 167-191, 202, 215-257, 273-283, 288-292, 319-320, 331-377, 381-399, 403-419
+gkc/cli.py                 188     91    52%   37-38, 42-43, 204-211, 241-244, 260-261, 277-282, 309-420, 428-439, 443
+gkc/cooperage.py            99     62    37%   51, 56, 65-66, 95, 103-115, 138, 148, 150-155, 189-234, 256, 283-293
+gkc/mash.py                230    125    46%   76-90, 117, 190, 230-248, 305-308, 325-330, 340-343, 360-378, 396-419, 430-454, 469-480, 492-517, 544, 548, 556, 559-564, 567-572, 575-577, 582-593
+gkc/mash_formatters.py      78      4    95%   90, 153-154, 165
+gkc/recipe.py              636    473    26%   27-34, 65, 69-71, 80, 98-100, 106, 136-141, 150-153, 166-167, 176-257, 266-268, 277-279, 288-290, 294-297, 301-336, 346-357, 361-373, 381-556, 563-572, 576-585, 589-605, 609-617, 657, 661, 667, 687, 690, 726-729, 812, 918-932, 936-938, 957-985, 1003-1069, 1078-1124, 1133-1186, 1203-1237, 1255-1399, 1418-1433, 1440-1447, 1452-1466
+gkc/shipper.py              97     15    85%   121, 142, 180-181, 223-224, 246, 259-261, 276-277, 285, 300, 308
+gkc/sitelinks.py            86     73    15%   48-51, 64-83, 101-144, 175-191, 206-224, 247-253, 274-275
+gkc/sparql.py               92     17    82%   17, 26-27, 100, 198-199, 228-242, 348-349
+gkc/spirit_safe.py         101     35    65%   130, 137-145, 167-168, 175-181, 195, 210, 214, 227-229, 265-266, 270, 279, 302-313
+------------------------------------------------------
+TOTAL                     1910   1057    45%
+Coverage HTML written to dir htmlcov
+================== 93 passed, 2 skipped, 1 warning in 19.50s ===================
+✓ All tests passed
+
+📚 Running MkDocs build check...
+INFO    -  DeprecationWarning: Importing from 'mkdocs_autorefs.plugin' is deprecated. Import directly from 'mkdocs_autorefs' instead.
+  File "/Users/sky/code/gkc/.venv/lib/python3.12/site-packages/mkdocstrings/plugin.py", line 30, in <module>
+    from mkdocs_autorefs.plugin import AutorefsConfig, AutorefsPlugin
+  File "/Users/sky/code/gkc/.venv/lib/python3.12/site-packages/mkdocs_autorefs/plugin.py", line 12, in __getattr__
+    warnings.warn(
+
+INFO    -  DeprecationWarning: Importing from 'mkdocs_autorefs.references' is deprecated. Import directly from 'mkdocs_autorefs' instead.
+  File "/Users/sky/code/gkc/.venv/lib/python3.12/site-packages/mkdocstrings/handlers/base.py", line 18, in <module>
+    from mkdocs_autorefs.references import AutorefsInlineProcessor
+  File "/Users/sky/code/gkc/.venv/lib/python3.12/site-packages/mkdocs_autorefs/references.py", line 12, in __getattr__
+    warnings.warn(
+
+INFO    -  DeprecationWarning: Setting a fallback anchor function is deprecated and will be removed in a future release.
+  File "/Users/sky/code/gkc/.venv/lib/python3.12/site-packages/mkdocstrings/plugin.py", line 190, in on_config
+    autorefs.get_fallback_anchor = self.handlers.get_anchors
+  File "/Users/sky/code/gkc/.venv/lib/python3.12/site-packages/mkdocs_autorefs/_internal/plugin.py", line 576, in get_fallback_anchor
+    warn(
+
+INFO    -  Cleaning site directory
+INFO    -  Building documentation to directory: /Users/sky/code/gkc/site
+INFO    -  The following pages exist in the docs directory, but are not included in the "nav" configuration:
+  - gkc/api/API_DOCUMENTATION_PATTERN.md
+INFO    -  DeprecationWarning: Importing from 'mkdocs_autorefs.references' is deprecated. Import directly from 'mkdocs_autorefs' instead.
+  File "/Users/sky/code/gkc/.venv/lib/python3.12/site-packages/mkdocstrings_handlers/python/rendering.py", line 31, in <module>
+    from mkdocs_autorefs.references import AutorefsHookInterface
+  File "/Users/sky/code/gkc/.venv/lib/python3.12/site-packages/mkdocs_autorefs/references.py", line 12, in __getattr__
+    warnings.warn(
+
+INFO    -  Documentation built in 1.54 seconds
+✓ MkDocs build passed
+
+📦 Testing package build...
+Building gkc (0.1.0)
+  - Building sdist
+  - Built gkc-0.1.0.tar.gz
+  - Building wheel
+  - Built gkc-0.1.0-py3-none-any.whl
+✓ Package builds successfully
+
+==================================
+✅ All pre-merge checks passed!
+==================================
+
+You can now:
+  - Create a pull request
+  - Merge to main
+  - Tag a release for PyPI publishing
+

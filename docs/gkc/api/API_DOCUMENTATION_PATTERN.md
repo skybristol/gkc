@@ -230,7 +230,7 @@ Based on the codebase, these modules need API documentation:
 2. **cooperage.md** - Barrel schema management
 3. **spirit_safe.md** - Validation
 4. **bottler.md** - Data transformation
-5. **exporter.md** - Wikidata submission
+6. **shipper.md** - Wikidata submission
 6. **auth.md** - Authentication
 7. **sitelinks.md** - Wikipedia sitelinks
 
