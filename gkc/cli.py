@@ -181,6 +181,27 @@ def _build_parser() -> argparse.ArgumentParser:
         mash_mode="update",
     )
 
+    # Mash commands for loading Wikidata EntitySchemas as templates
+    mash_eid = mash_subparsers.add_parser(
+        "eid", help="Load a Wikidata EntitySchema as a template"
+    )
+    mash_eid.add_argument("eid", help="The Wikidata EntitySchema ID (e.g., E502)")
+    mash_eid.add_argument(
+        "--output",
+        choices=["summary", "json", "profile"],
+        default="summary",
+        help="Output format (default: summary)",
+    )
+    mash_eid.add_argument(
+        "--save-profile",
+        type=str,
+        help="Directory path to save generated GKC Entity Profile JSON",
+    )
+    mash_eid.set_defaults(
+        handler=_handle_mash_eid,
+        command_path="mash.eid",
+    )
+
     return parser
 
 
@@ -437,6 +458,118 @@ def _handle_mash_qid(args: argparse.Namespace) -> dict[str, Any]:
         raise CLIError(f"Unsupported output format: {output_format}")
     except Exception as exc:
         raise CLIError(f"Failed to load item {qid}: {str(exc)}") from exc
+
+
+def _handle_mash_eid(args: argparse.Namespace) -> dict[str, Any]:
+    """Handle mash eid subcommand: load and display Wikidata EntitySchema."""
+    eid = args.eid
+    output_format = args.output
+    save_profile = getattr(args, "save_profile", None)
+
+    try:
+        from gkc.recipe import RecipeBuilder
+
+        builder = RecipeBuilder(eid=eid)
+        builder.load_specification()
+
+        if output_format == "profile":
+            # Generate GKC Entity Profile
+            profile_dict = builder.generate_gkc_entity_profile()
+
+            print(json.dumps(profile_dict, indent=2))
+
+            # Optionally save to file
+            if save_profile:
+                import os
+
+                os.makedirs(save_profile, exist_ok=True)
+                profile_id = profile_dict.get("id", eid.lower())
+                filename = f"{profile_id}_entity_profile.json"
+                filepath = os.path.join(save_profile, filename)
+                with open(filepath, "w") as f:
+                    json.dump(profile_dict, f, indent=2)
+
+                return {
+                    "command": args.command_path,
+                    "ok": True,
+                    "message": f"GKC Entity Profile generated for {eid}",
+                    "details": {
+                        "format": "profile",
+                        "profile_id": profile_id,
+                        "saved_to": filepath,
+                    },
+                }
+            else:
+                return {
+                    "command": args.command_path,
+                    "ok": True,
+                    "message": f"GKC Entity Profile for {eid}",
+                    "details": {"format": "profile"},
+                }
+
+        elif output_format == "json":
+            # Fetch raw EntitySchema metadata
+            from gkc.cooperage import fetch_entity_schema_json
+
+            schema_json = fetch_entity_schema_json(eid)
+            print(json.dumps(schema_json, indent=2))
+            return {
+                "command": args.command_path,
+                "ok": True,
+                "message": f"EntitySchema JSON for {eid}",
+                "details": {"format": "json"},
+            }
+
+        elif output_format == "summary":
+            # Generate human-readable summary
+            # Get metadata
+            from gkc.cooperage import fetch_entity_schema_metadata
+            from gkc.recipe import SpecificationExtractor
+
+            user_agent = None
+            metadata = fetch_entity_schema_metadata(eid, user_agent=user_agent)
+
+            # Get properties from ShEx
+            schema_text = builder.schema_text
+            extractor = SpecificationExtractor(schema_text)
+            properties = extractor.extract()
+
+            # Get constraints
+            instance_of = extractor.get_instance_of_constraints()
+            subclass_of = extractor.get_subclass_of_constraints()
+
+            # Format summary
+            p31_str = ", ".join(instance_of) if instance_of else "None"
+            p279_str = ", ".join(subclass_of) if subclass_of else "None"
+            summary_lines = [
+                f"EntitySchema: {eid}",
+                f"Label: {metadata.get('label', '<no label>')}",
+                f"Description: {metadata.get('description', '<no description>')}",
+                f"Properties: {len(properties)}",
+                f"Classification constraints P31: {p31_str}",
+                f"Classification constraints P279: {p279_str}",
+            ]
+
+            print("\n".join(summary_lines))
+
+            return {
+                "command": args.command_path,
+                "ok": True,
+                "message": f"EntitySchema summary for {eid}",
+                "details": {
+                    "format": "summary",
+                    "label": metadata.get("label", ""),
+                    "property_count": len(properties),
+                    "p31_constraints": instance_of,
+                    "p279_constraints": subclass_of,
+                },
+            }
+
+        else:
+            raise CLIError(f"Unsupported output format: {output_format}")
+
+    except Exception as exc:
+        raise CLIError(f"Failed to process EntitySchema {eid}: {str(exc)}") from exc
 
 
 def _emit_output(output: dict[str, Any], json_output: bool, verbose: bool) -> None:
