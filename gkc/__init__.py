@@ -54,6 +54,9 @@ from gkc.cooperage import (
     validate_entity_reference,
 )
 
+# Entity Profiles (GKC Entity Profile definitions)
+from gkc.entity_profile import GKCEntityProfile
+
 # Recipe (Wikidata Barrel Recipe Builder)
 from gkc.recipe import PropertyLedgerEntry, RecipeBuilder, SpecificationExtractor
 
@@ -131,6 +134,8 @@ __all__ = [
     "fetch_schema_specification",
     "get_entity_uri",
     "validate_entity_reference",
+    # Entity Profiles
+    "GKCEntityProfile",
     # Recipe (new names)
     "PropertyLedgerEntry",
     "RecipeBuilder",

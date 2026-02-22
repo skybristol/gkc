@@ -353,6 +353,107 @@ Use `--verbose` to see additional diagnostic information:
 $ gkc --verbose mash qid Q42
 ```
 
+---
+
+## Load Wikidata EntitySchema by EID
+
+```bash
+gkc mash eid <EID>
+```
+
+Load a Wikidata EntitySchema by its EntitySchema ID (e.g., E502) and output it in the specified format. EntitySchemas define the structure and properties for specific entity types in Wikidata.
+
+**Arguments:**
+- `eid`: The Wikidata EntitySchema ID (e.g., E502, E123)
+
+**Output Format Options:**
+- `--output summary`: (default) Human-readable summary of the schema
+- `--output json`: Raw EntitySchema metadata from Wikidata
+- `--output profile`: Generated GKC Entity Profile as JSON
+
+**Profile Saving:**
+- `--save-profile <directory>`: Write the generated GKC Entity Profile JSON to a directory for hand-tuning and version control
+
+### Examples
+
+#### Summary Output (Default)
+
+View a human-readable summary of an EntitySchema:
+
+```bash
+$ gkc mash eid E502
+EntitySchema: E502
+Label: Tribe
+Description: An ethnic group or community
+Properties: 15
+Classification constraints P31: Q7840353
+Classification constraints P279: 
+```
+
+#### JSON Output
+
+Export raw EntitySchema metadata from Wikidata:
+
+```bash
+$ gkc mash eid E502 --output json
+{
+  "id": "E502",
+  "labels": {
+    "en": {"language": "en", "value": "Tribe"}
+  },
+  "descriptions": {
+    "en": {"language": "en", "value": "An ethnic group or community"}
+  },
+  "schemaText": "# ShExC definition...",
+  ...
+}
+```
+
+#### Generate GKC Entity Profile
+
+Generate a GKC Entity Profile from the EntitySchema, ready for hand-tuning:
+
+```bash
+$ gkc mash eid E502 --output profile
+{
+  "id": "tribe",
+  "source_eid": "E502",
+  "labels": {
+    "en": "Tribe"
+  },
+  "descriptions": {
+    "en": "An ethnic group or community"
+  },
+  "properties": ["P31", "P17", "P625", "P580", "P582"],
+  "classification_constraints": {
+    "p31": ["Q7840353"],
+    "p279": []
+  },
+  "target_systems": ["wikidata"]
+}
+```
+
+Save the profile to a directory for version control:
+
+```bash
+$ gkc mash eid E502 --output profile --save-profile ./work/tribes/
+Wrote: ./work/tribes/tribe_entity_profile.json
+```
+
+### Understanding Entity Profiles
+
+A **GKC Entity Profile** is a canonical definition of an entity type that describes:
+- **Properties**: Which Wikidata properties apply to this entity
+- **Classification constraints**: Required P31 (instance of) and P279 (subclass of) values
+- **Multilingual labels**: Human-readable names in different languages
+- **Target systems**: Which platforms this entity can be distributed to
+
+Entity Profiles are the foundation for the GKC distillery workflow:
+1. **Mash**: Load entities (existing items or schemas)
+2. **Recipe**: Transform via Entity Profiles
+3. **Bottler**: Output to target platforms
+4. **Shipper**: Submit to Wikidata, OSM, etc.
+
 ## Related Documentation
 
 - [CLI Overview](index.md) - Main CLI documentation

@@ -172,6 +172,118 @@ template.filter_languages("all")
 
 ---
 
+## Entity Profiles
+
+### Overview
+
+A **GKC Entity Profile** is a canonical definition of how an entity type should be structured in the GKC distillery workflow. It captures:
+- Which Wikidata properties apply to an entity type
+- Classification constraints (P31/P279 requirements)
+- Multilingual labels and descriptions
+- Target system compatibility
+
+Entity Profiles serve as the bridge between raw Wikidata schemas and GKC processing pipelines.
+
+### Generating Entity Profiles from EntitySchemas
+
+```python
+from gkc.recipe import RecipeBuilder
+
+# Create a recipe builder
+rb = RecipeBuilder()
+
+# Load an EntitySchema (E502, Tribe)
+rb.load_from_eid("E502")
+
+# Generate a GKC Entity Profile
+profile_data = rb.generate_gkc_entity_profile(profile_id="tribe")
+
+print(profile_data)
+# {
+#   "id": "tribe",
+#   "source_eid": "E502",
+#   "labels": {"en": "Tribe"},
+#   "descriptions": {"en": "An ethnic group or community"},
+#   "properties": ["P31", "P17", "P625", "P580", "P582"],
+#   "classification_constraints": {
+#     "p31": ["Q7840353"],  # ethnic group
+#     "p279": []
+#   },
+#   "target_systems": ["wikidata"]
+# }
+```
+
+### Working with GKCEntityProfile Objects
+
+```python
+from gkc import GKCEntityProfile
+from gkc.recipe import RecipeBuilder
+
+# Generate a profile
+rb = RecipeBuilder()
+rb.load_from_eid("E502")
+profile_dict = rb.generate_gkc_entity_profile(profile_id="tribe")
+
+# Convert to GKCEntityProfile pydantic model
+profile = GKCEntityProfile(**profile_dict)
+
+# Access fields
+print(profile.id)  # "tribe"
+print(profile.source_eid)  # "E502"
+print(profile.labels)  # {"en": "Tribe"}
+
+# Modify properties as needed for hand-tuning
+profile.properties.append("P242")  # Add geographic area
+
+# Serialize back to dictionary
+updated_dict = profile.to_dict()
+
+# Validate the updated profile
+profile2 = GKCEntityProfile(**updated_dict)
+```
+
+### Saving Profiles for Version Control
+
+```python
+from gkc.recipe import RecipeBuilder
+import json
+from pathlib import Path
+
+rb = RecipeBuilder()
+rb.load_from_eid("E502")
+profile_dict = rb.generate_gkc_entity_profile(profile_id="tribe")
+
+# Save to JSON file
+output_dir = Path("./profiles")
+output_dir.mkdir(exist_ok=True)
+
+filename = output_dir / "tribe_entity_profile.json"
+with open(filename, "w") as f:
+    json.dump(profile_dict, f, indent=2)
+
+print(f"Saved: {filename}")
+```
+
+### Understanding Profile Structure
+
+**id**: Internal GKC identifier for this entity type (derived from EntitySchema label or specified explicitly)
+
+**source_eid**: The original Wikidata EntitySchema ID (e.g., "E502")
+
+**labels**: Multilingual labels from the EntitySchema, using package language configuration
+
+**descriptions**: Multilingual descriptions from the EntitySchema
+
+**properties**: List of Wikidata property IDs that apply to entities of this type
+
+**classification_constraints**: 
+- `p31`: Required values for "instance of" (P31) property
+- `p279`: Required values for "subclass of" (P279) property
+
+**target_systems**: Platform(s) where entities of this type can be created (initially just "wikidata")
+
+---
+
 ## Error Handling
 
 ### Item not found

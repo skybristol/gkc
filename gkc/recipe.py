@@ -1398,6 +1398,113 @@ class RecipeBuilder:
 
         return mapping
 
+    def generate_gkc_entity_profile(
+        self, profile_id: Optional[str] = None
+    ) -> dict[str, Any]:
+        """
+        Generate a minimal GKC Entity Profile from the loaded EntitySchema.
+
+        Creates a canonical entity structure suitable for hand-tuning and storage
+        in the SpiritSafe repository. Includes properties extracted from the
+        EntitySchema and classification constraints (P31/P279).
+
+        Args:
+            profile_id: Optional custom profile ID
+                (e.g., 'office-held-by-head-of-government').
+                If not provided, will be derived from EntitySchema metadata or EID.
+
+        Returns:
+            Dictionary matching GKCEntityProfile schema, ready for JSON serialization
+
+        Raises:
+            ValueError: If schema text cannot be loaded
+            Exception: If EntitySchema metadata fetch fails
+        """
+        from gkc.entity_profile import GKCEntityProfile
+
+        if not self.schema_text:
+            self.load_specification()
+
+        if not self.schema_text:
+            raise ValueError("Schema text could not be loaded")
+
+        # Extract properties and constraints from ShEx
+        extractor = SpecificationExtractor(self.schema_text)
+        shex_properties = extractor.extract()
+        property_ids = sorted(shex_properties.keys())
+
+        # Extract classification constraints (P31 and P279)
+        instance_of_qids = extractor.get_instance_of_constraints()
+        subclass_of_qids = extractor.get_subclass_of_constraints()
+
+        classification_constraints: dict[str, list[str]] = {}
+        if instance_of_qids:
+            classification_constraints["p31"] = instance_of_qids
+        if subclass_of_qids:
+            classification_constraints["p279"] = subclass_of_qids
+
+        # Fetch EntitySchema metadata (labels, descriptions, aliases)
+        schema_metadata = {}
+        if self.validator.eid:
+            try:
+                schema_metadata = fetch_entity_schema_metadata(
+                    self.validator.eid, user_agent=self.user_agent
+                )
+            except Exception:
+                # Graceful fallback if metadata fetch fails
+                schema_metadata = {
+                    "label": "",
+                    "description": "",
+                    "aliases": [],
+                }
+
+        # Determine profile ID
+        final_profile_id = profile_id
+        if not final_profile_id and schema_metadata.get("label"):
+            # Derive from EntitySchema label by converting to slug format
+            label = schema_metadata["label"]
+            final_profile_id = (
+                label.lower().replace(" ", "-").replace("/", "-").replace("_", "-")
+            )
+            # Remove extra dashes
+            import re
+
+            final_profile_id = re.sub(r"-+", "-", final_profile_id).strip("-")
+        if not final_profile_id and self.validator.eid:
+            final_profile_id = f"entity-from-{self.validator.eid.lower()}"
+        if not final_profile_id:
+            final_profile_id = "unnamed-entity-profile"
+
+        # Build profile dict
+        profile_data = {
+            "id": final_profile_id,
+            "source_eid": self.validator.eid,
+            "labels": (
+                {_get_preferred_language(): schema_metadata.get("label", "")}
+                if schema_metadata.get("label")
+                else {}
+            ),
+            "descriptions": (
+                {_get_preferred_language(): schema_metadata.get("description", "")}
+                if schema_metadata.get("description")
+                else {}
+            ),
+            "aliases": (
+                {_get_preferred_language(): schema_metadata.get("aliases", [])}
+                if schema_metadata.get("aliases")
+                else {}
+            ),
+            "properties": property_ids,
+            "classification_constraints": classification_constraints,
+            "target_systems": ["wikidata"],
+        }
+
+        # Validate against model
+        profile = GKCEntityProfile(**profile_data)
+
+        # Return as dict for flexibility (JSON serializable, etc.)
+        return profile.model_dump()  # type: ignore[return-value]
+
     @staticmethod
     def _resolve_entity_types(
         explicit_entity_type: Optional[Any],
