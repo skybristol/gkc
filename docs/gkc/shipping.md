@@ -52,8 +52,6 @@ Provides:
 
 ## Relationship to Other Stages
 
-**Before**: [Bottling](bottling.md) organizes final data into target format/structure and validates
-
 **After**: Data are available across components of the Commons
 
 ---
@@ -79,7 +77,6 @@ Filter by `_proofing_status == "pass"` or a minimum quality threshold.
 -- [MediaWiki Wikibase extension API documentation](https://www.mediawiki.org/wiki/Wikibase/API); includes several actions such as wbeditentity, wbsetclaim, etc.
 -- [OpenStreetMap API](https://wiki.openstreetmap.org/wiki/API)
 -- [OpenStreetMap API v0.6 Specifications](https://wiki.openstreetmap.org/wiki/API_v0.6)
-- **Related**: [Bottling](bottling.md)
 
 ---
 

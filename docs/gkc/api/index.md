@@ -242,5 +242,3 @@ Many modules use the package-level language configuration for filtering labels, 
 ## See Also
 
 - [CLI Reference](../cli/index.md) - Command-line interface
-- [Pipeline Overview](../pipeline_overview.md) - End-to-end workflow
-- Examples - Jupyter notebooks with real-world usage (coming soon)

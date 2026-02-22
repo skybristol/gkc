@@ -7,18 +7,7 @@ Welcome to the documentation for GKC (Global Knowledge Commons), a Python packag
 - [Installation and setup](setup.md) - setting up to operate the software (aka make whiskey)
 - [Authentication](authentication.md) - set up credentials for Wikimedia apps and OpenStreetMap
 - [Background](background.md) - read about where the project came from and its motivations
-- [Distillery glossary](distillery_glossary.md) - terminology for stages, components, and key concepts
-
-## Schema Architecture
-
-GKC uses a two-schema architecture to enable multi-system data distribution:
-
-- [Pipeline Overview](pipeline_overview.md) — Understand the end-to-end workflow with visual diagram and stage descriptions
-- [Barrel Schemas](barrel_schemas/index.md) — Target system schemas and constraints
-  - [Wikidata EntitySchemas](barrel_schemas/wikidata_entityschemas.md) — ShEx schemas and Barrel Recipe Builder ✅
-  - [Wikimedia Commons](barrel_schemas/commons_schemas.md) — Commons structured data schemas 🚧
-  - [Wikipedia Infoboxes](barrel_schemas/wikipedia_infoboxes.md) — Infobox template parameters 🚧
-  - [OpenStreetMap Tagging](barrel_schemas/osm_tagging.md) — OSM tagging schemes 🚧
+- [Architecture](architecture.md) - major architectural concepts for the GKC and Data Distillery
 
 ## Data Distillery Workflow
 
@@ -30,22 +19,9 @@ The following sections lay out the extract, transform and load (ETL) workflow th
 - Data source annotation - review and enhance annotation on data sources
 - Mystery data sniffer - evaluating source data to produce a best-guess data map
 
-### Data Integration (ferment, distill, refine, proof and blend)
-
-- [Fermentation](fermentation.md) - organize the ingredients and examine gaps between source data and target knowledge systems
-- [Distillation](distillation.md) - record choices on how to handle gaps and necessary transformations
-- [Refinement](refinement.md) - identify and confirm interconnections within and beyond the source dataset
-- [Proofing](proofing.md) - examine the integrity of each component entity and their characteristics
-- [Blending](blending.md) - examine and confirm the combination of entities that tell the larger story
-
-### Data Delivery (bottling)
-
-- Wikidata item maintainer - create new items and make claims on existing items in Wikidata
-- Infobox template builder - output one or more filled infobox templates for Wikipedia
-- Commons contributor - create new items and add properties on existing items in Wikimedia Commons
-- OSM mapping & tagging - create new features or add to existing features with OSM tags
-
 ## Development Notes
+
+The GitHub repo for the project maintains a wealth of background on architectural decisions and code design in [issues](https://github.com/skybristol/gkc/issues) and [pull requests](https://github.com/skybristol/gkc/pulls).
 
 ## CI/CD
 

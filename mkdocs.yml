@@ -45,44 +45,12 @@ nav:
   - GKC Documentation:
     - Home: gkc/index.md
     - Background: gkc/background.md
+    - Architecture: gkc/architecture.md
     - Getting Started:
       - Setup and Orientation: gkc/setup.md
       - Authentication: gkc/authentication.md
     - Data Distillery Workflow:
-      - Pipeline Overview: gkc/pipeline_overview.md
-      - Distillery Glossary: gkc/distillery_glossary.md
-      - Mash Tun: gkc/mash_tun.md
-      - Fermentation: gkc/fermentation.md
-      - Distillation: gkc/distillation.md
-      - Refinement: gkc/refinement.md
-      - Proofing: gkc/proofing.md
-      - Blending: gkc/blending.md
-      - Bottling: gkc/bottling.md
       - Shipping: gkc/shipping.md
-    - Barrel Schemas:
-      - Overview: gkc/barrel_schemas/index.md
-      - Wikidata EntitySchemas: gkc/barrel_schemas/wikidata_entityschemas.md
-      - Wikimedia Commons: gkc/barrel_schemas/commons_schemas.md
-      - Wikipedia Infoboxes: gkc/barrel_schemas/wikipedia_infoboxes.md
-      - OpenStreetMap Tagging: gkc/barrel_schemas/osm_tagging.md
-    - Schema Forward Approach:
-      - Mapping Format Migration: gkc/mapping_format_migration.md
-    - Wikidata:
-      - Overview: gkc/wikidata/index.md
-      - Item Creation Approach: gkc/wikidata/item_creation_approach.md
-      - Claims Map Builder: gkc/wikidata/claims_map_builder.md
-      - Reference/Qualifier Patterns: gkc/wikidata/reference_qualifier_patterns.md
-      - Date/Time Handling: gkc/wikidata/date_time_handling.md
-      - Sitelinks:
-        - Sitelinks Usage: gkc/wikidata/sitelinks_usage.md
-        - Sitelinks Validation: gkc/wikidata/sitelinks_validation.md
-    - Command Line Interface:
-      - Overview: gkc/cli/index.md
-      - Authentication: gkc/cli/auth.md
-      - Mash: gkc/cli/mash.md
-    - Utilities and Tools:
-      - SPARQL Queries: gkc/sparql_queries.md
-      - SPARQL Quick Reference: gkc/sparql_quick_reference.md
     - API Reference:
       - Overview: gkc/api/index.md
       - Authentication: gkc/api/auth.md
@@ -90,6 +58,13 @@ nav:
       - Mash Formatters: gkc/api/mash_formatters.md
       - Shipper: gkc/api/shipper.md
       - SPARQL: gkc/api/sparql.md
+    - Command Line Interface:
+      - Overview: gkc/cli/index.md
+      - Authentication: gkc/cli/auth.md
+      - Mash: gkc/cli/mash.md
+    - Utilities and Tools:
+      - SPARQL Queries: gkc/sparql_queries.md
+      - SPARQL Quick Reference: gkc/sparql_quick_reference.md
     - Development:
       - CI/CD: gkc/CI_CD.md
       - Release Process: gkc/RELEASE.md
