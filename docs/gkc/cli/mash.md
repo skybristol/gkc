@@ -355,6 +355,5 @@ $ gkc --verbose mash qid Q42
 
 ## Related Documentation
 
-- [Mash Tun](../mash_tun.md) - Overview of the mash stage in the distillery pipeline
 - [CLI Overview](index.md) - Main CLI documentation
 - [QuickStatements Documentation](https://www.wikidata.org/wiki/Help:QuickStatements) - External documentation for QuickStatements format

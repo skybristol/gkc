@@ -385,6 +385,5 @@ except AuthenticationError as e:
 ## See Also
 
 - [Authentication API](auth.md) - Required for all write operations
-- [Bottling](../bottling.md) - Prepare data for shipping
 - [Shipping](../shipping.md) - Conceptual overview of the shipping stage
 - [MediaWiki Wikibase API](https://www.mediawiki.org/wiki/Wikibase/API) - Underlying API documentation

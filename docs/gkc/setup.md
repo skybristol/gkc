@@ -96,23 +96,7 @@ Most users begin with one of these paths:
 
 ---
 
-## 6. Locate the Stage Docs
-
-Start here for the full pipeline:
-- [Pipeline Overview](pipeline_overview.md)
-
-Then dive into each stage as needed:
-- [Mash Tun](mash_tun.md)
-- [Fermentation](fermentation.md)
-- [Distillation](distillation.md)
-- [Refinement](refinement.md)
-- [Proofing](proofing.md)
-- [Blending](blending.md)
-- [Bottling](bottling.md)
-
----
-
-## 7. What to Expect Next
+## 6. What to Expect Next
 
 As implementation work progresses, this setup guide will continue to expand with:
 
