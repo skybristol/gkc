@@ -79,11 +79,11 @@ def test_osm_status_json(monkeypatch, capsys):
     assert data["ok"] is True
 
 
-def test_mash_qid_json_include_exclude(monkeypatch, capsys):
-    """Mash JSON output respects include/exclude property filters."""
+def test_mash_qid_filter_properties(monkeypatch, capsys):
+    """Mash output respects include/exclude property filters."""
 
     class FakeWikidataLoader:
-        def load(self, qid):
+        def load_item(self, qid):
             return WikidataTemplate(
                 qid=qid,
                 labels={"en": "Test"},
@@ -113,8 +113,11 @@ def test_mash_qid_json_include_exclude(monkeypatch, capsys):
 
     args = argparse.Namespace(
         qid="Q42",
-        output="json",
-        mash_mode="update",
+        qids=None,
+        qid_list=None,
+        output=None,
+        raw=False,
+        transform=None,
         include_properties="P31,P21",
         exclude_properties="P21",
         exclude_qualifiers=False,
@@ -130,3 +133,124 @@ def test_mash_qid_json_include_exclude(monkeypatch, capsys):
     assert result["ok"] is True
     assert "P31" in data["claims"]
     assert "P21" not in data["claims"]
+
+
+def test_mash_qid_shell_transform(monkeypatch, capsys):
+    """Mash qid with shell transform strips identifiers."""
+
+    class FakeWikidataLoader:
+        def load_item(self, qid):
+            return WikidataTemplate(
+                qid=qid,
+                labels={"en": "Test"},
+                descriptions={"en": "Test"},
+                aliases={},
+                claims=[],
+                entity_data={
+                    "id": qid,
+                    "pageid": 123,
+                    "ns": 0,
+                    "title": "Q42",
+                    "labels": {"en": {"value": "Test"}},
+                    "claims": {},
+                },
+            )
+
+    monkeypatch.setattr(cli, "WikidataLoader", FakeWikidataLoader)
+
+    args = argparse.Namespace(
+        qid="Q42",
+        qids=None,
+        qid_list=None,
+        output=None,
+        raw=False,
+        transform="shell",
+        include_properties=None,
+        exclude_properties=None,
+        exclude_qualifiers=False,
+        exclude_references=False,
+        include_entity_labels=True,
+        command_path="mash.qid",
+    )
+
+    result = cli._handle_mash_qid(args)
+    output = capsys.readouterr().out.strip()
+    data = json.loads(output)
+
+    assert result["ok"] is True
+    assert data.get("id") is None
+    assert data.get("pageid") is None
+    assert data.get("ns") is None
+    assert data.get("title") is None
+
+
+def test_mash_pid_basic(monkeypatch, capsys):
+    """Mash pid loads a property."""
+    from gkc.mash import WikidataPropertyTemplate
+
+    class FakeWikidataLoader:
+        def load_property(self, pid):
+            return WikidataPropertyTemplate(
+                pid=pid,
+                labels={"en": "instance of"},
+                descriptions={"en": "test"},
+                aliases={},
+                datatype="wikibase-item",
+                formatter_url=None,
+                entity_data={"id": pid, "datatype": "wikibase-item"},
+            )
+
+    monkeypatch.setattr(cli, "WikidataLoader", FakeWikidataLoader)
+
+    args = argparse.Namespace(
+        pid="P31",
+        pids=None,
+        pid_list=None,
+        output=None,
+        raw=False,
+        transform=None,
+        command_path="mash.pid",
+    )
+
+    result = cli._handle_mash_pid(args)
+    output = capsys.readouterr().out.strip()
+    data = json.loads(output)
+
+    assert result["ok"] is True
+    assert data["id"] == "P31"
+    assert data["datatype"] == "wikibase-item"
+
+
+def test_mash_eid_basic(monkeypatch, capsys):
+    """Mash eid loads an EntitySchema."""
+    from gkc.mash import WikidataEntitySchemaTemplate
+
+    class FakeWikidataLoader:
+        def load_entity_schema(self, eid):
+            return WikidataEntitySchemaTemplate(
+                eid=eid,
+                labels={"en": "Tribe"},
+                descriptions={"en": "test"},
+                schema_text="PREFIX : <http://www.wikidata.org/entity/>",
+                entity_data={
+                    "id": eid,
+                    "schemaText": "PREFIX : <http://www.wikidata.org/entity/>",
+                },
+            )
+
+    monkeypatch.setattr(cli, "WikidataLoader", FakeWikidataLoader)
+
+    args = argparse.Namespace(
+        eid="E502",
+        output=None,
+        raw=False,
+        transform=None,
+        command_path="mash.eid",
+    )
+
+    result = cli._handle_mash_eid(args)
+    output = capsys.readouterr().out.strip()
+    data = json.loads(output)
+
+    assert result["ok"] is True
+    assert data["id"] == "E502"
