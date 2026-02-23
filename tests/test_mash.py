@@ -3,7 +3,9 @@
 import gkc
 from gkc.mash import (
     ClaimSummary,
+    WikidataEntitySchemaTemplate,
     WikidataLoader,
+    WikidataPropertyTemplate,
     WikidataTemplate,
     strip_entity_identifiers,
 )
@@ -210,6 +212,7 @@ def test_strip_entity_identifiers_removes_ids():
         "lastrevid": 456,
         "modified": "2024-01-01T00:00:00Z",
         "ns": 0,
+        "title": "Q42",
         "labels": {"en": {"value": "Douglas Adams"}},
         "claims": {
             "P31": [
@@ -245,8 +248,8 @@ def test_strip_entity_identifiers_removes_ids():
     assert cleaned.get("pageid") is None
     assert cleaned.get("lastrevid") is None
     assert cleaned.get("modified") is None
-    # ns should be preserved
-    assert cleaned.get("ns") == 0
+    assert cleaned.get("ns") is None
+    assert cleaned.get("title") is None
 
     # Statement ID should be removed
     assert cleaned["claims"]["P31"][0].get("id") is None
@@ -304,3 +307,193 @@ def test_wikidata_loader_snak_to_value_novalue():
     value, metadata = WikidataLoader._snak_to_value(snak)
     assert value == "[no value]"
     assert metadata is None
+
+
+def test_wikidata_template_to_shell():
+    """Test converting template to shell format."""
+    template = WikidataTemplate(
+        qid="Q42",
+        labels={"en": "Test"},
+        descriptions={"en": "Test"},
+        aliases={},
+        claims=[],
+        entity_data={
+            "id": "Q42",
+            "pageid": 123,
+            "lastrevid": 456,
+            "modified": "2024-01-01T00:00:00Z",
+            "ns": 0,
+            "title": "Q42",
+            "labels": {"en": {"value": "Test"}},
+            "claims": {},
+        },
+    )
+
+    shell = template.to_shell()
+    assert shell.get("id") is None
+    assert shell.get("pageid") is None
+    assert shell.get("ns") is None
+    assert shell.get("title") is None
+    assert "labels" in shell
+
+
+def test_wikidata_template_to_qsv1():
+    """Test converting template to QuickStatements V1 format."""
+    template = WikidataTemplate(
+        qid="Q42",
+        labels={"en": "Test"},
+        descriptions={"en": "Test"},
+        aliases={},
+        claims=[
+            ClaimSummary(property_id="P31", value="Q5", qualifiers=[], references=[]),
+        ],
+        entity_data={
+            "id": "Q42",
+            "labels": {"en": {"value": "Test"}},
+            "claims": {"P31": [{"mainsnak": {}}]},
+        },
+    )
+
+    qs_text = template.to_qsv1(for_new_item=False)
+    assert "Q42" in qs_text
+    assert "P31" in qs_text
+
+    qs_new = template.to_qsv1(for_new_item=True)
+    assert "CREATE" in qs_new
+    assert "LAST" in qs_new
+
+
+def test_wikidata_template_to_gkc_entity_profile_not_implemented():
+    """Test that to_gkc_entity_profile raises NotImplementedError."""
+    template = WikidataTemplate(
+        qid="Q42",
+        labels={"en": "Test"},
+        descriptions={"en": "Test"},
+        aliases={},
+        claims=[],
+        entity_data={"id": "Q42"},
+    )
+
+    try:
+        template.to_gkc_entity_profile()
+        assert False, "Should have raised NotImplementedError"
+    except NotImplementedError as e:
+        assert "not yet implemented" in str(e)
+
+
+def test_wikidata_property_template_summary():
+    """Test WikidataPropertyTemplate summary method."""
+    template = WikidataPropertyTemplate(
+        pid="P31",
+        labels={"en": "instance of"},
+        descriptions={"en": "that class of which this subject is a particular example"},
+        aliases={},
+        datatype="wikibase-item",
+        formatter_url=None,
+        entity_data={"id": "P31", "datatype": "wikibase-item"},
+    )
+
+    summary = template.summary()
+    assert summary["pid"] == "P31"
+    assert summary["labels"]["en"] == "instance of"
+    assert summary["datatype"] == "wikibase-item"
+
+
+def test_wikidata_property_template_filter_languages():
+    """Test filtering languages on property template."""
+    template = WikidataPropertyTemplate(
+        pid="P31",
+        labels={"en": "instance of", "fr": "nature de l'élément"},
+        descriptions={"en": "test", "fr": "test"},
+        aliases={},
+        datatype="wikibase-item",
+        formatter_url=None,
+        entity_data={
+            "id": "P31",
+            "labels": {
+                "en": {"value": "instance of"},
+                "fr": {"value": "nature de l'élément"},
+            },
+            "descriptions": {"en": {"value": "test"}, "fr": {"value": "test"}},
+        },
+    )
+
+    template.filter_languages("en")
+    assert len(template.labels) == 1
+    assert "en" in template.labels
+    assert "fr" not in template.labels
+
+
+def test_wikidata_property_template_to_shell():
+    """Test converting property template to shell format."""
+    template = WikidataPropertyTemplate(
+        pid="P31",
+        labels={"en": "instance of"},
+        descriptions={},
+        aliases={},
+        datatype="wikibase-item",
+        formatter_url=None,
+        entity_data={
+            "id": "P31",
+            "pageid": 123,
+            "ns": 120,
+            "title": "Property:P31",
+            "datatype": "wikibase-item",
+        },
+    )
+
+    shell = template.to_shell()
+    assert shell.get("id") is None
+    assert shell.get("pageid") is None
+    assert shell.get("ns") is None
+    assert shell.get("title") is None
+
+
+def test_wikidata_entity_schema_template_summary():
+    """Test WikidataEntitySchemaTemplate summary method."""
+    template = WikidataEntitySchemaTemplate(
+        eid="E502",
+        labels={"en": "Tribe"},
+        descriptions={"en": "An ethnic group"},
+        schema_text="PREFIX : <http://www.wikidata.org/entity/>",
+        entity_data={"id": "E502"},
+    )
+
+    summary = template.summary()
+    assert summary["eid"] == "E502"
+    assert summary["labels"]["en"] == "Tribe"
+    assert summary["schema_text_length"] > 0
+
+
+def test_wikidata_entity_schema_template_filter_languages():
+    """Test filtering languages on entity schema template."""
+    template = WikidataEntitySchemaTemplate(
+        eid="E502",
+        labels={"en": "Tribe", "fr": "Tribu"},
+        descriptions={"en": "test", "fr": "test"},
+        schema_text="test",
+        entity_data={
+            "id": "E502",
+            "labels": {"en": {"value": "Tribe"}, "fr": {"value": "Tribu"}},
+            "descriptions": {"en": {"value": "test"}, "fr": {"value": "test"}},
+        },
+    )
+
+    template.filter_languages("en")
+    assert len(template.labels) == 1
+    assert "en" in template.labels
+    assert "fr" not in template.labels
+
+
+def test_wikidata_loader_load_items_empty():
+    """Test loading empty list of items."""
+    loader = WikidataLoader()
+    result = loader.load_items([])
+    assert result == {}
+
+
+def test_wikidata_loader_fetch_descriptors_empty():
+    """Test fetching descriptors for empty list."""
+    loader = WikidataLoader()
+    result = loader.fetch_descriptors([])
+    assert result == {}

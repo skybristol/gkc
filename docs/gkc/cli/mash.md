@@ -4,457 +4,331 @@ Plain meaning: Load source data as ingredients for further actions.
 
 ## Overview
 
-The mash module in GKC handles the input of various data and information content and structure that will be processed through data distillery workflows. The mash CLI provides an interface to the most common functionality that is useful at the command line.
+The mash module in GKC handles the input of various data and information content and structure that will be processed through data distillery workflows. The mash CLI provides an interface to load Wikidata entities - items (QID), properties (PID), and EntitySchemas (EID).
 
-The name "mash" comes from the distillery metaphor—like grain that's been milled and steeped to extract fermentable sugars, mashed items extract the essential structure and content from source data, readying the ingredients for further processing.
+The name "mash" comes from the distillery metaphor—like grain that's been milled and steeped to extract fermentable sugars, mashed entities extract the essential structure and content from source data, readying the ingredients for further processing.
 
-**Current implementations:** The mash module currently supports loading Wikidata items as templates. Future versions will add support for CSV files, JSON APIs, and other data sources.
+**Current implementations:**
+- Wikidata items (QID)
+- Wikidata properties (PID)
+- Wikidata EntitySchemas (EID)
 
-## Load Wikidata Item by QID
+**Future implementations:** CSV files, JSON APIs, dataframes
+
+---
+
+## Load Wikidata Items by QID
 
 ```bash
-gkc mash qid <QID>
+gkc mash qid <QID> [options]
 ```
 
-Load a Wikidata item by its QID (e.g., Q42) and output it in the specified format.
+Load one or more Wikidata items by QID and output them in various formats.
 
-**Arguments:**
-- `qid`: The Wikidata item ID (e.g., Q42, Q1234567)
+### Arguments
 
-**Output Format Options:**
-- `--output summary`: (default) Human-readable summary of the item
-- `--output qsv1`: QuickStatements V1 format for bulk operations
-- `--output json`: Raw Wikidata entity JSON
+- `qid`: Positional argument for a single item ID (e.g., `Q42`)
+- `--qid <QID>`: Repeatable flag for multiple items (e.g., `--qid Q42 --qid Q5`)
+- `--qid-list <file>`: Path to file containing item IDs (one per line)
 
-**Filtering Options:**
-- `--include-properties <P1,P2,...>`: Comma-separated list of property IDs to include (e.g., P31,P21)
-- `--exclude-properties <P1,P2,...>`: Comma-separated list of property IDs to exclude (e.g., P31,P21)
-- `--exclude-qualifiers`: Omit all qualifiers from the output
-- `--exclude-references`: Omit all references from the output
+### Output Options
 
-**Item Creation Mode:**
-- `--update`: Retain identifiers for updates (default)
-- `--new`: Use CREATE/LAST syntax for new items and strip identifiers from JSON
+- `-o, --output <file>`: Write output to file instead of stdout
+- `--raw`: Output raw JSON to stdout (default behavior when no transform specified)
+- `--transform <type>`: Transform the output  
+  - `shell`: Strip all identifiers for new item creation
+  - `qsv1`: Convert to QuickStatements V1 format
+  - `gkc_entity_profile`: Convert to GKC Entity Profile (not yet implemented)
+
+### Filtering Options
+
+- `--include-properties <P1,P2,...>`: Comma-separated list of properties to include
+- `--exclude-properties <P1,P2,...>`: Comma-separated list of properties to exclude
+- `--exclude-qualifiers`: Omit all qualifiers from output
+- `--exclude-references`: Omit all references from output
+- `--no-entity-labels`: Skip fetching entity labels for QuickStatements comments (faster)
 
 ### Examples
 
-#### Summary Output (Default)
-
-View a human-readable summary of an item:
+#### Load a single item (raw JSON)
 
 ```bash
-$ gkc mash qid Q42
-Template loaded: Q42
-qid: Q42
-labels: en: Douglas Adams
-descriptions: en: English science fiction writer
-aliases: en: Douglas Noël Adams, Douglas Noel Adams
-claims: 42
+gkc mash qid Q42
 ```
 
-#### QuickStatements V1 Format
+Output: Raw Wikidata JSON for item Q42
 
-Export an item for bulk creation of similar items:
+#### Load multiple items
 
 ```bash
-$ gkc mash qid Q42 --output qsv1
-Q42|Len|"Douglas Adams"
-Q42|Den|"English science fiction writer"
-Q42|P31|Q5  /* instance of: human */
-Q42|P21|Q6581097  /* sex or gender: male */
-...
+# Using repeatable --qid flags
+gkc mash qid --qid Q42 --qid Q5 --qid Q30
+
+# Using a file list
+echo "Q42
+Q5
+Q30" > items.txt
+gkc mash qid --qid-list items.txt
 ```
 
-Use `--new` for creating new items with CREATE/LAST syntax:
+#### Transform to shell for new item creation
 
 ```bash
-$ gkc mash qid Q42 --output qsv1 --new
-CREATE
-LAST|Len|"Douglas Adams"
-LAST|Den|"English science fiction writer"
-LAST|P31|Q5  /* instance of: human */
+gkc mash qid Q42 --transform shell -o new_item_template.json
 ```
 
-#### JSON Format
+Strips all identifiers (id, pageid, ns, title, statement IDs, hashes) to create a clean template for submitting as a new item.
 
-Export raw Wikidata entity JSON for programmatic use:
+#### Transform to QuickStatements
 
 ```bash
-$ gkc mash qid Q42 --output json
-{
-  "id": "Q42",
-  "labels": {
-    "en": {"language": "en", "value": "Douglas Adams"}
-  },
-  "descriptions": {
-    "en": {"language": "en", "value": "English science fiction writer"}
-  },
-  "claims": {...}
-}
+# For editing existing item
+gkc mash qid Q42 --transform qsv1
+
+# Extract specific properties only
+gkc mash qid Q42 --transform qsv1 --include-properties P31,P21,P569
 ```
 
-By default, JSON output preserves the full Wikidata structure so it can be
-mutated and sent back as an update payload. Filters only apply when you
-explicitly request them (include/exclude properties, qualifiers, references).
-
-Use `--new` to strip identifiers for new-item creation. This removes:
-- Item-level: `id`, `pageid`, `lastrevid`, `modified`
-- Statement-level: `id` (statement GUID)
-- Snak-level: `hash` (in mainsnak, qualifiers, and references)
-
-#### Filtering Properties
-
-Exclude specific properties (e.g., exclude "instance of" and "sex or gender"):
+#### Filter properties and save
 
 ```bash
-$ gkc mash qid Q42 --output qsv1 --exclude-properties P31,P21
-```
-
-Include only specific properties:
-
-```bash
-$ gkc mash qid Q42 --output qsv1 --include-properties P31,P21
-```
-
-Exclude qualifiers and references if not needed:
-
-```bash
-$ gkc mash qid Q42 --output qsv1 --exclude-qualifiers --exclude-references
-```
-
-#### Machine-Readable Output
-
-Combine with `--json` flag for structured command output:
-
-```bash
-$ gkc --json mash qid Q42 --output summary
-{
-  "command": "mash.qid",
-  "ok": true,
-  "message": "Template loaded: Q42",
-  "details": {
-    "qid": "Q42",
-    "labels": "en: Douglas Adams",
-    "descriptions": "en: English science fiction writer",
-    ...
-  }
-}
+gkc mash qid Q42 \
+  --exclude-properties P18,P373 \
+  --exclude-qualifiers \
+  --exclude-references \
+  -o filtered_item.json
 ```
 
 ---
 
-## Library Usage
+## Load Wikidata Properties by PID
 
-To accomplish these same tasks using the Python library:
-
-### Summary Output
-
-```python
-from gkc.mash import WikidataLoader
-
-loader = WikidataLoader()
-template = loader.load("Q42")
-template.filter_languages()  # Uses package language config
-
-summary = template.summary()
-print(summary)
-
-# Optional: compact claim-centric structure
-simple_dict = template.to_simple_dict()
-print(simple_dict)
-
-# Round-trip JSON honors language filtering
-entity_data = template.to_dict()
-print(entity_data["labels"].keys())
+```bash
+gkc mash pid <PID> [options]
 ```
 
-### QuickStatements V1 Format
+Load one or more Wikidata properties by PID and output them in various formats.
 
-```python
-from gkc.mash import WikidataLoader
-from gkc.mash_formatters import QSV1Formatter
+### Arguments
 
-loader = WikidataLoader()
-template = loader.load("Q42")
+- `pid`: Positional argument for a single property ID (e.g., `P31`)
+- `--pid <PID>`: Repeatable flag for multiple properties (e.g., `--pid P31 --pid P279`)
+- `--pid-list <file>`: Path to file containing property IDs (one per line)
 
-# For new items (CREATE/LAST syntax)
-formatter = QSV1Formatter()
-qs_text = formatter.format(template, for_new_item=True)
-print(qs_text)
+### Output Options
 
-# For updates (QID syntax)
-qs_text = formatter.format(template, for_new_item=False)
-print(qs_text)
+- `-o, --output <file>`: Write output to file instead of stdout
+- `--raw`: Output raw JSON to stdout (default behavior)
+- `--transform <type>`: Transform the output
+  - `shell`: Strip all identifiers for new property creation
+  - `gkc_entity_profile`: Convert to GKC Entity Profile (not yet implemented)
+
+### Examples
+
+#### Load a single property
+
+```bash
+gkc mash pid P31
 ```
 
-### JSON Format
+Output: Raw Wikidata JSON for property P31 including labels, descriptions, datatype, formatter URL
 
-```python
-from gkc.mash import WikidataLoader, strip_entity_identifiers
-import json
+#### Load multiple properties
 
-loader = WikidataLoader()
+```bash
+# Using repeatable --pid flags
+gkc mash pid --pid P31 --pid P279 --pid P21
 
-# Raw entity data (round-trip safe)
-template = loader.load("Q42")
-entity_data = template.to_dict()
-print(json.dumps(entity_data, indent=2))
-
-# Strip identifiers for new item creation
-new_item_data = strip_entity_identifiers(entity_data)
-print(json.dumps(new_item_data, indent=2))
+# Using a file list
+echo "P31
+P279
+P21" > properties.txt
+gkc mash pid --pid-list properties.txt
 ```
 
-### Filtering Properties
+#### Transform to shell for new property creation
 
-```python
-from gkc.mash import WikidataLoader
-
-loader = WikidataLoader()
-template = loader.load("Q42")
-
-# Exclude specific properties
-template.filter_properties(exclude_properties=["P31", "P21"])
-
-# Include only specific properties
-template.filter_properties(include_properties=["P31", "P21"])
-
-# Exclude qualifiers and references
-template.filter_qualifiers()
-template.filter_references()
-
-# Get filtered summary
-summary = template.summary()
+```bash
+gkc mash pid P31 --transform shell -o new_property_template.json
 ```
-
-### With Property Label Comments
-
-```python
-from gkc.mash import WikidataLoader
-from gkc.mash_formatters import QSV1Formatter
-from gkc.recipe import EntityCatalog
-
-loader = WikidataLoader()
-template = loader.load("Q42")
-
-# Collect entity IDs
-entity_ids = set()
-for claim in template.claims:
-    entity_ids.add(claim.property_id)
-    if claim.value.startswith("Q"):
-        entity_ids.add(claim.value)
-
-# Fetch labels
-catalog = EntityCatalog()
-results = catalog.fetch_entities(list(entity_ids))
-entity_labels = {eid: entry.get_label("en") for eid, entry in results.items()}
-
-# Format with comments
-formatter = QSV1Formatter(entity_labels=entity_labels)
-qs_text = formatter.format(template, for_new_item=True)
-print(qs_text)
-```
-
-See the [Mash API documentation](../api/mash.md) for complete details on all available methods and options.
 
 ---
 
-## Output Format Details
+## Load Wikidata EntitySchemas by EID
 
-### Summary Format
+```bash
+gkc mash eid <EID> [options]
+```
 
-The summary format provides a high-level overview of the item including:
-- QID
-- Labels (by language)
-- Descriptions (by language)
-- Aliases (by language)
-- Claim count
+Load a Wikidata EntitySchema by EID and output it in various formats.
 
-This format is useful for quickly understanding an item's structure.
+### Arguments
 
-### QuickStatements V1 Format
+- `eid`: The EntitySchema ID (e.g., `E502`)
 
-QuickStatements V1 (QSV1) is a tab-separated format used by the [QuickStatements tool](https://quickstatements.toolforge.org/) for batch operations on Wikidata. The output includes:
+### Output Options
 
-- Labels: `Q42|Len|"Douglas Adams"`
-- Descriptions: `Q42|Den|"English science fiction writer"`
-- Claims: `Q42|P31|Q5` (with property label comments for readability)
-- Qualifiers and references (if not excluded)
+- `-o, --output <file>`: Write output to file instead of stdout
+- `--raw`: Output raw JSON to stdout (default behavior)
+- `--transform <type>`: Transform the output
+  - `shell`: Strip all identifiers for new EntitySchema creation
+  - `gkc_entity_profile`: Convert to GKC Entity Profile
 
-**Edit mode** (default): Uses the item's QID (e.g., `Q42|P31|Q5`)
-**New mode** (`--new`): Uses CREATE/LAST syntax for new items (e.g., `CREATE` followed by `LAST|P31|Q5`)
+### Examples
 
-Property labels are automatically fetched and included as comments (`/* property: value */`) to make the output more readable.
+#### Load an EntitySchema
 
-### JSON Format
+```bash
+gkc mash eid E502
+```
 
-The JSON format provides the raw Wikidata entity JSON suitable for:
-- Programmatic processing
+Output: Raw EntitySchema JSON including labels, descriptions, and ShEx schema text
+
+#### Transform to GKC Entity Profile
+
+```bash
+gkc mash eid E502 --transform gkc_entity_profile -o tribe_profile.json
+```
+
+Converts the EntitySchema's ShEx specification into a GKC Entity Profile that can be used for data validation and transformation.
+
+#### Transform to shell for reuse
+
+```bash
+gkc mash eid E502 --transform shell -o new_schema_template.json
+```
+
+---
+
+## Batch Processing Patterns
+
+### Load multiple items from a file
+
+```bash
+# Create a file with QIDs
+cat > items.txt <<EOF_MARKER
+Q42
+Q5
+Q30
+# Comments are ignored
+Q515
+EOF_MARKER
+
+# Process all items
+gkc mash qid --qid-list items.txt -o batch_items.json
+```
+
+### Transform multiple items to QuickStatements
+
+```bash
+# Load multiple items and convert to QS for batch editing
+gkc mash qid --qid Q42 --qid Q5 --transform qsv1 -o batch_statements.qs
+```
+
+### Property metadata extraction
+
+```bash
+# Extract metadata for a set of properties
+cat > props.txt <<EOF_MARKER
+P31
+P279
+P21
+P569
+P570
+EOF_MARKER
+
+gkc mash pid --pid-list props.txt -o property_metadata.json
+```
+
+---
+
+## Output Formats
+
+### Raw JSON (default)
+The raw Wikidata entity JSON as returned by the API. This format preserves all structure and identifiers, suitable for:
+- Round-trip processing
 - Integration with other tools
-- Detailed inspection of item structure
+- Detailed inspection
 
-The JSON includes all labels, descriptions, aliases, and claims with their qualifiers and references as provided by Wikidata. Use `--new` to strip identifiers when preparing JSON for new-item creation.
+### Shell (--transform shell)
+Strips all system identifiers and metadata:
+- Removes: `id`, `pageid`, `lastrevid`, `modified`, `ns`, `title`
+- Removes: statement IDs (GUIDs)
+- Removes: all hashes from snaks, qualifiers, and references
 
-## Typical Workflows
+Use this when creating templates for new entity creation on Wikidata or Wikibase instances.
+
+### QuickStatements V1 (--transform qsv1, items only)
+Converts item data to QuickStatements V1 format for bulk operations:
+- Format: `QID|property|value`
+- Includes property labels as comments for readability
+- Use on [QuickStatements](https://quickstatements.toolforge.org/) for batch editing
+
+### GKC Entity Profile (--transform gkc_entity_profile, EntitySchemas only)
+Converts EntitySchemas to GKC Entity Profiles:
+- Extracts properties and constraints from ShEx
+- Creates portable profiles for validation and transformation
+- Currently only implemented for EntitySchemas
+
+---
+
+## Common Workflows
 
 ### Creating Similar Items
 
-1. Find an exemplar item on Wikidata (e.g., Q42)
-2. Load it with mash: `gkc mash qid Q42 --output qsv1 --new`
-3. Copy the output and modify labels/values as needed
-4. Paste into [QuickStatements](https://quickstatements.toolforge.org/) to create new items
+1. Find anexemplar item on Wikidata (e.g., Q42)
+2. Load with shell transform: `gkc mash qid Q42 --transform shell -o template.json`
+3. Edit the template JSON to modify labels/values
+4. Submit to Wikidata using the wbeditentity API or QuickStatements
 
-### Understanding Item Structure
-
-```bash
-# Get a quick overview
-gkc mash qid Q42
-
-# See full structure
-gkc mash qid Q42 --output json
-
-# Focus on specific properties
-gkc mash qid Q42 --output qsv1 --exclude-qualifiers --exclude-references
-```
-
-### Extracting Templates for Documentation
+### Property Documentation
 
 ```bash
-# Export clean template without system properties
-gkc mash qid Q42 --output qsv1 \
-  --exclude-properties P31,P21 \
-  --exclude-qualifiers \
-  --exclude-references > template.qs
+# Extract metadata for all properties in a domain
+gkc mash pid --pid-list biological_properties.txt -o bio_props.json
 ```
 
-## Property Label Comments
-
-When using QSV1 output, the command automatically fetches human-readable labels for properties and includes them as comments:
-
-```
-Q42|P31|Q5  /* instance of: human */
-Q42|P21|Q6581097  /* sex or gender: male */
-```
-
-This makes the output more readable without requiring constant lookups of property IDs. The labels are fetched efficiently in batch from Wikidata and use the default language (English).
-
-## Error Handling
-
-If an item cannot be loaded, the command will fail with an error message:
+### EntitySchema Development
 
 ```bash
-$ gkc mash qid Q999999999999
-Failed to load item Q999999999999: Item not found
-```
+# Load existing schema as starting point
+gkc mash eid E502 --transform shell -o new_schema.json
 
-Use `--verbose` to see additional diagnostic information:
-
-```bash
-$ gkc --verbose mash qid Q42
+# Or convert to profile for analysis
+gkc mash eid E502 --transform gkc_entity_profile -o tribe_profile.json
 ```
 
 ---
 
-## Load Wikidata EntitySchema by EID
+## Migration from Previous CLI
 
+The mash CLI has been refactored for consistency. Key changes:
+
+**Old:**
 ```bash
-gkc mash eid <EID>
+gkc mash qid Q42 --output qsv1 --new
+gkc mash qid Q42 --output json
 ```
 
-Load a Wikidata EntitySchema by its EntitySchema ID (e.g., E502) and output it in the specified format. EntitySchemas define the structure and properties for specific entity types in Wikidata.
-
-**Arguments:**
-- `eid`: The Wikidata EntitySchema ID (e.g., E502, E123)
-
-**Output Format Options:**
-- `--output summary`: (default) Human-readable summary of the schema
-- `--output json`: Raw EntitySchema metadata from Wikidata
-- `--output profile`: Generated GKC Entity Profile as JSON
-
-**Profile Saving:**
-- `--save-profile <directory>`: Write the generated GKC Entity Profile JSON to a directory for hand-tuning and version control
-
-### Examples
-
-#### Summary Output (Default)
-
-View a human-readable summary of an EntitySchema:
-
+**New:**
 ```bash
-$ gkc mash eid E502
-EntitySchema: E502
-Label: Tribe
-Description: An ethnic group or community
-Properties: 15
-Classification constraints P31: Q7840353
-Classification constraints P279: 
+gkc mash qid Q42 --transform qsv1
+gkc mash qid Q42  # raw JSON is default
+gkc mash qid Q42 --transform shell  # for new items
 ```
 
-#### JSON Output
+Changes:
+- `--output` now means output file path, not format
+- `--transform` specifies the transformation type
+- `--new` flag removed (use `--transform shell` or `--transform qsv1` with for_new_item)
+- `--save-profile` replaced with `-o, --output`
+- Added support for batch loading with `--qid-list`, `--pid-list`
+- Added `mash pid` command for properties
+- Simplified `mash eid` command
 
-Export raw EntitySchema metadata from Wikidata:
-
-```bash
-$ gkc mash eid E502 --output json
-{
-  "id": "E502",
-  "labels": {
-    "en": {"language": "en", "value": "Tribe"}
-  },
-  "descriptions": {
-    "en": {"language": "en", "value": "An ethnic group or community"}
-  },
-  "schemaText": "# ShExC definition...",
-  ...
-}
-```
-
-#### Generate GKC Entity Profile
-
-Generate a GKC Entity Profile from the EntitySchema, ready for hand-tuning:
-
-```bash
-$ gkc mash eid E502 --output profile
-{
-  "id": "tribe",
-  "source_eid": "E502",
-  "labels": {
-    "en": "Tribe"
-  },
-  "descriptions": {
-    "en": "An ethnic group or community"
-  },
-  "properties": ["P31", "P17", "P625", "P580", "P582"],
-  "classification_constraints": {
-    "p31": ["Q7840353"],
-    "p279": []
-  },
-  "target_systems": ["wikidata"]
-}
-```
-
-Save the profile to a directory for version control:
-
-```bash
-$ gkc mash eid E502 --output profile --save-profile ./work/tribes/
-Wrote: ./work/tribes/tribe_entity_profile.json
-```
-
-### Understanding Entity Profiles
-
-A **GKC Entity Profile** is a canonical definition of an entity type that describes:
-- **Properties**: Which Wikidata properties apply to this entity
-- **Classification constraints**: Required P31 (instance of) and P279 (subclass of) values
-- **Multilingual labels**: Human-readable names in different languages
-- **Target systems**: Which platforms this entity can be distributed to
-
-Entity Profiles are the foundation for the GKC distillery workflow:
-1. **Mash**: Load entities (existing items or schemas)
-2. **Recipe**: Transform via Entity Profiles
-3. **Bottler**: Output to target platforms
-4. **Shipper**: Submit to Wikidata, OSM, etc.
+---
 
 ## Related Documentation
 
-- [CLI Overview](index.md) - Main CLI documentation
-- [QuickStatements Documentation](https://www.wikidata.org/wiki/Help:QuickStatements) - External documentation for QuickStatements format
+- [Mash API](../api/mash.md) - Python API for programmatic use
+- [QuickStatements Documentation](https://www.wikidata.org/wiki/Help:QuickStatements) - External tool for batch operations

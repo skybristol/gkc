@@ -94,7 +94,7 @@ def strip_entity_identifiers(entity_data: dict[str, Any]) -> dict[str, Any]:
     """Return a copy of entity data with identifiers stripped for new-item use.
 
     Removes fields that prevent using the JSON as a new item template:
-    - Item-level: id, pageid, lastrevid, modified
+    - Item-level: id, pageid, lastrevid, modified, ns, title
     - Statement-level: id (statement GUID)
     - Snak-level: hash (in mainsnak, qualifiers, and references)
 
@@ -108,6 +108,8 @@ def strip_entity_identifiers(entity_data: dict[str, Any]) -> dict[str, Any]:
     cleaned.pop("pageid", None)
     cleaned.pop("lastrevid", None)
     cleaned.pop("modified", None)
+    cleaned.pop("ns", None)
+    cleaned.pop("title", None)
 
     # Remove statement-level identifiers and hashes
     claims = cleaned.get("claims")
@@ -351,6 +353,288 @@ class WikidataTemplate:
             ],
         }
 
+    def to_shell(self) -> dict[str, Any]:
+        """Strip identifiers and metadata to create a shell for new item creation.
+
+        Returns entity data with all system IDs, metadata, and hashes removed,
+        suitable for use as a template for creating new items.
+
+        Returns:
+            Dict with identifiers stripped, ready for new item creation.
+
+        Plain meaning: Prepare this template as a clean shell for a new item.
+        """
+        return strip_entity_identifiers(self.entity_data)
+
+    def to_qsv1(
+        self, for_new_item: bool = False, entity_labels: Optional[dict[str, str]] = None
+    ) -> str:
+        """Convert to QuickStatements V1 format.
+
+        Args:
+            for_new_item: If True, use CREATE/LAST syntax for new items.
+                         If False, use the item's QID for updates.
+            entity_labels: Optional dict mapping entity IDs to labels for comments.
+
+        Returns:
+            QuickStatements V1 formatted string.
+
+        Plain meaning: Export as QuickStatements commands for bulk operations.
+        """
+        from gkc.mash_formatters import QSV1Formatter
+
+        formatter = QSV1Formatter(entity_labels=entity_labels or {})
+        return formatter.format(self, for_new_item=for_new_item)
+
+    def to_gkc_entity_profile(self) -> dict[str, Any]:
+        """Convert to GKC Entity Profile format.
+
+        Returns:
+            Dict representing the GKC Entity Profile.
+
+        Raises:
+            NotImplementedError: This transformation is not yet implemented for items.
+
+        Plain meaning: Transform into a GKC Entity Profile (not yet implemented).
+        """
+        raise NotImplementedError(
+            "Item to GKC Entity Profile transformation is not yet implemented. "
+            "This will be added in a future version."
+        )
+
+
+@dataclass
+class WikidataPropertyTemplate:
+    """An extracted Wikidata property ready for filtering and export.
+
+    This is the property-specific implementation of the DataTemplate protocol.
+
+    Plain meaning: A loaded Wikidata property template ready for modification.
+    """
+
+    pid: str
+    labels: dict[str, str]
+    descriptions: dict[str, str]
+    aliases: dict[str, list[str]]
+    datatype: Optional[str]
+    formatter_url: Optional[str]
+    entity_data: dict[str, Any]
+
+    def filter_languages(
+        self, languages: Optional[Union[str, list[str]]] = None
+    ) -> None:
+        """Filter labels, descriptions, and aliases to specified languages.
+
+        Args:
+            languages: Either:
+                - A single language code (e.g., "en")
+                - A list of language codes (e.g., ["en", "es", "fr"])
+                - The string "all" to keep all languages
+                - None to use the package-level language configuration
+
+        Plain meaning: Keep only the specified language versions.
+        """
+        import gkc
+
+        if languages is None:
+            languages = gkc.get_languages()
+
+        # If "all", don't filter anything
+        if languages == "all":
+            return
+
+        # Convert single string to list for uniform handling
+        if isinstance(languages, str):
+            languages = [languages]
+
+        # Filter each field
+        self.labels = {k: v for k, v in self.labels.items() if k in languages}
+        self.descriptions = {
+            k: v for k, v in self.descriptions.items() if k in languages
+        }
+        self.aliases = {k: v for k, v in self.aliases.items() if k in languages}
+
+        labels = self.entity_data.get("labels")
+        if isinstance(labels, dict):
+            self.entity_data["labels"] = {
+                lang: value for lang, value in labels.items() if lang in languages
+            }
+
+        descriptions = self.entity_data.get("descriptions")
+        if isinstance(descriptions, dict):
+            self.entity_data["descriptions"] = {
+                lang: value for lang, value in descriptions.items() if lang in languages
+            }
+
+        aliases = self.entity_data.get("aliases")
+        if isinstance(aliases, dict):
+            self.entity_data["aliases"] = {
+                lang: value for lang, value in aliases.items() if lang in languages
+            }
+
+    def summary(self) -> dict[str, Any]:
+        """Return a summary of the template for display.
+
+        Plain meaning: Get a quick overview without full details.
+        """
+        return {
+            "pid": self.pid,
+            "labels": self.labels,
+            "descriptions": self.descriptions,
+            "datatype": self.datatype,
+            "formatter_url": self.formatter_url,
+            "aliases": self.aliases,
+        }
+
+    def to_dict(self) -> dict[str, Any]:
+        """Serialize to a dictionary.
+
+        Plain meaning: Convert to a form suitable for JSON export.
+        """
+        return copy.deepcopy(self.entity_data)
+
+    def to_shell(self) -> dict[str, Any]:
+        """Strip identifiers and metadata to create a shell for new property creation.
+
+        Returns entity data with all system IDs, metadata, and hashes removed,
+        suitable for use as a template for creating new properties.
+
+        Returns:
+            Dict with identifiers stripped, ready for new property creation.
+
+        Plain meaning: Prepare this template as a clean shell for a new property.
+        """
+        return strip_entity_identifiers(self.entity_data)
+
+    def to_gkc_entity_profile(self) -> dict[str, Any]:
+        """Convert to GKC Entity Profile format.
+
+        Returns:
+            Dict representing the GKC Entity Profile.
+
+        Raises:
+            NotImplementedError: This transformation is not yet implemented
+                for properties.
+
+        Plain meaning: Transform into a GKC Entity Profile
+            (not yet implemented).
+        """
+        raise NotImplementedError(
+            "Property to GKC Entity Profile transformation is not yet implemented. "
+            "This will be added in a future version."
+        )
+
+
+@dataclass
+class WikidataEntitySchemaTemplate:
+    """An extracted Wikidata EntitySchema ready for filtering and export.
+
+    This is the EntitySchema-specific implementation of the DataTemplate protocol.
+
+    Plain meaning: A loaded Wikidata EntitySchema template ready for modification.
+    """
+
+    eid: str
+    labels: dict[str, str]
+    descriptions: dict[str, str]
+    schema_text: str
+    entity_data: dict[str, Any]
+
+    def filter_languages(
+        self, languages: Optional[Union[str, list[str]]] = None
+    ) -> None:
+        """Filter labels and descriptions to specified languages.
+
+        Args:
+            languages: Either:
+                - A single language code (e.g., "en")
+                - A list of language codes (e.g., ["en", "es", "fr"])
+                - The string "all" to keep all languages
+                - None to use the package-level language configuration
+
+        Plain meaning: Keep only the specified language versions.
+        """
+        import gkc
+
+        if languages is None:
+            languages = gkc.get_languages()
+
+        # If "all", don't filter anything
+        if languages == "all":
+            return
+
+        # Convert single string to list for uniform handling
+        if isinstance(languages, str):
+            languages = [languages]
+
+        # Filter each field
+        self.labels = {k: v for k, v in self.labels.items() if k in languages}
+        self.descriptions = {
+            k: v for k, v in self.descriptions.items() if k in languages
+        }
+
+        labels = self.entity_data.get("labels")
+        if isinstance(labels, dict):
+            self.entity_data["labels"] = {
+                lang: value for lang, value in labels.items() if lang in languages
+            }
+
+        descriptions = self.entity_data.get("descriptions")
+        if isinstance(descriptions, dict):
+            self.entity_data["descriptions"] = {
+                lang: value for lang, value in descriptions.items() if lang in languages
+            }
+
+    def summary(self) -> dict[str, Any]:
+        """Return a summary of the template for display.
+
+        Plain meaning: Get a quick overview without full details.
+        """
+        return {
+            "eid": self.eid,
+            "labels": self.labels,
+            "descriptions": self.descriptions,
+            "schema_text_length": len(self.schema_text),
+        }
+
+    def to_dict(self) -> dict[str, Any]:
+        """Serialize to a dictionary.
+
+        Plain meaning: Convert to a form suitable for JSON export.
+        """
+        return copy.deepcopy(self.entity_data)
+
+    def to_shell(self) -> dict[str, Any]:
+        """Strip identifiers and metadata for new EntitySchema creation.
+
+        Returns entity data with all system IDs and metadata removed,
+        suitable for use as a template for creating new EntitySchemas.
+
+        Returns:
+            Dict with identifiers stripped, ready for new EntitySchema creation.
+
+        Plain meaning: Prepare this template as a clean shell for a new EntitySchema.
+        """
+        return strip_entity_identifiers(self.entity_data)
+
+    def to_gkc_entity_profile(self) -> dict[str, Any]:
+        """Convert to GKC Entity Profile format.
+
+        Uses the existing RecipeBuilder logic to generate a profile from
+        the EntitySchema's ShEx specification.
+
+        Returns:
+            Dict representing the GKC Entity Profile.
+
+        Plain meaning: Transform into a GKC Entity Profile.
+        """
+        from gkc.recipe import RecipeBuilder
+
+        builder = RecipeBuilder(eid=self.eid)
+        builder.schema_text = self.schema_text
+        builder.load_specification()
+        return builder.generate_gkc_entity_profile()
+
 
 class WikidataLoader:
     """Load a Wikidata item as a template for bulk modification.
@@ -374,7 +658,7 @@ class WikidataLoader:
 
         self.user_agent = user_agent
 
-    def load(self, qid: str) -> WikidataTemplate:
+    def load_item(self, qid: str) -> WikidataTemplate:
         """Load a Wikidata item and return it as a template.
 
         Args:
@@ -384,9 +668,14 @@ class WikidataLoader:
             WikidataTemplate with the item's structure.
 
         Raises:
-            Exception: If the item cannot be fetched or parsed.
+            RuntimeError: If the item cannot be fetched or parsed.
 
         Plain meaning: Retrieve the item and return it ready for use.
+
+        Example:
+            >>> loader = WikidataLoader()
+            >>> template = loader.load_item("Q42")
+            >>> print(template.summary())
         """
 
         entity_data = self.load_entity_data(qid)
@@ -395,6 +684,228 @@ class WikidataLoader:
         template = self._build_template(qid, entity_data)
 
         return template
+
+    def load(self, qid: str) -> WikidataTemplate:
+        """Load a Wikidata item and return it as a template.
+
+        .. deprecated:: 1.0
+            Use :meth:`load_item` instead. This method is maintained for
+            backwards compatibility and will be removed in a future version.
+
+        Args:
+            qid: The Wikidata item ID (e.g., 'Q42').
+
+        Returns:
+            WikidataTemplate with the item's structure.
+
+        Plain meaning: Retrieve the item and return it ready for use.
+        """
+        return self.load_item(qid)
+
+    def load_items(self, qids: list[str]) -> dict[str, WikidataTemplate]:
+        """Load multiple Wikidata items in batch and return them as templates.
+
+        Uses the wbgetentities API to efficiently fetch multiple items in batches
+        of 50. Handles partial failures gracefully.
+
+        Args:
+            qids: List of Wikidata item IDs (e.g., ['Q42', 'Q5']).
+
+        Returns:
+            Dict mapping QIDs to WikidataTemplates. Only successfully loaded
+            items are included in the result.
+
+        Raises:
+            RuntimeError: If the API request fails completely.
+
+        Plain meaning: Load multiple items efficiently in batch.
+
+        Example:
+            >>> loader = WikidataLoader()
+            >>> templates = loader.load_items(["Q42", "Q5", "Q30"])
+            >>> print(len(templates))
+            3
+        """
+        if not qids:
+            return {}
+
+        result: dict[str, WikidataTemplate] = {}
+
+        # Process in batches of 50 (wbgetentities limit)
+        batch_size = 50
+        for i in range(0, len(qids), batch_size):
+            batch = qids[i : i + batch_size]
+            batch_results = self._fetch_entities_batch(batch)
+
+            # Build templates for each successfully fetched entity
+            for qid, entity_data in batch_results.items():
+                try:
+                    template = self._build_template(qid, entity_data)
+                    result[qid] = template
+                except Exception:
+                    # Skip items that fail to parse
+                    continue
+
+        return result
+
+    def load_property(self, pid: str) -> WikidataPropertyTemplate:
+        """Load a Wikidata property and return it as a template.
+
+        Args:
+            pid: The Wikidata property ID (e.g., 'P31').
+
+        Returns:
+            WikidataPropertyTemplate with the property's metadata.
+
+        Raises:
+            RuntimeError: If the property cannot be fetched or parsed.
+
+        Plain meaning: Retrieve a property definition and return it ready for use.
+
+        Example:
+            >>> loader = WikidataLoader()
+            >>> prop = loader.load_property("P31")
+            >>> print(prop.summary())
+        """
+        entity_data = self.load_entity_data(pid)
+        return self._build_property_template(pid, entity_data)
+
+    def load_properties(self, pids: list[str]) -> dict[str, WikidataPropertyTemplate]:
+        """Load multiple Wikidata properties in batch using SPARQL.
+
+        Uses SPARQL queries to efficiently fetch property metadata including
+        labels, descriptions, datatype, and formatter URLs.
+
+        Args:
+            pids: List of Wikidata property IDs (e.g., ['P31', 'P279']).
+
+        Returns:
+            Dict mapping PIDs to WikidataPropertyTemplates.
+
+        Raises:
+            RuntimeError: If the SPARQL query fails.
+
+        Plain meaning: Load multiple property definitions efficiently.
+
+        Example:
+            >>> loader = WikidataLoader()
+            >>> props = loader.load_properties(["P31", "P279", "P21"])
+            >>> print(len(props))
+            3
+        """
+        if not pids:
+            return {}
+
+        # Use EntityCatalog for efficient SPARQL-based batch fetching
+        catalog = EntityCatalog(user_agent=self.user_agent, fetch_property_details=True)
+        results = catalog.fetch_entities(pids)
+
+        templates: dict[str, WikidataPropertyTemplate] = {}
+        for pid, entry in results.items():
+            if pid.startswith("P"):
+                # Build template from catalog entry
+                templates[pid] = self._build_property_template_from_catalog(pid, entry)
+
+        return templates
+
+    def load_entity_schema(self, eid: str) -> WikidataEntitySchemaTemplate:
+        """Load a Wikidata EntitySchema and return it as a template.
+
+        Args:
+            eid: The Wikidata EntitySchema ID (e.g., 'E502').
+
+        Returns:
+            WikidataEntitySchemaTemplate with the schema content.
+
+        Raises:
+            RuntimeError: If the EntitySchema cannot be fetched or parsed.
+
+        Plain meaning: Retrieve an EntitySchema and return it ready for use.
+
+        Example:
+            >>> loader = WikidataLoader()
+            >>> schema = loader.load_entity_schema("E502")
+            >>> print(schema.summary())
+        """
+        from gkc.cooperage import fetch_entity_schema_json
+
+        entity_data = fetch_entity_schema_json(eid, user_agent=self.user_agent)
+        return self._build_entity_schema_template(eid, entity_data)
+
+    def fetch_descriptors(
+        self, entity_ids: list[str]
+    ) -> dict[str, dict[str, Union[str, dict[str, str]]]]:
+        """Fetch basic labels and descriptions for a mix of items and properties.
+
+        This is a lightweight convenience method for getting just labels and
+        descriptions without full entity data. Uses SPARQL for efficiency.
+
+        Args:
+            entity_ids: List of entity IDs (e.g., ['Q5', 'P31', 'Q30']).
+
+        Returns:
+            Dict mapping entity IDs to dicts with `labels` and `descriptions`
+            keys, each containing language->value mappings.
+
+        Plain meaning: Quickly look up names and descriptions for any entities.
+        """
+        if not entity_ids:
+            return {}
+
+        catalog = EntityCatalog(user_agent=self.user_agent)
+        results = catalog.fetch_entities(entity_ids)
+
+        descriptors: dict[str, dict[str, Union[str, dict[str, str]]]] = {}
+        for eid, entry in results.items():
+            descriptors[eid] = {
+                "labels": entry.labels,
+                "descriptions": entry.descriptions,
+            }
+
+        return descriptors
+
+    def _fetch_entities_batch(self, entity_ids: list[str]) -> dict[str, dict[str, Any]]:
+        """Fetch multiple entities using wbgetentities API.
+
+        Args:
+            entity_ids: List of entity IDs (max 50).
+
+        Returns:
+            Dict mapping entity IDs to their entity data.
+
+        Raises:
+            RuntimeError: If the API request fails.
+
+        Plain meaning: Fetch a batch of entities from Wikidata.
+        """
+        url = "https://www.wikidata.org/w/api.php"
+        params = {
+            "action": "wbgetentities",
+            "ids": "|".join(entity_ids),
+            "format": "json",
+        }
+
+        headers = {}
+        if self.user_agent:
+            headers["User-Agent"] = self.user_agent
+
+        try:
+            response = requests.get(url, params=params, headers=headers, timeout=30)
+            response.raise_for_status()
+            data = response.json()
+
+            # Extract entities from response
+            entities = data.get("entities", {})
+
+            # Filter out entities with "missing" key (not found)
+            return {
+                eid: entity_data
+                for eid, entity_data in entities.items()
+                if "missing" not in entity_data
+            }
+
+        except requests.RequestException as exc:
+            raise RuntimeError(f"Failed to fetch entities batch: {exc}") from exc
 
     def load_entity_data(self, qid: str) -> dict[str, Any]:
         """Load raw Wikidata entity data.
@@ -546,6 +1057,151 @@ class WikidataLoader:
                     claims.append(claim)
 
         return claims
+
+    def _build_property_template(
+        self, pid: str, entity_data: dict[str, Any]
+    ) -> WikidataPropertyTemplate:
+        """Convert entity data to a WikidataPropertyTemplate.
+
+        Plain meaning: Transform API data into our simplified property format.
+        """
+        # Extract labels, descriptions, aliases
+        labels = entity_data.get("labels", {})
+        descriptions = entity_data.get("descriptions", {})
+        aliases = entity_data.get("aliases", {})
+
+        # Simplify to language -> value mappings
+        labels_dict = {
+            lang: item.get("value", "")
+            for lang, item in labels.items()
+            if isinstance(item, dict)
+        }
+        descriptions_dict = {
+            lang: item.get("value", "")
+            for lang, item in descriptions.items()
+            if isinstance(item, dict)
+        }
+        aliases_dict = {
+            lang: [alias.get("value", "") for alias in alias_list]
+            for lang, alias_list in aliases.items()
+            if isinstance(alias_list, list)
+        }
+
+        # Extract property-specific metadata
+        datatype = entity_data.get("datatype")
+
+        # Formatter URL is in claims P1630
+        formatter_url = None
+        claims = entity_data.get("claims", {})
+        p1630_statements = claims.get("P1630", [])
+        if p1630_statements and isinstance(p1630_statements, list):
+            first_statement = p1630_statements[0]
+            mainsnak = first_statement.get("mainsnak", {})
+            datavalue = mainsnak.get("datavalue", {})
+            if datavalue.get("type") == "string":
+                formatter_url = datavalue.get("value")
+
+        return WikidataPropertyTemplate(
+            pid=pid,
+            labels=labels_dict,
+            descriptions=descriptions_dict,
+            aliases=aliases_dict,
+            datatype=datatype,
+            formatter_url=formatter_url,
+            entity_data=copy.deepcopy(entity_data),
+        )
+
+    def _build_property_template_from_catalog(
+        self, pid: str, entry: Any
+    ) -> WikidataPropertyTemplate:
+        """Build a WikidataPropertyTemplate from an EntityCatalog entry.
+
+        Plain meaning: Convert catalog data into our property template format.
+        """
+        from gkc.recipe import PropertyLedgerEntry
+
+        if not isinstance(entry, PropertyLedgerEntry):
+            raise ValueError(
+                f"Expected PropertyLedgerEntry for {pid}, got {type(entry)}"
+            )
+
+        # Build minimal entity_data structure
+        entity_data = {
+            "id": pid,
+            "type": "property",
+            "datatype": entry.datatype,
+            "labels": {
+                lang: {"language": lang, "value": label}
+                for lang, label in entry.labels.items()
+            },
+            "descriptions": {
+                lang: {"language": lang, "value": desc}
+                for lang, desc in entry.descriptions.items()
+            },
+            "aliases": {
+                lang: [{"language": lang, "value": alias} for alias in alias_list]
+                for lang, alias_list in entry.aliases.items()
+            },
+        }
+
+        # Add formatter URL if present
+        if entry.formatter_url:
+            entity_data["claims"] = {
+                "P1630": [
+                    {
+                        "mainsnak": {
+                            "datavalue": {
+                                "type": "string",
+                                "value": entry.formatter_url,
+                            }
+                        }
+                    }
+                ]
+            }
+
+        return WikidataPropertyTemplate(
+            pid=pid,
+            labels=entry.labels,
+            descriptions=entry.descriptions,
+            aliases=entry.aliases,
+            datatype=entry.datatype,
+            formatter_url=entry.formatter_url,
+            entity_data=entity_data,
+        )
+
+    def _build_entity_schema_template(
+        self, eid: str, entity_data: dict[str, Any]
+    ) -> WikidataEntitySchemaTemplate:
+        """Convert entity data to a WikidataEntitySchemaTemplate.
+
+        Plain meaning: Transform API data into our simplified EntitySchema format.
+        """
+        # Extract labels and descriptions
+        labels = entity_data.get("labels", {})
+        descriptions = entity_data.get("descriptions", {})
+
+        # Simplify to language -> value mappings
+        labels_dict = {
+            lang: item.get("value", "")
+            for lang, item in labels.items()
+            if isinstance(item, dict)
+        }
+        descriptions_dict = {
+            lang: item.get("value", "")
+            for lang, item in descriptions.items()
+            if isinstance(item, dict)
+        }
+
+        # Extract schema text
+        schema_text = entity_data.get("schemaText", "")
+
+        return WikidataEntitySchemaTemplate(
+            eid=eid,
+            labels=labels_dict,
+            descriptions=descriptions_dict,
+            schema_text=schema_text,
+            entity_data=copy.deepcopy(entity_data),
+        )
 
     @staticmethod
     def _statement_to_claim(
