@@ -2,19 +2,20 @@
 
 ## Overview
 
-Load data from Wikidata and other sources as templates for processing. The Mash stage is the entry point to the data distillery workflow, preparing source data for validation, transformation, and submission.
+Load data from Wikidata, Wikipedia, and other sources as templates for processing. The Mash stage is the entry point to the data distillery workflow, preparing source data for validation, transformation, and submission.
 
 **Current implementations:**
 - Wikidata items (QID)
 - Wikidata properties (P ID)
 - Wikidata EntitySchemas (EID)
+- Wikipedia templates
 
 **Future implementations:** CSV files, JSON APIs, dataframes
 
 ## Quick Start
 
 ```python
-from gkc.mash import WikidataLoader
+from gkc.mash import WikidataLoader, WikipediaLoader
 
 # Load Wikidata entities
 loader = WikidataLoader()
@@ -30,6 +31,10 @@ prop = loader.load_property("P31")
 
 # Load an EntitySchema
 schema = loader.load_entity_schema("E502")
+
+# Load Wikipedia templates
+wp_loader = WikipediaLoader()
+template = wp_loader.load_template("Infobox settlement")
 
 # Filter and transform
 item.filter_languages(["en", "es"])
@@ -65,6 +70,20 @@ print(summary)
 ### WikidataEntitySchemaTemplate
 
 ::: gkc.mash.WikidataEntitySchemaTemplate
+    options:
+      show_root_heading: false
+      heading_level: 4
+
+### WikipediaLoader
+
+::: gkc.mash.WikipediaLoader
+    options:
+      show_root_heading: false
+      heading_level: 4
+
+### WikipediaTemplate
+
+::: gkc.mash.WikipediaTemplate
     options:
       show_root_heading: false
       heading_level: 4
@@ -269,6 +288,31 @@ loader = WikidataLoader(
 )
 
 template = loader.load_item("Q42")
+```
+
+### Load and examine a Wikipedia template
+
+```python
+from gkc.mash import WikipediaLoader
+
+# Initialize the loader for en.wikipedia.org
+loader = WikipediaLoader()
+
+# Load a Wikipedia template
+template = loader.load_template("Infobox settlement")
+
+# Get a quick summary
+summary = template.summary()
+print(f"Template: {summary['title']}")
+print(f"Description: {summary['description']}")
+print(f"Parameters: {summary['param_count']}")
+
+# Get the full template structure
+full_data = template.to_dict()
+for param_name in template.param_order[:5]:  # First 5 parameters
+    param_info = template.params.get(param_name, {})
+    label = param_info.get("label", {}).get("en", param_name)
+    print(f"  - {param_name}: {label}")
 ```
 
 ---

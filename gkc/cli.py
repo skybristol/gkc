@@ -12,7 +12,7 @@ from typing import Any, Optional
 
 import gkc
 from gkc.auth import AuthenticationError, OpenStreetMapAuth, WikiverseAuth
-from gkc.mash import WikidataLoader
+from gkc.mash import WikidataLoader, WikipediaLoader
 from gkc.recipe import EntityCatalog
 
 
@@ -151,6 +151,11 @@ def _build_parser() -> argparse.ArgumentParser:
         help="Output raw JSON to stdout (default for single item)",
     )
     mash_qid.add_argument(
+        "--summary",
+        action="store_true",
+        help="Output summary of the item(s)",
+    )
+    mash_qid.add_argument(
         "--transform",
         choices=["shell", "qsv1", "gkc_entity_profile"],
         help=(
@@ -215,6 +220,11 @@ def _build_parser() -> argparse.ArgumentParser:
         help="Output raw JSON to stdout (default)",
     )
     mash_pid.add_argument(
+        "--summary",
+        action="store_true",
+        help="Output summary of the property(ies)",
+    )
+    mash_pid.add_argument(
         "--transform",
         choices=["shell", "gkc_entity_profile"],
         help="Transform the output (shell=strip IDs, gkc_entity_profile=profile)",
@@ -241,6 +251,11 @@ def _build_parser() -> argparse.ArgumentParser:
         help="Output raw JSON to stdout (default)",
     )
     mash_eid.add_argument(
+        "--summary",
+        action="store_true",
+        help="Output summary of the EntitySchema",
+    )
+    mash_eid.add_argument(
         "--transform",
         choices=["shell", "gkc_entity_profile"],
         help="Transform the output (shell=strip IDs, gkc_entity_profile=profile)",
@@ -248,6 +263,31 @@ def _build_parser() -> argparse.ArgumentParser:
     mash_eid.set_defaults(
         handler=_handle_mash_eid,
         command_path="mash.eid",
+    )
+
+    # Wikipedia Template: Load a Wikipedia template
+    mash_wp_template = mash_subparsers.add_parser(
+        "wp_template", help="Load a Wikipedia template"
+    )
+    mash_wp_template.add_argument(
+        "template_name",
+        nargs="?",
+        help="The Wikipedia template name (e.g., Infobox_settlement)",
+    )
+    mash_wp_template.add_argument(
+        "-o",
+        "--output",
+        type=str,
+        help="Write output to file instead of stdout",
+    )
+    mash_wp_template.add_argument(
+        "--raw",
+        action="store_true",
+        help="Output raw JSON response instead of summary",
+    )
+    mash_wp_template.set_defaults(
+        handler=_handle_mash_wp_template,
+        command_path="mash.wp_template",
     )
 
     return parser
@@ -424,7 +464,7 @@ def _handle_mash_qid(args: argparse.Namespace) -> dict[str, Any]:
 
     # Remove duplicates while preserving order
     seen = set()
-    qids = [qid for qid in qids if not (qid in seen or seen.add(qid))]
+    qids = [qid for qid in qids if not (qid in seen or seen.add(qid))]  # type: ignore[func-returns-value]
 
     # Parse filter options
     include_properties = []
@@ -456,82 +496,94 @@ def _handle_mash_qid(args: argparse.Namespace) -> dict[str, Any]:
             if args.exclude_references:
                 template.filter_references()
 
-        # Handle transformation
-        transform = getattr(args, "transform", None)
-
-        if transform == "shell":
-            # Strip identifiers for new item creation
-            output_data = (
-                [template.to_shell() for template in templates.values()]
-                if len(templates) > 1
-                else templates[qids[0]].to_shell()
-            )
-        elif transform == "qsv1":
-            # Convert to QuickStatements V1
-            entity_labels = {}
-            if getattr(args, "include_entity_labels", True):
-                entity_ids = set()
-                for template in templates.values():
-                    for claim in template.claims:
-                        entity_ids.add(claim.property_id)
-                        if claim.value.startswith("Q") and claim.value[1:].isdigit():
-                            entity_ids.add(claim.value)
-                        if not args.exclude_qualifiers:
-                            for qual in claim.qualifiers:
-                                qual_prop = qual.get("property", "")
-                                qual_val = qual.get("value", "")
-                                if qual_prop:
-                                    entity_ids.add(qual_prop)
-                                if qual_val.startswith("Q") and qual_val[1:].isdigit():
-                                    entity_ids.add(qual_val)
-
-                if entity_ids:
-                    try:
-                        catalog = EntityCatalog()
-                        languages = gkc.get_languages()
-                        language = (
-                            "en"
-                            if languages == "all"
-                            else (
-                                languages
-                                if isinstance(languages, str)
-                                else languages[0] if languages else "en"
-                            )
-                        )
-                        results = catalog.fetch_entities(list(entity_ids))
-                        entity_labels = {
-                            eid: entry.get_label(language)
-                            for eid, entry in results.items()
-                        }
-                    except Exception as exc:
-                        raise CLIError(
-                            f"Failed to fetch entity labels: {exc}. "
-                            "Use --no-entity-labels to skip."
-                        ) from exc
-
-            # Generate QSV1 for each template
-            qs_outputs = []
-            for qid in qids:
-                if qid in templates:
-                    qs_text = templates[qid].to_qsv1(
-                        for_new_item=False, entity_labels=entity_labels
-                    )
-                    qs_outputs.append(qs_text)
-
-            output_data = (
-                "\n\n".join(qs_outputs) if len(qs_outputs) > 1 else qs_outputs[0]
-            )
-        elif transform == "gkc_entity_profile":
-            raise CLIError(
-                "Item to GKC Entity Profile transformation is not yet implemented."
-            )
+        # Check if --summary was requested
+        if getattr(args, "summary", False):
+            # Output summary for each template
+            summaries = [template.summary() for template in templates.values()]
+            output_data = summaries if len(summaries) > 1 else summaries[0]
         else:
-            # No transformation - output raw JSON
-            output_data = (
-                [template.to_dict() for template in templates.values()]
-                if len(templates) > 1
-                else templates[qids[0]].to_dict()
-            )
+            # Handle transformation
+            transform = getattr(args, "transform", None)
+
+            if transform == "shell":
+                # Strip identifiers for new item creation
+                output_data = (
+                    [template.to_shell() for template in templates.values()]
+                    if len(templates) > 1
+                    else templates[qids[0]].to_shell()
+                )
+            elif transform == "qsv1":
+                # Convert to QuickStatements V1
+                entity_labels = {}
+                if getattr(args, "include_entity_labels", True):
+                    entity_ids = set()
+                    for template in templates.values():
+                        for claim in template.claims:
+                            entity_ids.add(claim.property_id)
+                            if (
+                                claim.value.startswith("Q")
+                                and claim.value[1:].isdigit()
+                            ):
+                                entity_ids.add(claim.value)
+                            if not args.exclude_qualifiers:
+                                for qual in claim.qualifiers:
+                                    qual_prop = qual.get("property", "")
+                                    qual_val = qual.get("value", "")
+                                    if qual_prop:
+                                        entity_ids.add(qual_prop)
+                                    if (
+                                        qual_val.startswith("Q")
+                                        and qual_val[1:].isdigit()
+                                    ):
+                                        entity_ids.add(qual_val)
+
+                    if entity_ids:
+                        try:
+                            catalog = EntityCatalog()
+                            languages = gkc.get_languages()
+                            language = (
+                                "en"
+                                if languages == "all"
+                                else (
+                                    languages
+                                    if isinstance(languages, str)
+                                    else languages[0] if languages else "en"
+                                )
+                            )
+                            results = catalog.fetch_entities(list(entity_ids))
+                            entity_labels = {
+                                eid: entry.get_label(language)
+                                for eid, entry in results.items()
+                            }
+                        except Exception as exc:
+                            raise CLIError(
+                                f"Failed to fetch entity labels: {exc}. "
+                                "Use --no-entity-labels to skip."
+                            ) from exc
+
+                qs_outputs: list[str] = []
+                for qid in qids:
+                    if qid in templates:
+                        qs_text = templates[qid].to_qsv1(
+                            for_new_item=False, entity_labels=entity_labels
+                        )
+                        qs_outputs.append(qs_text)
+
+                qs_outputs_str: str = (
+                    "\n\n".join(qs_outputs) if len(qs_outputs) > 1 else qs_outputs[0]
+                )
+                output_data = qs_outputs_str  # type: ignore[assignment]
+            elif transform == "gkc_entity_profile":
+                raise CLIError(
+                    "Item to GKC Entity Profile transformation is not yet implemented."
+                )
+            else:
+                # No transformation - output raw JSON
+                output_data = (
+                    [template.to_dict() for template in templates.values()]
+                    if len(templates) > 1
+                    else templates[qids[0]].to_dict()
+                )
 
         # Handle output (file or stdout)
         if args.output:
@@ -580,7 +632,7 @@ def _handle_mash_pid(args: argparse.Namespace) -> dict[str, Any]:
 
     # Remove duplicates while preserving order
     seen = set()
-    pids = [pid for pid in pids if not (pid in seen or seen.add(pid))]
+    pids = [pid for pid in pids if not (pid in seen or seen.add(pid))]  # type: ignore[func-returns-value]
 
     try:
         loader = WikidataLoader()
@@ -595,27 +647,34 @@ def _handle_mash_pid(args: argparse.Namespace) -> dict[str, Any]:
         for template in templates.values():
             template.filter_languages()
 
-        # Handle transformation
-        transform = getattr(args, "transform", None)
-
-        if transform == "shell":
-            # Strip identifiers for new property creation
-            output_data = (
-                [template.to_shell() for template in templates.values()]
-                if len(templates) > 1
-                else templates[pids[0]].to_shell()
-            )
-        elif transform == "gkc_entity_profile":
-            raise CLIError(
-                "Property to GKC Entity Profile transformation is not yet implemented."
-            )
+        # Check if --summary was requested
+        if getattr(args, "summary", False):
+            # Output summary for each template
+            summaries = [template.summary() for template in templates.values()]
+            output_data = summaries if len(summaries) > 1 else summaries[0]
         else:
-            # No transformation - output raw JSON
-            output_data = (
-                [template.to_dict() for template in templates.values()]
-                if len(templates) > 1
-                else templates[pids[0]].to_dict()
-            )
+            # Handle transformation
+            transform = getattr(args, "transform", None)
+
+            if transform == "shell":
+                # Strip identifiers for new property creation
+                output_data = (
+                    [template.to_shell() for template in templates.values()]
+                    if len(templates) > 1
+                    else templates[pids[0]].to_shell()
+                )
+            elif transform == "gkc_entity_profile":
+                raise CLIError(
+                    "Property to GKC Entity Profile transformation is "
+                    "not yet implemented."
+                )
+            else:
+                # No transformation - output raw JSON
+                output_data = (
+                    [template.to_dict() for template in templates.values()]
+                    if len(templates) > 1
+                    else templates[pids[0]].to_dict()
+                )
 
         # Handle output (file or stdout)
         if args.output:
@@ -663,16 +722,22 @@ def _handle_mash_eid(args: argparse.Namespace) -> dict[str, Any]:
         # Apply filters
         template.filter_languages()
 
-        # Handle transformation
-        if transform == "shell":
-            # Strip identifiers for new EntitySchema creation
-            output_data = template.to_shell()
-        elif transform == "gkc_entity_profile":
-            # Convert to GKC Entity Profile
-            output_data = template.to_gkc_entity_profile()
+        # Check if --summary was requested
+        if getattr(args, "summary", False):
+            output_data = template.summary()
         else:
-            # No transformation - output raw JSON
-            output_data = template.to_dict()
+            # Handle transformation
+            transform = getattr(args, "transform", None)
+
+            if transform == "shell":
+                # Strip identifiers for new EntitySchema creation
+                output_data = template.to_shell()
+            elif transform == "gkc_entity_profile":
+                # Convert to GKC Entity Profile
+                output_data = template.to_gkc_entity_profile()
+            else:
+                # No transformation - output raw JSON
+                output_data = template.to_dict()
 
         # Handle output (file or stdout)
         if args.output:
@@ -703,6 +768,58 @@ def _handle_mash_eid(args: argparse.Namespace) -> dict[str, Any]:
 
     except Exception as exc:
         raise CLIError(f"Failed to process EntitySchema {eid}: {exc}") from exc
+
+
+def _handle_mash_wp_template(args: argparse.Namespace) -> dict[str, Any]:
+    """Handle mash wp_template subcommand: load and display Wikipedia template."""
+    template_name = args.template_name
+
+    if not template_name:
+        raise CLIError(
+            "Template name is required. "
+            "Provide a Wikipedia template name (e.g., Infobox_settlement)."
+        )
+
+    try:
+        loader = WikipediaLoader()
+        template = loader.load_template(template_name)
+
+        # Determine output format: --raw or summary (default)
+        if args.raw:
+            output_data = template.to_dict()
+        else:
+            output_data = template.summary()
+
+        # Handle output (file or stdout)
+        if args.output:
+            # Write to file
+            with open(args.output, "w") as f:
+                json.dump(output_data, f, indent=2)
+            return {
+                "command": args.command_path,
+                "ok": True,
+                "message": (
+                    f"Wrote Wikipedia template '{template_name}' to {args.output}"
+                ),
+                "details": {
+                    "template_name": template_name,
+                    "output_file": args.output,
+                },
+            }
+        else:
+            # Print to stdout
+            print(json.dumps(output_data, indent=2))
+            return {
+                "command": args.command_path,
+                "ok": True,
+                "message": f"Output for Wikipedia template '{template_name}'",
+                "details": {"template_name": template_name},
+            }
+
+    except Exception as exc:
+        raise CLIError(
+            f"Failed to load Wikipedia template '{template_name}': {exc}"
+        ) from exc
 
 
 def _emit_output(output: dict[str, Any], json_output: bool, verbose: bool) -> None:
