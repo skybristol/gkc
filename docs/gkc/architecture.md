@@ -140,3 +140,9 @@ The Mash Tun provides:
 
 In short:  
 **The Mash Tun is where raw data meets structure — a workspace that harmonizes incoming material and guides human or automated contributors in preparing data for transformation into GKC Entities.**
+
+### Bootstrapping the Knowledge Commons
+
+The Global Knowledge Commons isn't actually a thing in any tangible sense. The term itself is something I just made up some time ago. But it is real insofar as the underlying components we are working with all contribute their bits and as much as we can improve the linkages between them.
+
+Having landed on the use of Pydantic to provide deep actionable definitions for what data need to look like to be effectively distributed across The Commons, we built initial capabilities into the gkc package to go get the raw ingredients for GKC Entity Profiles, Modulation Profiles, and Barrel Profiles. These will be tuned and organized and then applied using some of the same tooling we built initially for a slightly different purpose.

@@ -4,7 +4,7 @@ Plain meaning: Load source data as ingredients for further actions.
 
 ## Overview
 
-The mash module in GKC handles the input of various data and information content and structure that will be processed through data distillery workflows. The mash CLI provides an interface to load Wikidata entities - items (QID), properties (PID), and EntitySchemas (EID).
+The mash module in GKC handles the input of various data and information content and structure that will be processed through data distillery workflows. The mash CLI provides an interface to load Wikidata entities - items (QID), properties (PID), EntitySchemas (EID) - as well as Wikipedia templates.
 
 The name "mash" comes from the distillery metaphor—like grain that's been milled and steeped to extract fermentable sugars, mashed entities extract the essential structure and content from source data, readying the ingredients for further processing.
 
@@ -12,6 +12,7 @@ The name "mash" comes from the distillery metaphor—like grain that's been mill
 - Wikidata items (QID)
 - Wikidata properties (PID)
 - Wikidata EntitySchemas (EID)
+- Wikipedia templates
 
 **Future implementations:** CSV files, JSON APIs, dataframes
 
@@ -35,6 +36,7 @@ Load one or more Wikidata items by QID and output them in various formats.
 
 - `-o, --output <file>`: Write output to file instead of stdout
 - `--raw`: Output raw JSON to stdout (default behavior when no transform specified)
+- `--summary`: Output a summary of the item(s) with labels, descriptions, and statement count
 - `--transform <type>`: Transform the output  
   - `shell`: Strip all identifiers for new item creation
   - `qsv1`: Convert to QuickStatements V1 format
@@ -50,10 +52,18 @@ Load one or more Wikidata items by QID and output them in various formats.
 
 ### Examples
 
+#### Load a single item and display summary
+
+```bash
+gkc mash qid Q42 --summary
+```
+
+Output: JSON summary with labels, descriptions, and statement count
+
 #### Load a single item (raw JSON)
 
 ```bash
-gkc mash qid Q42
+gkc mash qid Q42 --raw
 ```
 
 Output: Raw Wikidata JSON for item Q42
@@ -99,8 +109,6 @@ gkc mash qid Q42 \
   -o filtered_item.json
 ```
 
----
-
 ## Load Wikidata Properties by PID
 
 ```bash
@@ -119,19 +127,28 @@ Load one or more Wikidata properties by PID and output them in various formats.
 
 - `-o, --output <file>`: Write output to file instead of stdout
 - `--raw`: Output raw JSON to stdout (default behavior)
+- `--summary`: Output a summary of the property(ies) with labels, descriptions, and datatype
 - `--transform <type>`: Transform the output
   - `shell`: Strip all identifiers for new property creation
   - `gkc_entity_profile`: Convert to GKC Entity Profile (not yet implemented)
 
 ### Examples
 
-#### Load a single property
+#### Load a single property and display summary
 
 ```bash
-gkc mash pid P31
+gkc mash pid P31 --summary
 ```
 
-Output: Raw Wikidata JSON for property P31 including labels, descriptions, datatype, formatter URL
+Output: JSON summary with labels, descriptions, datatype, and formatter URL
+
+#### Load a single property (raw JSON)
+
+```bash
+gkc mash pid P31 --raw
+```
+
+Output: Raw Wikidata JSON for property P31
 
 #### Load multiple properties
 
@@ -170,16 +187,25 @@ Load a Wikidata EntitySchema by EID and output it in various formats.
 
 - `-o, --output <file>`: Write output to file instead of stdout
 - `--raw`: Output raw JSON to stdout (default behavior)
+- `--summary`: Output a summary of the EntitySchema with labels and descriptions
 - `--transform <type>`: Transform the output
   - `shell`: Strip all identifiers for new EntitySchema creation
   - `gkc_entity_profile`: Convert to GKC Entity Profile
 
 ### Examples
 
-#### Load an EntitySchema
+#### Load an EntitySchema and display summary
 
 ```bash
-gkc mash eid E502
+gkc mash eid E502 --summary
+```
+
+Output: JSON summary with labels, descriptions, and schema text length
+
+#### Load an EntitySchema (raw JSON)
+
+```bash
+gkc mash eid E502 --raw
 ```
 
 Output: Raw EntitySchema JSON including labels, descriptions, and ShEx schema text
@@ -197,6 +223,61 @@ Converts the EntitySchema's ShEx specification into a GKC Entity Profile that ca
 ```bash
 gkc mash eid E502 --transform shell -o new_schema_template.json
 ```
+
+---
+
+## Load Wikipedia Templates
+
+```bash
+gkc mash wp_template <TEMPLATE_NAME> [options]
+```
+
+Load a Wikipedia template from en.wikipedia.org and output it in various formats.
+
+### Arguments
+
+- `template_name`: The Wikipedia template name (e.g., `Infobox_settlement`)
+
+### Output Options
+
+- `-o, --output <file>`: Write output to file instead of stdout
+- `--raw`: Output raw JSON response from the Wikimedia API
+- Default (no flags): Output summary of the template with title, description, and parameter count
+
+### Examples
+
+#### Load a Wikipedia template and display summary
+
+```bash
+gkc mash wp_template Infobox_settlement
+```
+
+Output:
+```json
+{
+  "title": "Infobox settlement",
+  "description": "An infobox used to summarize information about places or geographic entities",
+  "param_count": 47
+}
+```
+
+#### Get the full template structure
+
+```bash
+gkc mash wp_template Infobox_settlement --raw -o settlement_template.json
+```
+
+Output: Full JSON structure including title, description (multilingual), params, and paramOrder
+
+#### Explore template parameters
+
+```bash
+gkc mash wp_template Infobox_settlement --raw | jq '.paramOrder[:10]'
+```
+
+Lists the first 10 parameters in order, useful for understanding template structure.
+
+---
 
 ---
 

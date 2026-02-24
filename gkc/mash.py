@@ -1315,3 +1315,158 @@ class WikidataLoader:
             return str(dv_value), None
 
         return (str(dv_value), None) if dv_value else (None, None)
+
+
+@dataclass
+class WikipediaTemplate:
+    """A Wikipedia template loaded from Wikimedia API for use in Wikipedia editing.
+
+    This is the Wikipedia-specific implementation of the DataTemplate protocol.
+
+    Plain meaning: A loaded Wikipedia template ready for display and use
+    in editing workflows.
+    """
+
+    title: str
+    description: str
+    params: dict[str, Any]
+    param_order: list[str]
+    raw_data: dict[str, Any]
+
+    def summary(self) -> dict[str, Any]:
+        """Return a summary of the template for display.
+
+        Returns:
+            Dict with title, description, and number of parameters.
+
+        Plain meaning: Get a quick overview without full details.
+        """
+        return {
+            "title": self.title,
+            "description": self.description,
+            "param_count": len(self.params),
+        }
+
+    def to_dict(self) -> dict[str, Any]:
+        """Serialize to a dictionary.
+
+        Returns:
+            Dict containing title, description, params, and paramOrder.
+
+        Plain meaning: Convert to a form suitable for JSON export.
+        """
+        return {
+            "title": self.title,
+            "description": self.description,
+            "params": self.params,
+            "paramOrder": self.param_order,
+        }
+
+
+class WikipediaLoader:
+    """Load Wikipedia templates from Wikimedia API as templates for editing workflows.
+
+    This is the Wikipedia-specific implementation of a data loader.
+
+    Plain meaning: Fetch and parse a Wikipedia template into a usable format.
+    """
+
+    def __init__(self, user_agent: Optional[str] = None):
+        """Initialize the loader.
+
+        Args:
+            user_agent: Custom user agent for Wikimedia API requests.
+                       If not provided, a default GKC user agent is used.
+
+        Plain meaning: Set up the loader with optional custom user agent.
+        """
+        if user_agent is None:
+            user_agent = "GKC/1.0 (https://github.com/skybristol/gkc; data integration)"
+
+        self.user_agent = user_agent
+        self.base_url = "https://en.wikipedia.org/w/api.php"
+
+    def load_template(self, template_name: str) -> WikipediaTemplate:
+        """Load a Wikipedia template and return it as a template.
+
+        Args:
+            template_name: The Wikipedia template name (e.g., 'Infobox settlement').
+
+        Returns:
+            WikipediaTemplate with the template's structure.
+
+        Raises:
+            RuntimeError: If the template cannot be fetched or parsed.
+
+        Plain meaning: Retrieve the template and return it ready for use.
+
+        Example:
+            >>> loader = WikipediaLoader()
+            >>> template = loader.load_template("Infobox settlement")
+            >>> print(template.summary())
+        """
+        # Fetch template data from Wikimedia API
+        params: dict[str, Any] = {
+            "action": "templatedata",
+            "format": "json",
+            "titles": f"Template:{template_name}",
+        }
+
+        try:
+            response = requests.get(
+                self.base_url,
+                params=params,
+                headers={"User-Agent": self.user_agent},
+                timeout=10,
+            )
+            response.raise_for_status()
+        except requests.RequestException as exc:
+            raise RuntimeError(
+                f"Failed to fetch template '{template_name}' from Wikimedia API: {exc}"
+            ) from exc
+
+        try:
+            data = response.json()
+        except ValueError as exc:
+            raise RuntimeError(
+                f"Failed to parse JSON response for template '{template_name}': {exc}"
+            ) from exc
+
+        # Extract pages from response. The templatedata API returns pages directly,
+        # not nested under a "query" key like other Mediawiki APIs.
+        pages = data.get("pages", {})
+        if not pages:
+            raise RuntimeError(
+                f"Template '{template_name}' not found in Wikimedia API response"
+            )
+
+        # Get the first (and only) page
+        page_data = next(iter(pages.values()))
+
+        # Check if this page has template data
+        if "notabledescriptions" in page_data or "missing" in page_data:
+            raise RuntimeError(
+                f"Template '{template_name}' not found or has no template data"
+            )
+
+        # Extract required fields
+        title = page_data.get("title", template_name)
+
+        # Get description in English, or empty string if not available
+        descriptions = page_data.get("description", {})
+        if isinstance(descriptions, dict):
+            description = descriptions.get("en", "")
+        else:
+            description = str(descriptions) if descriptions else ""
+
+        params_data = page_data.get("params", {})
+        param_order = page_data.get("paramOrder", [])
+
+        # Build and return the template
+        return WikipediaTemplate(
+            title=title,
+            description=description,
+            params=params_data,
+            param_order=param_order,
+            raw_data=page_data,
+        )

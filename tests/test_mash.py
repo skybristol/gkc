@@ -7,6 +7,8 @@ from gkc.mash import (
     WikidataLoader,
     WikidataPropertyTemplate,
     WikidataTemplate,
+    WikipediaLoader,
+    WikipediaTemplate,
     strip_entity_identifiers,
 )
 
@@ -497,3 +499,72 @@ def test_wikidata_loader_fetch_descriptors_empty():
     loader = WikidataLoader()
     result = loader.fetch_descriptors([])
     assert result == {}
+
+
+def test_wikipedia_template_initialization():
+    """Test creating a Wikipedia template."""
+    template = WikipediaTemplate(
+        title="Infobox settlement",
+        description="An infobox for settlements",
+        params={"name": {"label": "Name"}, "image": {"label": "Image"}},
+        param_order=["name", "image"],
+        raw_data={"title": "Infobox settlement", "params": {}},
+    )
+
+    assert template.title == "Infobox settlement"
+    assert template.description == "An infobox for settlements"
+    assert len(template.params) == 2
+    assert template.param_order == ["name", "image"]
+
+
+def test_wikipedia_template_summary():
+    """Test the summary method returns expected fields."""
+    template = WikipediaTemplate(
+        title="Infobox settlement",
+        description="An infobox for settlements",
+        params={
+            "name": {"label": "Name"},
+            "image": {"label": "Image"},
+            "population": {"label": "Population"},
+        },
+        param_order=["name", "image", "population"],
+        raw_data={},
+    )
+
+    summary = template.summary()
+    assert summary["title"] == "Infobox settlement"
+    assert summary["description"] == "An infobox for settlements"
+    assert summary["param_count"] == 3
+
+
+def test_wikipedia_template_to_dict():
+    """Test serializing template to dict."""
+    params = {"name": {"label": "Name"}, "image": {"label": "Image"}}
+    param_order = ["name", "image"]
+    template = WikipediaTemplate(
+        title="Infobox settlement",
+        description="An infobox for settlements",
+        params=params,
+        param_order=param_order,
+        raw_data={},
+    )
+
+    result = template.to_dict()
+    assert result["title"] == "Infobox settlement"
+    assert result["description"] == "An infobox for settlements"
+    assert result["params"] == params
+    assert result["paramOrder"] == param_order
+
+
+def test_wikipedia_loader_initialization():
+    """Test initializing a Wikipedia loader."""
+    loader = WikipediaLoader()
+    expected_agents = "GKC/1.0 (https://github.com/skybristol/gkc; data integration)"
+    assert loader.user_agent == expected_agents
+    assert loader.base_url == "https://en.wikipedia.org/w/api.php"
+
+
+def test_wikipedia_loader_custom_user_agent():
+    """Test initializing a Wikipedia loader with custom user agent."""
+    loader = WikipediaLoader(user_agent="CustomBot/1.0")
+    assert loader.user_agent == "CustomBot/1.0"

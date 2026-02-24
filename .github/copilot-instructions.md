@@ -3,27 +3,23 @@ The GKC python package supports a data integration workflow that transforms raw 
 
 ## Who's who
 - Architect: Sky
-- Engineer: Copilot (with oversight and guidance from Sky)
+- Engineer: Copilot (with oversight and guidance from the Architect)
 
 ## Protocol
-- The architect will create issues in GitHub to outline specific tasks or features to be developed, along with any necessary context or requirements.
-- The architect will start work on an issue by creating a new branch.
-- The architect may ask the engineer to evaluate the issue by reading the issue description and any related documentation, and then writing a response comment in the GitHub issue with their understanding of the task and any questions or clarifications needed. (Note: GitHub issues and pull request comments are a primary channel for communication and documentation of design decisions in this project, so it's important to use them consistently and effectively.)
-- The architect will review the approach and provide feedback or additional guidance as needed with further comments in the GitHub issue before the engineer begins writing code.
-- The architect will ask the engineer to write code for the issue, and the engineer will write code in the branch created for that issue, following the guidance and requirements outlined in the issue description and any related documentation.
-- The engineer will write code that is clear, maintainable, and well-documented, following the coding style and architectural patterns established in the project.
-- The engineer will write tests for the code they create, ensuring that the code is robust and that functionality is verified.
-- The engineer will run tests frequently during development to catch issues early, and will use the provided pre-merge check script to run all CI checks locally to resolve as many issues as possible before handoff to the architect.
-- The engineer will include documentation in their workflow with both docstrings in the code and markdown files in the `/docs/gkc/` directory as appropriate.
-- The engineer will follow up from work completed with a comment in the GitHub issue describing what was done, any issues encountered, and any questions or concerns that remain.
-- The architect will review the code, tests, and documentation written by the engineer, providing feedback in the GitHub issue and requesting changes as needed to ensure that the code meets the project's standards for quality and maintainability.
-- Once the code is approved, the architect will merge the branch into the main codebase, and delete the branch.
+1. The Architect will start an issue in GitHub and then work up an issue file in `.github/.issues` following the template at `.github/.issues/template.md`.
+2. Before getting started on code, the Architect will ask the Engineer to evaluate the issue by reading the issue description in the tracking file and any related documentation to provide a plan of action and ask clarifying questions.
+3. The Architect and Engineer will track their work and design decisions made in the working file for the issue.
+4. The Architect will respond to specific questions on the plans submitted by the Engineer in the issue document and direct the Engineer on when they can proceed with writing code for the issue.
+5. The Architect will ask the Engineer to write code for the issue, and the Engineer will write code in the branch created for that issue, following the guidance and requirements outlined in the issue description and any related documentation.
+6. The Engineer will follow up from work completed with a summary of what was done, any issues encountered, any questions or concerns that remain, and a reasonable commit message written to the issue document.
+7. The Architect will review the code, tests, and documentation written by the Engineer, providing feedback on the GitHub issue and requesting changes as needed to ensure that the code meets the project's standards for quality and maintainability.
+8. Once the code is approved, the Architect will merge the branch into the main codebase, organize issue documentation from the working document to GitHub, and delete the branch.
 
 ### Code Quality Standards
-- The engineer will use the provided pre-merge check script frequently during development (after each major component, not just at the end)
-- The engineer will prioritize mypy type checking and aim for zero type errors in new code
+- The Engineer will use the provided pre-merge check script frequently during development (after each major component, not just at the end)
+- The Engineer will prioritize mypy type checking and aim for zero type errors in new code
 - Type annotations should be included in initial code, not added as an afterthought
-- The engineer will verify code imports and runs without syntax errors before committing
+- The Engineer will verify code imports and runs without syntax errors before committing
 - When writing new functions/classes, examine existing patterns in the codebase for consistency in typing and style
 
 ### Documentation Guidelines
@@ -32,7 +28,6 @@ The GKC python package supports a data integration workflow that transforms raw 
 - Every public function/class must include: purpose, parameters, return values, side effects, error conditions, and at least one real-world example.
 - Every CLI command must include: description, usage block, flags/options, and two examples (minimal + realistic).
 - Document the Python API first, then the CLI as a thin wrapper.
-- Use the distillery metaphor consistently (Mash Bill, Still, Spirit Safe, Bottling).
 - Each module should begin with a high-level description and a list of its main functions.
 - Prefer task-oriented examples using realistic Wikidata data.
 - All public functionality must be documented; no undocumented parameters or return types.
@@ -46,7 +41,7 @@ Before considering work complete:
 3. If type errors exist, investigate the root cause
 
 ### Escalation Checkpoints
-The engineer should escalate to the architect if any of these conditions are met:
+The Engineer should escalate to the Architect if any of these conditions are met:
 
 **1. Pre-Merge Check Failures (after each component):**
 - More than 10 mypy errors in new/modified code
@@ -87,6 +82,7 @@ The engineer should escalate to the architect if any of these conditions are met
 Each issue should:
 - Have a single, clearly defined goal
 - List explicit success criteria (X tests pass, Y mypy errors resolved, etc.)
+- Include notional usage patterns for API and or CLI commands
 - Include links to existing code patterns to follow
 - Specify which files/components will be modified
 - Estimate scope (touching N files suggests scope creep if it grows)
@@ -96,4 +92,5 @@ Each issue should:
 - Follow existing code patterns for consistency in style and architecture
 - Prioritize type safety and maintainability over quick fixes
 - Write tests that are robust and cover edge cases, not just the happy path
-- Document code with clear docstrings and maintain up-to-date API documentation in `/docs/gkc`
+- Document code with clear docstrings and maintain up-to-date API documentation in `/docs/gkc/api` along with CLI documentation in `/docs/gkc/cli`
+- Use GitHub issues and comments to document design decisions and questions, rather than relying on external communication channels
