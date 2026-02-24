@@ -5,12 +5,13 @@
 Load data from Wikidata, Wikipedia, and other sources as templates for processing. The Mash stage is the entry point to the data distillery workflow, preparing source data for validation, transformation, and submission.
 
 **Current implementations:**
+
 - Wikidata items (QID)
-- Wikidata properties (P ID)
+- Wikidata properties (PID)
 - Wikidata EntitySchemas (EID)
 - Wikipedia templates
 
-**Future implementations:** CSV files, JSON APIs, dataframes
+**Future implementations:** OSM, Wikimedia Commons, CSV files, JSON APIs, dataframes
 
 ## Quick Start
 

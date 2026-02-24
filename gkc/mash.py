@@ -1432,8 +1432,9 @@ class WikipediaLoader:
                 f"Failed to parse JSON response for template '{template_name}': {exc}"
             ) from exc
 
-        # Extract the first page from the response
-        pages = data.get("query", {}).get("pages", {})
+        # Extract pages from response. The templatedata API returns pages directly,
+        # not nested under a "query" key like other Mediawiki APIs.
+        pages = data.get("pages", {})
         if not pages:
             raise RuntimeError(
                 f"Template '{template_name}' not found in Wikimedia API response"

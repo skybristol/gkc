@@ -2,15 +2,15 @@
 
 ## Overview
 
-**Shipping** is the stage that handles submission of bottled and packaged data to components of the Global Knowledge Commons - Wikidata, OpenStreetMap, Wikimedia Commons, etc. Not all data gets shipped; some of it relies on hand delivery such as the infoboxes in Wikipedia.
+**Shipping** is the stage that handles submission of bottled and packaged data to components of the Global Knowledge Commons - Wikidata, OpenStreetMap, Wikimedia Commons, etc. Not all data gets shipped; some of it relies on hand delivery such as filled templates in Wikipedia.
 
 | Aspect | Details |
 |--------|---------|
 | **Input** | Bottled data transformed into the proper formats for target systems |
-| **What Happens** | Interaction with write APIs, transmission of data, receipt of delivery |
+| **What Happens** | Validation against Barrel Profiles, interaction with write APIs, transmission of data, receipt of delivery |
 | **Output** | Receipt notices suitable for annotation for source systems and users |
 | **Best For** | Final distribution of finished products (until the next distillation) |
-| **Typical Duration** | Minutes to hours, depending on receiving capacity |
+| **Typical Duration** | Seconds to hours, depending on receiving capacity and amount being shipped |
 
 ---
 
