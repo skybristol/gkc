@@ -16,10 +16,10 @@ def test_auth_imports():
     assert hasattr(gkc, "AuthenticationError")
 
 
-def test_spirit_safe_imports():
-    """Test that Spirit Safe classes are importable."""
-    assert hasattr(gkc, "SpiritSafeValidator")
-    assert hasattr(gkc, "SpiritSafeValidationError")
+def test_shex_imports():
+    """Test that ShEx validation classes are importable."""
+    assert hasattr(gkc, "ShexValidator")
+    assert hasattr(gkc, "ShexValidationError")
 
 
 def test_cooperage_imports():

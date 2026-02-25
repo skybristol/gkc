@@ -56,15 +56,16 @@ nav:
       - Authentication: gkc/api/auth.md
       - Mash: gkc/api/mash.md
       - Mash Formatters: gkc/api/mash_formatters.md
+      - ShEx: gkc/api/shex.md
       - Shipper: gkc/api/shipper.md
       - SPARQL: gkc/api/sparql.md
     - Command Line Interface:
       - Overview: gkc/cli/index.md
       - Authentication: gkc/cli/auth.md
       - Mash: gkc/cli/mash.md
+      - ShEx: gkc/cli/shex.md
     - Utilities and Tools:
-      - SPARQL Queries: gkc/sparql_queries.md
-      - SPARQL Quick Reference: gkc/sparql_quick_reference.md
+      - Utilities: gkc/utilities.md
     - Development:
       - CI/CD: gkc/CI_CD.md
       - Release Process: gkc/RELEASE.md

@@ -19,8 +19,8 @@ from datetime import datetime
 from typing import Any, Optional, Union
 
 from gkc.cooperage import DEFAULT_USER_AGENT, fetch_entity_schema_metadata
+from gkc.shex import ShexValidator
 from gkc.sparql import SPARQLError, execute_sparql
-from gkc.spirit_safe import SpiritSafeValidator
 
 
 def _get_preferred_language() -> str:
@@ -915,7 +915,7 @@ class RecipeBuilder:
             user_agent: Custom user agent for API requests
             max_entities: Maximum entities to fetch from Wikidata (default 500)
         """
-        self.validator = SpiritSafeValidator(
+        self.validator = ShexValidator(
             eid=eid, schema_text=schema_text, schema_file=schema_file
         )
         self.user_agent = user_agent

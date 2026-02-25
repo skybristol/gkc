@@ -120,8 +120,7 @@ Quick function to execute query and return DataFrame.
 
 ## Documentation
 
-- [Full API Reference](../sparql_queries.md)
-- [Quick Reference](../sparql_quick_reference.md)
+- [Utilities Guide](../utilities.md) - SPARQL usage patterns and examples
 - [Examples](https://github.com/skybristol/gkc/blob/main/examples/sparql_query_example.py)
 
 ## Examples

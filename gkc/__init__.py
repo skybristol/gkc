@@ -60,6 +60,9 @@ from gkc.entity_profile import GKCEntityProfile
 # Recipe (Wikidata Barrel Recipe Builder)
 from gkc.recipe import PropertyLedgerEntry, RecipeBuilder, SpecificationExtractor
 
+# ShEx validation utilities
+from gkc.shex import ShexValidationError, ShexValidator
+
 # Sitelinks (cross-reference validation)
 from gkc.sitelinks import (
     SitelinkValidator,
@@ -74,9 +77,6 @@ from gkc.sparql import (
     execute_sparql,
     execute_sparql_to_dataframe,
 )
-
-# Spirit Safe (Barrel Schema validation and quality gates)
-from gkc.spirit_safe import SpiritSafeValidationError, SpiritSafeValidator
 
 # Language Configuration
 # Package-level language settings for multilingual data handling
@@ -149,7 +149,7 @@ __all__ = [
     "SPARQLQuery",
     "execute_sparql",
     "execute_sparql_to_dataframe",
-    # Spirit Safe (new names)
-    "SpiritSafeValidationError",
-    "SpiritSafeValidator",
+    # ShEx validation
+    "ShexValidationError",
+    "ShexValidator",
 ]
