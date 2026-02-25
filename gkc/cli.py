@@ -290,6 +290,43 @@ def _build_parser() -> argparse.ArgumentParser:
         command_path="mash.wp_template",
     )
 
+    # ShEx validation commands
+    shex_parser = subparsers.add_parser("shex", help="ShEx validation utilities")
+    shex_subparsers = shex_parser.add_subparsers(dest="shex_command")
+
+    shex_validate = shex_subparsers.add_parser(
+        "validate", help="Validate RDF data against ShEx schema"
+    )
+    shex_validate.add_argument(
+        "--qid",
+        type=str,
+        help="Wikidata entity ID (e.g., Q42)",
+    )
+    shex_validate.add_argument(
+        "--eid",
+        type=str,
+        help="Wikidata EntitySchema ID (e.g., E502)",
+    )
+    shex_validate.add_argument(
+        "--schema-file",
+        type=str,
+        help="Path to local ShEx schema file",
+    )
+    shex_validate.add_argument(
+        "--rdf-file",
+        type=str,
+        help="Path to local RDF file",
+    )
+    shex_validate.add_argument(
+        "--user-agent",
+        type=str,
+        help="Custom user agent for Wikidata requests",
+    )
+    shex_validate.set_defaults(
+        handler=_handle_shex_validate,
+        command_path="shex.validate",
+    )
+
     return parser
 
 
@@ -820,6 +857,120 @@ def _handle_mash_wp_template(args: argparse.Namespace) -> dict[str, Any]:
         raise CLIError(
             f"Failed to load Wikipedia template '{template_name}': {exc}"
         ) from exc
+
+
+def _handle_shex_validate(args: argparse.Namespace) -> dict[str, Any]:
+    """Handle shex validate subcommand: validate RDF against ShEx schema."""
+    from gkc.shex import ShexValidationError, ShexValidator
+
+    # Validate required arguments combinations
+    has_wikidata = args.qid and args.eid
+    has_local = args.rdf_file and args.schema_file
+    has_mixed_wikidata_local = (args.qid and args.schema_file) or (
+        args.eid and args.rdf_file
+    )
+
+    if not (has_wikidata or has_local or has_mixed_wikidata_local):
+        raise CLIError(
+            "Validation requires either:\n"
+            "  - Both --qid and --eid for Wikidata validation\n"
+            "  - Both --rdf-file and --schema-file for local file validation\n"
+            "  - --qid with --schema-file or --eid with --rdf-file for mixed validation"
+        )
+
+    try:
+        # Create validator with provided arguments
+        validator = ShexValidator(
+            qid=args.qid,
+            eid=args.eid,
+            schema_file=args.schema_file,
+            rdf_file=args.rdf_file,
+            user_agent=args.user_agent,
+        )
+
+        # Perform validation
+        validator.check()
+        is_valid = validator.is_valid()
+
+        # Build output details
+        details: dict[str, Any] = {}
+
+        if args.qid:
+            details["entity"] = args.qid
+            from gkc.cooperage import get_entity_uri
+
+            details["entity_uri"] = get_entity_uri(args.qid)
+        elif args.rdf_file:
+            details["rdf_file"] = args.rdf_file
+
+        if args.eid:
+            details["schema"] = args.eid
+        elif args.schema_file:
+            details["schema_file"] = args.schema_file
+
+        details["valid"] = is_valid
+
+        # Extract error summary if validation failed
+        if not is_valid:
+            error_summary = _extract_validation_error_summary(validator.results)
+            details["error_summary"] = error_summary
+
+        # Include full results in verbose mode
+        if args.verbose and validator.results:
+            details["results"] = str(validator.results)
+
+        # Build human-readable message
+        if is_valid:
+            message = "✓ Validation passed"
+        else:
+            message = "✗ Validation failed"
+            if not args.verbose and "error_summary" in details:
+                message += f"\nError: {details['error_summary']}"
+
+        # Add entity/schema info to message
+        if args.qid:
+            message += f"\nEntity: {args.qid}"
+        if args.eid:
+            message += f"\nSchema: {args.eid}"
+
+        return {
+            "command": args.command_path,
+            "ok": is_valid,
+            "message": message,
+            "details": details,
+        }
+
+    except ShexValidationError as exc:
+        raise CLIError(f"Validation error: {exc}") from exc
+    except Exception as exc:
+        raise CLIError(f"Unexpected error during validation: {exc}") from exc
+
+
+def _extract_validation_error_summary(results: Any) -> str:
+    """Extract a brief error summary from PyShEx validation results."""
+    if not results:
+        return "No validation results available"
+
+    # Try to extract first error message
+    for result in results:
+        reason = result.reason or ""
+        if any(
+            indicator in reason
+            for indicator in [
+                "not in value set",
+                "does not match",
+                "Constraint violation",
+                "No matching",
+                "Failed to",
+            ]
+        ):
+            # Extract first line of error message
+            first_line = reason.split("\n")[0]
+            if len(first_line) > 100:
+                return first_line[:97] + "..."
+            return first_line
+
+    return "Validation failed (see --verbose for details)"
 
 
 def _emit_output(output: dict[str, Any], json_output: bool, verbose: bool) -> None:

@@ -11,7 +11,7 @@ from pathlib import Path
 
 import pytest
 
-from gkc import SpiritSafeValidator
+from gkc import ShexValidator
 
 
 class TestShExIntegration:
@@ -31,7 +31,7 @@ class TestShExIntegration:
             pytest.skip("Test data files not found. See tests/fixtures/README.md")
 
         # Create validator using file paths from fixtures
-        validator = SpiritSafeValidator(
+        validator = ShexValidator(
             schema_file=str(organism_schema_file),
             rdf_file=str(valid_organism_rdf_file),
         )
@@ -56,7 +56,7 @@ class TestShExIntegration:
             pytest.skip("Test data files not found. See tests/fixtures/README.md")
 
         # Create validator using text loaded by fixtures
-        validator = SpiritSafeValidator(
+        validator = ShexValidator(
             schema_text=organism_schema_text,
             rdf_text=valid_organism_rdf_text,
         )
@@ -77,7 +77,7 @@ class TestShExIntegration:
         if not organism_schema_file.exists() or not invalid_organism_rdf_file.exists():
             pytest.skip("Test data files not found. See tests/fixtures/README.md")
 
-        validator = SpiritSafeValidator(
+        validator = ShexValidator(
             schema_file=str(organism_schema_file),
             rdf_file=str(invalid_organism_rdf_file),
         )
@@ -102,7 +102,7 @@ class TestShExIntegration:
             pytest.skip("Test data files not found. See tests/fixtures/README.md")
 
         # Create validator and load data step by step
-        validator = SpiritSafeValidator(
+        validator = ShexValidator(
             schema_file=str(organism_schema_file),
             rdf_file=str(valid_organism_rdf_file),
         )
@@ -133,14 +133,14 @@ class TestShExIntegration:
             pytest.skip("Test data files not found. See tests/fixtures/README.md")
 
         # Validate using file paths
-        validator_file = SpiritSafeValidator(
+        validator_file = ShexValidator(
             schema_file=str(organism_schema_file),
             rdf_file=str(valid_organism_rdf_file),
         )
         result_file = validator_file.check()
 
         # Validate using loaded text
-        validator_text = SpiritSafeValidator(
+        validator_text = ShexValidator(
             schema_text=organism_schema_text,
             rdf_text=valid_organism_rdf_text,
         )
@@ -165,7 +165,7 @@ class TestFetchFromWikidata:
         """
         # Use a known valid tribe: Wanapum (Q14708404)
         # against tribe schema (E502)
-        validator = SpiritSafeValidator(
+        validator = ShexValidator(
             eid="E502",  # Tribe schema
             qid="Q14708404",  # Wanapum tribe
         )
@@ -199,7 +199,7 @@ class TestFetchFromWikidata:
         rdf_file.write_text(rdf_text)
 
         # Now validate using the saved files
-        validator = SpiritSafeValidator(
+        validator = ShexValidator(
             schema_file=str(schema_file),
             rdf_file=str(rdf_file),
         )

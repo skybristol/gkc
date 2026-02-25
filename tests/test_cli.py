@@ -439,3 +439,113 @@ def test_mash_wp_template_raw(monkeypatch, capsys):
     assert data["title"] == "Infobox_settlement"
     assert "params" in data
     assert "paramOrder" in data
+
+
+def test_shex_validate_missing_args(capsys):
+    """ShEx validate requires proper argument combinations."""
+    exit_code = cli.main(["shex", "validate"])
+    assert exit_code == 1  # Error exit code
+
+
+def test_shex_validate_success(monkeypatch, capsys):
+    """ShEx validate returns success when validation passes."""
+
+    class FakeShexValidator:
+        def __init__(self, **kwargs):
+            self.qid = kwargs.get("qid")
+            self.eid = kwargs.get("eid")
+            self.schema_file = kwargs.get("schema_file")
+            self.rdf_file = kwargs.get("rdf_file")
+            self.results = []
+
+        def check(self):
+            return self
+
+        def is_valid(self):
+            return True
+
+    monkeypatch.setattr("gkc.shex.ShexValidator", FakeShexValidator)
+
+    exit_code = cli.main(
+        ["--json", "shex", "validate", "--qid", "Q42", "--eid", "E502"]
+    )
+    assert exit_code == 0
+
+    output = capsys.readouterr().out.strip()
+    data = json.loads(output)
+    assert data["command"] == "shex.validate"
+    assert data["ok"] is True
+    assert data["details"]["entity"] == "Q42"
+    assert data["details"]["schema"] == "E502"
+    assert data["details"]["valid"] is True
+
+
+def test_shex_validate_failure(monkeypatch, capsys):
+    """ShEx validate returns failure when validation fails."""
+
+    class MockResult:
+        def __init__(self):
+            self.reason = "Node: http://example.org not in value set [wd:Q123]"
+
+    class FakeShexValidator:
+        def __init__(self, **kwargs):
+            self.qid = kwargs.get("qid")
+            self.eid = kwargs.get("eid")
+            self.results = [MockResult()]
+
+        def check(self):
+            return self
+
+        def is_valid(self):
+            return False
+
+    monkeypatch.setattr("gkc.shex.ShexValidator", FakeShexValidator)
+
+    exit_code = cli.main(
+        ["--json", "shex", "validate", "--qid", "Q42", "--eid", "E502"]
+    )
+    assert exit_code == 1  # Validation failed
+
+    output = capsys.readouterr().out.strip()
+    data = json.loads(output)
+    assert data["command"] == "shex.validate"
+    assert data["ok"] is False
+    assert data["details"]["valid"] is False
+    assert "error_summary" in data["details"]
+
+
+def test_shex_validate_local_files(monkeypatch, capsys):
+    """ShEx validate works with local files."""
+
+    class FakeShexValidator:
+        def __init__(self, **kwargs):
+            self.rdf_file = kwargs.get("rdf_file")
+            self.schema_file = kwargs.get("schema_file")
+            self.results = []
+
+        def check(self):
+            return self
+
+        def is_valid(self):
+            return True
+
+    monkeypatch.setattr("gkc.shex.ShexValidator", FakeShexValidator)
+
+    exit_code = cli.main(
+        [
+            "--json",
+            "shex",
+            "validate",
+            "--rdf-file",
+            "/tmp/data.ttl",
+            "--schema-file",
+            "/tmp/schema.shex",
+        ]
+    )
+    assert exit_code == 0
+
+    output = capsys.readouterr().out.strip()
+    data = json.loads(output)
+    assert data["ok"] is True
+    assert data["details"]["rdf_file"] == "/tmp/data.ttl"
+    assert data["details"]["schema_file"] == "/tmp/schema.shex"
