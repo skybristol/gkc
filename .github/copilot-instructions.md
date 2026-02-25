@@ -6,14 +6,14 @@ The GKC python package supports a data integration workflow that transforms raw 
 - Engineer: Copilot (with oversight and guidance from the Architect)
 
 ## Protocol
-1. The Architect will start an issue in GitHub and then work up an issue file in `.github/.issues` following the template at `.github/.issues/template.md`.
-2. Before getting started on code, the Architect will ask the Engineer to evaluate the issue by reading the issue description in the tracking file and any related documentation to provide a plan of action and ask clarifying questions.
-3. The Architect and Engineer will track their work and design decisions made in the working file for the issue.
-4. The Architect will respond to specific questions on the plans submitted by the Engineer in the issue document and direct the Engineer on when they can proceed with writing code for the issue.
-5. The Architect will ask the Engineer to write code for the issue, and the Engineer will write code in the branch created for that issue, following the guidance and requirements outlined in the issue description and any related documentation.
-6. The Engineer will follow up from work completed with a summary of what was done, any issues encountered, any questions or concerns that remain, and a reasonable commit message written to the issue document.
-7. The Architect will review the code, tests, and documentation written by the Engineer, providing feedback on the GitHub issue and requesting changes as needed to ensure that the code meets the project's standards for quality and maintainability.
-8. Once the code is approved, the Architect will merge the branch into the main codebase, organize issue documentation from the working document to GitHub, and delete the branch.
+1. The Architect will start work toward a new feature by creating a collaborative design document under `.dev`.
+2. Before getting started on code, the Architect will ask the Engineer to collaborate on building out the design document under `.dev` that follows a basic template.
+3. The Architect and Engineer will track their work and design decisions made in the working development file.
+4. The Architect will respond to specific questions on the plans submitted by the Engineer in the dev document, create a branch for the work, and direct the Engineer on when they can proceed with writing code.
+5. The Engineer will write code in the development branch following the guidance and requirements outlined in the working development document and any related documentation.
+6. The Engineer will follow up from work completed with a summary of what was done, any issues encountered, any questions or concerns that remain, and a reasonable commit message all written to the dev document.
+7. The Architect will review the code, tests, and documentation written by the Engineer, providing feedback on the dev document and requesting changes as needed to ensure that the code meets the project's standards for quality and maintainability.
+8. Once the code is approved, the Architect will post the documentation from the dev document in a pull request, review CI workflow status, and merge the branch into the main codebase, and delete the branch.
 
 ### Code Quality Standards
 - The Engineer will use the provided pre-merge check script frequently during development (after each major component, not just at the end)
