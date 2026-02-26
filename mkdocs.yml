@@ -42,6 +42,8 @@ extra_javascript:
 
 nav:
   - Home: index.md
+  - Data Curation Narratives:
+    - Tribal Governments: tribes.md
   - GKC Documentation:
     - Home: gkc/index.md
     - Background: gkc/background.md
