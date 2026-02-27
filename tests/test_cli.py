@@ -632,3 +632,144 @@ def test_shex_validate_local_files(monkeypatch, capsys):
     assert data["ok"] is True
     assert data["details"]["rdf_file"] == "/tmp/data.ttl"
     assert data["details"]["schema_file"] == "/tmp/schema.shex"
+
+
+def test_profile_lookups_hydrate_dry_run(monkeypatch, capsys):
+    """Profile lookups hydrate dry-run returns summary JSON."""
+
+    def fake_hydrate_profile_lookups(**kwargs):
+        assert kwargs["dry_run"] is True
+        assert kwargs["profile_paths"] == ["profiles/example.yaml"]
+        return {
+            "profiles_scanned": 1,
+            "lookup_specs_found": 2,
+            "unique_queries": 1,
+            "unique_queries_executed": 0,
+            "cache_dir": "/tmp/cache",
+            "cache_file_count": 0,
+            "failures": [],
+        }
+
+    monkeypatch.setattr("gkc.hydrate_profile_lookups", fake_hydrate_profile_lookups)
+
+    exit_code = cli.main(
+        [
+            "--json",
+            "profile",
+            "lookups",
+            "hydrate",
+            "--profile",
+            "profiles/example.yaml",
+            "--dry-run",
+        ]
+    )
+
+    assert exit_code == 0
+    output = capsys.readouterr().out.strip()
+    data = json.loads(output)
+    assert data["command"] == "profile.lookups.hydrate"
+    assert data["ok"] is True
+    assert data["details"]["lookup_specs_found"] == 2
+    assert data["details"]["unique_queries"] == 1
+
+
+def test_profile_lookups_hydrate_local_source_override(monkeypatch, capsys):
+    """Profile lookups hydrate applies local source override and restores source."""
+    set_calls = []
+
+    def fake_set_spirit_safe_source(**kwargs):
+        set_calls.append(kwargs)
+
+    def fake_hydrate_profile_lookups(**kwargs):
+        return {
+            "profiles_scanned": 1,
+            "lookup_specs_found": 1,
+            "unique_queries": 1,
+            "unique_queries_executed": 1,
+            "cache_dir": "/tmp/cache",
+            "cache_file_count": 1,
+            "failures": [],
+        }
+
+    monkeypatch.setattr("gkc.set_spirit_safe_source", fake_set_spirit_safe_source)
+    monkeypatch.setattr("gkc.hydrate_profile_lookups", fake_hydrate_profile_lookups)
+
+    exit_code = cli.main(
+        [
+            "--json",
+            "profile",
+            "lookups",
+            "hydrate",
+            "--profile",
+            "profiles/example.yaml",
+            "--source",
+            "local",
+            "--local-root",
+            ".SpiritSafe",
+        ]
+    )
+
+    assert exit_code == 0
+    output = capsys.readouterr().out.strip()
+    data = json.loads(output)
+    assert data["ok"] is True
+
+    # First call applies override; second call restores previous source.
+    assert len(set_calls) == 2
+    assert set_calls[0]["mode"] == "local"
+    assert set_calls[0]["local_root"] == ".SpiritSafe"
+
+
+def test_profile_lookups_hydrate_profile_name_resolution(monkeypatch, capsys):
+    """Profile lookups hydrate resolves simple profile names to profiles/ directory."""
+
+    def fake_hydrate_profile_lookups(**kwargs):
+        # Verify that the simple profile name was resolved to profiles/Name.yaml
+        assert kwargs["profile_paths"] == ["profiles/SampleProfile.yaml"]
+        return {
+            "profiles_scanned": 1,
+            "lookup_specs_found": 0,
+            "unique_queries": 0,
+            "unique_queries_executed": 0,
+            "cache_dir": "/tmp/cache",
+            "cache_file_count": 0,
+            "failures": [],
+        }
+
+    monkeypatch.setattr("gkc.hydrate_profile_lookups", fake_hydrate_profile_lookups)
+
+    # Test 1: Simple name without .yaml extension
+    exit_code = cli.main(
+        [
+            "--json",
+            "profile",
+            "lookups",
+            "hydrate",
+            "--profile",
+            "SampleProfile",
+            "--dry-run",
+        ]
+    )
+
+    assert exit_code == 0
+    output = capsys.readouterr().out.strip()
+    data = json.loads(output)
+    assert data["ok"] is True
+
+    # Test 2: Name with .yaml extension
+    exit_code = cli.main(
+        [
+            "--json",
+            "profile",
+            "lookups",
+            "hydrate",
+            "--profile",
+            "SampleProfile.yaml",
+            "--dry-run",
+        ]
+    )
+
+    assert exit_code == 0
+    output = capsys.readouterr().out.strip()
+    data = json.loads(output)
+    assert data["ok"] is True

@@ -70,16 +70,27 @@
     },
     "choice_list": {
       "type": "object",
-      "required": ["source", "query"],
+      "required": ["source"],
       "properties": {
         "source": {"enum": ["sparql"]},
         "query": {"type": "string"},
+        "query_ref": {"type": "string"},
+        "query_params": {
+          "type": "object",
+          "additionalProperties": {
+            "type": ["string", "number", "integer", "boolean"]
+          }
+        },
         "refresh": {"enum": ["manual", "daily", "weekly", "on_release"]},
         "fallback_items": {
           "type": "array",
           "items": {"$ref": "#/$defs/choice_item"}
         }
-      }
+      },
+      "anyOf": [
+        {"required": ["query"]},
+        {"required": ["query_ref"]}
+      ]
     },
     "reference_target": {
       "type": "object",

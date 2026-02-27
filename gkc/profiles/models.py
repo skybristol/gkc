@@ -11,7 +11,7 @@ from __future__ import annotations
 
 from typing import List, Literal, Optional, Union
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, field_validator, model_validator
 
 ValidationPolicy = Literal["allow_existing_nonconforming", "strict"]
 FormPolicy = Literal["target_only", "show_all"]
@@ -68,24 +68,45 @@ class ChoiceListSpec(BaseModel):
 
     Args:
         source: Choice list source type (currently only "sparql").
-        query: SPARQL query text.
+        query: Optional inline SPARQL query text.
+        query_ref: Optional named query reference path.
+        query_params: Optional parameter map used to render query templates.
         refresh: Refresh cadence for cached results.
         fallback_items: Static fallback choices when query is unavailable.
 
     Example:
         >>> ChoiceListSpec(source="sparql", query="SELECT ...", refresh="manual")
+        >>> ChoiceListSpec(
+        ...     source="sparql",
+        ...     query_ref="queries/wikidata_language_items_en.sparql",
+        ...     query_params={"lang": "en"},
+        ... )
 
     Plain meaning: A reusable list of recommended or allowed values.
     """
 
     source: Literal["sparql"] = Field(..., description="Choice list source")
-    query: str = Field(..., description="SPARQL query text")
+    query: Optional[str] = Field(default=None, description="Inline SPARQL query text")
+    query_ref: Optional[str] = Field(
+        default=None,
+        description="Named SPARQL query reference path (e.g., queries/file.sparql)",
+    )
+    query_params: dict[str, Union[str, int, float, bool]] = Field(
+        default_factory=dict,
+        description="Template parameters for referenced queries",
+    )
     refresh: ChoiceRefreshPolicy = Field(
         default="manual", description="Refresh cadence"
     )
     fallback_items: List[ChoiceItem] = Field(
         default_factory=list, description="Fallback items"
     )
+
+    @model_validator(mode="after")
+    def _require_query_or_ref(self):
+        if not self.query and not self.query_ref:
+            raise ValueError("ChoiceListSpec requires either 'query' or 'query_ref'")
+        return self
 
 
 class ValueDefinition(BaseModel):

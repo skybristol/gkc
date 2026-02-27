@@ -2,8 +2,9 @@
 
 from pathlib import Path
 
-import gkc
 import pytest
+
+import gkc
 
 
 def test_default_spirit_safe_source_is_github():

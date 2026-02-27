@@ -378,6 +378,81 @@ def _build_parser() -> argparse.ArgumentParser:
         command_path="profile.form_schema",
     )
 
+    profile_lookups = profile_subparsers.add_parser(
+        "lookups", help="Profile lookup hydration utilities"
+    )
+    profile_lookups_subparsers = profile_lookups.add_subparsers(
+        dest="profile_lookups_command"
+    )
+
+    profile_lookups_hydrate = profile_lookups_subparsers.add_parser(
+        "hydrate", help="Hydrate SPARQL lookup caches from profile definitions"
+    )
+    profile_lookups_hydrate.add_argument(
+        "--profile",
+        action="append",
+        required=True,
+        help="Path to profile YAML (repeatable)",
+    )
+    profile_lookups_hydrate.add_argument(
+        "--refresh",
+        choices=["manual", "daily", "weekly", "on_release"],
+        help="Optional refresh policy override",
+    )
+    profile_lookups_hydrate.add_argument(
+        "--force-refresh",
+        action="store_true",
+        help="Refresh queries even when cache appears fresh",
+    )
+    profile_lookups_hydrate.add_argument(
+        "--page-size",
+        type=int,
+        default=1000,
+        help="Query page size for pagination (default: 1000)",
+    )
+    profile_lookups_hydrate.add_argument(
+        "--max-results",
+        type=int,
+        help="Maximum total results per query",
+    )
+    profile_lookups_hydrate.add_argument(
+        "--endpoint",
+        default="https://query.wikidata.org/sparql",
+        help="SPARQL endpoint URL",
+    )
+    profile_lookups_hydrate.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="Analyze and summarize lookups without executing queries",
+    )
+    profile_lookups_hydrate.add_argument(
+        "--fail-on-query-error",
+        action="store_true",
+        help="Fail immediately when any query preparation/execution errors occur",
+    )
+    profile_lookups_hydrate.add_argument(
+        "--source",
+        choices=["github", "local"],
+        help="Override SpiritSafe source mode for this command",
+    )
+    profile_lookups_hydrate.add_argument(
+        "--local-root",
+        help="Local SpiritSafe root (required with --source local)",
+    )
+    profile_lookups_hydrate.add_argument(
+        "--repo",
+        help="GitHub repo slug when --source github (e.g., owner/SpiritSafe)",
+    )
+    profile_lookups_hydrate.add_argument(
+        "--ref",
+        dest="github_ref",
+        help="Git reference when --source github (default: main)",
+    )
+    profile_lookups_hydrate.set_defaults(
+        handler=_handle_profile_lookups_hydrate,
+        command_path="profile.lookups.hydrate",
+    )
+
     return parser
 
 
@@ -1087,6 +1162,87 @@ def _handle_profile_form_schema(args: argparse.Namespace) -> dict[str, Any]:
         "ok": True,
         "message": message,
         "details": {"profile": profile.name, "output": args.output or "stdout"},
+    }
+
+
+def _handle_profile_lookups_hydrate(args: argparse.Namespace) -> dict[str, Any]:
+    """Hydrate SPARQL lookup caches from one or more profile YAML files."""
+    if not args.profile:
+        raise CLIError("Provide at least one --profile path")
+
+    previous_source = gkc.get_spirit_safe_source()
+    source_overridden = args.source is not None
+
+    try:
+        if source_overridden:
+            if args.source == "local":
+                if not args.local_root:
+                    raise CLIError("--local-root is required when --source local")
+                gkc.set_spirit_safe_source(mode="local", local_root=args.local_root)
+            else:
+                gkc.set_spirit_safe_source(
+                    mode="github",
+                    github_repo=args.repo or previous_source.github_repo,
+                    github_ref=args.github_ref or previous_source.github_ref,
+                )
+
+        # Resolve profile names to full paths
+        resolved_profiles = [gkc.resolve_profile_path(p) for p in args.profile]
+
+        summary = gkc.hydrate_profile_lookups(
+            profile_paths=resolved_profiles,
+            refresh_policy=args.refresh,
+            force_refresh=args.force_refresh,
+            page_size=args.page_size,
+            max_results=args.max_results,
+            endpoint=args.endpoint,
+            dry_run=args.dry_run,
+            fail_on_query_error=args.fail_on_query_error,
+        )
+    except Exception as exc:
+        raise CLIError(str(exc)) from exc
+    finally:
+        if source_overridden:
+            gkc.set_spirit_safe_source(
+                mode=previous_source.mode,
+                github_repo=previous_source.github_repo,
+                github_ref=previous_source.github_ref,
+                local_root=previous_source.local_root,
+            )
+
+    failures = summary.get("failures", [])
+    ok = len(failures) == 0
+
+    if args.dry_run:
+        message = (
+            "Dry run complete: "
+            f"{summary['lookup_specs_found']} lookup specs, "
+            f"{summary['unique_queries']} unique queries"
+        )
+    else:
+        message = (
+            "Hydration complete: "
+            f"{summary['unique_queries_executed']} unique queries executed"
+        )
+
+    if failures:
+        message += f" ({len(failures)} failures)"
+
+    details = {
+        "profiles_scanned": summary.get("profiles_scanned"),
+        "lookup_specs_found": summary.get("lookup_specs_found"),
+        "unique_queries": summary.get("unique_queries"),
+        "unique_queries_executed": summary.get("unique_queries_executed"),
+        "cache_dir": summary.get("cache_dir"),
+        "cache_file_count": summary.get("cache_file_count"),
+        "failures": failures,
+    }
+
+    return {
+        "command": args.command_path,
+        "ok": ok,
+        "message": message,
+        "details": details,
     }
 
 

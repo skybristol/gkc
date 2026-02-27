@@ -13,12 +13,15 @@ Plain meaning: Tools for working with SpiritSafe profiles and their data sources
 
 from __future__ import annotations
 
-from dataclasses import dataclass
 import hashlib
 import json
+from dataclasses import dataclass
 from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Any, Literal, Optional, Union
+
+import requests
+import yaml
 
 from gkc.sparql import SPARQLQuery, paginate_query
 
@@ -331,6 +334,40 @@ class LookupFetcher:
         self.endpoint = endpoint
         self.sparql = SPARQLQuery(endpoint=endpoint)
 
+    def _dedupe_results(self, results: list[dict[str, Any]]) -> list[dict[str, Any]]:
+        """Remove duplicate results based on unique identifier.
+
+        Handles query result redundancy from SPARQL endpoints or pagination
+        artifacts by tracking seen items and keeping only first occurrence.
+        Uses the "item" field as the unique identifier (standard for Wikidata).
+
+        Args:
+            results: Raw results from SPARQL query execution.
+
+        Returns:
+            Deduplicated results list preserving order of first occurrence.
+
+        Plain meaning: Remove duplicate rows from query results.
+        """
+        seen_items: set[str] = set()
+        deduplicated: list[dict[str, Any]] = []
+
+        for result in results:
+            # Use "item" field as unique identifier (Wikidata convention)
+            # If no item field, use entire result as dict key (as string)
+            if "item" in result:
+                item_key = result["item"]
+            else:
+                # Fallback: use string representation of the entire row
+                # This handles cases with multiple identifier fields
+                item_key = tuple(sorted(result.items())).__str__()
+
+            if item_key not in seen_items:
+                seen_items.add(item_key)
+                deduplicated.append(result)
+
+        return deduplicated
+
     def fetch(
         self,
         query: str,
@@ -376,6 +413,10 @@ class LookupFetcher:
             endpoint=self.endpoint,
             max_results=max_results,
         )
+
+        # Deduplicate results to handle redundant query results
+        # (can occur with certain SPARQL patterns or pagination artifacts)
+        results = self._dedupe_results(results)
 
         # Cache results
         self.cache.set(
@@ -453,3 +494,265 @@ class LookupFetcher:
             choices.append(choice)
 
         return choices
+
+
+def _read_text_from_resolved_path(resolved_path: Union[Path, str]) -> str:
+    """Read text from a resolved local path or URL.
+
+    Args:
+        resolved_path: Local filesystem path or HTTP URL.
+
+    Returns:
+        UTF-8 text content.
+
+    Raises:
+        FileNotFoundError: If local path does not exist.
+        requests.HTTPError: If URL fetch fails.
+    """
+    if isinstance(resolved_path, Path):
+        return resolved_path.read_text(encoding="utf-8")
+
+    response = requests.get(resolved_path, timeout=30)
+    response.raise_for_status()
+    return response.text
+
+
+def resolve_profile_path(profile_ref: Union[str, Path]) -> Union[str, Path]:
+    """Resolve a profile reference to a path within SpiritSafe structure.
+
+    Handles profile name resolution (with or without .yaml extension) to the
+    profiles/ subdirectory, and preserves full paths as-is.
+
+    Args:
+        profile_ref: Profile name (e.g., "TribalGovernmentUS",
+                    "TribalGovernmentUS.yaml") or full path
+                    (e.g., "profiles/TribalGovernmentUS.yaml").
+
+    Returns:
+        Resolved path suitable for _resolve_profile_text().
+    """
+    ref_str = str(profile_ref)
+
+    # If it's already a path with directory separators, use as-is
+    if "/" in ref_str or "\\" in ref_str:
+        return profile_ref
+
+    # If it looks like an absolute path, use as-is
+    path_obj = Path(profile_ref)
+    if path_obj.is_absolute():
+        return profile_ref
+
+    # Simple profile name: resolve to profiles/ subdirectory
+    # Add .yaml extension if not present
+    profile_name = ref_str if ref_str.endswith(".yaml") else f"{ref_str}.yaml"
+    return f"profiles/{profile_name}"
+
+
+def _resolve_profile_text(profile_path: Union[str, Path]) -> str:
+    """Resolve and read profile YAML text from local path or configured source.
+
+    Args:
+        profile_path: Absolute path, relative path, or SpiritSafe-relative path.
+
+    Returns:
+        YAML text.
+    """
+    path_obj = Path(profile_path)
+    if path_obj.is_absolute() and path_obj.exists():
+        return path_obj.read_text(encoding="utf-8")
+
+    if path_obj.exists():
+        return path_obj.read_text(encoding="utf-8")
+
+    resolved = get_spirit_safe_source().resolve_relative(str(profile_path))
+    return _read_text_from_resolved_path(resolved)
+
+
+def _extract_sparql_specs(node: Any, location: str = "") -> list[dict[str, Any]]:
+    """Extract SPARQL lookup specs from nested profile data.
+
+    Args:
+        node: Nested YAML data node.
+        location: Dot/bracket path for diagnostics.
+
+    Returns:
+        List of extracted lookup spec dictionaries.
+    """
+    specs: list[dict[str, Any]] = []
+
+    if isinstance(node, dict):
+        if node.get("source") == "sparql" and ("query" in node or "query_ref" in node):
+            specs.append(
+                {
+                    "location": location or "<root>",
+                    "query": node.get("query"),
+                    "query_ref": node.get("query_ref"),
+                    "query_params": node.get("query_params") or {},
+                    "refresh": node.get("refresh", "manual"),
+                }
+            )
+
+        for key, value in node.items():
+            child_location = f"{location}.{key}" if location else key
+            specs.extend(_extract_sparql_specs(value, child_location))
+    elif isinstance(node, list):
+        for index, item in enumerate(node):
+            child_location = f"{location}[{index}]" if location else f"[{index}]"
+            specs.extend(_extract_sparql_specs(item, child_location))
+
+    return specs
+
+
+def _render_query_template(template: str, params: dict[str, Any]) -> str:
+    """Render a template query using simple token replacement.
+
+    Tokens are expected as `{{token_name}}`.
+
+    Args:
+        template: Query template text.
+        params: Token replacement values.
+
+    Returns:
+        Rendered query string.
+    """
+    rendered = template
+    for key, value in params.items():
+        rendered = rendered.replace(f"{{{{{key}}}}}", str(value))
+    return rendered
+
+
+def hydrate_profile_lookups(
+    profile_paths: list[Union[str, Path]],
+    *,
+    refresh_policy: Optional[RefreshPolicy] = None,
+    force_refresh: bool = False,
+    page_size: int = 1000,
+    max_results: Optional[int] = None,
+    endpoint: str = "https://query.wikidata.org/sparql",
+    dry_run: bool = False,
+    fail_on_query_error: bool = False,
+) -> dict[str, Any]:
+    """Hydrate SPARQL lookup caches for one or more profile files.
+
+    This performs an explicit lookup hydration workflow by scanning profile YAML,
+    extracting SPARQL lookup specs, resolving query references/templates, deduplicating
+    identical rendered queries, and optionally executing them through `LookupFetcher`.
+
+    Args:
+        profile_paths: Paths to profile YAML files.
+        refresh_policy: Optional global refresh policy override.
+        force_refresh: Force refresh even if cache is fresh.
+        page_size: Page size for paginated query execution.
+        max_results: Optional maximum total results per query.
+        endpoint: SPARQL endpoint URL.
+        dry_run: If True, do not execute queries; return discovery summary only.
+        fail_on_query_error: If True, raise on first query execution failure.
+
+    Returns:
+        Summary dictionary with discovery/execution stats.
+    """
+    source = get_spirit_safe_source()
+    discovered_specs: list[dict[str, Any]] = []
+
+    for profile_path in profile_paths:
+        yaml_text = _resolve_profile_text(profile_path)
+        profile_data = yaml.safe_load(yaml_text) or {}
+        profile_specs = _extract_sparql_specs(profile_data)
+        for spec in profile_specs:
+            spec["profile"] = str(profile_path)
+            discovered_specs.append(spec)
+
+    unique_queries: dict[tuple[str, str], dict[str, Any]] = {}
+    failures: list[dict[str, Any]] = []
+
+    for spec in discovered_specs:
+        try:
+            if spec.get("query"):
+                rendered_query = str(spec["query"])
+            else:
+                query_ref = spec.get("query_ref")
+                if not query_ref:
+                    raise ValueError("Missing both 'query' and 'query_ref'")
+                resolved_query_ref = source.resolve_relative(str(query_ref))
+                query_template = _read_text_from_resolved_path(resolved_query_ref)
+                rendered_query = _render_query_template(
+                    query_template, spec.get("query_params", {})
+                )
+
+            key = (endpoint, rendered_query.strip())
+            if key not in unique_queries:
+                unique_queries[key] = {
+                    "endpoint": endpoint,
+                    "query": rendered_query,
+                    "refresh": refresh_policy or spec.get("refresh", "manual"),
+                    "sources": [],
+                }
+            unique_queries[key]["sources"].append(
+                {
+                    "profile": spec.get("profile"),
+                    "location": spec.get("location"),
+                    "query_ref": spec.get("query_ref"),
+                }
+            )
+        except Exception as exc:
+            failure = {
+                "profile": spec.get("profile"),
+                "location": spec.get("location"),
+                "query_ref": spec.get("query_ref"),
+                "error": str(exc),
+            }
+            failures.append(failure)
+            if fail_on_query_error:
+                profile_loc = f"{failure['profile']}:{failure['location']}"
+                raise RuntimeError(
+                    f"Failed to prepare query for {profile_loc}"
+                ) from exc
+
+    hydrated: list[dict[str, Any]] = []
+    if not dry_run:
+        fetcher = LookupFetcher(endpoint=endpoint)
+        for entry in unique_queries.values():
+            try:
+                results = fetcher.fetch(
+                    entry["query"],
+                    refresh_policy=entry["refresh"],
+                    force_refresh=force_refresh,
+                    page_size=page_size,
+                    max_results=max_results,
+                )
+                hydrated.append(
+                    {
+                        "endpoint": endpoint,
+                        "refresh": entry["refresh"],
+                        "source_count": len(entry["sources"]),
+                        "result_count": len(results),
+                        "sources": entry["sources"],
+                    }
+                )
+            except Exception as exc:
+                failure = {
+                    "endpoint": endpoint,
+                    "sources": entry["sources"],
+                    "error": str(exc),
+                }
+                failures.append(failure)
+                if fail_on_query_error:
+                    raise RuntimeError(
+                        "Failed to execute hydrated lookup query"
+                    ) from exc
+
+    cache_dir = source.resolve_cache_dir()
+    cache_file_count = len(list(cache_dir.glob("*.json"))) if cache_dir.exists() else 0
+
+    return {
+        "source_mode": source.mode,
+        "profiles_scanned": len(profile_paths),
+        "lookup_specs_found": len(discovered_specs),
+        "unique_queries": len(unique_queries),
+        "unique_queries_executed": 0 if dry_run else len(hydrated),
+        "dry_run": dry_run,
+        "cache_dir": str(cache_dir),
+        "cache_file_count": cache_file_count,
+        "hydrated": hydrated,
+        "failures": failures,
+    }

@@ -30,6 +30,7 @@ def test_spirit_safe_config_imports():
     assert hasattr(gkc, "set_spirit_safe_source")
     assert hasattr(gkc, "LookupCache")
     assert hasattr(gkc, "LookupFetcher")
+    assert hasattr(gkc, "hydrate_profile_lookups")
 
 
 def test_cooperage_imports():
