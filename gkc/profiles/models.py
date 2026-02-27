@@ -9,7 +9,7 @@ Plain meaning: The typed Python shape of a YAML profile.
 
 from __future__ import annotations
 
-from typing import Literal, Optional
+from typing import List, Literal, Optional, Union
 
 from pydantic import BaseModel, Field, field_validator
 
@@ -73,7 +73,7 @@ class ChoiceListSpec(BaseModel):
     refresh: ChoiceRefreshPolicy = Field(
         default="manual", description="Refresh cadence"
     )
-    fallback_items: list[ChoiceItem] = Field(
+    fallback_items: List[ChoiceItem] = Field(
         default_factory=list, description="Fallback items"
     )
 
@@ -94,11 +94,11 @@ class ValueDefinition(BaseModel):
     """
 
     type: ValueType = Field(..., description="Value datatype")
-    fixed: Optional[str | int | float] = Field(
+    fixed: Optional[Union[str, int, float]] = Field(
         default=None, description="Fixed value constraint"
     )
     label: str = Field(default="", description="Optional label for fixed values")
-    constraints: list[ConstraintDefinition] = Field(
+    constraints: List[ConstraintDefinition] = Field(
         default_factory=list, description="Value constraints"
     )
 
@@ -163,7 +163,7 @@ class ReferenceDefinition(BaseModel):
     form_policy: FormPolicy = Field(
         default="target_only", description="Reference form policy"
     )
-    allowed: list[ReferenceTargetDefinition] = Field(
+    allowed: List[ReferenceTargetDefinition] = Field(
         default_factory=list, description="Allowed reference properties"
     )
     target: Optional[ReferenceTargetDefinition] = Field(
@@ -274,7 +274,7 @@ class ProfileFieldDefinition(BaseModel):
         default="target_only", description="Field form policy"
     )
     value: ValueDefinition = Field(..., description="Value definition")
-    qualifiers: list[QualifierDefinition] = Field(
+    qualifiers: List[QualifierDefinition] = Field(
         default_factory=list, description="Qualifier definitions"
     )
     references: Optional[ReferenceDefinition] = Field(
@@ -298,7 +298,7 @@ class ProfileDefinition(BaseModel):
 
     name: str = Field(..., description="Profile name")
     description: str = Field(..., description="Profile description")
-    fields: list[ProfileFieldDefinition] = Field(
+    fields: List[ProfileFieldDefinition] = Field(
         default_factory=list, description="Profile fields"
     )
 

@@ -5,7 +5,7 @@ Plain meaning: Convert Wikidata item data into typed statement structures.
 
 from __future__ import annotations
 
-from typing import Literal, Optional
+from typing import Dict, List, Literal, Optional
 
 from pydantic import BaseModel, Field
 
@@ -44,10 +44,10 @@ class NormalizationResult(BaseModel):
     Plain meaning: Parsed statements and any problems found.
     """
 
-    data: dict[str, list[StatementData]] = Field(
-        default_factory=dict, description="Normalized statement data"
+    data: Dict[str, List[StatementData]] = Field(
+        default_factory=dict, description="Normalized statements"
     )
-    issues: list[NormalizationIssue] = Field(
+    issues: List[NormalizationIssue] = Field(
         default_factory=list, description="Normalization issues"
     )
 
@@ -98,7 +98,7 @@ class WikidataNormalizer:
                 )
                 continue
 
-            normalized_statements: list[StatementData] = []
+            normalized_statements: List[StatementData] = []
             for statement in statements_raw:
                 if isinstance(statement, dict):
                     mainsnak = statement.get("mainsnak", {})
@@ -133,7 +133,7 @@ class WikidataNormalizer:
 
 
 def _extract_qualifiers(raw_qualifiers: dict) -> dict[str, list[StatementValue]]:
-    qualifiers: dict[str, list[StatementValue]] = {}
+    qualifiers: Dict[str, List[StatementValue]] = {}
     if not isinstance(raw_qualifiers, dict):
         return qualifiers
 
@@ -152,7 +152,7 @@ def _extract_qualifiers(raw_qualifiers: dict) -> dict[str, list[StatementValue]]
 
 
 def _extract_references(raw_references: list) -> list[ReferenceData]:
-    references: list[ReferenceData] = []
+    references: List[ReferenceData] = []
     if not isinstance(raw_references, list):
         return references
 
@@ -160,7 +160,7 @@ def _extract_references(raw_references: list) -> list[ReferenceData]:
         if not isinstance(reference, dict):
             continue
         snaks = reference.get("snaks", {})
-        reference_snaks: dict[str, list[StatementValue]] = {}
+        reference_snaks: Dict[str, List[StatementValue]] = {}
         if isinstance(snaks, dict):
             for prop_id, snak_list in snaks.items():
                 if not isinstance(snak_list, list):

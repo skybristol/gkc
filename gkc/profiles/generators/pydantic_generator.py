@@ -5,7 +5,7 @@ Plain meaning: Build runtime validation models from YAML profiles.
 
 from __future__ import annotations
 
-from typing import Callable, Optional
+from typing import Callable, Dict, List, Optional, Union
 
 from pydantic import (
     BaseModel,
@@ -56,7 +56,7 @@ class ProfilePydanticGenerator:
         Plain meaning: Generate a validation class for profile statements.
         """
         field_definitions = {}
-        validators: dict[str, Callable] = {}
+        validators: Dict[str, Callable] = {}
 
         for field in self.profile.fields:
             safe_name = self._safe_field_name(field.id)
@@ -89,13 +89,13 @@ class ProfilePydanticGenerator:
         )
 
     def _make_field_validator(self, field):
-        def _validator(cls, value: list[StatementData], info: ValidationInfo):
+        def _validator(cls, value: List[StatementData], info: ValidationInfo):
             policy = "strict"
             if info.context and isinstance(info.context, dict):
                 policy = info.context.get("policy", "strict")
 
-            violations: list[str] = []
-            reference_violations: list[str] = []
+            violations: List[str] = []
+            reference_violations: List[str] = []
 
             if field.required and not value:
                 violations.append("required statement missing")
@@ -202,7 +202,7 @@ class ProfilePydanticGenerator:
                                 )
                                 reference_violations.append(message)
 
-            error_messages: list[str] = []
+            error_messages: List[str] = []
             if violations and _should_raise(field.validation_policy, policy):
                 error_messages.extend(violations)
 
@@ -247,7 +247,7 @@ def _should_raise(field_policy: str, validation_policy: str) -> bool:
     return field_policy == "strict"
 
 
-def _is_integer(value: str | int | float) -> bool:
+def _is_integer(value: Union[str, int, float]) -> bool:
     if isinstance(value, int):
         return True
     if isinstance(value, float):

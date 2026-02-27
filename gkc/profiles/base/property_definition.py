@@ -12,7 +12,7 @@ Plain meaning: The blueprint for what a property looks like and how to use it.
 
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, List
 
 from pydantic import BaseModel, Field
 
@@ -70,7 +70,7 @@ class PropertyDefinition(BaseModel):
         description="Platform this property belongs to (wikidata, osm, etc.)",
     )
 
-    required_qualifiers: list[str] = Field(
+    required_qualifiers: List[str] = Field(
         default_factory=list,
         description="Property IDs of qualifiers that must be present",
     )

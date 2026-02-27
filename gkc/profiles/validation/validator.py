@@ -5,7 +5,7 @@ Plain meaning: Validate Wikidata items against YAML profiles.
 
 from __future__ import annotations
 
-from typing import Literal, Optional
+from typing import Dict, List, Literal, Optional, Union
 
 from pydantic import BaseModel, ValidationError
 
@@ -54,9 +54,9 @@ class ValidationResult(BaseModel):
     """
 
     ok: bool
-    errors: list[ValidationIssue]
-    warnings: list[ValidationIssue]
-    normalized: dict[str, list[StatementData]]
+    errors: List[ValidationIssue]
+    warnings: List[ValidationIssue]
+    normalized: Dict[str, List[StatementData]]
 
     def is_valid(self) -> bool:
         """Return True when validation has no errors.
@@ -119,8 +119,8 @@ class ProfileValidator:
         normalization = self._normalizer.normalize(entity_data, self.profile)
         model = self._generator.build_model()
 
-        errors: list[ValidationIssue] = []
-        warnings: list[ValidationIssue] = []
+        errors: List[ValidationIssue] = []
+        warnings: List[ValidationIssue] = []
 
         self._add_normalization_issues(normalization, warnings, errors)
 
@@ -143,8 +143,8 @@ class ProfileValidator:
     def _add_normalization_issues(
         self,
         normalization: NormalizationResult,
-        warnings: list[ValidationIssue],
-        errors: list[ValidationIssue],
+        warnings: List[ValidationIssue],
+        errors: List[ValidationIssue],
     ) -> None:
         for issue in normalization.issues:
             target = warnings if issue.severity == "warning" else errors
@@ -160,7 +160,7 @@ class ProfileValidator:
     def _errors_from_validation(
         self, exc: ValidationError, model: type[BaseModel]
     ) -> list[ValidationIssue]:
-        issues: list[ValidationIssue] = []
+        issues: List[ValidationIssue] = []
         field_aliases = {
             name: (field.alias or name) for name, field in model.model_fields.items()
         }
@@ -208,8 +208,8 @@ class ProfileValidator:
         return warnings
 
 
-def _evaluate_field(field, statements: list[StatementData]) -> list[tuple[str, str]]:
-    violations: list[tuple[str, str]] = []
+def _evaluate_field(field, statements: List[StatementData]) -> List[tuple[str, str]]:
+    violations: List[tuple[str, str]] = []
 
     if field.required and not statements:
         violations.append(("required statement missing", "field"))
@@ -319,7 +319,7 @@ def _evaluate_field(field, statements: list[StatementData]) -> list[tuple[str, s
     return violations
 
 
-def _is_integer(value: str | int | float) -> bool:
+def _is_integer(value: Union[str, int, float]) -> bool:
     if isinstance(value, int):
         return True
     if isinstance(value, float):

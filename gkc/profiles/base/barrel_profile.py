@@ -13,7 +13,7 @@ Plain meaning: Convert entities to platform-ready formats for shipping.
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Dict
 
 if TYPE_CHECKING:
     from .entity_profile import EntityProfile
@@ -65,7 +65,7 @@ class BarrelProfile:
             f"{self.__class__.__name__} must implement transform()"
         )
 
-    def validate_payload(self, payload: dict[str, Any]) -> bool:
+    def validate_payload(self, payload: Dict[str, Any]) -> bool:
         """Validate that the payload is ready for shipping.
 
         Args:
@@ -82,7 +82,7 @@ class BarrelProfile:
         # Base implementation - concrete classes can override
         return True
 
-    def ship(self, payload: dict[str, Any]) -> Any:
+    def ship(self, payload: Dict[str, Any]) -> Any:
         """Send the payload to the external platform.
 
         Args:

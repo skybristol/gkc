@@ -7,7 +7,7 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
-from typing import Any, Iterable, Optional
+from typing import Any, Dict, Iterable, Optional, Union
 
 import yaml
 from jsonschema import Draft202012Validator
@@ -35,7 +35,7 @@ class ProfileLoader:
         self._schema_path = schema_path or self._default_schema_path()
         self._validator = Draft202012Validator(self._load_schema())
 
-    def load_from_file(self, path: str | Path) -> ProfileDefinition:
+    def load_from_file(self, path: Union[str, Path]) -> ProfileDefinition:
         """Load a YAML profile from a file.
 
         Args:
@@ -84,7 +84,7 @@ class ProfileLoader:
         data = yaml.safe_load(text) or {}
         return self.load_from_dict(data)
 
-    def load_from_dict(self, data: dict[str, Any]) -> ProfileDefinition:
+    def load_from_dict(self, data: Dict[str, Any]) -> ProfileDefinition:
         """Load a profile from a Python dictionary.
 
         Args:
@@ -110,7 +110,7 @@ class ProfileLoader:
             raise ValueError(message)
         return ProfileDefinition.model_validate(data)
 
-    def validate_data(self, data: dict[str, Any]) -> Iterable[str]:
+    def validate_data(self, data: Dict[str, Any]) -> Iterable[str]:
         """Validate profile data against the JSON schema.
 
         Args:

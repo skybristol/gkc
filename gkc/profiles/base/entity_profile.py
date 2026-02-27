@@ -9,7 +9,7 @@ Plain meaning: The blueprint for what a validated entity looks like.
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, ClassVar
+from typing import TYPE_CHECKING, Any, ClassVar, Dict, List, Optional
 
 from pydantic import BaseModel, Field
 
@@ -57,27 +57,27 @@ class EntityProfile(BaseModel):
     description: ClassVar[str] = ""
 
     # Core Wikibase-patterned fields
-    labels: dict[str, str] = Field(
+    labels: Dict[str, str] = Field(
         default_factory=dict,
         description="Language-keyed labels (e.g., {'en': 'Apache Tribe'})",
     )
-    descriptions: dict[str, str] = Field(
+    descriptions: Dict[str, str] = Field(
         default_factory=dict,
         description="Language-keyed descriptions of the entity",
     )
-    aliases: dict[str, list[str]] = Field(
+    aliases: Dict[str, List[str]] = Field(
         default_factory=dict,
         description="Language-keyed lists of alternative names",
     )
 
     # Optional: raw source item identifier (QID/EID/PID)
-    source_id: str | None = Field(
+    source_id: Optional[str] = Field(
         default=None,
         description="Source identifier (e.g., 'Q42' for Wikidata items)",
     )
 
     # Optional: provenance metadata about where this profile came from
-    provenance: dict[str, Any] = Field(
+    provenance: Dict[str, Any] = Field(
         default_factory=dict,
         description="Metadata about profile generation (timestamps, sources, etc.)",
     )

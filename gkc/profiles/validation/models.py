@@ -5,7 +5,7 @@ Plain meaning: Typed containers for normalized statement data.
 
 from __future__ import annotations
 
-from typing import Literal
+from typing import Dict, List, Literal, Union
 
 from pydantic import BaseModel, Field
 
@@ -25,7 +25,7 @@ class StatementValue(BaseModel):
     Plain meaning: A typed value pulled from a Wikidata statement.
     """
 
-    value: str | int | float = Field(..., description="Extracted value")
+    value: Union[str, int, float] = Field(..., description="Extracted value")
     value_type: ValueType = Field(..., description="Value datatype")
 
 
@@ -45,7 +45,7 @@ class ReferenceData(BaseModel):
     Plain meaning: A single reference block attached to a statement.
     """
 
-    snaks: dict[str, list[StatementValue]] = Field(
+    snaks: Dict[str, List[StatementValue]] = Field(
         default_factory=dict, description="Reference snaks"
     )
 
@@ -65,9 +65,9 @@ class StatementData(BaseModel):
     """
 
     value: StatementValue = Field(..., description="Main statement value")
-    qualifiers: dict[str, list[StatementValue]] = Field(
+    qualifiers: Dict[str, List[StatementValue]] = Field(
         default_factory=dict, description="Qualifier values"
     )
-    references: list[ReferenceData] = Field(
+    references: List[ReferenceData] = Field(
         default_factory=list, description="Statement references"
     )

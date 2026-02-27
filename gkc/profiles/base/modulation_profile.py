@@ -12,7 +12,7 @@ Plain meaning: The input form blueprint for a data contribution task.
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Dict, List
 
 from pydantic import BaseModel, Field
 
@@ -59,12 +59,12 @@ class ModulationProfile(BaseModel):
         description="Human-readable explanation of this workflow",
     )
 
-    entity_types: list[str] = Field(
+    entity_types: List[str] = Field(
         default_factory=list,
         description="List of entity profile names involved in this workflow",
     )
 
-    field_specs: dict[str, dict[str, Any]] = Field(
+    field_specs: Dict[str, Dict[str, Any]] = Field(
         default_factory=dict,
         description=(
             "Field specifications keyed by entity_type.field_name. "
@@ -72,7 +72,7 @@ class ModulationProfile(BaseModel):
         ),
     )
 
-    metadata: dict[str, Any] = Field(
+    metadata: Dict[str, Any] = Field(
         default_factory=dict,
         description="Additional metadata about this modulation workflow",
     )
@@ -96,7 +96,7 @@ class ModulationProfile(BaseModel):
             f"{self.__class__.__name__} must implement to_barrel_profiles()"
         )
 
-    def validate_inputs(self, inputs: dict[str, Any]) -> dict[str, Any]:
+    def validate_inputs(self, inputs: Dict[str, Any]) -> Dict[str, Any]:
         """Validate user inputs against field specifications.
 
         Args:
