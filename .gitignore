@@ -212,5 +212,8 @@ __marimo__/
 # Local
 .DS_Store
 
-# Issues
+# dev
 .dev
+
+# SpiritSafe
+.SpiritSafe/

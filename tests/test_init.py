@@ -22,6 +22,16 @@ def test_shex_imports():
     assert hasattr(gkc, "ShexValidationError")
 
 
+def test_spirit_safe_config_imports():
+    """Test that SpiritSafe source config helpers are importable."""
+    assert hasattr(gkc, "DEFAULT_SPIRIT_SAFE_GITHUB_REPO")
+    assert hasattr(gkc, "SpiritSafeSourceConfig")
+    assert hasattr(gkc, "get_spirit_safe_source")
+    assert hasattr(gkc, "set_spirit_safe_source")
+    assert hasattr(gkc, "LookupCache")
+    assert hasattr(gkc, "LookupFetcher")
+
+
 def test_cooperage_imports():
     """Test that Cooperage functions are importable."""
     assert hasattr(gkc, "CooperageError")

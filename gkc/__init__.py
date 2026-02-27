@@ -74,6 +74,16 @@ from gkc.recipe import PropertyLedgerEntry, RecipeBuilder, SpecificationExtracto
 # ShEx validation utilities
 from gkc.shex import ShexValidationError, ShexValidator
 
+# SpiritSafe source configuration + lookup utilities
+from gkc.spirit_safe import (
+    DEFAULT_SPIRIT_SAFE_GITHUB_REPO,
+    LookupCache,
+    LookupFetcher,
+    SpiritSafeSourceConfig,
+    get_spirit_safe_source,
+    set_spirit_safe_source,
+)
+
 # Sitelinks (cross-reference validation)
 from gkc.sitelinks import (
     SitelinkValidator,
@@ -171,4 +181,11 @@ __all__ = [
     # ShEx validation
     "ShexValidationError",
     "ShexValidator",
+    # SpiritSafe source configuration + lookup utilities
+    "DEFAULT_SPIRIT_SAFE_GITHUB_REPO",
+    "SpiritSafeSourceConfig",
+    "get_spirit_safe_source",
+    "set_spirit_safe_source",
+    "LookupCache",
+    "LookupFetcher",
 ]

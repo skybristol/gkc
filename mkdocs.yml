@@ -48,6 +48,7 @@ nav:
     - Home: gkc/index.md
     - Background: gkc/background.md
     - Architecture: gkc/architecture.md
+    - SpiritSafe Profiles: gkc/profiles.md
     - Getting Started:
       - Setup and Orientation: gkc/setup.md
       - Authentication: gkc/authentication.md

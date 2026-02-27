@@ -157,9 +157,181 @@ SELECT ?person ?personLabel ?country ?countryLabel WHERE {
 LIMIT 10
 ```
 
+### Handling Large Result Sets with Pagination
+
+When query results exceed thousands of rows, the SPARQL endpoint will time out or limit results. Use the `paginate_query()` function to automatically fetch large datasets in manageable chunks:
+
+#### Basic Pagination
+
+```python
+from gkc.sparql import paginate_query
+
+# Fetch all results in batches of 1000
+query = """
+    SELECT ?item ?itemLabel WHERE {
+      ?item wdt:P31 wd:Q5 .
+      SERVICE wikibase:label {
+        bd:serviceParam wikibase:language "en" .
+      }
+    }
+"""
+
+all_results = paginate_query(query)
+print(f"Total results: {len(all_results)}")
+```
+
+#### Pagination with Control
+
+```python
+# Fetch up to 5000 results, 500 per page
+results = paginate_query(
+    query,
+    page_size=500,
+    max_results=5000,
+    endpoint="https://query.wikidata.org/sparql"
+)
+
+for result in results:
+    print(result['item'], result['itemLabel'])
+```
+
+#### Manual LIMIT/OFFSET
+
+If you need to handle pagination directly:
+
+```python
+from gkc.sparql import add_pagination
+
+# Add LIMIT 100 OFFSET 0 to query
+paginated = add_pagination(query, limit=100, offset=0)
+
+# Add without OFFSET
+paginated = add_pagination(query, limit=1000)
+```
+
+**Key Parameters:**
+- `page_size` - Results per request (default: 1000, max recommended: 5000)
+- `max_results` - Stop after this many results (default: None, fetch all)
+- `endpoint` - SPARQL endpoint to query (default: Wikidata)
+
+**When to Use Pagination:**
+- Queries returning thousands of results
+- Long-running batch processes
+- Building choice lists for profiles
+- Mining data for analysis
+
+### Lookup Cache and Choice Lists
+
+For profiles that use SPARQL-backed choice lists (e.g., language codes, allowed property values), use the `LookupFetcher` to cache results and avoid repeated queries:
+
+#### Setup and Basic Usage
+
+```python
+from gkc.spirit_safe import LookupFetcher
+
+# Initialize fetcher (creates .SpiritSafe/cache directory)
+fetcher = LookupFetcher()
+
+# Fetch and cache results
+query = """
+    PREFIX wd: <http://www.wikidata.org/entity/>
+    PREFIX wdt: <http://www.wikidata.org/prop/direct/>
+    PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+    
+    SELECT ?item ?itemLabel
+    WHERE {
+      ?item wdt:P31/wdt:P279* wd:Q34770 ;
+            rdfs:label ?itemLabel .
+      FILTER(LANG(?itemLabel) = "en")
+    }
+"""
+
+# Fetch with automatic caching and pagination
+results = fetcher.fetch(query, refresh_policy="weekly")
+print(f"Found {len(results)} languages")
+```
+
+#### Choice List Normalization
+
+For form generation, normalize results to a consistent choice list format:
+
+```python
+# Fetch and normalize to {id, label, extra_fields} format
+choices = fetcher.fetch_choice_list(
+    query,
+    id_var="item",
+    label_var="itemLabel",
+    extra_vars=["languageCode"],
+    refresh_policy="weekly"
+)
+
+# Result: [{"id": "Q123", "label": "Navajo", "languageCode": "nav"}]
+for choice in choices:
+    print(f"{choice['label']} ({choice['id']})")
+```
+
+#### Refresh Policies
+
+Control how often cached results are validated:
+
+```python
+# manual - Check only when explicitly refreshed
+results = fetcher.fetch(query, refresh_policy="manual")
+
+# daily - Recheck if cache is older than 1 day
+results = fetcher.fetch(query, refresh_policy="daily")
+
+# weekly - Recheck if cache is older than 1 week
+results = fetcher.fetch(query, refresh_policy="weekly")
+
+# Force refresh even if cache is fresh
+results = fetcher.fetch(query, refresh_policy="daily", force_refresh=True)
+```
+
+#### Cache Management
+
+```python
+from gkc.spirit_safe import LookupCache
+
+cache = LookupCache()
+
+# Check if specific query is cached and fresh
+is_fresh = cache.is_fresh(query, refresh_policy="daily")
+
+# Manually invalidate a specific query
+cache.invalidate(query)
+
+# Clear all cached queries
+cleared_count = cache.clear_all()
+print(f"Cleared {cleared_count} cache files")
+
+# Custom cache directory
+custom_cache = LookupCache(cache_dir="/path/to/cache")
+```
+
+#### Profile Integration Example
+
+```yaml
+# In .SpiritSafe/profiles/YourProfile.yaml
+value:
+  type: item
+  allowed_items:
+    source: sparql
+    query: |
+      PREFIX wd: <http://www.wikidata.org/entity/>
+      SELECT ?item ?itemLabel WHERE { ... }
+    refresh: weekly
+    fallback_items:
+      - id: Q123
+        label: Fallback option
+```
+
+The profile loader currently parses and validates profile YAML only; it does **not** automatically execute SPARQL lookups. Run lookup hydration explicitly (for example, via a dedicated prefetch step or application startup job) to populate cache files.
+
 ### See Also
 
 - **API Reference**: Detailed API documentation at [gkc/api/sparql.md](api/sparql.md)
+- **SpiritSafe Profiles**: [gkc/profiles.md](profiles.md) - Choice list configuration
 - **Wikidata Query Service**: [https://query.wikidata.org/](https://query.wikidata.org/)
 - **SPARQL Tutorial**: [https://www.wikidata.org/wiki/Wikidata:SPARQL_query_service](https://www.wikidata.org/wiki/Wikidata:SPARQL_query_service)
 

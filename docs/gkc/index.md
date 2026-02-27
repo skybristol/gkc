@@ -8,10 +8,15 @@ Welcome to the documentation for GKC (Global Knowledge Commons), a Python packag
 - [Authentication](authentication.md) - set up credentials for Wikimedia apps and OpenStreetMap
 - [Background](background.md) - read about where the project came from and its motivations
 - [Architecture](architecture.md) - major architectural concepts for the GKC and Data Distillery
+- [Profiles](profiles.md) - comprehensive guide to building and using YAML profiles
 
 ## Data Distillery Workflow
 
 The following sections lay out the extract, transform and load (ETL) workflow the GKC package is designed to support - messy and disconnected data in to refined and linked open data out.
+
+### Profile Development
+
+- [SpiritSafe YAML Profiles](profiles.md) - Complete reference for defining entity profiles with all datatypes, constraints, and patterns
 
 ### Data Ingestion (mash tun)
 
