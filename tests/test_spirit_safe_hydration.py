@@ -3,6 +3,7 @@
 from pathlib import Path
 
 import pytest
+from typing import Optional
 
 import gkc
 
@@ -138,7 +139,7 @@ fields:
         query: str,
         page_size: int = 1000,
         endpoint: str = "https://query.wikidata.org/sparql",
-        max_results: int | None = None,
+        max_results: Optional[int] = None,
     ):
         captured_queries.append(query)
         return [{"item": "Q42", "itemLabel": "Douglas Adams"}]
@@ -173,7 +174,7 @@ def test_lookup_fetcher_deduplicates_results(monkeypatch: pytest.MonkeyPatch):
         query: str,
         page_size: int = 1000,
         endpoint: str = "https://query.wikidata.org/sparql",
-        max_results: int | None = None,
+        max_results: Optional[int] = None,
     ):
         # Return results with intentional duplicates
         return [
