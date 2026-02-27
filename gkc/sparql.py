@@ -347,3 +347,102 @@ def execute_sparql_to_dataframe(
     """
     executor = SPARQLQuery(endpoint=endpoint)
     return executor.to_dataframe(query)
+
+
+def add_pagination(query: str, limit: int, offset: int = 0) -> str:
+    """
+    Add LIMIT and OFFSET clauses to a SPARQL query.
+
+    If the query already has LIMIT or OFFSET clauses, they will be removed
+    and replaced with the provided values.
+
+    Args:
+        query: SPARQL query string
+        limit: Maximum number of results to return
+        offset: Number of results to skip (default: 0)
+
+    Returns:
+        Modified query with LIMIT and OFFSET clauses
+
+    Example:
+        >>> query = "SELECT ?item WHERE { ?item wdt:P31 wd:Q5 }"
+        >>> paginated = add_pagination(query, limit=100, offset=0)
+        >>> print(paginated)
+        SELECT ?item WHERE { ?item wdt:P31 wd:Q5 }
+        LIMIT 100 OFFSET 0
+
+    Plain meaning: Add result count and skip controls to a query.
+    """
+    import re
+
+    # Remove existing LIMIT and OFFSET clauses (case-insensitive)
+    cleaned = re.sub(r"\s*LIMIT\s+\d+", "", query, flags=re.IGNORECASE)
+    cleaned = re.sub(r"\s*OFFSET\s+\d+", "", cleaned, flags=re.IGNORECASE)
+
+    # Add new clauses
+    paginated = f"{cleaned.rstrip()}\nLIMIT {limit}"
+    if offset > 0:
+        paginated += f" OFFSET {offset}"
+
+    return paginated
+
+
+def paginate_query(
+    query: str,
+    page_size: int = 1000,
+    endpoint: str = DEFAULT_WIKIDATA_ENDPOINT,
+    max_results: Optional[int] = None,
+) -> list[dict[str, str]]:
+    """
+    Execute a SPARQL query with automatic pagination.
+
+    Fetches results in batches of page_size until all results are retrieved
+    or max_results is reached.
+
+    Args:
+        query: SPARQL query string (without LIMIT/OFFSET)
+        page_size: Number of results per page (default: 1000)
+        endpoint: SPARQL endpoint URL (default: Wikidata)
+        max_results: Optional maximum total results to fetch
+
+    Returns:
+        List of all result rows as dictionaries
+
+    Raises:
+        SPARQLError: If query fails
+
+    Example:
+        >>> query = "SELECT ?item ?itemLabel WHERE { ?item wdt:P31 wd:Q5 }"
+        >>> results = paginate_query(query, page_size=500, max_results=2000)
+
+    Plain meaning: Automatically fetch large result sets in manageable chunks.
+    """
+    executor = SPARQLQuery(endpoint=endpoint)
+    all_results: list[dict[str, str]] = []
+    offset = 0
+
+    while True:
+        # Add pagination to query
+        paginated_query = add_pagination(query, limit=page_size, offset=offset)
+
+        # Execute query
+        page_results = executor.to_dict_list(paginated_query)
+
+        # No more results
+        if not page_results:
+            break
+
+        all_results.extend(page_results)
+
+        # Check if we've hit the max_results limit
+        if max_results and len(all_results) >= max_results:
+            all_results = all_results[:max_results]
+            break
+
+        # Check if we got fewer results than page_size (indicates last page)
+        if len(page_results) < page_size:
+            break
+
+        offset += page_size
+
+    return all_results

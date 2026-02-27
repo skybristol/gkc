@@ -25,6 +25,11 @@ def test_profile_loader_reads_yaml(profile_fixture_path: Path):
     assert instance_field.wikidata_property == "P31"
     assert instance_field.references is not None
     assert len(instance_field.references.allowed) == 1
+    allowed_items = instance_field.references.allowed[0].allowed_items
+    assert allowed_items is not None
+    assert allowed_items.query_ref == "queries/bia_federal_register_issues.sparql"
+    assert allowed_items.query is None
+    assert allowed_items.query_params["federal_register_class_qid"] == "Q121840925"
 
 
 def test_form_schema_generator(profile_fixture_path: Path):

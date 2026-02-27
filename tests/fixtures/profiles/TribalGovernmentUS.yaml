@@ -28,13 +28,11 @@ fields:
         label: Stated in
         allowed_items:
           source: sparql
-          query: |
-            SELECT ?item ?itemLabel
-            WHERE {
-              ?item wdt:P31 wd:Q121840925 ;
-                    wdt:P50 wd:Q1010563 .
-              SERVICE wikibase:label { bd:serviceParam wikibase:language "en". }
-            }
+          query_ref: queries/bia_federal_register_issues.sparql
+          query_params:
+            federal_register_class_qid: Q121840925
+            author_qid: Q1010563
+            lang: en
           refresh: manual
           fallback_items:
             - id: Q138391266

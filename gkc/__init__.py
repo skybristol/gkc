@@ -89,6 +89,18 @@ from gkc.sparql import (
     execute_sparql_to_dataframe,
 )
 
+# SpiritSafe source configuration + lookup utilities
+from gkc.spirit_safe import (
+    DEFAULT_SPIRIT_SAFE_GITHUB_REPO,
+    LookupCache,
+    LookupFetcher,
+    SpiritSafeSourceConfig,
+    get_spirit_safe_source,
+    hydrate_profile_lookups,
+    resolve_profile_path,
+    set_spirit_safe_source,
+)
+
 # Language Configuration
 # Package-level language settings for multilingual data handling
 _DEFAULT_LANGUAGES: Union[str, list[str]] = "en"
@@ -171,4 +183,13 @@ __all__ = [
     # ShEx validation
     "ShexValidationError",
     "ShexValidator",
+    # SpiritSafe source configuration + lookup utilities
+    "DEFAULT_SPIRIT_SAFE_GITHUB_REPO",
+    "SpiritSafeSourceConfig",
+    "get_spirit_safe_source",
+    "set_spirit_safe_source",
+    "LookupCache",
+    "LookupFetcher",
+    "hydrate_profile_lookups",
+    "resolve_profile_path",
 ]

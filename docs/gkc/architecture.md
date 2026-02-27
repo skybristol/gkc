@@ -9,106 +9,22 @@ Together, the Global Knowledge Commons and the Data Distillery provide a coheren
 ----
 
 ## Profile Architecture
-Profiles are the core organizing structures of the Global Knowledge Commons. Each Profile type captures a different facet of how knowledge moves through the distillation pipeline — from raw, heterogeneous inputs, to unified cross‑platform representations, to platform‑specific outputs, and finally to the rules that govern how entities can be created or maintained. Together, these Profiles form a coherent, extensible framework for understanding, validating, transforming, and publishing structured knowledge across the Commons.
+Each consituent system in the de facto Global Knowledge Commons (Wikidata, OpenStreetMap, etc.) has its own mechanism for validating data and checking conformance. As open public knowledge systems, everything is fairly open by default, generally relying on informal and sometimes more formal community consensus to decide what things should look like.
 
-While Profiles define *what* data looks like and *how* it should behave, the **Spirit Safe** is the execution layer that enforces these definitions. It is where Profiles become actionable: where validation occurs, where transformations are applied, and where data is prepared for bottling into Commons platforms.
+Wikidata has some of the more robust and prolific options where standardized schemas are concerned. The most developed and well used aspect of this comes with the [property constraints infrastructure](https://www.wikidata.org/wiki/Help:Property_constraints_portal). This is implemented with a combination of statements with what can be very detailed rules within Wikidata's Property suite and custom tools in Wikibase that flag non-conforming values. These are not strict rules but more notices to the community on areas for improvement.
 
-```mermaid
-flowchart TD
+The other mechanism Wikidata has in play are [Entity Schemas](https://www.wikidata.org/wiki/Wikidata:Schemas) comprised of published schemas in Shape Expression format. Entity Schemas are not widely adopted in any real way and have no impact on anything in Wikidata itself. The big thing that ShEx does in the Wikidata ecosystem that doesn't really exist anywhere else is identify and define logical entities that are comprised of a specific set of properties.
 
-    %% Profile Inputs
-    MB[Mash Bill<br><sub>Validates incoming raw data</sub>]
-    MP[Modulation Profile<br><sub>Defines allowable adjustments</sub>]
-    GKC[GKC Entity Profile<br><sub>Canonical entity structure</sub>]
-    BP[Barrel Profile<br><sub>Platform‑specific output</sub>]
+We experimented with both of these mechanisms in the development of gkc. We built a number of utility features for reading and validating against ShEx schemas. However, we ended up developing our own concept of a profile written in YAML to handle all the necessary specifications about what different types of "GKC Entities" should look like. These do take into account some aspects of property constraints that are actionable and useful at the point of data curation, including the development of "pick lists" of identifiers and labels for properties that need to link to another item.
 
-    %% Spirit Safe
-    SS[[Spirit Safe<br><sub>Validation & Transformation Engine</sub>]]
-
-    %% Flow into Spirit Safe
-    MB --> SS
-    MP --> SS
-    GKC --> SS
-    BP --> SS
-
-    %% Output from Spirit Safe
-    SS -->|Validated Entity| GKC
-    SS -->|API‑Ready Output| BP
-
-    %% Styling
-    classDef profile fill:#f5f5f5,stroke:#333,stroke-width:1px,border-radius:6px;
-    classDef engine fill:#fff7e6,stroke:#cc8a00,stroke-width:2px,border-radius:8px;
-
-    class MB,MP,GKC,BP profile;
-    class SS engine;
-```
-
----
-
-### Global Knowledge Commons Profile
-**Plain Meaning:** defines the canonical structure and meaning of an entity, independent of any specific platform’s constraints or APIs
-
-A **Global Knowledge Commons Profile (GKC Entity Profile)** is the unified, cross‑platform representation of a real‑world entity within the GKC ecosystem. It synthesizes structure, semantics, and expectations drawn from diverse sources — Wikidata property definitions, ShEx schemas, Wikipedia infoboxes, Commons SDC patterns, OSM tagging conventions, and domain‑specific formal schemas — and distills them into a single, coherent, Pydantic‑based model.
-
-A GKC Entity Profile provides:
-
-- **A cross‑platform conceptual definition** of what a given kind of entity *is* in the Global Knowledge Commons.  
-- **A harmonized abstraction** that resolves inconsistencies across platforms and community conventions.  
-- **A functional, executable model** that includes validation logic, coercion rules, and semantic expectations.  
-- **A stable foundation** from which multiple Modulation Profiles can be derived.  
-- **A durable, reviewable artifact** that evolves as understanding of the entity type deepens.
-
----
-
-### Modulation Profile
-**Plain Meaning:** defines *how* a GKC Entity can be filled, adjusted, or maintained in practice
-
-A **Modulation Profile** defines how a GKC Entity may be populated, edited, or maintained — whether through one‑off human input, assisted workflows, or automated batch processes. It specifies the *mutable surface* of the entity: which fields can be changed, what inputs are required or optional, how user intent maps into the GKC Entity Profile, and what transformations are permissible.
-
-A Modulation Profile provides:
-
-- **Rules for controlled mutability**, distinguishing fixed characteristics from editable ones.  
-- **Input models** that guide human or machine contributors through structured data entry.  
-- **Workflow‑specific logic**, enabling different modulation strategies for different contexts (e.g., tribal governments vs. sovereign states).  
-- **A bridge between user input and the GKC Entity Profile**, ensuring all changes remain valid and coherent.  
-- **Support for both interactive and batch processes**, including repeated maintenance operations.
-
----
-
-### Barrel Profile
-**Plain Meaning:** defines the exact shape of an entity as it must appear in a specific Commons platform, ready for API submission or template rendering
-
-A **Barrel Profile** is the platform‑specific, API‑ready representation of a GKC Entity for a particular outlet in the Commons — such as Wikidata, Wikimedia Commons (SDC), Wikipedia infoboxes, or OpenStreetMap features. It encodes the exact structure, formatting, and validation rules required by each platform’s APIs or data ingestion mechanisms.
-
-A Barrel Profile provides:
-
-- **A precise, Pydantic‑based output model** tailored to a specific platform’s requirements.  
-- **Stable, predictable structure** that changes only when the platform’s APIs or conventions change.  
-- **Executable validation and coercion logic** that ensures outputs conform to platform expectations.  
-- **A clear separation** between cross‑platform entity understanding (GKC Entity Profile) and platform‑specific implementation details.  
-- **A reliable foundation** for automated “bottling” into Wikidata, Commons, OSM, or infobox templates.
-
----
-
-### Mash Bill
-**Plain Meaning:** defines the expected structure and quality of the raw data used to create or update a GKC Entity, ensuring that every distillation run begins with a predictable and validated foundation
-
-A **Mash Bill** defines the structure, expectations, and validation rules for the *incoming data* used to construct or update a GKC Entity. It describes the composition of the raw material — the fields, formats, sources, and content patterns that are expected when processing a particular class of inputs. Mash Bills are semi‑permanent architectural fixtures: stable enough to be versioned and reviewed, but flexible enough to evolve as upstream data sources change.
-
-A Mash Bill provides:
-
-- **A structured definition of expected input data**, including fields, types, formats, and provenance.  
-- **Pydantic‑based validation and coercion logic** to ensure that each incoming “mash” conforms to expectations before processing begins.  
-- **A bridge between heterogeneous external data sources** (CSV files, APIs, spreadsheets, domain‑specific schemas, harvested Wikidata items, etc.) and the GKC Entity Profile.  
-- **A stable reference point** for building Modulation Profiles, which define how the mash is transformed into a GKC Entity.  
-- **A mechanism for identifying unusable or incomplete input** — the “Angel’s Share” — so that only viable data proceeds into the distillation workflow.
+Learn more about [building profiles](profiles.md).
 
 ---
 
 ### Spirit Safe
 **Plain Meaning:** the execution and validation engine that ensures all Profiles behave as intended
 
-The **Spirit Safe** is the operational heart of the GKC distillation pipeline. It is where Profiles become executable: where Mash Bills are validated, where Modulation Profiles are applied, where GKC Entity Profiles are instantiated, and where Barrel Profiles are checked before bottling. Implemented through Pydantic models and custom validation logic, the Spirit Safe ensures that every transformation is correct, consistent, and aligned with both cross‑platform semantics and platform‑specific requirements.
+The **Spirit Safe** is the operational heart of the GKC distillation pipeline. It is where Profiles become executable. Implemented through Pydantic models and custom validation logic, the Spirit Safe ensures that every transformation is correct, consistent, and aligned with both cross‑platform semantics and platform‑specific requirements.
 
 The Spirit Safe provides:
 

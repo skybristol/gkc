@@ -11,11 +11,21 @@ from __future__ import annotations
 
 from typing import List, Literal, Optional, Union
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, field_validator, model_validator
 
 ValidationPolicy = Literal["allow_existing_nonconforming", "strict"]
 FormPolicy = Literal["target_only", "show_all"]
-ValueType = Literal["item", "url", "string", "quantity", "time"]
+ValueType = Literal[
+    "item",
+    "url",
+    "string",
+    "quantity",
+    "time",
+    "monolingualtext",
+    "globecoordinate",
+    "external-id",
+    "commonsMedia",
+]
 ChoiceRefreshPolicy = Literal["manual", "daily", "weekly", "on_release"]
 
 
@@ -58,24 +68,45 @@ class ChoiceListSpec(BaseModel):
 
     Args:
         source: Choice list source type (currently only "sparql").
-        query: SPARQL query text.
+        query: Optional inline SPARQL query text.
+        query_ref: Optional named query reference path.
+        query_params: Optional parameter map used to render query templates.
         refresh: Refresh cadence for cached results.
         fallback_items: Static fallback choices when query is unavailable.
 
     Example:
         >>> ChoiceListSpec(source="sparql", query="SELECT ...", refresh="manual")
+        >>> ChoiceListSpec(
+        ...     source="sparql",
+        ...     query_ref="queries/wikidata_language_items_en.sparql",
+        ...     query_params={"lang": "en"},
+        ... )
 
     Plain meaning: A reusable list of recommended or allowed values.
     """
 
     source: Literal["sparql"] = Field(..., description="Choice list source")
-    query: str = Field(..., description="SPARQL query text")
+    query: Optional[str] = Field(default=None, description="Inline SPARQL query text")
+    query_ref: Optional[str] = Field(
+        default=None,
+        description="Named SPARQL query reference path (e.g., queries/file.sparql)",
+    )
+    query_params: dict[str, Union[str, int, float, bool]] = Field(
+        default_factory=dict,
+        description="Template parameters for referenced queries",
+    )
     refresh: ChoiceRefreshPolicy = Field(
         default="manual", description="Refresh cadence"
     )
     fallback_items: List[ChoiceItem] = Field(
         default_factory=list, description="Fallback items"
     )
+
+    @model_validator(mode="after")
+    def _require_query_or_ref(self):
+        if not self.query and not self.query_ref:
+            raise ValueError("ChoiceListSpec requires either 'query' or 'query_ref'")
+        return self
 
 
 class ValueDefinition(BaseModel):
@@ -134,6 +165,90 @@ class ReferenceTargetDefinition(BaseModel):
     value_source: Optional[str] = Field(default=None, description="Value source hint")
     allowed_items: Optional[ChoiceListSpec] = Field(
         default=None, description="Optional choice list"
+    )
+
+
+class MetadataDefinition(BaseModel):
+    """Define metadata for a single language (labels, descriptions, aliases, sitelinks).
+
+    Args:
+        label: Field label for curation.
+        description: Description explaining what should go here.
+        required: Whether this language variant is required.
+        guidance: Curator guidance text.
+        examples: Optional list of example values.
+
+    Example:
+        >>> MetadataDefinition(
+        ...     label="Label",
+        ...     description="Primary name in English",
+        ...     required=True,
+        ...     guidance="Use the tribe's self-designation"
+        ... )
+
+    Plain meaning: A single language's metadata definition with curator guidance.
+    """
+
+    label: str = Field(..., description="Metadata field label")
+    description: str = Field(..., description="What this metadata contains")
+    required: bool = Field(default=False, description="Is this variant required?")
+    guidance: str = Field(default="", description="Curator guidance text")
+    examples: List[str] = Field(default_factory=list, description="Example values")
+
+
+class SitelinkLanguageDefinition(BaseModel):
+    """Define a sitelink for a specific language/project.
+
+    Args:
+        project: Wikimedia project name (wikipedia, commons, etc.).
+        description: Description of the sitelink.
+        required: Whether this language variant is required.
+        guidance: Curator guidance text.
+
+    Example:
+        >>> SitelinkLanguageDefinition(
+        ...     project="wikipedia",
+        ...     description="English Wikipedia article",
+        ...     required=False,
+        ...     guidance="Add if article exists"
+        ... )
+
+    Plain meaning: Links to Wikipedia/Commons articles in a specific language.
+    """
+
+    project: str = Field(..., description="Wikimedia project name")
+    description: str = Field(..., description="Sitelink description")
+    required: bool = Field(default=False, description="Is this variant required?")
+    guidance: str = Field(default="", description="Curator guidance text")
+
+
+class SitelinksDefinition(BaseModel):
+    """Define all sitelinks for an item.
+
+    Args:
+        required: Whether sitelinks are required.
+        validation_policy: Validation policy for existing items.
+        guidance: General curator guidance for sitelinks.
+        languages: Per-language sitelink definitions.
+
+    Example:
+        >>> SitelinksDefinition(
+        ...     required=False,
+        ...     guidance="Check for uniqueness conflicts",
+        ...     languages={"en": SitelinkLanguageDefinition(...)}
+        ... )
+
+    Plain meaning: Configuration for all wiki article links on an item.
+    """
+
+    required: bool = Field(default=False, description="Are sitelinks required?")
+    validation_policy: ValidationPolicy = Field(
+        default="allow_existing_nonconforming",
+        description="Sitelink validation policy",
+    )
+    guidance: str = Field(default="", description="General curator guidance")
+    languages: dict[str, SitelinkLanguageDefinition] = Field(
+        default_factory=dict, description="Per-language sitelink definitions"
     )
 
 
@@ -288,6 +403,10 @@ class ProfileDefinition(BaseModel):
     Attributes:
         name: Profile name.
         description: Profile description.
+        labels: Per-language label definitions.
+        descriptions: Per-language description definitions.
+        aliases: Per-language alias definitions.
+        sitelinks: Sitelink definitions for wiki projects.
         fields: List of field definitions.
 
     Example:
@@ -298,6 +417,18 @@ class ProfileDefinition(BaseModel):
 
     name: str = Field(..., description="Profile name")
     description: str = Field(..., description="Profile description")
+    labels: dict[str, MetadataDefinition] = Field(
+        default_factory=dict, description="Per-language labels"
+    )
+    descriptions: dict[str, MetadataDefinition] = Field(
+        default_factory=dict, description="Per-language descriptions"
+    )
+    aliases: dict[str, MetadataDefinition] = Field(
+        default_factory=dict, description="Per-language aliases"
+    )
+    sitelinks: Optional[SitelinksDefinition] = Field(
+        default=None, description="Sitelinks configuration"
+    )
     fields: List[ProfileFieldDefinition] = Field(
         default_factory=list, description="Profile fields"
     )
