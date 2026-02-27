@@ -40,6 +40,14 @@ Load Wikidata items as templates for viewing, filtering, and exporting in variou
 gkc mash qid Q42
 ```
 
+### [Profiles](profiles.md)
+
+Validate items against YAML profiles and generate form schemas.
+
+```bash
+gkc profile validate --profile .dev/TribalGovernmentUS.yaml --qid Q123
+```
+
 ## Quick Start Examples
 
 Check authentication status:

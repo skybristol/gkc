@@ -2,6 +2,7 @@
 
 import argparse
 import json
+from pathlib import Path
 
 from gkc import cli
 from gkc.mash import ClaimSummary, WikidataTemplate
@@ -512,6 +513,88 @@ def test_shex_validate_failure(monkeypatch, capsys):
     assert data["ok"] is False
     assert data["details"]["valid"] is False
     assert "error_summary" in data["details"]
+
+
+def test_profile_validate_with_item_json(tmp_path, capsys):
+    """Profile validate accepts a local item JSON file."""
+    profile_path = (
+        Path(__file__).parent / "fixtures" / "profiles" / "TribalGovernmentUS.yaml"
+    )
+
+    item_data = {
+        "id": "Q123",
+        "claims": {
+            "P31": [
+                {
+                    "mainsnak": {
+                        "snaktype": "value",
+                        "datatype": "wikibase-item",
+                        "datavalue": {
+                            "type": "wikibase-entityid",
+                            "value": {"id": "Q7840353"},
+                        },
+                    },
+                    "references": [
+                        {
+                            "snaks": {
+                                "P248": [
+                                    {
+                                        "snaktype": "value",
+                                        "datatype": "wikibase-item",
+                                        "datavalue": {
+                                            "type": "wikibase-entityid",
+                                            "value": {"id": "Q138391266"},
+                                        },
+                                    }
+                                ]
+                            }
+                        }
+                    ],
+                }
+            ]
+        },
+    }
+
+    item_path = tmp_path / "item.json"
+    item_path.write_text(json.dumps(item_data), encoding="utf-8")
+
+    exit_code = cli.main(
+        [
+            "--json",
+            "profile",
+            "validate",
+            "--profile",
+            str(profile_path),
+            "--item-json",
+            str(item_path),
+        ]
+    )
+
+    assert exit_code == 0
+    output = capsys.readouterr().out.strip()
+    data = json.loads(output)
+    assert data["command"] == "profile.validate"
+    assert data["ok"] is True
+
+
+def test_profile_form_schema(monkeypatch, capsys):
+    """Profile form-schema prints schema to stdout."""
+    profile_path = (
+        Path(__file__).parent / "fixtures" / "profiles" / "TribalGovernmentUS.yaml"
+    )
+
+    args = argparse.Namespace(
+        profile=str(profile_path),
+        output=None,
+        command_path="profile.form_schema",
+    )
+
+    result = cli._handle_profile_form_schema(args)
+    output = capsys.readouterr().out.strip()
+    data = json.loads(output)
+
+    assert result["ok"] is True
+    assert data["name"] == "Federally Recognized Tribe"
 
 
 def test_shex_validate_local_files(monkeypatch, capsys):

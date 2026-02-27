@@ -1,0 +1,129 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://datadistillery.org/schemas/profile.schema.json",
+  "title": "SpiritSafe YAML Profile",
+  "type": "object",
+  "required": ["name", "description", "fields"],
+  "properties": {
+    "name": {"type": "string"},
+    "description": {"type": "string"},
+    "fields": {
+      "type": "array",
+      "minItems": 1,
+      "items": {"$ref": "#/$defs/field"}
+    }
+  },
+  "$defs": {
+    "constraint": {
+      "type": "object",
+      "required": ["type"],
+      "properties": {
+        "type": {"type": "string"},
+        "description": {"type": "string"}
+      }
+    },
+    "value": {
+      "type": "object",
+      "required": ["type"],
+      "properties": {
+        "type": {"enum": ["item", "url", "string", "quantity", "time"]},
+        "fixed": {"type": ["string", "number", "integer", "null"]},
+        "label": {"type": "string"},
+        "constraints": {
+          "type": "array",
+          "items": {"$ref": "#/$defs/constraint"}
+        }
+      }
+    },
+    "choice_item": {
+      "type": "object",
+      "required": ["id", "label"],
+      "properties": {
+        "id": {"type": "string"},
+        "label": {"type": "string"}
+      }
+    },
+    "choice_list": {
+      "type": "object",
+      "required": ["source", "query"],
+      "properties": {
+        "source": {"enum": ["sparql"]},
+        "query": {"type": "string"},
+        "refresh": {"enum": ["manual", "daily", "weekly", "on_release"]},
+        "fallback_items": {
+          "type": "array",
+          "items": {"$ref": "#/$defs/choice_item"}
+        }
+      }
+    },
+    "reference_target": {
+      "type": "object",
+      "required": ["id", "wikidata_property", "type", "label"],
+      "properties": {
+        "id": {"type": "string"},
+        "wikidata_property": {"type": "string", "pattern": "^P\\d+$"},
+        "type": {"enum": ["item", "url", "string", "quantity", "time"]},
+        "label": {"type": "string"},
+        "description": {"type": "string"},
+        "value_source": {"type": "string"},
+        "allowed_items": {"$ref": "#/$defs/choice_list"}
+      }
+    },
+    "reference": {
+      "type": "object",
+      "properties": {
+        "required": {"type": "boolean"},
+        "min_count": {"type": ["integer", "null"]},
+        "validation_policy": {"enum": ["allow_existing_nonconforming", "strict"]},
+        "form_policy": {"enum": ["target_only", "show_all"]},
+        "allowed": {
+          "oneOf": [
+            {"$ref": "#/$defs/reference_target"},
+            {"type": "array", "items": {"$ref": "#/$defs/reference_target"}}
+          ]
+        },
+        "target": {"$ref": "#/$defs/reference_target"}
+      }
+    },
+    "qualifier": {
+      "type": "object",
+      "required": ["id", "label", "wikidata_property", "value"],
+      "properties": {
+        "id": {"type": "string"},
+        "label": {"type": "string"},
+        "wikidata_property": {"type": "string", "pattern": "^P\\d+$"},
+        "required": {"type": "boolean"},
+        "min_count": {"type": ["integer", "null"]},
+        "max_count": {"type": ["integer", "null"]},
+        "value": {"$ref": "#/$defs/value"}
+      }
+    },
+    "field": {
+      "type": "object",
+      "required": [
+        "id",
+        "label",
+        "wikidata_property",
+        "type",
+        "required",
+        "value"
+      ],
+      "properties": {
+        "id": {"type": "string"},
+        "label": {"type": "string"},
+        "wikidata_property": {"type": "string", "pattern": "^P\\d+$"},
+        "type": {"enum": ["statement"]},
+        "required": {"type": "boolean"},
+        "max_count": {"type": ["integer", "null"]},
+        "validation_policy": {"enum": ["allow_existing_nonconforming", "strict"]},
+        "form_policy": {"enum": ["target_only", "show_all"]},
+        "value": {"$ref": "#/$defs/value"},
+        "qualifiers": {
+          "type": "array",
+          "items": {"$ref": "#/$defs/qualifier"}
+        },
+        "references": {"$ref": "#/$defs/reference"}
+      }
+    }
+  }
+}

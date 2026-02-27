@@ -19,12 +19,15 @@ classifiers = [
     "Programming Language :: Python :: 3.12",
 ]
 packages = [{include = "gkc"}]
+include = ["gkc/profiles/schemas/*.json"]
 
 [tool.poetry.dependencies]
 python = "^3.9"
 requests = "^2.31.0"
 pyshex = "^0.8.1"
 pydantic = "^2.0.0"
+pyyaml = "^6.0.2"
+jsonschema = "^4.23.0"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.0.0"
@@ -33,6 +36,8 @@ ruff = "^0.8.0"
 black = "^25.1.0"
 mypy = "^1.13.0"
 types-requests = "^2.32.4.20260107"
+types-PyYAML = "^6.0.12.20250220"
+types-jsonschema = "^4.24.0.20250205"
 
 [tool.poetry.group.docs.dependencies]
 mkdocs = "^1.6.1"

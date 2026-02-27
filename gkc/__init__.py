@@ -57,6 +57,17 @@ from gkc.cooperage import (
 # Entity Profiles (GKC Entity Profile definitions)
 from gkc.entity_profile import GKCEntityProfile
 
+# YAML-first profiles (SpiritSafe)
+from gkc.profiles import (
+    FormSchemaGenerator,
+    ProfileDefinition,
+    ProfileLoader,
+    ProfilePydanticGenerator,
+    ProfileValidator,
+    ValidationIssue,
+    ValidationResult,
+)
+
 # Recipe (Wikidata Barrel Recipe Builder)
 from gkc.recipe import PropertyLedgerEntry, RecipeBuilder, SpecificationExtractor
 
@@ -136,6 +147,14 @@ __all__ = [
     "validate_entity_reference",
     # Entity Profiles
     "GKCEntityProfile",
+    # YAML-first profiles
+    "FormSchemaGenerator",
+    "ProfileDefinition",
+    "ProfileLoader",
+    "ProfilePydanticGenerator",
+    "ProfileValidator",
+    "ValidationIssue",
+    "ValidationResult",
     # Recipe (new names)
     "PropertyLedgerEntry",
     "RecipeBuilder",
