@@ -1,9 +1,9 @@
 """Tests for profile lookup hydration workflow."""
 
 from pathlib import Path
+from typing import Optional
 
 import pytest
-from typing import Optional
 
 import gkc
 
