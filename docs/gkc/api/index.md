@@ -17,7 +17,6 @@ GKC modules are grouped by their role in the distillery pipeline:
 | **Mash** | [mash](mash.md) | Load data from Wikidata and other sources |
 | | [mash_formatters](mash_formatters.md) | Convert templates to output formats |
 | **Barrel Schema** | cooperage | Fetch schemas and metadata from target systems |
-| | recipe | Build transformation recipes from EntitySchemas |
 | **Validation** | spirit_safe | Validate against Barrel Schemas |
 | **Transform** | bottler | Transform data into Wikidata format |
 | **Deliver** | [shipper](shipper.md) | Submit data to Wikidata |
@@ -55,18 +54,6 @@ qs_text = formatter.format(template, for_new_item=True)
 ```
 
 📖 [Mash Formatters Documentation](mash_formatters.md)
-
-### Build a Recipe from EntitySchema
-
-```python
-from gkc.recipe import RecipeBuilder
-
-builder = RecipeBuilder(eid="E502")  # EntitySchema ID
-recipe = builder.build()
-print(recipe.get_property_mappings())
-```
-
-📖 Recipe Module Documentation (coming soon)
 
 ### Validate Against EntitySchema
 
@@ -130,18 +117,6 @@ Convert templates to different output formats.
 
 **Key classes:**
 - `QSV1Formatter` - Format as QuickStatements V1
-
-### Recipe
-
-Build transformation recipes from EntitySchemas.
-
-**Key classes:**
-- `RecipeBuilder` - Generate recipes from EntitySchemas
-- `EntityCatalog` - Fetch and cache entity metadata
-- `PropertyLedgerEntry` - Property metadata container
-- `ItemLedgerEntry` - Item metadata container
-
-_Documentation coming soon_
 
 ### Cooperage
 

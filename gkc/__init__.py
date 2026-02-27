@@ -13,17 +13,14 @@ GKC uses a two-schema design to enable multi-system data distribution:
 2. **Barrel Schemas** - Target system schemas (Wikidata EntitySchemas,
    OSM tagging, etc.)
 
-Data flows: Source → Still Recipe → Unified Still Schema → Barrel Recipe
-→ Barrel Schema → Target
+Data flows: Source → Still → Unified Still Schema → Barrel Schema → Target
 
 ## Key Components
 
 - **Cooperage** - Manages Barrel Schemas from target systems
   (EntitySchemas, tagging schemes, etc.)
-- **Recipe Builder** - Generates Barrel Recipes (transformation specs)
-  from Barrel Schemas
-- **Spirit Safe** - Validates data against Barrel Schemas before bottling
-- **Bottler** - Transforms and exports data using Barrel Recipes
+- **Spirit Safe** - Validates data against profiles before processing
+- **Bottler** - Transforms and exports data using specifications
 
 See documentation at: https://datadistillery.org/
 """
@@ -67,9 +64,6 @@ from gkc.profiles import (
     ValidationIssue,
     ValidationResult,
 )
-
-# Recipe (Wikidata Barrel Recipe Builder)
-from gkc.recipe import PropertyLedgerEntry, RecipeBuilder, SpecificationExtractor
 
 # ShEx validation utilities
 from gkc.shex import ShexValidationError, ShexValidator
@@ -167,10 +161,6 @@ __all__ = [
     "ProfileValidator",
     "ValidationIssue",
     "ValidationResult",
-    # Recipe (new names)
-    "PropertyLedgerEntry",
-    "RecipeBuilder",
-    "SpecificationExtractor",
     # Sitelinks
     "SitelinkValidator",
     "check_wikipedia_page",
