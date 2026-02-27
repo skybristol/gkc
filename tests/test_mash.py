@@ -494,13 +494,6 @@ def test_wikidata_loader_load_items_empty():
     assert result == {}
 
 
-def test_wikidata_loader_fetch_descriptors_empty():
-    """Test fetching descriptors for empty list."""
-    loader = WikidataLoader()
-    result = loader.fetch_descriptors([])
-    assert result == {}
-
-
 def test_wikipedia_template_initialization():
     """Test creating a Wikipedia template."""
     template = WikipediaTemplate(

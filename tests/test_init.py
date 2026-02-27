@@ -38,10 +38,3 @@ def test_cooperage_imports():
     assert hasattr(gkc, "CooperageError")
     assert hasattr(gkc, "fetch_schema_specification")
     assert hasattr(gkc, "validate_entity_reference")
-
-
-def test_recipe_imports():
-    """Test that Recipe Builder classes are importable."""
-    assert hasattr(gkc, "RecipeBuilder")
-    assert hasattr(gkc, "PropertyLedgerEntry")
-    assert hasattr(gkc, "SpecificationExtractor")

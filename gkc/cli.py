@@ -14,7 +14,7 @@ import gkc
 from gkc.auth import AuthenticationError, OpenStreetMapAuth, WikiverseAuth
 from gkc.mash import WikidataLoader, WikipediaLoader
 from gkc.profiles import FormSchemaGenerator, ProfileLoader, ProfileValidator
-from gkc.recipe import EntityCatalog
+from gkc.sparql import fetch_entity_labels
 
 
 class CLIError(Exception):
@@ -702,7 +702,6 @@ def _handle_mash_qid(args: argparse.Namespace) -> dict[str, Any]:
 
                     if entity_ids:
                         try:
-                            catalog = EntityCatalog()
                             languages = gkc.get_languages()
                             language = (
                                 "en"
@@ -713,11 +712,9 @@ def _handle_mash_qid(args: argparse.Namespace) -> dict[str, Any]:
                                     else languages[0] if languages else "en"
                                 )
                             )
-                            results = catalog.fetch_entities(list(entity_ids))
-                            entity_labels = {
-                                eid: entry.get_label(language)
-                                for eid, entry in results.items()
-                            }
+                            entity_labels = fetch_entity_labels(
+                                list(entity_ids), languages=[language]
+                            )
                         except Exception as exc:
                             raise CLIError(
                                 f"Failed to fetch entity labels: {exc}. "
@@ -800,11 +797,10 @@ def _handle_mash_pid(args: argparse.Namespace) -> dict[str, Any]:
     try:
         loader = WikidataLoader()
 
-        # Load properties (single or batch)
-        if len(pids) == 1:
-            templates = {pids[0]: loader.load_property(pids[0])}
-        else:
-            templates = loader.load_properties(pids)
+        # Load properties individually (batch loading removed with EntityCatalog)
+        templates = {}
+        for pid in pids:
+            templates[pid] = loader.load_property(pid)
 
         # Apply filters to all templates
         for template in templates.values():

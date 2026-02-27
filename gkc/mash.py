@@ -25,7 +25,7 @@ from typing import Any, Optional, Protocol, Union
 
 import requests
 
-from gkc.recipe import EntityCatalog
+from gkc.sparql import fetch_entity_labels
 
 
 class DataTemplate(Protocol):
@@ -62,7 +62,7 @@ class DataTemplate(Protocol):
 def fetch_property_labels(
     property_ids: list[str], language: Optional[str] = None
 ) -> dict[str, str]:
-    """Fetch human-readable labels for Wikidata properties using EntityCatalog.
+    """Fetch human-readable labels for Wikidata properties using SPARQL.
 
     Args:
         property_ids: List of property IDs (e.g., ['P31', 'P21']).
@@ -85,9 +85,7 @@ def fetch_property_labels(
             language = languages
         else:
             language = languages[0] if languages else "en"
-    catalog = EntityCatalog()
-    results = catalog.fetch_entities(property_ids)
-    return {pid: entry.get_label(language) for pid, entry in results.items()}
+    return fetch_entity_labels(property_ids, languages=[language])
 
 
 def strip_entity_identifiers(entity_data: dict[str, Any]) -> dict[str, Any]:
@@ -620,20 +618,21 @@ class WikidataEntitySchemaTemplate:
     def to_gkc_entity_profile(self) -> dict[str, Any]:
         """Convert to GKC Entity Profile format.
 
-        Uses the existing RecipeBuilder logic to generate a profile from
-        the EntitySchema's ShEx specification.
-
         Returns:
             Dict representing the GKC Entity Profile.
 
-        Plain meaning: Transform into a GKC Entity Profile.
-        """
-        from gkc.recipe import RecipeBuilder
+        Raises:
+            NotImplementedError: EntitySchema to Entity Profile transformation
+                is not yet supported. This functionality will be restored
+                when the new Entity Profile architecture is finalized.
 
-        builder = RecipeBuilder(eid=self.eid)
-        builder.schema_text = self.schema_text
-        builder.load_specification()
-        return builder.generate_gkc_entity_profile()
+        Plain meaning: Transform into a GKC Entity Profile (not yet supported).
+        """
+        raise NotImplementedError(
+            "EntitySchema to GKC Entity Profile transformation is not yet supported. "
+            "This functionality will be restored when the new Entity Profile "
+            "architecture is finalized."
+        )
 
 
 class WikidataLoader:
@@ -770,44 +769,6 @@ class WikidataLoader:
         entity_data = self.load_entity_data(pid)
         return self._build_property_template(pid, entity_data)
 
-    def load_properties(self, pids: list[str]) -> dict[str, WikidataPropertyTemplate]:
-        """Load multiple Wikidata properties in batch using SPARQL.
-
-        Uses SPARQL queries to efficiently fetch property metadata including
-        labels, descriptions, datatype, and formatter URLs.
-
-        Args:
-            pids: List of Wikidata property IDs (e.g., ['P31', 'P279']).
-
-        Returns:
-            Dict mapping PIDs to WikidataPropertyTemplates.
-
-        Raises:
-            RuntimeError: If the SPARQL query fails.
-
-        Plain meaning: Load multiple property definitions efficiently.
-
-        Example:
-            >>> loader = WikidataLoader()
-            >>> props = loader.load_properties(["P31", "P279", "P21"])
-            >>> print(len(props))
-            3
-        """
-        if not pids:
-            return {}
-
-        # Use EntityCatalog for efficient SPARQL-based batch fetching
-        catalog = EntityCatalog(user_agent=self.user_agent, fetch_property_details=True)
-        results = catalog.fetch_entities(pids)
-
-        templates: dict[str, WikidataPropertyTemplate] = {}
-        for pid, entry in results.items():
-            if pid.startswith("P"):
-                # Build template from catalog entry
-                templates[pid] = self._build_property_template_from_catalog(pid, entry)
-
-        return templates
-
     def load_entity_schema(self, eid: str) -> WikidataEntitySchemaTemplate:
         """Load a Wikidata EntitySchema and return it as a template.
 
@@ -831,38 +792,6 @@ class WikidataLoader:
 
         entity_data = fetch_entity_schema_json(eid, user_agent=self.user_agent)
         return self._build_entity_schema_template(eid, entity_data)
-
-    def fetch_descriptors(
-        self, entity_ids: list[str]
-    ) -> dict[str, dict[str, Union[str, dict[str, str]]]]:
-        """Fetch basic labels and descriptions for a mix of items and properties.
-
-        This is a lightweight convenience method for getting just labels and
-        descriptions without full entity data. Uses SPARQL for efficiency.
-
-        Args:
-            entity_ids: List of entity IDs (e.g., ['Q5', 'P31', 'Q30']).
-
-        Returns:
-            Dict mapping entity IDs to dicts with `labels` and `descriptions`
-            keys, each containing language->value mappings.
-
-        Plain meaning: Quickly look up names and descriptions for any entities.
-        """
-        if not entity_ids:
-            return {}
-
-        catalog = EntityCatalog(user_agent=self.user_agent)
-        results = catalog.fetch_entities(entity_ids)
-
-        descriptors: dict[str, dict[str, Union[str, dict[str, str]]]] = {}
-        for eid, entry in results.items():
-            descriptors[eid] = {
-                "labels": entry.labels,
-                "descriptions": entry.descriptions,
-            }
-
-        return descriptors
 
     def _fetch_entities_batch(self, entity_ids: list[str]) -> dict[str, dict[str, Any]]:
         """Fetch multiple entities using wbgetentities API.
@@ -1109,64 +1038,6 @@ class WikidataLoader:
             datatype=datatype,
             formatter_url=formatter_url,
             entity_data=copy.deepcopy(entity_data),
-        )
-
-    def _build_property_template_from_catalog(
-        self, pid: str, entry: Any
-    ) -> WikidataPropertyTemplate:
-        """Build a WikidataPropertyTemplate from an EntityCatalog entry.
-
-        Plain meaning: Convert catalog data into our property template format.
-        """
-        from gkc.recipe import PropertyLedgerEntry
-
-        if not isinstance(entry, PropertyLedgerEntry):
-            raise ValueError(
-                f"Expected PropertyLedgerEntry for {pid}, got {type(entry)}"
-            )
-
-        # Build minimal entity_data structure
-        entity_data = {
-            "id": pid,
-            "type": "property",
-            "datatype": entry.datatype,
-            "labels": {
-                lang: {"language": lang, "value": label}
-                for lang, label in entry.labels.items()
-            },
-            "descriptions": {
-                lang: {"language": lang, "value": desc}
-                for lang, desc in entry.descriptions.items()
-            },
-            "aliases": {
-                lang: [{"language": lang, "value": alias} for alias in alias_list]
-                for lang, alias_list in entry.aliases.items()
-            },
-        }
-
-        # Add formatter URL if present
-        if entry.formatter_url:
-            entity_data["claims"] = {
-                "P1630": [
-                    {
-                        "mainsnak": {
-                            "datavalue": {
-                                "type": "string",
-                                "value": entry.formatter_url,
-                            }
-                        }
-                    }
-                ]
-            }
-
-        return WikidataPropertyTemplate(
-            pid=pid,
-            labels=entry.labels,
-            descriptions=entry.descriptions,
-            aliases=entry.aliases,
-            datatype=entry.datatype,
-            formatter_url=entry.formatter_url,
-            entity_data=entity_data,
         )
 
     def _build_entity_schema_template(

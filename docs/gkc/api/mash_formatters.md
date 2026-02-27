@@ -97,10 +97,8 @@ for claim in template.claims:
         entity_ids.add(claim.value)
 
 # Fetch labels for comments
-from gkc.recipe import EntityCatalog
-catalog = EntityCatalog()
-results = catalog.fetch_entities(list(entity_ids))
-entity_labels = {eid: entry.get_label("en") for eid, entry in results.items()}
+from gkc.sparql import fetch_entity_labels
+entity_labels = fetch_entity_labels(list(entity_ids), languages=["en"])
 
 # Format with inline comments
 formatter = QSV1Formatter(entity_labels=entity_labels)
@@ -156,7 +154,7 @@ qs_text = formatter.format(template, for_new_item=True)
 ```python
 from gkc.mash import WikidataLoader, fetch_property_labels
 from gkc.mash_formatters import QSV1Formatter
-from gkc.recipe import EntityCatalog
+from gkc.sparql import fetch_entity_labels
 
 # Load template
 loader = WikidataLoader()
@@ -173,9 +171,7 @@ for claim in template.claims:
     if claim.value.startswith("Q"):
         entity_ids.add(claim.value)
 
-catalog = EntityCatalog()
-results = catalog.fetch_entities(list(entity_ids))
-entity_labels = {eid: entry.get_label("en") for eid, entry in results.items()}
+entity_labels = fetch_entity_labels(list(entity_ids), languages=["en"])
 
 # Format with all options
 formatter = QSV1Formatter(

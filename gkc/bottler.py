@@ -10,10 +10,7 @@ Plain meaning: Convert transformed data into Wikidata item structure.
 """
 
 import math
-from typing import TYPE_CHECKING, Any, Optional, Union
-
-if TYPE_CHECKING:
-    from gkc.recipe import RecipeBuilder
+from typing import Any, Optional, Union
 
 
 class DataTypeTransformer:
@@ -289,34 +286,6 @@ class Distillate:
 
         with open(file_path) as f:
             config = json.load(f)
-        return cls(config)
-
-    @classmethod
-    def from_recipe(
-        cls, builder: "RecipeBuilder", entity_type: Optional[str] = None
-    ) -> "Distillate":
-        """
-        Create a Distillate directly from a RecipeBuilder.
-
-        Args:
-            builder: RecipeBuilder instance (can be already loaded
-                or will load specification)
-            entity_type: Optional entity type QID for the distillate
-
-        Returns:
-            Distillate instance ready to transform data
-
-        Example:
-            >>> from gkc import RecipeBuilder, Distillate
-            >>> builder = RecipeBuilder(eid="E502")
-            >>> distillate = Distillate.from_recipe(
-            ...     builder, entity_type="Q7840353"
-            ... )
-            >>> # Now distillate is ready to process data
-        """
-        # Import here to avoid circular dependency
-
-        config = builder.finalize_recipe(entity_type=entity_type)
         return cls(config)
 
     def _extract_inline_named_elements(self):

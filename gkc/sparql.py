@@ -446,3 +446,81 @@ def paginate_query(
         offset += page_size
 
     return all_results
+
+
+def fetch_entity_labels(
+    entity_ids: list[str],
+    languages: Optional[list[str]] = None,
+    endpoint: str = DEFAULT_WIKIDATA_ENDPOINT,
+) -> dict[str, str]:
+    """
+    Fetch human-readable labels for Wikidata entities using SPARQL.
+
+    This utility efficiently fetches labels for multiple entities in a single
+    SPARQL query, supporting language filtering. Results for each entity ID
+    are merged using the first available language preference.
+
+    Args:
+        entity_ids: List of entity IDs (e.g., ['P31', 'Q5', 'Q7840353'])
+        languages: Optional list of language codes to fetch (in order of preference)
+            If None or empty list, fetches all available languages.
+        endpoint: SPARQL endpoint URL (default: Wikidata)
+
+    Returns:
+        Dictionary mapping entity IDs to their labels. If no label is found
+        for an entity in the requested languages, it's omitted from the result.
+
+    Raises:
+        SPARQLError: If the SPARQL query fails
+
+    Example:
+        >>> labels = fetch_entity_labels(
+        ...     ['P31', 'P21', 'Q5'],
+        ...     languages=['en', 'es']
+        ... )
+        >>> print(labels['P31'])  # "instance of"
+        >>> print(labels['Q5'])   # "human"
+
+    Plain meaning: Look up readable names for Wikidata entities efficiently.
+    """
+    if not entity_ids:
+        return {}
+
+    # Build language filter
+    language_filter = ""
+    if languages:
+        language_list = ", ".join([f'"{lang}"' for lang in languages])
+        language_filter = f"FILTER(?lang IN ({language_list}))"
+
+    # Build entity IRI list
+    entity_iris = " ".join([f"wd:{eid}" for eid in entity_ids])
+
+    # Build SPARQL query
+    query = f"""
+    PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+
+    SELECT DISTINCT ?entityId ?label ?lang
+    WHERE {{
+        VALUES ?entityId {{ {entity_iris} }}
+        ?entityId rdfs:label ?label .
+        BIND(LANG(?label) AS ?lang)
+        {language_filter}
+    }}
+    ORDER BY ?entityId ?lang
+    """
+
+    # Execute query
+    executor = SPARQLQuery(endpoint=endpoint)
+    results = executor.to_dict_list(query)
+
+    # Build result dict, taking first label per entity
+    labels_dict: dict[str, str] = {}
+    for row in results:
+        entity_iri = row.get("entityId", "")
+        entity_id = entity_iri.split("/")[-1] if entity_iri else None
+        label = row.get("label", "")
+
+        if entity_id and label and entity_id not in labels_dict:
+            labels_dict[entity_id] = label
+
+    return labels_dict
