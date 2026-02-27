@@ -13,6 +13,7 @@ from typing import Any, Optional
 import gkc
 from gkc.auth import AuthenticationError, OpenStreetMapAuth, WikiverseAuth
 from gkc.mash import WikidataLoader, WikipediaLoader
+from gkc.profiles import FormSchemaGenerator, ProfileLoader, ProfileValidator
 from gkc.recipe import EntityCatalog
 
 
@@ -325,6 +326,56 @@ def _build_parser() -> argparse.ArgumentParser:
     shex_validate.set_defaults(
         handler=_handle_shex_validate,
         command_path="shex.validate",
+    )
+
+    # Profile commands
+    profile_parser = subparsers.add_parser("profile", help="YAML profile utilities")
+    profile_subparsers = profile_parser.add_subparsers(dest="profile_command")
+
+    profile_validate = profile_subparsers.add_parser(
+        "validate", help="Validate a Wikidata item against a YAML profile"
+    )
+    profile_validate.add_argument(
+        "--profile",
+        required=True,
+        help="Path to YAML profile definition",
+    )
+    profile_validate.add_argument(
+        "--qid",
+        help="Wikidata item ID to fetch and validate",
+    )
+    profile_validate.add_argument(
+        "--item-json",
+        help="Path to Wikidata item JSON file",
+    )
+    profile_validate.add_argument(
+        "--policy",
+        choices=["strict", "lenient"],
+        default="lenient",
+        help="Validation policy (default: lenient)",
+    )
+    profile_validate.set_defaults(
+        handler=_handle_profile_validate,
+        command_path="profile.validate",
+    )
+
+    profile_form = profile_subparsers.add_parser(
+        "form-schema", help="Generate a form schema from a YAML profile"
+    )
+    profile_form.add_argument(
+        "--profile",
+        required=True,
+        help="Path to YAML profile definition",
+    )
+    profile_form.add_argument(
+        "-o",
+        "--output",
+        type=str,
+        help="Write output to file instead of stdout",
+    )
+    profile_form.set_defaults(
+        handler=_handle_profile_form_schema,
+        command_path="profile.form_schema",
     )
 
     return parser
@@ -971,6 +1022,72 @@ def _extract_validation_error_summary(results: Any) -> str:
             return first_line
 
     return "Validation failed (see --verbose for details)"
+
+
+def _handle_profile_validate(args: argparse.Namespace) -> dict[str, Any]:
+    """Validate a Wikidata item against a YAML profile."""
+    if not args.qid and not args.item_json:
+        raise CLIError("Provide either --qid or --item-json")
+    if args.qid and args.item_json:
+        raise CLIError("Use only one of --qid or --item-json")
+
+    loader = ProfileLoader()
+    profile = loader.load_from_file(args.profile)
+
+    if args.qid:
+        item = WikidataLoader().load_item(args.qid)
+        entity_data = item.to_dict()
+        source = args.qid
+    else:
+        with open(args.item_json, "r") as f:
+            entity_data = json.load(f)
+        source = args.item_json
+
+    validator = ProfileValidator(profile)
+    result = validator.validate_item(entity_data, policy=args.policy)
+
+    details = {
+        "profile": profile.name,
+        "policy": args.policy,
+        "source": source,
+        "errors": [issue.model_dump() for issue in result.errors],
+        "warnings": [issue.model_dump() for issue in result.warnings],
+    }
+
+    if result.ok:
+        message = "✓ Profile validation passed"
+    else:
+        message = "✗ Profile validation failed"
+
+    return {
+        "command": args.command_path,
+        "ok": result.ok,
+        "message": message,
+        "details": details,
+    }
+
+
+def _handle_profile_form_schema(args: argparse.Namespace) -> dict[str, Any]:
+    """Generate form schema from a YAML profile."""
+    loader = ProfileLoader()
+    profile = loader.load_from_file(args.profile)
+
+    schema = FormSchemaGenerator(profile).build_schema()
+
+    if args.output:
+        with open(args.output, "w") as f:
+            json.dump(schema, f, indent=2)
+        message = f"Wrote form schema to {args.output}"
+    else:
+        print(json.dumps(schema))
+        message = "Form schema generated"
+
+    return {
+        "command": args.command_path,
+        "ok": True,
+        "message": message,
+        "details": {"profile": profile.name, "output": args.output or "stdout"},
+    }
 
 
 def _emit_output(output: dict[str, Any], json_output: bool, verbose: bool) -> None:

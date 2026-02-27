@@ -58,6 +58,7 @@ nav:
       - Authentication: gkc/api/auth.md
       - Mash: gkc/api/mash.md
       - Mash Formatters: gkc/api/mash_formatters.md
+      - Profiles: gkc/api/profiles.md
       - ShEx: gkc/api/shex.md
       - Shipper: gkc/api/shipper.md
       - SPARQL: gkc/api/sparql.md
@@ -65,6 +66,7 @@ nav:
       - Overview: gkc/cli/index.md
       - Authentication: gkc/cli/auth.md
       - Mash: gkc/cli/mash.md
+      - Profiles: gkc/cli/profiles.md
       - ShEx: gkc/cli/shex.md
     - Utilities and Tools:
       - Utilities: gkc/utilities.md

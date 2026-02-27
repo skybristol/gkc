@@ -24,6 +24,7 @@ GKC modules are grouped by their role in the distillery pipeline:
 | **Utilities** | auth | Authentication for Wikidata and OSM |
 | | sitelinks | Manage Wikipedia sitelinks |
 | | [sparql](sparql.md) | Query Wikidata with SPARQL |
+| **Profiles** | [profiles](profiles.md) | YAML profile loading and validation |
 
 ---
 
@@ -215,6 +216,15 @@ Query Wikidata and other SPARQL endpoints.
 
 **Key functions:**
 - `execute_sparql()` - Run raw SPARQL queries
+
+### [Profiles](profiles.md)
+
+YAML-first profiles for validation and form schema generation.
+
+**Key classes:**
+- `ProfileLoader` - Load YAML profiles
+- `ProfileValidator` - Validate Wikidata items
+- `FormSchemaGenerator` - Build form schemas
 
 ---
 
