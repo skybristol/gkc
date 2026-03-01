@@ -1,0 +1,3369 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Data Distillery - A framework for data distillation toward the Global Knowledge Commons">
+      
+      
+      
+        <link rel="canonical" href="https://datadistillery.org/SpiritSafe/">
+      
+      
+        <link rel="prev" href="../tribes/">
+      
+      
+        <link rel="next" href="../architecture/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.1">
+    
+    
+      
+        <title>SpiritSafe - Data Distillery</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.484c7ddc.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/_mkdocstrings.css">
+    
+      <link rel="stylesheet" href="../stylesheets/extra.css">
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    <body dir="ltr">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#spiritsafe-the-entity-profile-registry-for-the-global-knowledge-commons" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="Data Distillery" class="md-header__button md-logo" aria-label="Data Distillery" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            Data Distillery
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              SpiritSafe
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/skybristol/gkc" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    skybristol/gkc
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="Data Distillery" class="md-nav__button md-logo" aria-label="Data Distillery" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    Data Distillery
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/skybristol/gkc" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    skybristol/gkc
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Data Curation Narratives
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Data Curation Narratives
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../tribes/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Tribal Governments
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SpiritSafe
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SpiritSafe
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#vision-a-better-alternative-to-wikidata-entity-schemas" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Vision: A Better Alternative to Wikidata Entity Schemas
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Vision: A Better Alternative to Wikidata Entity Schemas">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#the-problem" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The Problem
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-spiritsafe-solution" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The SpiritSafe Solution
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#architecture-spiritsafe-in-the-data-distillery" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Architecture: SpiritSafe in the Data Distillery
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Architecture: SpiritSafe in the Data Distillery">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#the-data-distillery-metaphor" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The Data Distillery Metaphor
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#spiritsafes-role" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        SpiritSafe's Role
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#directory-structure-profiles-as-registry-entries" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Directory Structure: Profiles as Registry Entries
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Directory Structure: Profiles as Registry Entries">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#rationale-for-per-profile-organization" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Rationale for Per-Profile Organization
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#structure" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Structure
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#directory-descriptions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Directory Descriptions
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Directory Descriptions">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#profiles" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        profiles/
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#queries" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        queries/
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#cache" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        cache/
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#github" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        .github/
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#profile-metadata-registry-documentation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Profile Metadata: Registry Documentation
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Profile Metadata: Registry Documentation">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#metadata-fields" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Metadata Fields
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#profile-documentation-readme-and-changelog" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Profile Documentation: README and CHANGELOG
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Profile Documentation: README and CHANGELOG">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#readmemd" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        README.md
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#changelogmd" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        CHANGELOG.md
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#branch-strategy-and-pr-process" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Branch Strategy and PR Process
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Branch Strategy and PR Process">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#branch-naming" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Branch Naming
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#contribution-workflow" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Contribution Workflow
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#cicd-pipeline-validation-and-hydration" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        CI/CD Pipeline: Validation and Hydration
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="CI/CD Pipeline: Validation and Hydration">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#workflow-1-validate-profileyml-on-pr" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Workflow 1: validate-profile.yml (On PR)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#workflow-2-hydrate-cachesyml-on-pr-manual" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Workflow 2: hydrate-caches.yml (On PR + Manual)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#workflow-3-publish-releaseyml-on-main-merge" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Workflow 3: publish-release.yml (On main merge)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#integration-with-gkc-the-spirit_safe-module" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Integration with GKC: The spirit_safe Module
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Integration with GKC: The spirit_safe Module">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#profile-loading" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Profile Loading
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#choice-list-hydration" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Choice List Hydration
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#configuration" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Configuration
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#source-of-truth-status" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Source-of-Truth Status
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#theoretical-design-notes-for-infrastructure-development" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Theoretical Design Notes for Infrastructure Development
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Theoretical Design Notes for Infrastructure Development">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#1-automated-cache-refresh-pipeline" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. Automated Cache Refresh Pipeline
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2-profile-versioning-and-backward-compatibility" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. Profile Versioning and Backward Compatibility
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#3-profile-discoverability-and-registry-index" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. Profile Discoverability and Registry Index
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#4-profile-lifecycle-management" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4. Profile Lifecycle Management
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#community-and-governance" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Community and Governance
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Community and Governance">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#who-can-contribute" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Who Can Contribute?
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#decision-making" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Decision Making
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#reporting-issues-or-suggestions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Reporting Issues or Suggestions
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#conclusion" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Conclusion
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Architecture
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../architecture/profile-loading/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Profile Loading
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../architecture/spiritsafe-infrastructure/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SpiritSafe Infrastructure
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../architecture/validation-architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Validation Architecture
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    GKC Documentation
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    GKC Documentation
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../gkc/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../gkc/background/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Background
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../gkc/profiles/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Entity Profiles
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_5_4" id="__nav_5_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Getting Started
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Getting Started
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../gkc/setup/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Setup and Orientation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../gkc/authentication/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Authentication
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5_5" id="__nav_5_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Data Distillery Workflow
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Data Distillery Workflow
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../gkc/shipping/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Shipping
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_6" >
+        
+          
+          <label class="md-nav__link" for="__nav_5_6" id="__nav_5_6_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API Reference
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5_6">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    API Reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../gkc/api/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../gkc/api/auth/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Authentication
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../gkc/api/mash/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Mash
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../gkc/api/mash_formatters/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Mash Formatters
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../gkc/api/profiles/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Profiles
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../gkc/api/spirit_safe/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SpiritSafe
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../gkc/api/shex/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ShEx
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../gkc/api/shipper/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Shipper
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../gkc/api/sparql/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SPARQL
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_7" >
+        
+          
+          <label class="md-nav__link" for="__nav_5_7" id="__nav_5_7_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Command Line Interface
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_7_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5_7">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Command Line Interface
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../gkc/cli/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../gkc/cli/auth/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Authentication
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../gkc/cli/mash/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Mash
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../gkc/cli/profiles/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Profiles
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../gkc/cli/shex/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ShEx
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_8" >
+        
+          
+          <label class="md-nav__link" for="__nav_5_8" id="__nav_5_8_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Utilities and Tools
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_8_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5_8">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Utilities and Tools
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../gkc/utilities/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Utilities
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_9" >
+        
+          
+          <label class="md-nav__link" for="__nav_5_9" id="__nav_5_9_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Development
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_9_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5_9">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Development
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../gkc/CI_CD/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CI/CD
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../gkc/RELEASE/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Release Process
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#vision-a-better-alternative-to-wikidata-entity-schemas" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Vision: A Better Alternative to Wikidata Entity Schemas
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Vision: A Better Alternative to Wikidata Entity Schemas">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#the-problem" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The Problem
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-spiritsafe-solution" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The SpiritSafe Solution
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#architecture-spiritsafe-in-the-data-distillery" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Architecture: SpiritSafe in the Data Distillery
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Architecture: SpiritSafe in the Data Distillery">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#the-data-distillery-metaphor" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The Data Distillery Metaphor
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#spiritsafes-role" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        SpiritSafe's Role
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#directory-structure-profiles-as-registry-entries" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Directory Structure: Profiles as Registry Entries
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Directory Structure: Profiles as Registry Entries">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#rationale-for-per-profile-organization" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Rationale for Per-Profile Organization
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#structure" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Structure
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#directory-descriptions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Directory Descriptions
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Directory Descriptions">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#profiles" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        profiles/
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#queries" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        queries/
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#cache" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        cache/
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#github" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        .github/
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#profile-metadata-registry-documentation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Profile Metadata: Registry Documentation
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Profile Metadata: Registry Documentation">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#metadata-fields" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Metadata Fields
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#profile-documentation-readme-and-changelog" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Profile Documentation: README and CHANGELOG
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Profile Documentation: README and CHANGELOG">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#readmemd" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        README.md
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#changelogmd" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        CHANGELOG.md
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#branch-strategy-and-pr-process" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Branch Strategy and PR Process
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Branch Strategy and PR Process">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#branch-naming" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Branch Naming
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#contribution-workflow" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Contribution Workflow
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#cicd-pipeline-validation-and-hydration" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        CI/CD Pipeline: Validation and Hydration
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="CI/CD Pipeline: Validation and Hydration">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#workflow-1-validate-profileyml-on-pr" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Workflow 1: validate-profile.yml (On PR)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#workflow-2-hydrate-cachesyml-on-pr-manual" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Workflow 2: hydrate-caches.yml (On PR + Manual)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#workflow-3-publish-releaseyml-on-main-merge" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Workflow 3: publish-release.yml (On main merge)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#integration-with-gkc-the-spirit_safe-module" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Integration with GKC: The spirit_safe Module
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Integration with GKC: The spirit_safe Module">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#profile-loading" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Profile Loading
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#choice-list-hydration" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Choice List Hydration
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#configuration" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Configuration
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#source-of-truth-status" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Source-of-Truth Status
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#theoretical-design-notes-for-infrastructure-development" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Theoretical Design Notes for Infrastructure Development
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Theoretical Design Notes for Infrastructure Development">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#1-automated-cache-refresh-pipeline" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. Automated Cache Refresh Pipeline
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2-profile-versioning-and-backward-compatibility" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. Profile Versioning and Backward Compatibility
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#3-profile-discoverability-and-registry-index" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. Profile Discoverability and Registry Index
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#4-profile-lifecycle-management" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4. Profile Lifecycle Management
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#community-and-governance" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Community and Governance
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Community and Governance">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#who-can-contribute" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Who Can Contribute?
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#decision-making" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Decision Making
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#reporting-issues-or-suggestions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Reporting Issues or Suggestions
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#conclusion" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Conclusion
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="spiritsafe-the-entity-profile-registry-for-the-global-knowledge-commons">SpiritSafe: The Entity Profile Registry for the Global Knowledge Commons</h1>
+<p><strong>Purpose</strong>: A comprehensive guide to understanding, contributing to, and maintaining the SpiritSafe registry—the centralized repository of GKC Entity Profiles that define how entities are structured, validated, and transformed across the Global Knowledge Commons.</p>
+<hr />
+<h2 id="vision-a-better-alternative-to-wikidata-entity-schemas">Vision: A Better Alternative to Wikidata Entity Schemas</h2>
+<h3 id="the-problem">The Problem</h3>
+<p>Wikidata's EntitySchema (ShEx) system, while conceptually sound, has struggled to gain adoption and provide the operational clarity needed for profile management. Profiles are created in isolation, versioning is implicit, community contribution processes are unclear, and there's no unified registry that says "here are all the entity types the community understands and maintains."</p>
+<h3 id="the-spiritsafe-solution">The SpiritSafe Solution</h3>
+<p>SpiritSafe reimagines the entity profile as a <strong>registry entry</strong>—a version-controlled, community-maintained package that brings together:</p>
+<ul>
+<li><strong>Profile Definition</strong> (YAML)—The canonical structure of an entity type</li>
+<li><strong>Controlled Vocabularies</strong> (SPARQL queries)—Definitive lists of allowed values for entity properties</li>
+<li><strong>Metadata &amp; Documentation</strong> (README, CHANGELOG, version history)—Clarity on purpose, authorship, and evolution</li>
+<li><strong>Governance</strong> (PR review, human curation, CI validation)—Trust and quality assurance</li>
+</ul>
+<p><strong>Metaphor</strong>: In a traditional distillery, the <strong>SpiritSafe</strong> is a locked cabinet where the master distiller inspects and approves each batch of spirit before it moves to barrel aging or bottling. Similarly, SpiritSafe is where entity profiles are registered, reviewed, tested, and maintained as a community asset.</p>
+<p><strong>Key Innovation</strong>: By treating profiles as registry entries with explicit versioning, documentation, and governance, we make entity schema management transparent, auditable, and community-driven—solving the adoption and clarity problems that have plagued EntitySchema.</p>
+<hr />
+<h2 id="architecture-spiritsafe-in-the-data-distillery">Architecture: SpiritSafe in the Data Distillery</h2>
+<h3 id="the-data-distillery-metaphor">The Data Distillery Metaphor</h3>
+<p>The <strong>Global Knowledge Commons (GKC)</strong> architecture uses whiskey distilling as its organizational metaphor:</p>
+<ul>
+<li><strong>SpiritSafe</strong> — Registry of entity profiles (this document)</li>
+<li><strong>Entity Profiles</strong> — The spirit (core product): YAML definitions of entity structure</li>
+<li><strong>Cooperage</strong> — Code that shapes and prepares data (validation, coercion, transformation)</li>
+<li><strong>Bottler</strong> — Final packages and exports (Wikidata JSON, Commons uploads, OSM relations)</li>
+<li><strong>Shipper</strong> — Delivery to target platforms (Wikidata API, Commons, OSM)</li>
+</ul>
+<h3 id="spiritsafes-role">SpiritSafe's Role</h3>
+<p>SpiritSafe is the <strong>registry layer</strong> that:</p>
+<ol>
+<li><strong>Centralizes</strong> entity profiles that curators and developers need</li>
+<li><strong>Maintains</strong> definition, versioning, and history of each entity type</li>
+<li><strong>Provides</strong> controlled vocabularies (SPARQL-driven choice lists) used by profiles</li>
+<li><strong>Enables</strong> community contribution under clear governance</li>
+<li><strong>Documents</strong> each entity type's purpose, structure, and authorship</li>
+<li><strong>Serves</strong> as the single source of truth for profile definitions in GKC workflows</li>
+</ol>
+<p>The <strong>gkc</strong> Python package fetches profiles and controlled vocabularies from SpiritSafe, validates them, and uses them to generate wizards, validators, and export logic. The <code>gkc.spirit_safe</code> module is the execution layer that loads profiles, hydrates choice lists, manages caches, and provides configuration for profile sources (GitHub or local).</p>
+<hr />
+<h2 id="directory-structure-profiles-as-registry-entries">Directory Structure: Profiles as Registry Entries</h2>
+<h3 id="rationale-for-per-profile-organization">Rationale for Per-Profile Organization</h3>
+<p>Profiles are organized as <strong>self-contained packages</strong> rather than flat lists. This approach:</p>
+<ul>
+<li><strong>Isolates changes</strong>: Modifications to one profile don't affect others</li>
+<li><strong>Clarifies ownership</strong>: Each profile has explicit authorship and responsibility</li>
+<li><strong>Enables clear versioning</strong>: Profile version history is tracked together with the profile</li>
+<li><strong>Simplifies PR review</strong>: Reviewers examine a specific profile package</li>
+<li><strong>Supports curation</strong>: Metadata (README, CHANGELOG) lives with the profile</li>
+<li><strong>Scales</strong>: Adding new profiles doesn't require structural changes</li>
+</ul>
+<h3 id="structure">Structure</h3>
+<div class="highlight"><pre><span></span><code>SpiritSafe/
+├── README.md                           # Registry overview and contribution guide
+├── profiles/                           # All registered entity profiles
+│   ├── TribalGovernmentUS/
+│   │   ├── profile.yaml               # YAML profile definition
+│   │   ├── metadata.yaml              # Profile metadata (version, status, authors)
+│   │   ├── README.md                  # Profile documentation and use cases
+│   │   ├── CHANGELOG.md               # Version history and change log
+│   │   └── queries/                   # SPARQL queries for this profile
+│   │       ├── tribal-recognition-references.sparql
+│   │       └── tribal-government-offices.sparql
+│   │
+│   ├── OfficeHeldByHeadOfState/
+│   │   ├── profile.yaml
+│   │   ├── metadata.yaml
+│   │   ├── README.md
+│   │   ├── CHANGELOG.md
+│   │   └── queries/
+│   │       ├── government-office-classifications.sparql
+│   │       └── head-of-state-government-types.sparql
+│   │
+│   └── [additional profiles...]
+│
+├── queries/                            # Shared/common SPARQL queries
+│   ├── wikidata-items-by-type.sparql
+│   └── [other shared queries...]
+│
+├── cache/                              # Cached SPARQL results
+│   └── [managed by hydration process]
+│
+└── .github/
+    ├── workflows/
+    │   ├── validate-profile.yml       # Validate profile on PR
+    │   ├── hydrate-caches.yml         # Refresh choice lists
+    │   └── publish-release.yml        # Tag and release on merge to main
+    └── CONTRIBUTION.md                 # Community contribution guidelines
+</code></pre></div>
+<h3 id="directory-descriptions">Directory Descriptions</h3>
+<h4 id="profiles"><code>profiles/</code></h4>
+<p>Registry of all entity profile packages. Each subdirectory represents one entity type and contains:</p>
+<ul>
+<li><strong><code>profile.yaml</code></strong> — The GKC Entity Profile definition (canonical structure)</li>
+<li><strong><code>metadata.yaml</code></strong> — Profile metadata (see below)</li>
+<li><strong><code>README.md</code></strong> — Human-readable documentation of the entity type, use cases, and authorship</li>
+<li><strong><code>CHANGELOG.md</code></strong> — Version history with dates and change descriptions</li>
+<li><strong><code>queries/</code></strong> — SPARQL queries that generate controlled vocabularies for this profile's choice lists (optional, only if profile has SPARQL-driven allowed-item lists)</li>
+</ul>
+<h4 id="queries"><code>queries/</code></h4>
+<p>Shared SPARQL queries used across multiple profiles or commonly referenced. Individual profile queries live in <code>profiles/[name]/queries/</code>.</p>
+<h4 id="cache"><code>cache/</code></h4>
+<p>Cached results from SPARQL query hydration. Managed by CI workflow (see below). Structure mirrors the hierarchy for organization:</p>
+<div class="highlight"><pre><span></span><code>cache/
+├── profiles/
+│   ├── TribalGovernmentUS/
+│   │   ├── tribal-recognition-references.json
+│   │   └── tribal-government-offices.json
+│   └── [...]
+└── queries/
+    ├── wikidata-items-by-type.json
+    └── [...]
+</code></pre></div>
+<h4 id="github"><code>.github/</code></h4>
+<p>GitHub workflows and contribution guidelines for the registry.</p>
+<hr />
+<h2 id="profile-metadata-registry-documentation">Profile Metadata: Registry Documentation</h2>
+<p>Each profile includes a <code>metadata.yaml</code> file that captures essential information for registry management and profile discovery:</p>
+<div class="highlight"><pre><span></span><code><span class="c1"># TribalGovernmentUS/metadata.yaml</span>
+
+<span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Federally Recognized Tribe</span>
+<span class="nt">description</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">&gt;</span>
+<span class="w">  </span><span class="no">Canonical form for representing a federally recognized Native American tribe</span>
+<span class="w">  </span><span class="no">in the United States. Based on Wikidata EntitySchema E502 concepts but extended</span>
+<span class="w">  </span><span class="no">with additional properties and enhanced validation.</span>
+
+<span class="nt">version</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">1.0.0</span><span class="w">                          </span><span class="c1"># Semantic versioning</span>
+<span class="nt">status</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">stable</span><span class="w">                          </span><span class="c1"># stable | beta | deprecated</span>
+<span class="nt">published_date</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">2026-02-15</span>
+
+<span class="nt">authors</span><span class="p">:</span>
+<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Sky Bristol</span>
+<span class="w">    </span><span class="nt">contact</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">sky@example.org</span>
+<span class="w">    </span><span class="nt">role</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">primary</span>
+
+<span class="nt">maintainers</span><span class="p">:</span>
+<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Sky Bristol</span>
+<span class="w">    </span><span class="nt">contact</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">sky@example.org</span>
+
+<span class="nt">source_references</span><span class="p">:</span>
+<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Wikidata EntitySchema E502</span>
+<span class="w">    </span><span class="nt">url</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">https://www.wikidata.org/wiki/EntitySchema:E502</span>
+<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">United States Bureau of Indian Affairs</span>
+<span class="w">    </span><span class="nt">url</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">https://www.bia.gov/</span>
+
+<span class="nt">related_profiles</span><span class="p">:</span>
+<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">OfficeHeldByHeadOfState</span><span class="w">  </span><span class="c1"># Profiles related to hierarchies/governance</span>
+<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">GovernmentAgency</span>
+
+<span class="nt">community_feedback</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">email</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">profiles@example.org</span>
+<span class="w">  </span><span class="nt">issue_tracker</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">https://github.com/skybristol/SpiritSafe/issues</span>
+
+<span class="c1"># Profile capabilities summary (from profile.yaml - referenced for discovery)</span>
+<span class="nt">datatypes_used</span><span class="p">:</span>
+<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">item</span>
+<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">string</span>
+<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">quantity</span>
+<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">url</span>
+
+<span class="nt">statements_count</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">12</span>
+<span class="nt">references_required</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
+<span class="nt">qualifiers_used</span><span class="p">:</span>
+<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">sourcing_circumstances</span>
+<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">applies_to_territorial_jurisdiction</span>
+</code></pre></div>
+<h3 id="metadata-fields">Metadata Fields</h3>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Required</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>name</code></td>
+<td>Yes</td>
+<td>Display name of the entity type</td>
+</tr>
+<tr>
+<td><code>description</code></td>
+<td>Yes</td>
+<td>What this entity type represents</td>
+</tr>
+<tr>
+<td><code>version</code></td>
+<td>Yes</td>
+<td>Semantic version (MAJOR.MINOR.PATCH)</td>
+</tr>
+<tr>
+<td><code>status</code></td>
+<td>Yes</td>
+<td>stable, beta, or deprecated</td>
+</tr>
+<tr>
+<td><code>published_date</code></td>
+<td>Yes</td>
+<td>ISO 8601 date of current version</td>
+</tr>
+<tr>
+<td><code>authors</code></td>
+<td>Yes</td>
+<td>Primary profile designer(s)</td>
+</tr>
+<tr>
+<td><code>maintainers</code></td>
+<td>Yes</td>
+<td>Current profile maintainer(s)</td>
+</tr>
+<tr>
+<td><code>source_references</code></td>
+<td>No</td>
+<td>References (EntitySchema, Wikidata items, external resources)</td>
+</tr>
+<tr>
+<td><code>related_profiles</code></td>
+<td>No</td>
+<td>Other profiles this type relates to</td>
+</tr>
+<tr>
+<td><code>community_feedback</code></td>
+<td>No</td>
+<td>Where to report issues or suggest changes</td>
+</tr>
+<tr>
+<td><code>datatypes_used</code></td>
+<td>No</td>
+<td>List of datatypes used (for discovery)</td>
+</tr>
+<tr>
+<td><code>statements_count</code></td>
+<td>No</td>
+<td>Number of statements (for discovery)</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="profile-documentation-readme-and-changelog">Profile Documentation: README and CHANGELOG</h2>
+<h3 id="readmemd">README.md</h3>
+<p>Each profile includes a <code>README.md</code> that explains:</p>
+<ol>
+<li><strong>What is this entity?</strong> — Plain-language explanation (e.g., "A federally recognized Native American tribe in the United States")</li>
+<li><strong>When to use this profile</strong> — Guidance for profile designers on when to apply this entity type</li>
+<li><strong>Key statements</strong> — List of primary properties that define this entity type</li>
+<li><strong>Example entity</strong> — A real Wikidata item that exemplifies this type (with QID and link)</li>
+<li><strong>Known issues or limitations</strong> — If any (e.g., "Sitelinks currently support English Wikipedia only")</li>
+<li><strong>Future enhancements</strong> — Planned additions or improvements</li>
+<li><strong>Contributing</strong> — How to propose changes to this profile</li>
+</ol>
+<p><strong>Example structure</strong>:
+<div class="highlight"><pre><span></span><code><span class="gh"># Federally Recognized Tribe</span>
+
+<span class="gu">## What is this entity?</span>
+
+A Federally Recognized Tribe is a Native American tribe formally recognized 
+by the United States Bureau of Indian Affairs...
+
+<span class="gu">## When to use this profile</span>
+
+Use TribalGovernmentUS when creating Wikidata items for:
+<span class="k">-</span><span class="w"> </span>A specific federally recognized tribe
+<span class="k">-</span><span class="w"> </span>NOT for historical tribes pre-dating federal recognition
+<span class="k">-</span><span class="w"> </span>NOT for state-recognized but not federally recognized tribes
+
+<span class="gu">## Key Statements</span>
+
+<span class="k">-</span><span class="w"> </span><span class="gs">**Instance of (P31)**</span>: Indicates this is a tribe organization
+<span class="k">-</span><span class="w"> </span><span class="gs">**Government type (P1313)**</span>: What form of government (tribal council, elected chief, etc.)
+<span class="k">-</span><span class="w"> </span><span class="gs">**Country (P17)**</span>: Always United States
+
+<span class="gu">## Example Entity</span>
+
+Bitterroot Salish Tribe: [<span class="nt">Q24279783</span>](<span class="na">https://www.wikidata.org/wiki/Q24279783</span>)
+
+<span class="gu">## Known Issues</span>
+
+<span class="k">-</span><span class="w"> </span>Geographic data not yet integrated; coordinate fields are theoretical
+
+<span class="gu">## Contributing</span>
+
+To propose changes to this profile:
+<span class="k">1.</span> Fork SpiritSafe repository
+<span class="k">2.</span> Create a branch: <span class="sb">`feature/tribal-government-update`</span>
+<span class="k">3.</span> Edit <span class="sb">`profiles/TribalGovernmentUS/profile.yaml`</span> and this README
+<span class="k">4.</span> Submit PR with explanation of change
+<span class="k">5.</span> Await maintainer review
+</code></pre></div></p>
+<h3 id="changelogmd">CHANGELOG.md</h3>
+<p>Tracks all changes to a profile, enabling clear version history:</p>
+<div class="highlight"><pre><span></span><code><span class="gh"># Changelog: TribalGovernmentUS</span>
+
+<span class="gu">## [1.0.0] - 2026-02-15</span>
+
+<span class="gu">### Added</span>
+<span class="k">-</span><span class="w"> </span>Initial stable release
+<span class="k">-</span><span class="w"> </span>12 statements fully defined
+<span class="k">-</span><span class="w"> </span>Support for official website, member count, headquarters location
+<span class="k">-</span><span class="w"> </span>Per-language labels, descriptions, aliases
+<span class="k">-</span><span class="w"> </span>SPARQL-driven allowed-items lists for tribe classification
+
+<span class="gu">### Fixed</span>
+<span class="k">-</span><span class="w"> </span>Corrected P1313 (government type) reference constraints
+
+<span class="gu">### Deprecated</span>
+<span class="k">-</span><span class="w"> </span>Legacy <span class="sb">`preferred_name`</span> field (use label instead)
+
+<span class="gu">## [0.9.0] - 2026-01-20</span>
+
+<span class="gu">### Added</span>
+<span class="k">-</span><span class="w"> </span>Beta release for community feedback
+<span class="k">-</span><span class="w"> </span>Initial profile structure
+<span class="k">-</span><span class="w"> </span>SPARQL queries for tribal classification
+
+<span class="gu">### Changed</span>
+<span class="k">-</span><span class="w"> </span>Restructured qualifiers for sourcing_circumstances
+</code></pre></div>
+<hr />
+<h2 id="branch-strategy-and-pr-process">Branch Strategy and PR Process</h2>
+<h3 id="branch-naming">Branch Naming</h3>
+<ul>
+<li><strong>main</strong>: Production-ready profiles, passing all CI checks, approved by maintainers</li>
+<li><strong>develop</strong> (optional): Staging integration branch for coordinated changes</li>
+<li><strong>feature branches</strong>: Created by contributors for new or modified profiles</li>
+<li>Format: <code>profile/[profile-name]-[description]</code> or <code>feature/[profile-name]-[description]</code></li>
+<li>Example: <code>profile/tribal-government-update</code>, <code>feature/add-office-schema</code></li>
+</ul>
+<h3 id="contribution-workflow">Contribution Workflow</h3>
+<ol>
+<li>
+<p><strong>Create branch</strong> from main
+   <div class="highlight"><pre><span></span><code>git<span class="w"> </span>checkout<span class="w"> </span>-b<span class="w"> </span>profile/tribal-government-update
+</code></pre></div></p>
+</li>
+<li>
+<p><strong>Edit profile files</strong></p>
+</li>
+<li>Modify <code>profiles/TribalGovernmentUS/profile.yaml</code></li>
+<li>Update <code>profiles/TribalGovernmentUS/CHANGELOG.md</code></li>
+<li>Update <code>profiles/TribalGovernmentUS/metadata.yaml</code> (increment version)</li>
+<li>Update <code>profiles/TribalGovernmentUS/README.md</code> if needed</li>
+<li>
+<p>Add/modify SPARQL queries as needed</p>
+</li>
+<li>
+<p><strong>Push and create PR</strong></p>
+</li>
+<li>Draft PR if work in progress</li>
+<li>Final PR when ready for review</li>
+<li>
+<p>Description includes: why change, what changed, validation results</p>
+</li>
+<li>
+<p><strong>Automated checks</strong> (run on PR)</p>
+</li>
+<li>Profile YAML validation</li>
+<li>SPARQL query syntax check</li>
+<li>Metadata completeness validation</li>
+<li>
+<p>Choice list hydration from SPARQL queries (cache generation)</p>
+</li>
+<li>
+<p><strong>Human review</strong> (maintainer)</p>
+</li>
+<li>Review profile changes against design principles</li>
+<li>Validate metadata accuracy</li>
+<li>Ensure documentation is clear and complete</li>
+<li>
+<p>Approve or request changes</p>
+</li>
+<li>
+<p><strong>Merge to main</strong></p>
+</li>
+<li>Once approved, PR is merged</li>
+<li>Version tags created automatically (from metadata.yaml)</li>
+<li>Release notes generated from CHANGELOG.md</li>
+</ol>
+<hr />
+<h2 id="cicd-pipeline-validation-and-hydration">CI/CD Pipeline: Validation and Hydration</h2>
+<p>The SpiritSafe repository uses GitHub Actions workflows to ensure profile quality and maintain cached choice lists. Workflows are triggered on PR creation, PR updates, and manual triggers.</p>
+<h3 id="workflow-1-validate-profileyml-on-pr">Workflow 1: <code>validate-profile.yml</code> (On PR)</h3>
+<p><strong>Purpose</strong>: Validate all profiles and SPARQL queries in the PR</p>
+<p><strong>Steps</strong>:</p>
+<ol>
+<li><strong>Profile YAML Validation</strong></li>
+<li>Load each profile YAML</li>
+<li>Validate against GKC profile schema</li>
+<li>Check for required fields (profile name, description, statements)</li>
+<li>
+<p>Report any validation errors</p>
+</li>
+<li>
+<p><strong>SPARQL Query Validation</strong></p>
+</li>
+<li>
+<p>Syntax check: Is each SPARQL query well-formed?</p>
+</li>
+<li>Test query execution: Can the query run against Wikidata?</li>
+<li>
+<p>Report query execution errors or warnings</p>
+</li>
+<li>
+<p><strong>Metadata Validation</strong></p>
+</li>
+<li>
+<p>Check metadata.yaml completeness</p>
+</li>
+<li>Verify semantic versioning (MAJOR.MINOR.PATCH)</li>
+<li>Validate author/maintainer existence</li>
+<li>
+<p>Report missing or malformed metadata</p>
+</li>
+<li>
+<p><strong>Documentation Check</strong></p>
+</li>
+<li>
+<p>README.md exists and has required sections</p>
+</li>
+<li>CHANGELOG.md documents the version being published</li>
+<li>Check for obvious typos or formatting issues</li>
+</ol>
+<p><strong>Output</strong>: Required checks pass/fail on PR; blocks merge if critical issues found</p>
+<h3 id="workflow-2-hydrate-cachesyml-on-pr-manual">Workflow 2: <code>hydrate-caches.yml</code> (On PR + Manual)</h3>
+<p><strong>Purpose</strong>: Generate cached choice lists by executing SPARQL queries</p>
+<p><strong>Steps</strong>:</p>
+<ol>
+<li><strong>For each profile with SPARQL queries</strong>:</li>
+<li>Execute each SPARQL query against live Wikidata endpoint</li>
+<li>Transform results to JSON format expected by GKC</li>
+<li>
+<p>Cache results in <code>cache/profiles/[profile-name]/</code></p>
+</li>
+<li>
+<p><strong>For shared queries in <code>queries/</code></strong>:</p>
+</li>
+<li>Execute each query</li>
+<li>
+<p>Cache results in <code>cache/queries/</code></p>
+</li>
+<li>
+<p><strong>Fallback behavior</strong>:</p>
+</li>
+<li>If Wikidata endpoint is unavailable, use previously cached results</li>
+<li>Log warnings about cache staleness</li>
+</ol>
+<p><strong>Trigger</strong>: 
+- Manual trigger on-demand (when editor knows Wikidata data has changed)
+- Scheduled weekly or monthly (configurable)
+- Run on merge to main (to ensure main always has fresh caches)</p>
+<p><strong>Output</strong>: Updated cache files committed to PR or automatically committed to main after merge</p>
+<h3 id="workflow-3-publish-releaseyml-on-main-merge">Workflow 3: <code>publish-release.yml</code> (On main merge)</h3>
+<p><strong>Purpose</strong>: Tag and release profile changes</p>
+<p><strong>Steps</strong>:</p>
+<ol>
+<li><strong>Extract version</strong> from metadata.yaml</li>
+<li><strong>Create git tag</strong> with version (e.g., <code>v1.0.0</code>)</li>
+<li><strong>Generate release notes</strong> from CHANGELOG.md</li>
+<li><strong>Create GitHub Release</strong> with tag, notes, and attached cache files</li>
+<li><strong>Optional</strong>: Push updated cache to CDN or package registry for distribution</li>
+</ol>
+<p><strong>Output</strong>: Versioned release of profile package available for download</p>
+<hr />
+<h2 id="integration-with-gkc-the-spirit_safe-module">Integration with GKC: The spirit_safe Module</h2>
+<p>The <code>gkc.spirit_safe</code> module in the GKC Python package is the execution layer that consumes SpiritSafe registry assets. It:</p>
+<h3 id="profile-loading">Profile Loading</h3>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">gkc.spirit_safe</span><span class="w"> </span><span class="kn">import</span> <span class="n">SpiritSafeSourceConfig</span><span class="p">,</span> <span class="n">set_spirit_safe_source</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">gkc.profiles</span><span class="w"> </span><span class="kn">import</span> <span class="n">ProfileLoader</span>
+
+<span class="c1"># Configure source (GitHub or local SpiritSafe)</span>
+<span class="n">set_spirit_safe_source</span><span class="p">(</span>
+    <span class="n">mode</span><span class="o">=</span><span class="s2">&quot;github&quot;</span><span class="p">,</span>
+    <span class="n">github_repo</span><span class="o">=</span><span class="s2">&quot;skybristol/SpiritSafe&quot;</span><span class="p">,</span>
+    <span class="n">github_ref</span><span class="o">=</span><span class="s2">&quot;main&quot;</span>
+<span class="p">)</span>
+
+<span class="c1"># Load profile</span>
+<span class="n">loader</span> <span class="o">=</span> <span class="n">ProfileLoader</span><span class="p">()</span>
+<span class="n">profile</span> <span class="o">=</span> <span class="n">loader</span><span class="o">.</span><span class="n">load_from_file</span><span class="p">(</span><span class="s2">&quot;profiles/TribalGovernmentUS/profile.yaml&quot;</span><span class="p">)</span>
+</code></pre></div>
+<h3 id="choice-list-hydration">Choice List Hydration</h3>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">gkc.spirit_safe</span><span class="w"> </span><span class="kn">import</span> <span class="n">LookupCache</span>
+
+<span class="c1"># Initialize cache (uses configured SpiritSafe source)</span>
+<span class="n">cache</span> <span class="o">=</span> <span class="n">LookupCache</span><span class="p">()</span>
+
+<span class="c1"># Get cached choice list results</span>
+<span class="n">tribal_refs</span> <span class="o">=</span> <span class="n">cache</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;profiles/TribalGovernmentUS/tribal-recognition-references&quot;</span><span class="p">)</span>
+
+<span class="c1"># If cache miss or refresh needed, execute SPARQL query and update cache</span>
+</code></pre></div>
+<h3 id="configuration">Configuration</h3>
+<ul>
+<li><strong>GitHub mode</strong> (default): Profiles fetched from https://raw.githubusercontent.com/skybristol/SpiritSafe/main/...</li>
+<li><strong>Local mode</strong>: Profiles loaded from local SpiritSafe clone (for development)</li>
+</ul>
+<hr />
+<h2 id="source-of-truth-status">Source-of-Truth Status</h2>
+<p>SpiritSafe is now fully externalized and serves as the active source of truth at:</p>
+<ul>
+<li>https://github.com/skybristol/SpiritSafe</li>
+</ul>
+<p>GKC no longer relies on a <code>.SpiritSafe/</code> directory inside the GKC repository.</p>
+<p>For local development overrides, clone SpiritSafe and point GKC to that clone path when needed.</p>
+<div class="highlight"><pre><span></span><code>git<span class="w"> </span>clone<span class="w"> </span>https://github.com/skybristol/SpiritSafe.git
+<span class="nb">cd</span><span class="w"> </span>SpiritSafe
+git<span class="w"> </span>checkout<span class="w"> </span>-b<span class="w"> </span>your-feature-branch
+</code></pre></div>
+<p>Then use local override in GKC runtime/CLI for branch validation and hydration tests.</p>
+<hr />
+<h2 id="theoretical-design-notes-for-infrastructure-development">Theoretical Design Notes for Infrastructure Development</h2>
+<p>The following elements are designed but not yet fully implemented. These notes guide infrastructure development:</p>
+<h3 id="1-automated-cache-refresh-pipeline">1. Automated Cache Refresh Pipeline</h3>
+<p><strong>Goal</strong>: Keep choice list caches fresh without manual intervention<br />
+<strong>Approach</strong>:</p>
+<ul>
+<li>Schedule hydration workflow weekly or monthly</li>
+<li>Fallback to previous cache if Wikidata endpoint unavailable</li>
+<li>Log staleness warnings so curators know if data is outdated</li>
+<li>Optional: Push updated caches to CDN for faster retrieval</li>
+</ul>
+<p><strong>Open Questions</strong>:</p>
+<ul>
+<li>What refresh cadence makes sense? (weekly, monthly, quarterly by profile?)</li>
+<li>Should each profile have its own refresh schedule or unified?</li>
+<li>How to handle transient Wikidata outages without generating false positives?</li>
+</ul>
+<h3 id="2-profile-versioning-and-backward-compatibility">2. Profile Versioning and Backward Compatibility</h3>
+<p><strong>Goal</strong>: Support multiple profile versions without breaking existing curated data<br />
+<strong>Approach</strong>:</p>
+<ul>
+<li>Each profile version gets a git tag (v1.0.0, v1.1.0, etc.)</li>
+<li>GKC can specify which profile version to use: <code>ProfileLoader.load("TribalGovernmentUS@1.0.0")</code></li>
+<li>Profile schema migration paths for major version changes</li>
+<li>Curated data can be validated against original profile version used</li>
+</ul>
+<p><strong>Open Questions</strong>:</p>
+<ul>
+<li>How to store multiple versions in single directory (folder per version, or git history)?</li>
+<li>When to enforce migration vs. allow legacy data?</li>
+<li>How to document breaking changes in CHANGELOG for curators?</li>
+</ul>
+<h3 id="3-profile-discoverability-and-registry-index">3. Profile Discoverability and Registry Index</h3>
+<p><strong>Goal</strong>: Curators and developers can discover available profiles<br />
+<strong>Approach</strong>:</p>
+<ul>
+<li>Generate registry index (JSON) listing all profiles with metadata</li>
+<li>Web UI or CLI command to search/browse profiles</li>
+<li>Tag-based discovery (e.g., "government", "tribal", "organization")</li>
+<li>Community contributions feed to show recently updated profiles</li>
+</ul>
+<p><strong>Open Questions</strong>:</p>
+<ul>
+<li>Should profiles be tagged/categorized?</li>
+<li>How to balance ease of discovery vs. avoiding profile explosion?</li>
+<li>How to recommend profiles for a given use case?</li>
+</ul>
+<h3 id="4-profile-lifecycle-management">4. Profile Lifecycle Management</h3>
+<ul>
+<li><code>status: deprecated</code> in metadata sends signal to users</li>
+<li>Automatic archive after X period of no updates</li>
+<li>Formal retirement process with data migration guidance</li>
+<li>Audit trail of profile creation → active → deprecated → archived</li>
+</ul>
+<p><strong>Open Questions</strong>:
+ofile creation → active → deprecated → archived</p>
+<p><strong>Open Questions</strong>:
+- What triggers deprecation (maintainer decision, community vote)?
+- How to handle curated data when profile retires?
+- How to preserve profile history (GitHub releases)?</p>
+<hr />
+<h2 id="community-and-governance">Community and Governance</h2>
+<h3 id="who-can-contribute">Who Can Contribute?</h3>
+<p>Community members can propose new profiles or changes to existing profiles via PR. All contributions must:</p>
+<ul>
+<li>Follow the profile schema and structure</li>
+<li>Include complete documentation (README, CHANGELOG, metadata)</li>
+<li>Pass all CI validation</li>
+<li>Be reviewed and approved by at least one maintainer</li>
+</ul>
+<h3 id="decision-making">Decision Making</h3>
+<ul>
+<li><strong>Profile additions</strong>: Maintainer approval + community consensus for significant new types</li>
+<li><strong>Profile changes</strong>: Maintainer approval; breaking changes require community discussion</li>
+<li><strong>Infrastructure decisions</strong>: Maintainers meet quarterly or as needed</li>
+</ul>
+<h3 id="reporting-issues-or-suggestions">Reporting Issues or Suggestions</h3>
+<ul>
+<li><strong>Bug reports</strong>: GitHub Issues (e.g., "Profile X documentation is unclear")</li>
+<li><strong>Feature suggestions</strong>: Discussion forum or email (see metadata.yaml <code>community_feedback</code>)</li>
+<li><strong>Contributing a new profile</strong>: Create PR with complete profile package</li>
+</ul>
+<hr />
+<h2 id="conclusion">Conclusion</h2>
+<p>SpiritSafe reimagines entity schema management through a community-driven registry model. By treating profiles as curated, versioned, documented packages with transparent governance, we overcome adoption barriers that have hindered Wikidata EntitySchema. The per-profile folder structure keeps contributions manageable, the metadata and documentation make profiles discoverable, and CI/CD automation ensures quality.</p>
+<p>As the GKC ecosystem matures, SpiritSafe will become the standard registry of entity types for the Global Knowledge Commons—a reference point where users can find, understand, and contribute to canonical entity definitions across platforms.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["navigation.instant", "navigation.sections", "navigation.top", "toc.follow"], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.79ae519e.min.js"></script>
+      
+        <script src="https://unpkg.com/mermaid@10.6.1/dist/mermaid.min.js"></script>
+      
+        <script src="../javascripts/mermaid-init.js"></script>
+      
+    
+  </body>
+</html>

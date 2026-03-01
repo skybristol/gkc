@@ -1,0 +1,2913 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Data Distillery - A framework for data distillation toward the Global Knowledge Commons">
+      
+      
+      
+        <link rel="canonical" href="https://datadistillery.org/gkc/CI_CD/">
+      
+      
+        <link rel="prev" href="../utilities/">
+      
+      
+        <link rel="next" href="../RELEASE/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.1">
+    
+    
+      
+        <title>CI/CD - Data Distillery</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.484c7ddc.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/_mkdocstrings.css">
+    
+      <link rel="stylesheet" href="../../stylesheets/extra.css">
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    <body dir="ltr">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#cicd-configuration" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="Data Distillery" class="md-header__button md-logo" aria-label="Data Distillery" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            Data Distillery
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              CI/CD
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/skybristol/gkc" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    skybristol/gkc
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="Data Distillery" class="md-nav__button md-logo" aria-label="Data Distillery" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    Data Distillery
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/skybristol/gkc" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    skybristol/gkc
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Data Curation Narratives
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Data Curation Narratives
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../tribes/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Tribal Governments
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../SpiritSafe/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SpiritSafe
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Architecture
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../architecture/profile-loading/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Profile Loading
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../architecture/spiritsafe-infrastructure/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SpiritSafe Infrastructure
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../architecture/validation-architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Validation Architecture
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    GKC Documentation
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    GKC Documentation
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../background/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Background
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../profiles/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Entity Profiles
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_5_4" id="__nav_5_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Getting Started
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Getting Started
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../setup/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Setup and Orientation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../authentication/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Authentication
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5_5" id="__nav_5_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Data Distillery Workflow
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Data Distillery Workflow
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../shipping/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Shipping
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_6" >
+        
+          
+          <label class="md-nav__link" for="__nav_5_6" id="__nav_5_6_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API Reference
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5_6">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    API Reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api/auth/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Authentication
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api/mash/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Mash
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api/mash_formatters/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Mash Formatters
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api/profiles/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Profiles
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api/spirit_safe/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SpiritSafe
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api/shex/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ShEx
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api/shipper/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Shipper
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api/sparql/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SPARQL
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_7" >
+        
+          
+          <label class="md-nav__link" for="__nav_5_7" id="__nav_5_7_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Command Line Interface
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_7_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5_7">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Command Line Interface
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../cli/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../cli/auth/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Authentication
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../cli/mash/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Mash
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../cli/profiles/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Profiles
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../cli/shex/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ShEx
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_8" >
+        
+          
+          <label class="md-nav__link" for="__nav_5_8" id="__nav_5_8_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Utilities and Tools
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_8_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5_8">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Utilities and Tools
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../utilities/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Utilities
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_9" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_5_9" id="__nav_5_9_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Development
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_9_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_5_9">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Development
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CI/CD
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CI/CD
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#overview" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Overview
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#local-pre-merge-testing" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Local Pre-Merge Testing
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Local Pre-Merge Testing">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#quick-check" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Quick Check
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#manual-testing" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Manual Testing
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#ci-workflow-githubworkflowsciyml" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        CI Workflow (.github/workflows/ci.yml)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="CI Workflow (.github/workflows/ci.yml)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#triggers" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Triggers
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#jobs" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Jobs
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Jobs">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#test-matrix" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Test Matrix
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#lint-job" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Lint Job
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#success-criteria" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Success Criteria
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#publish-workflow-githubworkflowspublishyml" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Publish Workflow (.github/workflows/publish.yml)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Publish Workflow (.github/workflows/publish.yml)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#trigger" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Trigger
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#publishing-method-pypi-trusted-publishing" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Publishing Method: PyPI Trusted Publishing
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#setup-required" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Setup Required
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#alternative-token-based-publishing" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Alternative: Token-Based Publishing
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#creating-a-release" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Creating a Release
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Creating a Release">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#1-prepare-the-release" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. Prepare the Release
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2-create-git-tag" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. Create Git Tag
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#3-create-github-release" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. Create GitHub Release
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#4-automated-publishing" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4. Automated Publishing
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#5-verify-publication" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5. Verify Publication
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#monitoring-workflows" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Monitoring Workflows
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Monitoring Workflows">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#view-workflow-runs" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        View Workflow Runs
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#debugging-failed-workflows" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Debugging Failed Workflows
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#version-management" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Version Management
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Version Management">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#semantic-versioning" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Semantic Versioning
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pre-releases" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Pre-releases
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#security" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Security
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Security">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#secrets" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Secrets
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#permissions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Permissions
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#troubleshooting" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Troubleshooting
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Troubleshooting">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#package-already-exists-on-pypi" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        "Package already exists on PyPI"
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#trusted-publisher-not-configured" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        "Trusted Publisher not configured"
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#tests-pass-locally-but-fail-in-ci" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        "Tests pass locally but fail in CI"
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#best-practices" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Best Practices
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#additional-resources" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Additional Resources
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../RELEASE/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Release Process
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#overview" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Overview
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#local-pre-merge-testing" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Local Pre-Merge Testing
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Local Pre-Merge Testing">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#quick-check" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Quick Check
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#manual-testing" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Manual Testing
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#ci-workflow-githubworkflowsciyml" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        CI Workflow (.github/workflows/ci.yml)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="CI Workflow (.github/workflows/ci.yml)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#triggers" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Triggers
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#jobs" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Jobs
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Jobs">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#test-matrix" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Test Matrix
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#lint-job" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Lint Job
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#success-criteria" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Success Criteria
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#publish-workflow-githubworkflowspublishyml" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Publish Workflow (.github/workflows/publish.yml)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Publish Workflow (.github/workflows/publish.yml)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#trigger" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Trigger
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#publishing-method-pypi-trusted-publishing" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Publishing Method: PyPI Trusted Publishing
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#setup-required" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Setup Required
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#alternative-token-based-publishing" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Alternative: Token-Based Publishing
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#creating-a-release" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Creating a Release
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Creating a Release">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#1-prepare-the-release" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. Prepare the Release
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2-create-git-tag" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. Create Git Tag
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#3-create-github-release" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. Create GitHub Release
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#4-automated-publishing" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4. Automated Publishing
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#5-verify-publication" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5. Verify Publication
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#monitoring-workflows" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Monitoring Workflows
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Monitoring Workflows">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#view-workflow-runs" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        View Workflow Runs
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#debugging-failed-workflows" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Debugging Failed Workflows
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#version-management" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Version Management
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Version Management">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#semantic-versioning" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Semantic Versioning
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pre-releases" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Pre-releases
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#security" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Security
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Security">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#secrets" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Secrets
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#permissions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Permissions
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#troubleshooting" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Troubleshooting
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Troubleshooting">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#package-already-exists-on-pypi" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        "Package already exists on PyPI"
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#trusted-publisher-not-configured" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        "Trusted Publisher not configured"
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#tests-pass-locally-but-fail-in-ci" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        "Tests pass locally but fail in CI"
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#best-practices" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Best Practices
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#additional-resources" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Additional Resources
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="cicd-configuration">CI/CD Configuration</h1>
+<p>This document describes the continuous integration and deployment setup for the GKC project.</p>
+<h2 id="overview">Overview</h2>
+<p>The project uses GitHub Actions for CI/CD with two main workflows:
+1. <strong>CI Workflow</strong> - Runs tests, linting, and type checking on every PR and push to main
+2. <strong>Publish Workflow</strong> - Automatically publishes to PyPI when a GitHub release is created</p>
+<h2 id="local-pre-merge-testing">Local Pre-Merge Testing</h2>
+<h3 id="quick-check">Quick Check</h3>
+<p>Before pushing or creating a PR, run the pre-merge check script:</p>
+<div class="highlight"><pre><span></span><code>./scripts/pre-merge-check.sh
+</code></pre></div>
+<p>This script will:
+- ✓ Install/sync dependencies
+- ✓ Run ruff linting
+- ✓ Check code formatting (black)
+- ✓ Run type checking (mypy)
+- ✓ Execute full test suite
+- ✓ Verify package builds</p>
+<h3 id="manual-testing">Manual Testing</h3>
+<p>You can also run individual checks:</p>
+<div class="highlight"><pre><span></span><code><span class="c1"># Install dependencies</span>
+poetry<span class="w"> </span>install<span class="w"> </span>--sync
+
+<span class="c1"># Run linting</span>
+poetry<span class="w"> </span>run<span class="w"> </span>ruff<span class="w"> </span>check<span class="w"> </span>gkc<span class="w"> </span>tests
+
+<span class="c1"># Check formatting</span>
+poetry<span class="w"> </span>run<span class="w"> </span>black<span class="w"> </span>--check<span class="w"> </span>gkc<span class="w"> </span>tests
+
+<span class="c1"># Auto-fix formatting</span>
+poetry<span class="w"> </span>run<span class="w"> </span>black<span class="w"> </span>gkc<span class="w"> </span>tests
+
+<span class="c1"># Run type checking</span>
+poetry<span class="w"> </span>run<span class="w"> </span>mypy<span class="w"> </span>gkc
+
+<span class="c1"># Run tests</span>
+poetry<span class="w"> </span>run<span class="w"> </span>pytest<span class="w"> </span>-v
+
+<span class="c1"># Run tests with coverage</span>
+poetry<span class="w"> </span>run<span class="w"> </span>pytest<span class="w"> </span>--cov<span class="o">=</span>gkc<span class="w"> </span>--cov-report<span class="o">=</span>html
+
+<span class="c1"># Build package</span>
+poetry<span class="w"> </span>build
+</code></pre></div>
+<h2 id="ci-workflow-githubworkflowsciyml">CI Workflow (<code>.github/workflows/ci.yml</code>)</h2>
+<h3 id="triggers">Triggers</h3>
+<ul>
+<li>Push to <code>main</code> branch</li>
+<li>Pull requests targeting <code>main</code> branch</li>
+</ul>
+<h3 id="jobs">Jobs</h3>
+<h4 id="test-matrix">Test Matrix</h4>
+<p>Runs tests on multiple Python versions:
+- Python 3.9
+- Python 3.10
+- Python 3.11
+- Python 3.12</p>
+<p><strong>Steps:</strong>
+1. Checkout code
+2. Set up Python
+3. Install Poetry
+4. Cache dependencies
+5. Install dependencies
+6. Run linting (ruff)
+7. Check formatting (black)
+8. Run type checking (mypy) - non-blocking
+9. Run tests with coverage
+10. Upload coverage to Codecov (optional)</p>
+<h4 id="lint-job">Lint Job</h4>
+<p>Runs on Python 3.12 to verify code quality:
+- Ruff linting
+- Black formatting check</p>
+<h3 id="success-criteria">Success Criteria</h3>
+<p>All tests must pass across all Python versions for the workflow to succeed. This ensures:
+- Code works on all supported Python versions
+- Code style is consistent
+- All tests pass
+- No import errors</p>
+<h2 id="publish-workflow-githubworkflowspublishyml">Publish Workflow (<code>.github/workflows/publish.yml</code>)</h2>
+<h3 id="trigger">Trigger</h3>
+<p>Automatically runs when you <strong>create and publish a GitHub release</strong>.</p>
+<h3 id="publishing-method-pypi-trusted-publishing">Publishing Method: PyPI Trusted Publishing</h3>
+<p>The workflow uses <strong>PyPI Trusted Publishing</strong> (OIDC), which is the modern, secure way to publish packages. This method:
+- ✅ No API tokens needed
+- ✅ More secure (temporary credentials)
+- ✅ Automatic rotation
+- ✅ Recommended by PyPI</p>
+<h3 id="setup-required">Setup Required</h3>
+<p>Before your first release, you must configure Trusted Publishing on PyPI:</p>
+<ol>
+<li><strong>Create PyPI account</strong> (if you don't have one):</li>
+<li>
+<p>Go to https://pypi.org/account/register/</p>
+</li>
+<li>
+<p><strong>Configure Trusted Publishing</strong>:</p>
+</li>
+<li>Go to https://pypi.org/manage/account/publishing/</li>
+<li>Click "Add a new pending publisher"</li>
+<li>Fill in:<ul>
+<li><strong>PyPI Project Name</strong>: <code>gkc</code></li>
+<li><strong>Owner</strong>: <code>skybristol</code></li>
+<li><strong>Repository name</strong>: <code>gkc</code></li>
+<li><strong>Workflow name</strong>: <code>publish.yml</code></li>
+<li><strong>Environment name</strong>: (leave blank)</li>
+</ul>
+</li>
+<li>
+<p>Click "Add"</p>
+</li>
+<li>
+<p><strong>Important</strong>: You must do this <strong>before</strong> creating your first release. PyPI will reserve the project name for your GitHub repository.</p>
+</li>
+</ol>
+<h3 id="alternative-token-based-publishing">Alternative: Token-Based Publishing</h3>
+<p>If you prefer using a token (though Trusted Publishing is recommended), modify <code>.github/workflows/publish.yml</code>:</p>
+<div class="highlight"><pre><span></span><code><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Publish package distributions to PyPI</span>
+<span class="w">  </span><span class="nt">uses</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">pypa/gh-action-pypi-publish@release/v1</span>
+<span class="w">  </span><span class="nt">with</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">password</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">${{ secrets.PYPI_TOKEN }}</span>
+</code></pre></div>
+<p>And remove the <code>permissions: id-token: write</code> line.</p>
+<h2 id="creating-a-release">Creating a Release</h2>
+<h3 id="1-prepare-the-release">1. Prepare the Release</h3>
+<div class="highlight"><pre><span></span><code><span class="c1"># Ensure you&#39;re on main with latest changes</span>
+git<span class="w"> </span>checkout<span class="w"> </span>main
+git<span class="w"> </span>pull<span class="w"> </span>origin<span class="w"> </span>main
+
+<span class="c1"># Run pre-merge checks</span>
+./scripts/pre-merge-check.sh
+
+<span class="c1"># Update version in pyproject.toml</span>
+<span class="c1"># Edit: version = &quot;0.1.1&quot;  (or whatever the new version is)</span>
+
+<span class="c1"># Commit version bump</span>
+git<span class="w"> </span>add<span class="w"> </span>pyproject.toml
+git<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;Bump version to 0.1.1&quot;</span>
+git<span class="w"> </span>push<span class="w"> </span>origin<span class="w"> </span>main
+</code></pre></div>
+<h3 id="2-create-git-tag">2. Create Git Tag</h3>
+<div class="highlight"><pre><span></span><code><span class="c1"># Create and push tag</span>
+git<span class="w"> </span>tag<span class="w"> </span>-a<span class="w"> </span>v0.1.1<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;Release version 0.1.1&quot;</span>
+git<span class="w"> </span>push<span class="w"> </span>origin<span class="w"> </span>v0.1.1
+</code></pre></div>
+<h3 id="3-create-github-release">3. Create GitHub Release</h3>
+<p><strong>Option A: GitHub Web UI</strong>
+1. Go to https://github.com/skybristol/gkc/releases/new
+2. Choose the tag you just created (<code>v0.1.1</code>)
+3. Set release title (e.g., "v0.1.1")
+4. Add release notes describing changes
+5. Click "Publish release"</p>
+<p><strong>Option B: GitHub CLI</strong>
+<div class="highlight"><pre><span></span><code>gh<span class="w"> </span>release<span class="w"> </span>create<span class="w"> </span>v0.1.1<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--title<span class="w"> </span><span class="s2">&quot;v0.1.1&quot;</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--notes<span class="w"> </span><span class="s2">&quot;Release notes here&quot;</span>
+</code></pre></div></p>
+<h3 id="4-automated-publishing">4. Automated Publishing</h3>
+<p>Once you publish the release:
+1. GitHub Actions automatically triggers the publish workflow
+2. Workflow builds the package
+3. Package is published to PyPI
+4. Within minutes, available via <code>pip install gkc</code></p>
+<h3 id="5-verify-publication">5. Verify Publication</h3>
+<p>Check that the package is available:
+<div class="highlight"><pre><span></span><code><span class="c1"># Wait a few minutes after release</span>
+pip<span class="w"> </span>install<span class="w"> </span>--upgrade<span class="w"> </span>gkc
+
+<span class="c1"># Or check PyPI directly</span>
+open<span class="w"> </span>https://pypi.org/project/gkc/
+</code></pre></div></p>
+<h2 id="monitoring-workflows">Monitoring Workflows</h2>
+<h3 id="view-workflow-runs">View Workflow Runs</h3>
+<ul>
+<li><strong>All workflows</strong>: https://github.com/skybristol/gkc/actions</li>
+<li><strong>CI runs</strong>: https://github.com/skybristol/gkc/actions/workflows/ci.yml</li>
+<li><strong>Publish runs</strong>: https://github.com/skybristol/gkc/actions/workflows/publish.yml</li>
+</ul>
+<h3 id="debugging-failed-workflows">Debugging Failed Workflows</h3>
+<p>If a workflow fails:</p>
+<ol>
+<li><strong>Click on the failed run</strong> in GitHub Actions</li>
+<li><strong>Expand the failed step</strong> to see error details</li>
+<li><strong>Common issues</strong>:</li>
+<li>Test failures: Check test output</li>
+<li>Linting errors: Run <code>poetry run ruff check gkc tests</code></li>
+<li>Formatting issues: Run <code>poetry run black gkc tests</code></li>
+<li>Build errors: Run <code>poetry build</code> locally</li>
+<li>
+<p>PyPI publish errors: Check Trusted Publishing configuration</p>
+</li>
+<li>
+<p><strong>Fix locally and re-push</strong>:
+   <div class="highlight"><pre><span></span><code><span class="c1"># Fix the issue</span>
+./scripts/pre-merge-check.sh<span class="w">  </span><span class="c1"># Verify fix</span>
+git<span class="w"> </span>add<span class="w"> </span>.
+git<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;Fix CI issue&quot;</span>
+git<span class="w"> </span>push
+</code></pre></div></p>
+</li>
+</ol>
+<h2 id="version-management">Version Management</h2>
+<h3 id="semantic-versioning">Semantic Versioning</h3>
+<p>Follow semantic versioning (semver):
+- <strong>MAJOR</strong> (1.0.0): Breaking changes
+- <strong>MINOR</strong> (0.1.0): New features, backwards compatible
+- <strong>PATCH</strong> (0.0.1): Bug fixes, backwards compatible</p>
+<h3 id="pre-releases">Pre-releases</h3>
+<p>For testing releases before official publication:</p>
+<div class="highlight"><pre><span></span><code><span class="c1"># Update version to pre-release</span>
+<span class="c1"># version = &quot;0.2.0-alpha.1&quot;</span>
+
+<span class="c1"># Create pre-release tag</span>
+git<span class="w"> </span>tag<span class="w"> </span>-a<span class="w"> </span>v0.2.0-alpha.1<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;Alpha release&quot;</span>
+git<span class="w"> </span>push<span class="w"> </span>origin<span class="w"> </span>v0.2.0-alpha.1
+
+<span class="c1"># Create GitHub pre-release</span>
+gh<span class="w"> </span>release<span class="w"> </span>create<span class="w"> </span>v0.2.0-alpha.1<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--title<span class="w"> </span><span class="s2">&quot;v0.2.0-alpha.1&quot;</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--notes<span class="w"> </span><span class="s2">&quot;Alpha release for testing&quot;</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--prerelease
+</code></pre></div>
+<p>Pre-releases won't be installed by default with <code>pip install gkc</code>, users must specify:
+<div class="highlight"><pre><span></span><code>pip<span class="w"> </span>install<span class="w"> </span><span class="nv">gkc</span><span class="o">==</span><span class="m">0</span>.2.0-alpha.1
+</code></pre></div></p>
+<h2 id="security">Security</h2>
+<h3 id="secrets">Secrets</h3>
+<p>Current repository secrets:
+- <code>PYPI_TOKEN</code> - Not needed if using Trusted Publishing, but kept as backup</p>
+<h3 id="permissions">Permissions</h3>
+<p>The publish workflow requires:
+- <code>id-token: write</code> - For Trusted Publishing authentication</p>
+<h2 id="troubleshooting">Troubleshooting</h2>
+<h3 id="package-already-exists-on-pypi">"Package already exists on PyPI"</h3>
+<p>If you try to publish a version that already exists:
+1. Delete the GitHub release
+2. Delete the git tag: <code>git tag -d v0.1.0 &amp;&amp; git push origin :refs/tags/v0.1.0</code>
+3. Bump version in pyproject.toml
+4. Create new tag and release</p>
+<h3 id="trusted-publisher-not-configured">"Trusted Publisher not configured"</h3>
+<p>Error: <code>403: The user 'xxx' isn't allowed to upload to project 'gkc'</code></p>
+<p><strong>Solution</strong>: Configure Trusted Publishing on PyPI (see "Setup Required" above)</p>
+<h3 id="tests-pass-locally-but-fail-in-ci">"Tests pass locally but fail in CI"</h3>
+<p>Common causes:
+- Python version differences (CI tests on 3.9-3.12)
+- Missing dependencies in pyproject.toml
+- Environment-specific code</p>
+<p><strong>Debug</strong>:
+<div class="highlight"><pre><span></span><code><span class="c1"># Test on specific Python version</span>
+poetry<span class="w"> </span>env<span class="w"> </span>use<span class="w"> </span><span class="m">3</span>.9
+poetry<span class="w"> </span>install
+poetry<span class="w"> </span>run<span class="w"> </span>pytest
+</code></pre></div></p>
+<h2 id="best-practices">Best Practices</h2>
+<ol>
+<li><strong>Always run pre-merge checks</strong> before pushing</li>
+<li><strong>Never commit directly to main</strong> - use PRs for review</li>
+<li><strong>Write meaningful commit messages</strong> following conventional commits</li>
+<li><strong>Update CHANGELOG</strong> for each release</li>
+<li><strong>Test the package</strong> after publishing: <code>pip install --upgrade gkc</code></li>
+<li><strong>Monitor CI results</strong> - fix failures immediately</li>
+<li><strong>Keep dependencies updated</strong> - run <code>poetry update</code> regularly</li>
+</ol>
+<h2 id="additional-resources">Additional Resources</h2>
+<ul>
+<li><a href="https://docs.github.com/en/actions">GitHub Actions Documentation</a></li>
+<li><a href="https://docs.pypi.org/trusted-publishers/">PyPI Trusted Publishing Guide</a></li>
+<li><a href="https://python-poetry.org/docs/libraries/#publishing-to-pypi">Poetry Publishing Documentation</a></li>
+<li><a href="https://semver.org/">Semantic Versioning</a></li>
+</ul>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.instant", "navigation.sections", "navigation.top", "toc.follow"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.79ae519e.min.js"></script>
+      
+        <script src="https://unpkg.com/mermaid@10.6.1/dist/mermaid.min.js"></script>
+      
+        <script src="../../javascripts/mermaid-init.js"></script>
+      
+    
+  </body>
+</html>
