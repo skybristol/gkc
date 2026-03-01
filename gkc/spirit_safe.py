@@ -15,7 +15,7 @@ from __future__ import annotations
 
 import hashlib
 import json
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Any, Literal, Optional, Union
@@ -129,6 +129,235 @@ def get_spirit_safe_source() -> SpiritSafeSourceConfig:
     Plain meaning: See where SpiritSafe data is configured to come from.
     """
     return _SPIRIT_SAFE_SOURCE_CONFIG
+
+
+# ============================================================================
+# Profile Registry Abstraction
+# ============================================================================
+
+
+@dataclass(frozen=True)
+class ProfileMetadata:
+    """Metadata for a SpiritSafe profile registrant.
+
+    This dataclass represents the structured metadata from a profile's
+    metadata.yaml file, supporting discovery, versioning, and governance.
+
+    Attributes:
+        profile_id: Profile identifier (directory name)
+        name: Human-readable profile name
+        description: Profile description
+        version: Semantic version string
+        status: Profile status (e.g., "stable", "draft", "deprecated")
+        published_date: Publication date (ISO 8601 string)
+        authors: List of author dicts with 'name' and optional 'email'
+        maintainers: List of maintainer dicts with 'name' and optional 'email'
+        source_references: List of reference dicts with 'name' and 'url'
+        related_profiles: List of related profile IDs
+        community_feedback: Dict with issue tracker and other feedback URLs
+        datatypes_used: List of Wikibase datatypes used in profile
+        statements_count: Number of statements defined in profile
+        references_required: Whether references are required
+        qualifiers_used: List of qualifier property IDs used
+        sparql_sources: List of SPARQL query filenames
+        raw_metadata: Complete raw metadata dict for access to additional fields
+
+    Plain meaning: Structured information about a profile package.
+    """
+
+    profile_id: str
+    name: str
+    description: str
+    version: str
+    status: str
+    published_date: Optional[str] = None
+    authors: list[dict[str, str]] = field(default_factory=list)
+    maintainers: list[dict[str, str]] = field(default_factory=list)
+    source_references: list[dict[str, str]] = field(default_factory=list)
+    related_profiles: list[str] = field(default_factory=list)
+    community_feedback: dict[str, str] = field(default_factory=dict)
+    datatypes_used: list[str] = field(default_factory=list)
+    statements_count: Optional[int] = None
+    references_required: Optional[bool] = None
+    qualifiers_used: list[str] = field(default_factory=list)
+    sparql_sources: list[str] = field(default_factory=list)
+    raw_metadata: dict[str, Any] = field(default_factory=dict)
+
+
+def _read_text_from_resolved_path(resolved: Union[Path, str]) -> str:
+    """Read text content from a resolved path or URL.
+
+    Args:
+        resolved: Local Path or GitHub raw URL
+
+    Returns:
+        Text content of the file
+
+    Raises:
+        FileNotFoundError: If file/URL cannot be read
+    """
+    if isinstance(resolved, Path):
+        return resolved.read_text(encoding="utf-8")
+    # GitHub URL
+    response = requests.get(str(resolved), timeout=10)
+    response.raise_for_status()
+    return response.text
+
+
+def list_profiles() -> list[str]:
+    """List all available profile IDs in the configured SpiritSafe source.
+
+    Returns:
+        List of profile identifiers (directory names under profiles/)
+
+    Example:
+        >>> profiles = list_profiles()
+        >>> print(profiles)
+        ['TribalGovernmentUS', 'OfficeHeldByHeadOfState']
+
+    Note:
+        For GitHub mode, this requires an API call to list directory contents.
+        For local mode, this scans the local profiles/ directory.
+
+        **Design Question**: Should we maintain a central registry.yaml file
+        in SpiritSafe to avoid GitHub API calls and provide additional metadata
+        like profile categories, deprecation warnings, or featured profiles?
+
+    Plain meaning: See what entity profiles are available.
+    """
+    source = get_spirit_safe_source()
+
+    if source.mode == "local":
+        if source.local_root is None:
+            raise ValueError("local_root required for local mode")
+        profiles_dir = source.local_root / "profiles"
+        if not profiles_dir.exists():
+            return []
+        # List directories only
+        return sorted(
+            [
+                item.name
+                for item in profiles_dir.iterdir()
+                if item.is_dir() and not item.name.startswith(".")
+            ]
+        )
+
+    # GitHub mode: use GitHub API to list directory contents
+    api_url = (
+        f"https://api.github.com/repos/{source.github_repo}/"
+        f"contents/profiles?ref={source.github_ref}"
+    )
+    try:
+        response = requests.get(api_url, timeout=10)
+        response.raise_for_status()
+        contents = response.json()
+        # Filter for directories only
+        return sorted([item["name"] for item in contents if item["type"] == "dir"])
+    except requests.RequestException as exc:
+        raise RuntimeError(
+            f"Failed to list profiles from {source.github_repo}: {exc}"
+        ) from exc
+
+
+def profile_exists(profile_id: str) -> bool:
+    """Check if a profile exists in the configured SpiritSafe source.
+
+    Args:
+        profile_id: Profile identifier to check
+
+    Returns:
+        True if profile exists, False otherwise
+
+    Example:
+        >>> if profile_exists("TribalGovernmentUS"):
+        ...     print("Profile found")
+
+    Plain meaning: Check if a specific entity profile is available.
+    """
+    try:
+        # Attempt to resolve the profile path
+        profile_path = f"profiles/{profile_id}/profile.yaml"
+        source = get_spirit_safe_source()
+        resolved = source.resolve_relative(profile_path)
+        _read_text_from_resolved_path(resolved)
+        return True
+    except Exception:
+        return False
+
+
+def get_profile_metadata(profile_id: str) -> ProfileMetadata:
+    """Load metadata for a profile from its metadata.yaml file.
+
+    Args:
+        profile_id: Profile identifier (directory name)
+
+    Returns:
+        Structured profile metadata
+
+    Raises:
+        FileNotFoundError: If profile or metadata.yaml doesn't exist
+        ValueError: If metadata.yaml is invalid
+
+    Example:
+        >>> metadata = get_profile_metadata("TribalGovernmentUS")
+        >>> print(metadata.name)
+        'Federally Recognized Tribe'
+        >>> print(metadata.version)
+        '1.0.0'
+
+    Plain meaning: Get information about a profile without loading its full definition.
+    """
+    source = get_spirit_safe_source()
+    metadata_path = f"profiles/{profile_id}/metadata.yaml"
+    resolved = source.resolve_relative(metadata_path)
+
+    try:
+        metadata_text = _read_text_from_resolved_path(resolved)
+        raw = yaml.safe_load(metadata_text) or {}
+    except Exception as exc:
+        raise FileNotFoundError(
+            f"Could not load metadata for profile '{profile_id}'"
+        ) from exc
+
+    # Validate required fields
+    if "name" not in raw:
+        raise ValueError(
+            f"Profile '{profile_id}' metadata missing required field 'name'"
+        )
+    if "version" not in raw:
+        raise ValueError(
+            f"Profile '{profile_id}' metadata missing required field 'version'"
+        )
+    if "status" not in raw:
+        raise ValueError(
+            f"Profile '{profile_id}' metadata missing required field 'status'"
+        )
+
+    # Normalize published_date to string if it was parsed as date object
+    published_date = raw.get("published_date")
+    if published_date is not None and not isinstance(published_date, str):
+        # YAML may parse ISO dates as date objects
+        published_date = str(published_date)
+
+    return ProfileMetadata(
+        profile_id=profile_id,
+        name=raw["name"],
+        description=raw.get("description", ""),
+        version=raw["version"],
+        status=raw["status"],
+        published_date=published_date,
+        authors=raw.get("authors", []),
+        maintainers=raw.get("maintainers", []),
+        source_references=raw.get("source_references", []),
+        related_profiles=raw.get("related_profiles", []),
+        community_feedback=raw.get("community_feedback", {}),
+        datatypes_used=raw.get("datatypes_used", []),
+        statements_count=raw.get("statements_count"),
+        references_required=raw.get("references_required"),
+        qualifiers_used=raw.get("qualifiers_used", []),
+        sparql_sources=raw.get("sparql_sources", []),
+        raw_metadata=raw,
+    )
 
 
 class LookupCache:
@@ -496,37 +725,17 @@ class LookupFetcher:
         return choices
 
 
-def _read_text_from_resolved_path(resolved_path: Union[Path, str]) -> str:
-    """Read text from a resolved local path or URL.
-
-    Args:
-        resolved_path: Local filesystem path or HTTP URL.
-
-    Returns:
-        UTF-8 text content.
-
-    Raises:
-        FileNotFoundError: If local path does not exist.
-        requests.HTTPError: If URL fetch fails.
-    """
-    if isinstance(resolved_path, Path):
-        return resolved_path.read_text(encoding="utf-8")
-
-    response = requests.get(resolved_path, timeout=30)
-    response.raise_for_status()
-    return response.text
-
-
 def resolve_profile_path(profile_ref: Union[str, Path]) -> Union[str, Path]:
     """Resolve a profile reference to a path within SpiritSafe structure.
 
     Handles profile name resolution (with or without .yaml extension) to the
-    profiles/ subdirectory, and preserves full paths as-is.
+    registrant package path (`profiles/<ProfileName>/profile.yaml`) and preserves
+    explicit paths as-is.
 
     Args:
         profile_ref: Profile name (e.g., "TribalGovernmentUS",
-                    "TribalGovernmentUS.yaml") or full path
-                    (e.g., "profiles/TribalGovernmentUS.yaml").
+                "TribalGovernmentUS.yaml") or explicit path
+                (e.g., "profiles/TribalGovernmentUS/profile.yaml").
 
     Returns:
         Resolved path suitable for _resolve_profile_text().
@@ -542,10 +751,10 @@ def resolve_profile_path(profile_ref: Union[str, Path]) -> Union[str, Path]:
     if path_obj.is_absolute():
         return profile_ref
 
-    # Simple profile name: resolve to profiles/ subdirectory
-    # Add .yaml extension if not present
-    profile_name = ref_str if ref_str.endswith(".yaml") else f"{ref_str}.yaml"
-    return f"profiles/{profile_name}"
+    # Simple profile name: resolve to registrant package path
+    # Allow both "ProfileName" and "ProfileName.yaml" inputs
+    profile_name = ref_str.removesuffix(".yaml")
+    return f"profiles/{profile_name}/profile.yaml"
 
 
 def _resolve_profile_text(profile_path: Union[str, Path]) -> str:
@@ -564,8 +773,115 @@ def _resolve_profile_text(profile_path: Union[str, Path]) -> str:
     if path_obj.exists():
         return path_obj.read_text(encoding="utf-8")
 
-    resolved = get_spirit_safe_source().resolve_relative(str(profile_path))
-    return _read_text_from_resolved_path(resolved)
+    source = get_spirit_safe_source()
+    profile_path_str = str(profile_path)
+
+    # Transition compatibility:
+    # Prefer caller path first, then try alternate registrant/legacy forms.
+    candidates: list[str] = [profile_path_str]
+
+    # registrant path -> legacy flat YAML fallback
+    # profiles/Foo/profile.yaml -> profiles/Foo.yaml
+    if profile_path_str.startswith("profiles/") and profile_path_str.endswith(
+        "/profile.yaml"
+    ):
+        profile_id = profile_path_str[len("profiles/") : -len("/profile.yaml")]
+        if profile_id:
+            candidates.append(f"profiles/{profile_id}.yaml")
+
+    # legacy flat YAML -> registrant path fallback
+    # profiles/Foo.yaml -> profiles/Foo/profile.yaml
+    if profile_path_str.startswith("profiles/") and profile_path_str.endswith(".yaml"):
+        profile_file = profile_path_str[len("profiles/") :]
+        if "/" not in profile_file:
+            profile_id = Path(profile_file).stem
+            candidates.append(f"profiles/{profile_id}/profile.yaml")
+
+    last_error: Optional[Exception] = None
+    for candidate in dict.fromkeys(candidates):
+        try:
+            resolved = source.resolve_relative(candidate)
+            return _read_text_from_resolved_path(resolved)
+        except Exception as exc:
+            last_error = exc
+
+    if last_error is not None:
+        raise last_error
+
+    raise FileNotFoundError(f"Unable to resolve profile path: {profile_path_str}")
+
+
+def resolve_query_ref(
+    query_ref: str, profile_path: Union[str, Path]
+) -> Union[Path, str]:
+    """Resolve a query reference relative to profile location with root fallback.
+
+    Resolution strategy:
+    1. Try profile-relative first (profiles/<Name>/queries/file.sparql)
+    2. Fall back to root-relative (queries/file.sparql)
+
+    Args:
+        query_ref: Query reference path from profile (e.g., "queries/file.sparql")
+        profile_path: Path to the profile file that references the query
+
+    Returns:
+        Resolved path (local Path or GitHub URL depending on source mode)
+
+    Raises:
+        FileNotFoundError: If query cannot be found in either location
+
+    Example:
+        >>> # For profile "profiles/TribalGovernmentUS/profile.yaml"
+        >>> # and query_ref "queries/file.sparql"
+        >>> resolve_query_ref(
+        ...     "queries/file.sparql",
+        ...     "profiles/TribalGovernmentUS/profile.yaml",
+        ... )
+        # tries: profiles/TribalGovernmentUS/queries/file.sparql
+        # then:  queries/file.sparql
+
+    Plain meaning: Find query file near profile first, then in global queries directory.
+    """
+    source = get_spirit_safe_source()
+    profile_path_str = str(profile_path)
+
+    # Extract profile directory for registrant-style profiles
+    # profiles/Foo/profile.yaml -> profiles/Foo/
+    profile_dir: Optional[str] = None
+    if "/" in profile_path_str or "\\" in profile_path_str:
+        profile_parent = str(Path(profile_path_str).parent)
+        # Only treat as profile directory if it looks like a registrant path
+        if profile_parent.startswith("profiles/") and profile_parent != "profiles":
+            profile_dir = profile_parent
+
+    candidates: list[str] = []
+
+    # Strategy 1: profile-relative (only if we have a profile directory)
+    if profile_dir:
+        profile_relative = f"{profile_dir}/{query_ref}".replace("//", "/")
+        candidates.append(profile_relative)
+
+    # Strategy 2: root-relative fallback
+    candidates.append(query_ref)
+
+    last_error: Optional[Exception] = None
+    for candidate in candidates:
+        try:
+            resolved = source.resolve_relative(candidate)
+            # Verify the path exists before returning it
+            _read_text_from_resolved_path(resolved)
+            return resolved
+        except Exception as exc:
+            last_error = exc
+
+    # Build helpful error message
+    tried_paths = ", ".join(candidates)
+    if last_error is not None:
+        raise FileNotFoundError(
+            f"Query not found: {query_ref} (tried: {tried_paths})"
+        ) from last_error
+
+    raise FileNotFoundError(f"Query not found: {query_ref} (tried: {tried_paths})")
 
 
 def _extract_sparql_specs(node: Any, location: str = "") -> list[dict[str, Any]]:
@@ -673,7 +989,9 @@ def hydrate_profile_lookups(
                 query_ref = spec.get("query_ref")
                 if not query_ref:
                     raise ValueError("Missing both 'query' and 'query_ref'")
-                resolved_query_ref = source.resolve_relative(str(query_ref))
+                resolved_query_ref = resolve_query_ref(
+                    str(query_ref), spec.get("profile", "")
+                )
                 query_template = _read_text_from_resolved_path(resolved_query_ref)
                 rendered_query = _render_query_template(
                     query_template, spec.get("query_params", {})

@@ -229,7 +229,7 @@ For profiles that use SPARQL-backed choice lists (e.g., language codes, allowed 
 ```python
 from gkc.spirit_safe import LookupFetcher
 
-# Initialize fetcher (creates .SpiritSafe/cache directory)
+# Initialize fetcher (uses configured SpiritSafe cache directory)
 fetcher = LookupFetcher()
 
 # Fetch and cache results
@@ -312,7 +312,7 @@ custom_cache = LookupCache(cache_dir="/path/to/cache")
 #### Profile Integration Example
 
 ```yaml
-# In .SpiritSafe/profiles/YourProfile.yaml
+# In profiles/YourProfile/profile.yaml (SpiritSafe repo)
 value:
   type: item
   allowed_items:

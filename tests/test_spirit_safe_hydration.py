@@ -10,7 +10,7 @@ import gkc
 
 @pytest.fixture
 def spirit_safe_tmp(tmp_path: Path) -> Path:
-    root = tmp_path / ".SpiritSafe"
+    root = tmp_path / "SpiritSafe"
     (root / "profiles").mkdir(parents=True, exist_ok=True)
     (root / "queries").mkdir(parents=True, exist_ok=True)
     return root

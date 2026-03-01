@@ -12,7 +12,9 @@ The profiles module provides YAML-first entity profiles that drive validation, f
 ```python
 from gkc.profiles import ProfileLoader, ProfileValidator
 
-profile = ProfileLoader().load_from_file(".dev/TribalGovernmentUS.yaml")
+profile = ProfileLoader().load_from_file(
+    "/path/to/SpiritSafe/profiles/TribalGovernmentUS/profile.yaml"
+)
 validator = ProfileValidator(profile)
 result = validator.validate_item(item_json, policy="lenient")
 ```
@@ -62,7 +64,9 @@ result = validator.validate_item(item_json, policy="lenient")
 from gkc.profiles import ProfileLoader
 
 loader = ProfileLoader()
-profile = loader.load_from_file(".dev/TribalGovernmentUS.yaml")
+profile = loader.load_from_file(
+    "/path/to/SpiritSafe/profiles/TribalGovernmentUS/profile.yaml"
+)
 print(profile.name)
 ```
 
@@ -71,9 +75,11 @@ print(profile.name)
 ```python
 from gkc.profiles import FormSchemaGenerator, ProfileLoader
 
-profile = ProfileLoader().load_from_file(".dev/TribalGovernmentUS.yaml")
+profile = ProfileLoader().load_from_file(
+    "/path/to/SpiritSafe/profiles/TribalGovernmentUS/profile.yaml"
+)
 form_schema = FormSchemaGenerator(profile).build_schema()
-print(form_schema["fields"][0]["label"])
+print(form_schema["statements"][0]["label"])
 ```
 
 ### Validate a Wikidata Item (Lenient)
@@ -81,7 +87,9 @@ print(form_schema["fields"][0]["label"])
 ```python
 from gkc.profiles import ProfileLoader, ProfileValidator
 
-profile = ProfileLoader().load_from_file(".dev/TribalGovernmentUS.yaml")
+profile = ProfileLoader().load_from_file(
+    "/path/to/SpiritSafe/profiles/TribalGovernmentUS/profile.yaml"
+)
 validator = ProfileValidator(profile)
 result = validator.validate_item(item_json, policy="lenient")
 
@@ -96,7 +104,9 @@ if result.ok:
 ```python
 from gkc.profiles import ProfileLoader, ProfileValidator
 
-profile = ProfileLoader().load_from_file(".dev/TribalGovernmentUS.yaml")
+profile = ProfileLoader().load_from_file(
+    "/path/to/SpiritSafe/profiles/TribalGovernmentUS/profile.yaml"
+)
 validator = ProfileValidator(profile)
 result = validator.validate_item(item_json, policy="strict")
 

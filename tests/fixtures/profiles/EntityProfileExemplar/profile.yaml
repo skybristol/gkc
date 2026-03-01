@@ -1,0 +1,299 @@
+name: Entity Profile Exemplar
+description: >
+  Comprehensive exemplar profile fixture that demonstrates the full statement
+  structure, representative datatypes, qualifiers, references, and input prompts.
+
+labels:
+  en:
+    label: Label
+    input_prompt: Enter the primary English label.
+    required: true
+    guidance: Prefer self-designation and official usage.
+
+descriptions:
+  en:
+    label: Description
+    input_prompt: Enter a concise disambiguating description.
+    required: true
+    guidance: Keep concise and specific.
+
+aliases:
+  en:
+    label: Aliases
+    input_prompt: Enter alternate names (one at a time).
+    required: false
+    guidance: Include official variants and historical names if relevant.
+
+sitelinks:
+  required: false
+  validation_policy: allow_existing_nonconforming
+  guidance: Add sitelinks when verified.
+  languages:
+    en:
+      project: wikipedia
+      description: English Wikipedia article
+      required: false
+      guidance: Use established article title.
+
+standard_reference: &standard_reference
+  required: true
+  min_count: 1
+  input_prompt: Add at least one source reference for this statement.
+  validation_policy: allow_existing_nonconforming
+  form_policy: target_only
+  allowed:
+    - id: stated_in
+      wikidata_property: P248
+      type: item
+      label: Stated in
+      input_prompt: Enter QID for source publication or source dataset.
+      description: Reference to source document or dataset
+    - id: reference_url
+      wikidata_property: P854
+      type: url
+      label: Reference URL
+      input_prompt: Enter a direct supporting URL.
+      description: Direct URL to source
+
+statements:
+  - id: instance_of
+    label: Instance of
+    input_prompt: Add the core classification statement.
+    wikidata_property: P31
+    type: statement
+    required: true
+    max_count: null
+    validation_policy: allow_existing_nonconforming
+    form_policy: target_only
+    value:
+      type: item
+      fixed: Q7840353
+      label: federally recognized Native American tribe in the United States
+    references:
+      required: true
+      min_count: 1
+      input_prompt: Add the Federal Register source statement.
+      validation_policy: allow_existing_nonconforming
+      form_policy: target_only
+      allowed:
+        id: stated_in
+        wikidata_property: P248
+        type: item
+        label: Stated in
+        input_prompt: Enter QID for the Federal Register source record.
+        allowed_items:
+          source: sparql
+          query_ref: queries/bia_federal_register_issues.sparql
+          query_params:
+            federal_register_class_qid: Q121840925
+            author_qid: Q1010563
+            lang: en
+          refresh: manual
+          fallback_items:
+            - id: Q138391266
+              label: Indian Entities Recognized by and Eligible to Receive Services from the United States Bureau of Indian Affairs (January 30, 2026)
+
+  - id: official_website
+    label: Official website
+    input_prompt: Add official tribal government website statement.
+    wikidata_property: P856
+    type: statement
+    required: false
+    max_count: 1
+    validation_policy: allow_existing_nonconforming
+    form_policy: target_only
+    value:
+      type: url
+    qualifiers:
+      - id: language_of_work
+        label: Language of work or name
+        input_prompt: Specify website language item.
+        wikidata_property: P407
+        required: true
+        value:
+          type: item
+          fixed: Q1860
+          label: English
+    references:
+      required: true
+      min_count: 1
+      input_prompt: Add supporting reference URL.
+      validation_policy: allow_existing_nonconforming
+      form_policy: target_only
+      target:
+        id: reference_url
+        wikidata_property: P854
+        type: url
+        label: Reference URL
+        value_source: statement_value
+
+  - id: member_count
+    label: Member count
+    input_prompt: Add reported member count when source data exists.
+    wikidata_property: P2124
+    type: statement
+    required: false
+    value:
+      type: quantity
+      constraints:
+        - type: integer_only
+          description: Must be an integer (whole number)
+    qualifiers:
+      - id: point_in_time
+        label: Point in time
+        input_prompt: Enter date for reported count.
+        wikidata_property: P585
+        required: true
+        value:
+          type: time
+    references: *standard_reference
+
+  - id: native_name
+    label: Native name
+    input_prompt: Add native language name statement.
+    wikidata_property: P1705
+    type: statement
+    required: false
+    max_count: null
+    validation_policy: allow_existing_nonconforming
+    form_policy: target_only
+    value:
+      type: monolingualtext
+      constraints:
+        - type: language_required
+          description: Must specify a language code
+        - type: valid_language_code
+          description: Must use a valid Wikimedia language code
+    qualifiers:
+      - id: language_of_work
+        label: Language of work or name
+        input_prompt: Specify language item for native name.
+        wikidata_property: P407
+        required: false
+        max_count: 1
+        value:
+          type: item
+          allowed_items:
+            source: sparql
+            query_ref: queries/wikidata_language_items_en.sparql
+            query_params:
+              language_class_qid: Q34770
+              iso_property_pid: P424
+              lang: en
+            refresh: weekly
+            fallback_items:
+              - id: Q33298
+                label: Navajo
+              - id: Q28026
+                label: Cherokee
+              - id: Q36727
+                label: Ojibwe
+              - id: Q13310
+                label: Dakota
+              - id: Q13389
+                label: uncoded languages (mis)
+    references: *standard_reference
+
+  - id: headquarters_location
+    label: Headquarters location
+    input_prompt: Add headquarters location statement.
+    wikidata_property: P159
+    type: statement
+    required: false
+    max_count: 1
+    validation_policy: allow_existing_nonconforming
+    form_policy: target_only
+    value:
+      type: item
+    qualifiers:
+      - id: street_address
+        label: Street address
+        input_prompt: Enter street address text.
+        wikidata_property: P6375
+        required: false
+        max_count: 1
+        value:
+          type: monolingualtext
+          constraints:
+            - type: language_required
+              description: Must specify a language code
+      - id: postal_code
+        label: Postal code
+        input_prompt: Enter postal code.
+        wikidata_property: P281
+        required: false
+        max_count: 1
+        value:
+          type: string
+      - id: coordinate_location
+        label: Coordinate location
+        input_prompt: Enter latitude/longitude for headquarters.
+        wikidata_property: P625
+        required: false
+        max_count: 1
+        value:
+          type: globecoordinate
+          constraints:
+            - type: valid_coordinates
+              description: Latitude must be between -90 and 90, longitude between -180 and 180
+            - type: precision
+              description: Coordinate precision (smaller values = higher precision)
+              min_precision: 0.0001
+              max_precision: 0.01
+            - type: globe
+              description: Reference globe (default Earth)
+              default: http://www.wikidata.org/entity/Q2
+    references: *standard_reference
+
+  - id: inception
+    label: Inception
+    input_prompt: Add inception/formation statement.
+    wikidata_property: P571
+    type: statement
+    required: false
+    max_count: 1
+    validation_policy: allow_existing_nonconforming
+    form_policy: target_only
+    value:
+      type: time
+      constraints:
+        - type: precision
+          description: Time precision derived from input format
+          allowed_precisions: [9, 10, 11]
+          auto_derive: true
+    references: *standard_reference
+
+  - id: osm_relation_id
+    label: OpenStreetMap relation ID
+    input_prompt: Add OSM relation ID statement when available.
+    wikidata_property: P402
+    type: statement
+    required: false
+    max_count: 1
+    validation_policy: allow_existing_nonconforming
+    form_policy: target_only
+    value:
+      type: external-id
+      constraints:
+        - type: format
+          description: OpenStreetMap relation IDs are numeric
+          pattern: '^\\d+$'
+    references: *standard_reference
+
+  - id: flag_image
+    label: Flag image
+    input_prompt: Add flag image statement with Commons filename.
+    wikidata_property: P41
+    type: statement
+    required: false
+    max_count: 1
+    validation_policy: allow_existing_nonconforming
+    form_policy: target_only
+    value:
+      type: commonsMedia
+      constraints:
+        - type: file_exists
+          description: File must exist on Wikimedia Commons
+          validate: true
+          validation_method: commons_api
+    references: *standard_reference

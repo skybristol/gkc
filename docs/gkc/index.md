@@ -7,7 +7,7 @@ Welcome to the documentation for GKC (Global Knowledge Commons), a Python packag
 - [Installation and setup](setup.md) - setting up to operate the software (aka make whiskey)
 - [Authentication](authentication.md) - set up credentials for Wikimedia apps and OpenStreetMap
 - [Background](background.md) - read about where the project came from and its motivations
-- [Architecture](architecture.md) - major architectural concepts for the GKC and Data Distillery
+- [Architecture](../architecture/index.md) - major architectural concepts for the GKC and Data Distillery
 - [Profiles](profiles.md) - comprehensive guide to building and using YAML profiles
 
 ## Data Distillery Workflow

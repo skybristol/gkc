@@ -3,7 +3,7 @@ description: >
   Canonical form for representing a federally recognized Native American tribe
   in the United States, based loosely on EntitySchema E502.
 
-fields:
+statements:
   - id: instance_of
     label: Instance of
     wikidata_property: P31
@@ -102,3 +102,134 @@ fields:
           type: url
           label: Reference URL
           description: Direct URL to source
+
+  - id: native_label
+    label: Native label
+    wikidata_property: P1705
+    type: statement
+    required: false
+    max_count: null
+    validation_policy: allow_existing_nonconforming
+    form_policy: target_only
+    value:
+      type: monolingualtext
+    qualifiers:
+      - id: language_of_work
+        label: Language of work or name
+        wikidata_property: P407
+        required: false
+        value:
+          type: item
+          allowed_items:
+            source: sparql
+            query_ref: queries/language_items.sparql
+            query_params:
+              lang: en
+            refresh: manual
+    references:
+      required: false
+      min_count: 0
+      validation_policy: allow_existing_nonconforming
+      form_policy: target_only
+      allowed:
+        - id: stated_in
+          wikidata_property: P248
+          type: item
+          label: Stated in
+        - id: reference_url
+          wikidata_property: P854
+          type: url
+          label: Reference URL
+
+  - id: headquarters_location
+    label: Headquarters location
+    wikidata_property: P159
+    type: statement
+    required: false
+    max_count: 1
+    validation_policy: allow_existing_nonconforming
+    form_policy: target_only
+    value:
+      type: item
+      allowed_items:
+        source: sparql
+        query_ref: queries/us_places.sparql
+        query_params:
+          lang: en
+        refresh: manual
+    qualifiers:
+      - id: coordinate_location
+        label: Coordinate location
+        wikidata_property: P625
+        required: false
+        value:
+          type: globecoordinate
+          constraints:
+            - type: valid_latitude_longitude
+              description: Latitude must be -90 to 90, longitude -180 to 180
+            - type: coordinate_precision
+              description: Maximum 6 decimal places for coordinates
+    references:
+      required: false
+      min_count: 0
+      validation_policy: allow_existing_nonconforming
+      form_policy: target_only
+      allowed:
+        - id: stated_in
+          wikidata_property: P248
+          type: item
+          label: Stated in
+        - id: reference_url
+          wikidata_property: P854
+          type: url
+          label: Reference URL
+
+  - id: flag_image
+    label: Flag image
+    wikidata_property: P41
+    type: statement
+    required: false
+    max_count: 1
+    validation_policy: allow_existing_nonconforming
+    form_policy: target_only
+    value:
+      type: commonsMedia
+    references:
+      required: false
+      min_count: 0
+      validation_policy: allow_existing_nonconforming
+      form_policy: target_only
+      allowed:
+        - id: source_of_file
+          wikidata_property: P7482
+          type: item
+          label: Source of file
+        - id: copyright_status
+          wikidata_property: P6216
+          type: item
+          label: Copyright status
+
+  - id: seal_image
+    label: Seal image
+    wikidata_property: P94
+    type: statement
+    required: false
+    max_count: 1
+    validation_policy: allow_existing_nonconforming
+    form_policy: target_only
+    value:
+      type: commonsMedia
+    references:
+      required: false
+      min_count: 0
+      validation_policy: allow_existing_nonconforming
+      form_policy: target_only
+      allowed:
+        - id: source_of_file
+          wikidata_property: P7482
+          type: item
+          label: Source of file
+        - id: copyright_status
+          wikidata_property: P6216
+          type: item
+          label: Copyright status

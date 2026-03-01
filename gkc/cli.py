@@ -378,6 +378,23 @@ def _build_parser() -> argparse.ArgumentParser:
         command_path="profile.form_schema",
     )
 
+    profile_run_form = profile_subparsers.add_parser(
+        "form", help="Launch an interactive Textual form for a YAML profile"
+    )
+    profile_run_form.add_argument(
+        "--profile",
+        required=True,
+        help="Path to YAML profile definition",
+    )
+    profile_run_form.add_argument(
+        "--qid",
+        help="Optional Wikidata item ID for editing an existing item",
+    )
+    profile_run_form.set_defaults(
+        handler=_handle_profile_form,
+        command_path="profile.form",
+    )
+
     profile_lookups = profile_subparsers.add_parser(
         "lookups", help="Profile lookup hydration utilities"
     )
@@ -1158,6 +1175,34 @@ def _handle_profile_form_schema(args: argparse.Namespace) -> dict[str, Any]:
         "ok": True,
         "message": message,
         "details": {"profile": profile.name, "output": args.output or "stdout"},
+    }
+
+
+def _handle_profile_form(args: argparse.Namespace) -> dict[str, Any]:
+    """Launch an interactive Textual form from a YAML profile."""
+    loader = ProfileLoader()
+    profile = loader.load_from_file(args.profile)
+
+    try:
+        from gkc.profiles.forms import TextualFormGenerator
+    except ImportError as exc:
+        raise CLIError(
+            "Textual UI dependencies are unavailable. Install `textual` to use "
+            "`gkc profile form`."
+        ) from exc
+
+    generator = TextualFormGenerator(profile)
+    app = generator.create_form(qid=args.qid)
+    app.run()
+
+    return {
+        "command": args.command_path,
+        "ok": True,
+        "message": "Form session ended",
+        "details": {
+            "profile": profile.name,
+            "qid": args.qid,
+        },
     }
 
 

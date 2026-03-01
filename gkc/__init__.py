@@ -88,10 +88,15 @@ from gkc.spirit_safe import (
     DEFAULT_SPIRIT_SAFE_GITHUB_REPO,
     LookupCache,
     LookupFetcher,
+    ProfileMetadata,
     SpiritSafeSourceConfig,
+    get_profile_metadata,
     get_spirit_safe_source,
     hydrate_profile_lookups,
+    list_profiles,
+    profile_exists,
     resolve_profile_path,
+    resolve_query_ref,
     set_spirit_safe_source,
 )
 
@@ -181,5 +186,10 @@ __all__ = [
     "LookupCache",
     "LookupFetcher",
     "hydrate_profile_lookups",
+    "ProfileMetadata",
+    "get_profile_metadata",
+    "list_profiles",
+    "profile_exists",
     "resolve_profile_path",
+    "resolve_query_ref",
 ]

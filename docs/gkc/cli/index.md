@@ -42,10 +42,10 @@ gkc mash qid Q42
 
 ### [Profiles](profiles.md)
 
-Validate items against YAML profiles and generate form schemas.
+Validate items against YAML profiles, generate form schemas, and hydrate SPARQL lookups.
 
 ```bash
-gkc profile validate --profile .dev/TribalGovernmentUS.yaml --qid Q123
+gkc profile validate --profile /path/to/SpiritSafe/profiles/TribalGovernmentUS/profile.yaml --qid Q123
 ```
 
 ## Quick Start Examples

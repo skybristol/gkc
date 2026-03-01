@@ -1,96 +1,42 @@
-# Project Overview
-The GKC python package supports a data integration workflow that transforms raw data from various sources into linked open data distributed across systems like Wikidata, Wikimedia Commons, Wikipedia, and OpenStreetMap. The project uses a distillery metaphor to describe its architecture and processes.
+# Core architectural principles/components
+- The **Global Knowledge Commons** (GKC) is an abstract concept for an envisioned improved linkage between Wikidata, Wikimedia Commons, Wikipedia Templates, and OpenStreetMap
+- Our project uses the whiskey distillery metaphor for naming and organizing parts of a complex architecture
+- gkc is the engine (python package) that does the work
+- **SpiritSafe** is a declarative registry hosted in the dedicated `skybristol/SpiritSafe` repository; it contains
+  - `profiles/` with YAML Entity Profiles
+  - `queries/` with SPARQL files for allowed‑items list hydration
+  - `cache/` with the resulting hydrated JSON lists and indexes
+- **GKC Entities** are abstract representations of real‑world entities that we want to model and link across platforms
+  - GKC Entity Profiles are YAML documents that define entity structure, constraints, references, and SPARQL‑driven allowed‑item lists
+  - Entity Profiles are fundamentally based on the Wikibase/Wikidata model but incorporate linkages to other parts of the Global Knowledge Commons; the vision is to get Wikidata right and then share that content out with other platforms
+  - Entity Profiles drive both data validation and the presentation of input forms for users
 
-## Who's who
-- Architect: Sky
-- Engineer: Copilot (with oversight and guidance from the Architect)
+# High‑level rules for reasoning
+- Never hallucinate Wikidata JSON structures; always follow the profile.
+- Treat YAML profiles as the single source of truth for form generation and validation.
+- Keep code modular, atomic, and testable.
+- Maintain strict separation between profile definition, modulation, and serialization.
+- Never mix UI logic with profile logic.
+- Never modify SpiritSafe artifacts without explicit instruction to do so.
 
-## Protocol
-1. The Architect will start work toward a new feature by creating a collaborative design document under `.dev`.
-2. Before getting started on code, the Architect will ask the Engineer to collaborate on building out the design document under `.dev` that follows a basic template.
-3. The Architect and Engineer will track their work and design decisions made in the working development file.
-4. The Architect will respond to specific questions on the plans submitted by the Engineer in the dev document, create a branch for the work, and direct the Engineer on when they can proceed with writing code.
-5. The Engineer will write code in the development branch following the guidance and requirements outlined in the working development document and any related documentation.
-6. The Engineer will follow up from work completed with a summary of what was done, any issues encountered, any questions or concerns that remain, and a reasonable commit message all written to the dev document.
-7. The Architect will review the code, tests, and documentation written by the Engineer, providing feedback on the dev document and requesting changes as needed to ensure that the code meets the project's standards for quality and maintainability.
-8. Once the code is approved, the Architect will post the documentation from the dev document in a pull request, review CI workflow status, and merge the branch into the main codebase, and delete the branch.
+# Agent awareness and handoffs
+- Custom agents are at work in this workspace with guideline files at `.github/agents`
+  - Profile Architect - direct responsibility for the SpiritSafe registry structure, profile schema, documentation, and related functionality in the spirit_safe module
+  - Validation Agent - direct responsibility for the validation engine that consumes profiles and performs entity profile validation, entity validation, serialized data validation for shipping, and other related tasks
+  - Wizard Engineer - direct responsibility for the user interface components that consume profiles to generate forms, provide user guidance, and perform client‑side validation from the Entity Profiles
+- Always be aware of which agent (human or AI) is responsible for the next step in the workflow. When you reach a point where another agent's role begins, produce a concise Handoff Summary that captures only the information that agent needs to proceed. Do not attempt to perform tasks outside your scope. Instead, clearly indicate which agent should take the next step and what inputs they require.
 
-### Code Quality Standards
-- The Engineer will use the provided pre-merge check script frequently during development (after each major component, not just at the end)
-- The Engineer will prioritize mypy type checking and aim for zero type errors in new code
-- Type annotations should be included in initial code, not added as an afterthought
-- The Engineer will verify code imports and runs without syntax errors before committing
-- When writing new functions/classes, examine existing patterns in the codebase for consistency in typing and style
+# Interaction expectations
+- Prefer small, composable functions.
+- Prefer declarative over imperative logic.
+- Prefer explicit over inferred behavior.
+- Follow the YAML schema strictly. When it doesn't accomplish what's being asked, describe the necessary change and wait for instructions to proceed.
 
-### Documentation Guidelines
+# Documentation guidelines
+- Write Markdown for MkDocs (Python-Markdown strict mode), not GitHub-flavored Markdown: always include a blank line before and after bullet/numbered lists, and ensure nested list indentation is consistent.
+- Run a final pass to normalize list formatting so all lists render correctly in mkdocs serve.
 
-- Use the standard Python package documentation structure: Overview → Examples → API Reference → CLI Reference → Notes.
-- Every public function/class must include: purpose, parameters, return values, side effects, error conditions, and at least one real-world example.
-- Every CLI command must include: description, usage block, flags/options, and two examples (minimal + realistic).
-- Document the Python API first, then the CLI as a thin wrapper.
-- Each module should begin with a high-level description and a list of its main functions.
-- Prefer task-oriented examples using realistic Wikidata data.
-- All public functionality must be documented; no undocumented parameters or return types.
-- Keep documentation concise, explicit, and example-driven.
-- Add “See also” links between related modules and commands.
-
-### Development Workflow Checkpoint
-Before considering work complete:
-1. Run `./scripts/pre-merge-check.sh` and ensure all checks pass
-2. Do not commit code that produces mypy errors
-3. If type errors exist, investigate the root cause
-
-### Escalation Checkpoints
-The Engineer should escalate to the Architect if any of these conditions are met:
-
-**1. Pre-Merge Check Failures (after each component):**
-- More than 10 mypy errors in new/modified code
-- More than 5 consecutive failed test runs on the same component
-- Ruff/Black failures that can't be resolved with auto-fix
-- *Action:* Stop, commit current state, and describe the issue in GitHub
-
-**2. Complexity Growth:**
-- A task that was estimated as "small" is now touching >5 files
-- Need to refactor existing code extensively to support new code (suggests wrong approach)
-- Generated code is >1.5x the size of existing analogous code in the project
-- *Action:* Pause and review approach with architect before continuing
-
-**3. Iterative Failure Pattern:**
-- The same test fails for >3 attempts with different fixes
-- Same mypy error re-appears after being "fixed" in a different way
-- Fix for one issue creates errors in previously passing code
-- *Action:* This signals fundamental misunderstanding; escalate before proceeding
-
-**4. Type Safety Regression:**
-- Adding new code reduces the mypy pass rate of the module
-- Spreading `Any` types instead of improving specificity
-- Adding `# type: ignore` comments as a workaround
-- *Action:* Do not commit; investigate root cause with architect
-
-**5. Testing Coverage:**
-- New code has <60% test coverage
-- Tests pass but don't actually exercise new code paths
-- *Action:* Expand tests or escalate if coverage is legitimately difficult
-
-**6. Documentation Debt:**
-- New functions lack docstrings or have minimal ones
-- No API documentation added to `/docs/gkc/`
-- Type hints are unclear or use `Any` without explanation
-- *Action:* Complete documentation before marking as ready
-
-## Issue Design Guidelines (for Architect)
-Each issue should:
-- Have a single, clearly defined goal
-- List explicit success criteria (X tests pass, Y mypy errors resolved, etc.)
-- Include notional usage patterns for API and or CLI commands
-- Include links to existing code patterns to follow
-- Specify which files/components will be modified
-- Estimate scope (touching N files suggests scope creep if it grows)
-
-## Software Design Guidelines (for Engineer)
-- Always produce both library and CLI compatible infrastructure when implementing new features
-- Follow existing code patterns for consistency in style and architecture
-- Prioritize type safety and maintainability over quick fixes
-- Write tests that are robust and cover edge cases, not just the happy path
-- Document code with clear docstrings and maintain up-to-date API documentation in `/docs/gkc/api` along with CLI documentation in `/docs/gkc/cli`
-- Use GitHub issues and comments to document design decisions and questions, rather than relying on external communication channels
+# Test guidelines
+- Always run Python tests from the repo root with poetry run ... so they execute in the project .venv (not the system Python).
+- Follow existing test patterns for structure and style; when in doubt, ask for guidance before writing new tests.
+- For new features, write tests that cover both expected success cases and edge cases/failure modes

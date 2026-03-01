@@ -77,7 +77,7 @@ class ProfileLoader:
             None.
 
         Example:
-            >>> profile = loader.load_from_text("name: Example\nfields: []")
+            >>> profile = loader.load_from_text("name: Example\nstatements: []")
 
         Plain meaning: Parse YAML content into a profile object.
         """
@@ -100,7 +100,7 @@ class ProfileLoader:
             None.
 
         Example:
-            >>> profile = loader.load_from_dict({"name": "Demo", "fields": []})
+            >>> profile = loader.load_from_dict({"name": "Demo", "statements": []})
 
         Plain meaning: Validate and convert profile data to a typed object.
         """

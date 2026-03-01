@@ -7,7 +7,7 @@ from __future__ import annotations
 
 from typing import Dict, List, Literal, Optional, Union
 
-from pydantic import BaseModel, ValidationError
+from pydantic import AliasChoices, BaseModel, Field, ValidationError
 
 from gkc.profiles.generators.pydantic_generator import ProfilePydanticGenerator
 from gkc.profiles.models import ProfileDefinition
@@ -26,7 +26,7 @@ class ValidationIssue(BaseModel):
     Args:
         severity: "error" or "warning".
         message: Issue description.
-        field_id: Optional profile field identifier.
+        statement_id: Optional profile statement identifier.
         property_id: Optional Wikidata property ID.
 
     Example:
@@ -37,7 +37,11 @@ class ValidationIssue(BaseModel):
 
     severity: Literal["error", "warning"]
     message: str
-    field_id: Optional[str] = None
+    statement_id: Optional[str] = Field(
+        default=None,
+        validation_alias=AliasChoices("statement_id", "field_id"),
+        serialization_alias="statement_id",
+    )
     property_id: Optional[str] = None
 
 
@@ -152,7 +156,7 @@ class ProfileValidator:
                 ValidationIssue(
                     severity=issue.severity,
                     message=issue.message,
-                    field_id=issue.field_id,
+                    statement_id=issue.statement_id,
                     property_id=issue.property_id,
                 )
             )
@@ -168,12 +172,12 @@ class ProfileValidator:
         for err in exc.errors():
             loc = err.get("loc", [])
             field_name = loc[0] if loc else None
-            field_id = field_aliases.get(field_name) if field_name else None
+            statement_id = field_aliases.get(field_name) if field_name else None
             issues.append(
                 ValidationIssue(
                     severity="error",
                     message=err.get("msg", "Validation error"),
-                    field_id=field_id,
+                    statement_id=statement_id,
                 )
             )
         return issues
@@ -183,7 +187,7 @@ class ProfileValidator:
     ) -> list[ValidationIssue]:
         warnings: list[ValidationIssue] = []
 
-        for field in self.profile.fields:
+        for field in self.profile.statements:
             statements = normalization.data.get(field.id, [])
             violations = _evaluate_field(field, statements)
             for violation, category in violations:
@@ -200,7 +204,7 @@ class ProfileValidator:
                     ValidationIssue(
                         severity="warning",
                         message=f"{field.id}: {violation}",
-                        field_id=field.id,
+                        statement_id=field.id,
                         property_id=field.wikidata_property,
                     )
                 )
@@ -236,7 +240,11 @@ def _evaluate_field(field, statements: List[StatementData]) -> List[tuple[str, s
 
         for constraint in field.value.constraints:
             if constraint.type == "integer_only":
-                if not _is_integer(statement.value.value):
+                value_to_check = statement.value.value
+                if isinstance(value_to_check, dict):
+                    # Extract amount from quantity dict if present
+                    value_to_check = value_to_check.get("amount", value_to_check)
+                if not _is_integer(value_to_check):
                     violations.append(
                         (f"statement {index} violates integer_only", "field")
                     )

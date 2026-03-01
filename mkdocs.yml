@@ -44,11 +44,16 @@ nav:
   - Home: index.md
   - Data Curation Narratives:
     - Tribal Governments: tribes.md
+  - SpiritSafe: SpiritSafe.md
+  - Architecture:
+    - Overview: architecture/index.md
+    - Profile Loading: architecture/profile-loading.md
+    - SpiritSafe Infrastructure: architecture/spiritsafe-infrastructure.md
+    - Validation Architecture: architecture/validation-architecture.md
   - GKC Documentation:
     - Home: gkc/index.md
     - Background: gkc/background.md
-    - Architecture: gkc/architecture.md
-    - SpiritSafe Profiles: gkc/profiles.md
+    - Entity Profiles: gkc/profiles.md
     - Getting Started:
       - Setup and Orientation: gkc/setup.md
       - Authentication: gkc/authentication.md
@@ -60,6 +65,7 @@ nav:
       - Mash: gkc/api/mash.md
       - Mash Formatters: gkc/api/mash_formatters.md
       - Profiles: gkc/api/profiles.md
+      - SpiritSafe: gkc/api/spirit_safe.md
       - ShEx: gkc/api/shex.md
       - Shipper: gkc/api/shipper.md
       - SPARQL: gkc/api/sparql.md

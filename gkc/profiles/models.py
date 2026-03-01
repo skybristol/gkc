@@ -11,7 +11,7 @@ from __future__ import annotations
 
 from typing import List, Literal, Optional, Union
 
-from pydantic import BaseModel, Field, field_validator, model_validator
+from pydantic import AliasChoices, BaseModel, Field, field_validator, model_validator
 
 ValidationPolicy = Literal["allow_existing_nonconforming", "strict"]
 FormPolicy = Literal["target_only", "show_all"]
@@ -142,6 +142,7 @@ class ReferenceTargetDefinition(BaseModel):
         wikidata_property: Wikidata property ID.
         type: Datatype for the reference value.
         label: Human-readable label.
+        input_prompt: Optional short prompt shown in data-entry UIs.
         description: Optional description.
         value_source: Optional value source hint (e.g., "statement_value").
         allowed_items: Optional choice list for allowed values.
@@ -161,6 +162,9 @@ class ReferenceTargetDefinition(BaseModel):
     wikidata_property: str = Field(..., description="Wikidata property ID")
     type: ValueType = Field(..., description="Reference value datatype")
     label: str = Field(..., description="Reference entry label")
+    input_prompt: str = Field(
+        default="", description="Short prompt shown in input widgets"
+    )
     description: str = Field(default="", description="Reference entry description")
     value_source: Optional[str] = Field(default=None, description="Value source hint")
     allowed_items: Optional[ChoiceListSpec] = Field(
@@ -173,15 +177,14 @@ class MetadataDefinition(BaseModel):
 
     Args:
         label: Field label for curation.
-        description: Description explaining what should go here.
+        input_prompt: Short prompt shown in data-entry fields.
         required: Whether this language variant is required.
         guidance: Curator guidance text.
-        examples: Optional list of example values.
 
     Example:
         >>> MetadataDefinition(
         ...     label="Label",
-        ...     description="Primary name in English",
+        ...     input_prompt="Enter the primary English name",
         ...     required=True,
         ...     guidance="Use the tribe's self-designation"
         ... )
@@ -190,10 +193,11 @@ class MetadataDefinition(BaseModel):
     """
 
     label: str = Field(..., description="Metadata field label")
-    description: str = Field(..., description="What this metadata contains")
+    input_prompt: str = Field(
+        default="", description="Short prompt shown in input widgets"
+    )
     required: bool = Field(default=False, description="Is this variant required?")
     guidance: str = Field(default="", description="Curator guidance text")
-    examples: List[str] = Field(default_factory=list, description="Example values")
 
 
 class SitelinkLanguageDefinition(BaseModel):
@@ -258,6 +262,7 @@ class ReferenceDefinition(BaseModel):
     Args:
         required: Whether references are required.
         min_count: Minimum number of references per statement.
+        input_prompt: Optional short prompt for reference entry guidance.
         validation_policy: Validation policy for existing items.
         form_policy: Form visibility policy.
         allowed: Allowed reference property definitions.
@@ -271,6 +276,9 @@ class ReferenceDefinition(BaseModel):
 
     required: bool = Field(default=False, description="Reference required flag")
     min_count: Optional[int] = Field(default=None, description="Minimum references")
+    input_prompt: str = Field(
+        default="", description="Short prompt shown when collecting references"
+    )
     validation_policy: ValidationPolicy = Field(
         default="allow_existing_nonconforming",
         description="Reference validation policy",
@@ -308,6 +316,7 @@ class QualifierDefinition(BaseModel):
     Args:
         id: Qualifier identifier.
         label: Human-readable label.
+        input_prompt: Optional short prompt shown in data-entry UIs.
         wikidata_property: Wikidata property ID.
         required: Whether the qualifier is required.
         min_count: Minimum number of qualifier values.
@@ -328,6 +337,9 @@ class QualifierDefinition(BaseModel):
 
     id: str = Field(..., description="Qualifier identifier")
     label: str = Field(..., description="Qualifier label")
+    input_prompt: str = Field(
+        default="", description="Short prompt shown in input widgets"
+    )
     wikidata_property: str = Field(..., description="Wikidata property ID")
     required: bool = Field(default=False, description="Qualifier required flag")
     min_count: Optional[int] = Field(
@@ -352,6 +364,7 @@ class ProfileFieldDefinition(BaseModel):
     Args:
         id: Field identifier.
         label: Human-readable label.
+        input_prompt: Optional short prompt shown in data-entry UIs.
         wikidata_property: Wikidata property ID.
         type: Field type (currently only "statement").
         required: Whether the statement is required.
@@ -377,6 +390,9 @@ class ProfileFieldDefinition(BaseModel):
 
     id: str = Field(..., description="Field identifier")
     label: str = Field(..., description="Field label")
+    input_prompt: str = Field(
+        default="", description="Short prompt shown in input widgets"
+    )
     wikidata_property: str = Field(..., description="Wikidata property ID")
     type: Literal["statement"] = Field(default="statement", description="Field type")
     required: bool = Field(default=False, description="Field required flag")
@@ -398,7 +414,7 @@ class ProfileFieldDefinition(BaseModel):
 
 
 class ProfileDefinition(BaseModel):
-    """Define a YAML profile and its fields.
+    """Define a YAML profile and its statements.
 
     Attributes:
         name: Profile name.
@@ -407,10 +423,10 @@ class ProfileDefinition(BaseModel):
         descriptions: Per-language description definitions.
         aliases: Per-language alias definitions.
         sitelinks: Sitelink definitions for wiki projects.
-        fields: List of field definitions.
+        statements: List of statement definitions.
 
     Example:
-        >>> ProfileDefinition(name="Example", description="Demo", fields=[])
+        >>> ProfileDefinition(name="Example", description="Demo", statements=[])
 
     Plain meaning: The complete YAML profile definition.
     """
@@ -429,15 +445,23 @@ class ProfileDefinition(BaseModel):
     sitelinks: Optional[SitelinksDefinition] = Field(
         default=None, description="Sitelinks configuration"
     )
-    fields: List[ProfileFieldDefinition] = Field(
-        default_factory=list, description="Profile fields"
+    statements: List[ProfileFieldDefinition] = Field(
+        default_factory=list,
+        validation_alias=AliasChoices("statements", "fields"),
+        serialization_alias="statements",
+        description="Profile statements",
     )
 
-    def field_by_id(self, field_id: str) -> Optional[ProfileFieldDefinition]:
-        """Get a field definition by its identifier.
+    @property
+    def fields(self) -> List[ProfileFieldDefinition]:
+        """Backward-compatible alias for statements."""
+        return self.statements
+
+    def statement_by_id(self, statement_id: str) -> Optional[ProfileFieldDefinition]:
+        """Get a statement definition by its identifier.
 
         Args:
-            field_id: Field identifier to locate.
+            statement_id: Statement identifier to locate.
 
         Returns:
             Matching ProfileFieldDefinition or None if not found.
@@ -446,17 +470,19 @@ class ProfileDefinition(BaseModel):
             None.
 
         Example:
-            >>> profile.field_by_id("instance_of")
+            >>> profile.statement_by_id("instance_of")
 
-        Plain meaning: Find a field configuration by its ID.
+        Plain meaning: Find a statement configuration by its ID.
         """
-        for field in self.fields:
-            if field.id == field_id:
-                return field
+        for statement in self.statements:
+            if statement.id == statement_id:
+                return statement
         return None
 
-    def field_by_property(self, property_id: str) -> Optional[ProfileFieldDefinition]:
-        """Get a field definition by its Wikidata property ID.
+    def statement_by_property(
+        self, property_id: str
+    ) -> Optional[ProfileFieldDefinition]:
+        """Get a statement definition by its Wikidata property ID.
 
         Args:
             property_id: Wikidata property ID.
@@ -468,11 +494,19 @@ class ProfileDefinition(BaseModel):
             None.
 
         Example:
-            >>> profile.field_by_property("P31")
+            >>> profile.statement_by_property("P31")
 
-        Plain meaning: Find the field that maps to a Wikidata property.
+        Plain meaning: Find the statement that maps to a Wikidata property.
         """
-        for field in self.fields:
-            if field.wikidata_property == property_id:
-                return field
+        for statement in self.statements:
+            if statement.wikidata_property == property_id:
+                return statement
         return None
+
+    def field_by_id(self, field_id: str) -> Optional[ProfileFieldDefinition]:
+        """Backward-compatible alias for statement_by_id."""
+        return self.statement_by_id(field_id)
+
+    def field_by_property(self, property_id: str) -> Optional[ProfileFieldDefinition]:
+        """Backward-compatible alias for statement_by_property."""
+        return self.statement_by_property(property_id)

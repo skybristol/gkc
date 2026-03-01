@@ -3,7 +3,11 @@
   "$id": "https://datadistillery.org/schemas/profile.schema.json",
   "title": "SpiritSafe YAML Profile",
   "type": "object",
-  "required": ["name", "description", "fields"],
+  "required": ["name", "description"],
+  "anyOf": [
+    {"required": ["statements"]},
+    {"required": ["fields"]}
+  ],
   "properties": {
     "name": {"type": "string"},
     "description": {"type": "string"},
@@ -20,6 +24,11 @@
       "additionalProperties": {"$ref": "#/$defs/metadata"}
     },
     "sitelinks": {"$ref": "#/$defs/sitelinks"},
+    "statements": {
+      "type": "array",
+      "minItems": 1,
+      "items": {"$ref": "#/$defs/field"}
+    },
     "fields": {
       "type": "array",
       "minItems": 1,
@@ -112,6 +121,7 @@
           ]
         },
         "label": {"type": "string"},
+        "input_prompt": {"type": "string"},
         "description": {"type": "string"},
         "value_source": {"type": "string"},
         "allowed_items": {"$ref": "#/$defs/choice_list"}
@@ -122,6 +132,7 @@
       "properties": {
         "required": {"type": "boolean"},
         "min_count": {"type": ["integer", "null"]},
+        "input_prompt": {"type": "string"},
         "validation_policy": {"enum": ["allow_existing_nonconforming", "strict"]},
         "form_policy": {"enum": ["target_only", "show_all"]},
         "allowed": {
@@ -139,6 +150,7 @@
       "properties": {
         "id": {"type": "string"},
         "label": {"type": "string"},
+        "input_prompt": {"type": "string"},
         "wikidata_property": {"type": "string", "pattern": "^P\\d+$"},
         "required": {"type": "boolean"},
         "min_count": {"type": ["integer", "null"]},
@@ -148,15 +160,13 @@
     },
     "metadata": {
       "type": "object",
+      "required": ["label"],
+      "additionalProperties": false,
       "properties": {
         "label": {"type": "string"},
-        "description": {"type": "string"},
+        "input_prompt": {"type": "string"},
         "required": {"type": "boolean"},
-        "guidance": {"type": "string"},
-        "examples": {
-          "type": "array",
-          "items": {"type": "string"}
-        }
+        "guidance": {"type": "string"}
       }
     },
     "sitelink_language": {
@@ -194,6 +204,7 @@
       "properties": {
         "id": {"type": "string"},
         "label": {"type": "string"},
+        "input_prompt": {"type": "string"},
         "wikidata_property": {"type": "string", "pattern": "^P\\d+$"},
         "type": {"enum": ["statement"]},
         "required": {"type": "boolean"},
