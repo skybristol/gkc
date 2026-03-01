@@ -518,7 +518,11 @@ def test_shex_validate_failure(monkeypatch, capsys):
 def test_profile_validate_with_item_json(tmp_path, capsys):
     """Profile validate accepts a local item JSON file."""
     profile_path = (
-        Path(__file__).parent / "fixtures" / "profiles" / "TribalGovernmentUS.yaml"
+        Path(__file__).parent
+        / "fixtures"
+        / "profiles"
+        / "TribalGovernmentUS"
+        / "profile.yaml"
     )
 
     item_data = {
@@ -580,7 +584,11 @@ def test_profile_validate_with_item_json(tmp_path, capsys):
 def test_profile_form_schema(monkeypatch, capsys):
     """Profile form-schema prints schema to stdout."""
     profile_path = (
-        Path(__file__).parent / "fixtures" / "profiles" / "TribalGovernmentUS.yaml"
+        Path(__file__).parent
+        / "fixtures"
+        / "profiles"
+        / "TribalGovernmentUS"
+        / "profile.yaml"
     )
 
     args = argparse.Namespace(
@@ -595,6 +603,49 @@ def test_profile_form_schema(monkeypatch, capsys):
 
     assert result["ok"] is True
     assert data["name"] == "Federally Recognized Tribe"
+
+
+def test_profile_form_launches_textual_app(monkeypatch):
+    """Profile form command loads profile and runs interactive app."""
+    profile_path = (
+        Path(__file__).parent
+        / "fixtures"
+        / "profiles"
+        / "TribalGovernmentUS"
+        / "profile.yaml"
+    )
+
+    class FakeApp:
+        def __init__(self):
+            self.did_run = False
+
+        def run(self):
+            self.did_run = True
+
+    fake_app = FakeApp()
+
+    class FakeGenerator:
+        def __init__(self, profile):
+            self.profile = profile
+
+        def create_form(self, qid=None):
+            self.qid = qid
+            return fake_app
+
+    monkeypatch.setattr("gkc.profiles.forms.TextualFormGenerator", FakeGenerator)
+
+    args = argparse.Namespace(
+        profile=str(profile_path),
+        qid="Q123",
+        command_path="profile.form",
+    )
+
+    result = cli._handle_profile_form(args)
+
+    assert fake_app.did_run is True
+    assert result["ok"] is True
+    assert result["command"] == "profile.form"
+    assert result["details"]["qid"] == "Q123"
 
 
 def test_shex_validate_local_files(monkeypatch, capsys):
@@ -705,7 +756,7 @@ def test_profile_lookups_hydrate_local_source_override(monkeypatch, capsys):
             "--source",
             "local",
             "--local-root",
-            ".SpiritSafe",
+            "/tmp/SpiritSafe",
         ]
     )
 
@@ -717,15 +768,15 @@ def test_profile_lookups_hydrate_local_source_override(monkeypatch, capsys):
     # First call applies override; second call restores previous source.
     assert len(set_calls) == 2
     assert set_calls[0]["mode"] == "local"
-    assert set_calls[0]["local_root"] == ".SpiritSafe"
+    assert set_calls[0]["local_root"] == "/tmp/SpiritSafe"
 
 
 def test_profile_lookups_hydrate_profile_name_resolution(monkeypatch, capsys):
-    """Profile lookups hydrate resolves simple profile names to profiles/ directory."""
+    """Profile lookups hydrate resolves simple names to registrant profile paths."""
 
     def fake_hydrate_profile_lookups(**kwargs):
-        # Verify that the simple profile name was resolved to profiles/Name.yaml
-        assert kwargs["profile_paths"] == ["profiles/SampleProfile.yaml"]
+        # Verify that simple profile names resolve to registrant paths
+        assert kwargs["profile_paths"] == ["profiles/SampleProfile/profile.yaml"]
         return {
             "profiles_scanned": 1,
             "lookup_specs_found": 0,

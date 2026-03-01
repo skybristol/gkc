@@ -17,7 +17,7 @@ GKC modules are grouped by their role in the distillery pipeline:
 | **Mash** | [mash](mash.md) | Load data from Wikidata and other sources |
 | | [mash_formatters](mash_formatters.md) | Convert templates to output formats |
 | **Barrel Schema** | cooperage | Fetch schemas and metadata from target systems |
-| **Validation** | spirit_safe | Validate against Barrel Schemas |
+| **Validation / Registry** | [spirit_safe](spirit_safe.md) | SpiritSafe source config, registry discovery, query hydration, and caching |
 | **Transform** | bottler | Transform data into Wikidata format |
 | **Deliver** | [shipper](shipper.md) | Submit data to Wikidata |
 | **Utilities** | auth | Authentication for Wikidata and OSM |
@@ -55,17 +55,18 @@ qs_text = formatter.format(template, for_new_item=True)
 
 📖 [Mash Formatters Documentation](mash_formatters.md)
 
-### Validate Against EntitySchema
+### Discover and Load SpiritSafe Profiles
 
 ```python
-from gkc.spirit_safe import SpiritSafeValidator
+import gkc
 
-validator = SpiritSafeValidator(qid="Q42", eid="E502")
-result = validator.check()
-print(result.is_valid)
+# default mode is GitHub: skybristol/SpiritSafe@main
+profiles = gkc.list_profiles()
+metadata = gkc.get_profile_metadata("TribalGovernmentUS")
+print(metadata.version)
 ```
 
-📖 Spirit Safe Documentation (coming soon)
+📖 [SpiritSafe Module Documentation](spirit_safe.md)
 
 ### Query Wikidata with SPARQL
 
@@ -130,14 +131,17 @@ Fetch schemas and metadata from target systems (Barrel Schemas).
 
 _Documentation coming soon_
 
-### Spirit Safe
+### [Spirit Safe](spirit_safe.md)
 
-Validate data against Barrel Schemas before submission.
+Configure SpiritSafe source mode, discover profile registrants, resolve profile/query references, and hydrate/cache SPARQL-driven allowed-items lists.
 
-**Key classes:**
-- `SpiritSafeValidator` - Validate against EntitySchemas
+**Key classes/functions:**
 
-_Documentation coming soon_
+- `SpiritSafeSourceConfig`
+- `set_spirit_safe_source()`, `get_spirit_safe_source()`
+- `list_profiles()`, `profile_exists()`, `get_profile_metadata()`
+- `resolve_profile_path()`, `resolve_query_ref()`
+- `hydrate_profile_lookups()`, `LookupCache`, `LookupFetcher`
 
 ### Bottler
 

@@ -9,7 +9,13 @@ from gkc.profiles import ProfileLoader, ProfileValidator
 
 @pytest.fixture
 def profile_fixture_path() -> Path:
-    return Path(__file__).parent / "fixtures" / "profiles" / "TribalGovernmentUS.yaml"
+    return (
+        Path(__file__).parent
+        / "fixtures"
+        / "profiles"
+        / "TribalGovernmentUS"
+        / "profile.yaml"
+    )
 
 
 def _minimal_wikidata_item() -> dict:

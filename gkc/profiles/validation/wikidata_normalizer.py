@@ -7,7 +7,7 @@ from __future__ import annotations
 
 from typing import Dict, List, Literal, Optional
 
-from pydantic import BaseModel, Field
+from pydantic import AliasChoices, BaseModel, Field
 
 from gkc.profiles.models import ProfileDefinition
 from gkc.profiles.validation.models import ReferenceData, StatementData, StatementValue
@@ -19,7 +19,7 @@ class NormalizationIssue(BaseModel):
     Args:
         severity: "warning" or "error".
         message: Issue description.
-        field_id: Optional profile field identifier.
+        statement_id: Optional profile statement identifier.
         property_id: Optional Wikidata property ID.
 
     Example:
@@ -30,7 +30,12 @@ class NormalizationIssue(BaseModel):
 
     severity: Literal["warning", "error"] = Field(..., description="Issue severity")
     message: str = Field(..., description="Issue message")
-    field_id: Optional[str] = Field(default=None, description="Profile field ID")
+    statement_id: Optional[str] = Field(
+        default=None,
+        validation_alias=AliasChoices("statement_id", "field_id"),
+        serialization_alias="statement_id",
+        description="Profile statement ID",
+    )
     property_id: Optional[str] = Field(default=None, description="Property ID")
 
 
@@ -38,7 +43,7 @@ class NormalizationResult(BaseModel):
     """Result of normalizing a Wikidata item.
 
     Args:
-        data: Normalized statement data keyed by profile field id.
+        data: Normalized statement data keyed by profile statement id.
         issues: Normalization issues.
 
     Plain meaning: Parsed statements and any problems found.
@@ -85,14 +90,14 @@ class WikidataNormalizer:
         claims = entity_data.get("claims", {}) if isinstance(entity_data, dict) else {}
         result = NormalizationResult()
 
-        for field in profile.fields:
+        for field in profile.statements:
             statements_raw = claims.get(field.wikidata_property, [])
             if not isinstance(statements_raw, list):
                 result.issues.append(
                     NormalizationIssue(
                         severity="warning",
                         message="Claims entry is not a list",
-                        field_id=field.id,
+                        statement_id=field.id,
                         property_id=field.wikidata_property,
                     )
                 )
@@ -110,7 +115,7 @@ class WikidataNormalizer:
                         NormalizationIssue(
                             severity="warning",
                             message="Statement missing value",
-                            field_id=field.id,
+                            statement_id=field.id,
                             property_id=field.wikidata_property,
                         )
                     )
@@ -203,22 +208,63 @@ def _snak_to_value(snak: dict) -> Optional[StatementValue]:
     if value_type == "string" and isinstance(raw_value, str):
         if datatype == "url":
             return StatementValue(value=raw_value, value_type="url")
+        if datatype == "external-id":
+            return StatementValue(value=raw_value, value_type="external-id")
+        if datatype == "commonsMedia":
+            return StatementValue(value=raw_value, value_type="commonsMedia")
         return StatementValue(value=raw_value, value_type="string")
 
     if value_type == "quantity" and isinstance(raw_value, dict):
         amount = raw_value.get("amount")
+        unit = raw_value.get("unit", "1")
         if isinstance(amount, str):
             amount = amount.replace("+", "")
         if amount is not None:
             try:
                 numeric = float(amount)
+                # Store as dict for quantities with units
+                if unit != "1":
+                    return StatementValue(
+                        value={"amount": numeric, "unit": unit},
+                        value_type="quantity",
+                    )
                 return StatementValue(value=numeric, value_type="quantity")
             except ValueError:
                 return None
 
     if value_type == "time" and isinstance(raw_value, dict):
         time_value = raw_value.get("time")
+        precision = raw_value.get("precision")
+        calendar = raw_value.get("calendarmodel")
         if isinstance(time_value, str):
-            return StatementValue(value=time_value, value_type="time")
+            # Store as dict for time with precision/calendar
+            time_data = {"time": time_value}
+            if precision is not None:
+                time_data["precision"] = precision
+            if calendar:
+                time_data["calendar"] = calendar
+            return StatementValue(value=time_data, value_type="time")
+
+    if value_type == "monolingualtext" and isinstance(raw_value, dict):
+        text = raw_value.get("text")
+        language = raw_value.get("language")
+        if isinstance(text, str) and isinstance(language, str):
+            return StatementValue(
+                value={"text": text, "language": language},
+                value_type="monolingualtext",
+            )
+
+    if value_type == "globecoordinate" and isinstance(raw_value, dict):
+        latitude = raw_value.get("latitude")
+        longitude = raw_value.get("longitude")
+        precision = raw_value.get("precision")
+        globe = raw_value.get("globe")
+        if latitude is not None and longitude is not None:
+            coord_data = {"latitude": latitude, "longitude": longitude}
+            if precision is not None:
+                coord_data["precision"] = precision
+            if globe:
+                coord_data["globe"] = globe
+            return StatementValue(value=coord_data, value_type="globecoordinate")
 
     return None

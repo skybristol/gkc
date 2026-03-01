@@ -5,7 +5,7 @@ Plain meaning: Build runtime validation models from YAML profiles.
 
 from __future__ import annotations
 
-from typing import Callable, Dict, List, Optional, Union
+from typing import Any, Callable, Dict, List, Optional, Union
 
 from pydantic import (
     BaseModel,
@@ -55,24 +55,25 @@ class ProfilePydanticGenerator:
 
         Plain meaning: Generate a validation class for profile statements.
         """
-        field_definitions = {}
+        statement_definitions: Dict[str, Any] = {}
         validators: Dict[str, Callable] = {}
 
-        for field in self.profile.fields:
-            safe_name = self._safe_field_name(field.id)
-            field_definitions[safe_name] = (
+        for statement in self.profile.statements:
+            safe_name = self._safe_statement_name(statement.id)
+            statement_definitions[safe_name] = (
                 list[StatementData],
                 Field(
                     default_factory=list,
                     description=(
-                        f"Statements for {field.label} ({field.wikidata_property})"
+                        "Statements for "
+                        f"{statement.label} ({statement.wikidata_property})"
                     ),
-                    alias=field.id,
+                    alias=statement.id,
                 ),
             )
 
             validators[f"validate_{safe_name}"] = field_validator(safe_name)(
-                self._make_field_validator(field)
+                self._make_statement_validator(statement)
             )
 
         model_config = ConfigDict(
@@ -85,10 +86,12 @@ class ProfilePydanticGenerator:
             __base__=_ProfileModelBase,
             __config__=model_config,
             __validators__=validators,
-            **field_definitions,
+            **statement_definitions,
         )
 
-    def _make_field_validator(self, field):
+    def _make_statement_validator(self, statement):
+        statement_def = statement
+
         def _validator(cls, value: List[StatementData], info: ValidationInfo):
             policy = "strict"
             if info.context and isinstance(info.context, dict):
@@ -97,35 +100,58 @@ class ProfilePydanticGenerator:
             violations: List[str] = []
             reference_violations: List[str] = []
 
-            if field.required and not value:
+            if statement.required and not value:
                 violations.append("required statement missing")
 
-            if field.max_count is not None and len(value) > field.max_count:
+            if statement.max_count is not None and len(value) > statement.max_count:
                 violations.append(
-                    f"max_count exceeded ({len(value)} > {field.max_count})"
+                    f"max_count exceeded ({len(value)} > {statement.max_count})"
                 )
 
-            for index, statement in enumerate(value):
-                if statement.value.value_type != field.value.type:
+            for index, statement_data in enumerate(value):
+                if statement_data.value.value_type != statement_def.value.type:
                     violations.append(
-                        f"statement {index} has value type {statement.value.value_type}"
+                        "statement "
+                        f"{index} has value type {statement_data.value.value_type}"
                     )
 
-                if field.value.fixed is not None:
-                    if statement.value.value != field.value.fixed:
+                if statement_def.value.fixed is not None:
+                    if statement_data.value.value != statement_def.value.fixed:
                         violations.append(
                             f"statement {index} does not match fixed value"
                         )
 
-                for constraint in field.value.constraints:
+                for constraint in statement_def.value.constraints:
                     if constraint.type == "integer_only":
-                        if not _is_integer(statement.value.value):
+                        value_to_check = statement_data.value.value
+                        if isinstance(value_to_check, dict):
+                            # Extract amount from quantity dict if present
+                            value_to_check = value_to_check.get(
+                                "amount", value_to_check
+                            )
+                        if not _is_integer(value_to_check):
                             violations.append(
                                 f"statement {index} violates integer_only"
                             )
+                    elif constraint.type == "coordinate_precision":
+                        if statement_def.value.type == "globecoordinate":
+                            if not _validate_coordinate_precision(
+                                statement_data.value.value, constraint
+                            ):
+                                violations.append(
+                                    f"statement {index} violates coordinate_precision"
+                                )
+                    elif constraint.type == "valid_latitude_longitude":
+                        if statement_def.value.type == "globecoordinate":
+                            if not _validate_lat_long_range(statement_data.value.value):
+                                violations.append(
+                                    f"statement {index} has invalid latitude/longitude"
+                                )
 
-                for qualifier in field.qualifiers:
-                    qvalues = statement.qualifiers.get(qualifier.wikidata_property, [])
+                for qualifier in statement_def.qualifiers:
+                    qvalues = statement_data.qualifiers.get(
+                        qualifier.wikidata_property, []
+                    )
                     if (
                         qualifier.min_count is not None
                         and len(qvalues) < qualifier.min_count
@@ -155,23 +181,25 @@ class ProfilePydanticGenerator:
                             )
                             violations.append(message)
 
-                references = field.references
+                references = statement_def.references
                 if references:
                     if (
                         references.min_count is not None
-                        and len(statement.references) < references.min_count
+                        and len(statement_data.references) < references.min_count
                     ):
                         reference_violations.append(
                             f"statement {index} has too few references"
                         )
-                    if references.required and not statement.references:
+                    if references.required and not statement_data.references:
                         reference_violations.append(
                             f"statement {index} missing required references"
                         )
 
                     if references.target:
                         target_pid = references.target.wikidata_property
-                        for ref_index, reference in enumerate(statement.references):
+                        for ref_index, reference in enumerate(
+                            statement_data.references
+                        ):
                             if target_pid not in reference.snaks:
                                 message = (
                                     "statement "
@@ -182,7 +210,8 @@ class ProfilePydanticGenerator:
                             if references.target.value_source == "statement_value":
                                 values = reference.snaks.get(target_pid, [])
                                 if values and any(
-                                    val.value != statement.value.value for val in values
+                                    val.value != statement_data.value.value
+                                    for val in values
                                 ):
                                     message = (
                                         "statement "
@@ -193,7 +222,9 @@ class ProfilePydanticGenerator:
 
                     if references.allowed:
                         allowed_pids = {a.wikidata_property for a in references.allowed}
-                        for ref_index, reference in enumerate(statement.references):
+                        for ref_index, reference in enumerate(
+                            statement_data.references
+                        ):
                             if not allowed_pids.intersection(reference.snaks.keys()):
                                 message = (
                                     "statement "
@@ -203,17 +234,18 @@ class ProfilePydanticGenerator:
                                 reference_violations.append(message)
 
             error_messages: List[str] = []
-            if violations and _should_raise(field.validation_policy, policy):
+            if violations and _should_raise(statement_def.validation_policy, policy):
                 error_messages.extend(violations)
 
-            references = field.references
+            references = statement_def.references
             if references and reference_violations:
                 if _should_raise(references.validation_policy, policy):
                     error_messages.extend(reference_violations)
 
             if error_messages:
                 raise ValueError(
-                    f"{field.id} validation failed: " + "; ".join(error_messages)
+                    f"{statement_def.id} validation failed: "
+                    + "; ".join(error_messages)
                 )
 
             return value
@@ -225,10 +257,10 @@ class ProfilePydanticGenerator:
         return f"{safe}ProfileModel"
 
     @staticmethod
-    def _safe_field_name(field_id: str) -> str:
-        safe = field_id.replace("-", "_")
+    def _safe_statement_name(statement_id: str) -> str:
+        safe = statement_id.replace("-", "_")
         if safe and safe[0].isdigit():
-            return f"field_{safe}"
+            return f"statement_{safe}"
         return safe
 
 
@@ -241,10 +273,10 @@ class _ProfileModelBase(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
 
-def _should_raise(field_policy: str, validation_policy: str) -> bool:
+def _should_raise(statement_policy: str, validation_policy: str) -> bool:
     if validation_policy == "strict":
         return True
-    return field_policy == "strict"
+    return statement_policy == "strict"
 
 
 def _is_integer(value: Union[str, int, float]) -> bool:
@@ -258,3 +290,66 @@ def _is_integer(value: Union[str, int, float]) -> bool:
         except ValueError:
             return False
     return False
+
+
+def _validate_coordinate_precision(
+    value: Union[str, int, float, dict], constraint: Any
+) -> bool:
+    """Validate coordinate precision constraint.
+
+    Args:
+        value: Coordinate value (dict with latitude/longitude).
+        constraint: ConstraintDefinition with optional max_decimals parameter.
+
+    Returns:
+        True if precision is valid, False otherwise.
+
+    Plain meaning: Check if coordinate has too many decimal places.
+    """
+    if not isinstance(value, dict):
+        return False
+
+    max_decimals = getattr(constraint, "max_decimals", 6)
+    latitude = value.get("latitude")
+    longitude = value.get("longitude")
+
+    if latitude is None or longitude is None:
+        return False
+
+    for coord in [latitude, longitude]:
+        if isinstance(coord, float):
+            coord_str = str(coord)
+            if "." in coord_str:
+                decimals = len(coord_str.split(".")[1])
+                if decimals > max_decimals:
+                    return False
+
+    return True
+
+
+def _validate_lat_long_range(value: Union[str, int, float, dict]) -> bool:
+    """Validate latitude/longitude are in valid ranges.
+
+    Args:
+        value: Coordinate value (dict with latitude/longitude).
+
+    Returns:
+        True if ranges are valid, False otherwise.
+
+    Plain meaning: Check if latitude is -90 to 90 and longitude is -180 to 180.
+    """
+    if not isinstance(value, dict):
+        return False
+
+    latitude = value.get("latitude")
+    longitude = value.get("longitude")
+
+    if latitude is None or longitude is None:
+        return False
+
+    try:
+        lat = float(latitude)
+        lon = float(longitude)
+        return -90 <= lat <= 90 and -180 <= lon <= 180
+    except (ValueError, TypeError):
+        return False

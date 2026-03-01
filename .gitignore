@@ -215,5 +215,5 @@ __marimo__/
 # dev
 .dev
 
-# SpiritSafe
-.SpiritSafe/
+# SpiritSafe (external repository clone paths are user-selected)
+gkc.code-workspace

@@ -5,27 +5,43 @@ Plain meaning: Typed containers for normalized statement data.
 
 from __future__ import annotations
 
-from typing import Dict, List, Literal, Union
+from typing import Any, Dict, List, Literal, Union
 
 from pydantic import BaseModel, Field
 
-ValueType = Literal["item", "url", "string", "quantity", "time"]
+ValueType = Literal[
+    "item",
+    "url",
+    "string",
+    "quantity",
+    "time",
+    "monolingualtext",
+    "globecoordinate",
+    "external-id",
+    "commonsMedia",
+]
 
 
 class StatementValue(BaseModel):
     """Normalized value for a statement, qualifier, or reference.
 
     Args:
-        value: The extracted value.
+        value: The extracted value (primitive or structured dict).
         value_type: The datatype for the value.
 
     Example:
         >>> StatementValue(value="Q5", value_type="item")
+        >>> StatementValue(
+        ...     value={"text": "Example", "language": "en"},
+        ...     value_type="monolingualtext"
+        ... )
 
     Plain meaning: A typed value pulled from a Wikidata statement.
     """
 
-    value: Union[str, int, float] = Field(..., description="Extracted value")
+    value: Union[str, int, float, Dict[str, Any]] = Field(
+        ..., description="Extracted value"
+    )
     value_type: ValueType = Field(..., description="Value datatype")
 
 

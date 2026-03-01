@@ -1,0 +1,4 @@
+SELECT ?item ?itemLabel WHERE {
+  VALUES ?item { wd:Q33298 wd:Q28026 }
+  OPTIONAL { ?item rdfs:label ?itemLabel FILTER (lang(?itemLabel) = "en") }
+}

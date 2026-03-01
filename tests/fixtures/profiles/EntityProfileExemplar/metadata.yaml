@@ -1,0 +1,9 @@
+name: Entity Profile Exemplar
+description: Test fixture profile package for local GKC tests.
+version: 1.0.0
+status: stable
+published_date: 2026-03-01
+authors:
+  - name: GKC Test Fixture
+maintainers:
+  - name: GKC Test Fixture
