@@ -53,7 +53,7 @@ class FormSchemaGenerator:
     def _field_schema(self, field) -> dict[str, Any]:
         value = {
             "type": field.value.type,
-            "fixed": field.value.fixed,
+            "fixed": getattr(field.value, "fixed", None),
             "label": field.value.label,
             "constraints": [c.model_dump() for c in field.value.constraints],
         }
@@ -71,7 +71,7 @@ class FormSchemaGenerator:
                     "max_count": qualifier.max_count,
                     "value": {
                         "type": qualifier.value.type,
-                        "fixed": qualifier.value.fixed,
+                        "fixed": getattr(qualifier.value, "fixed", None),
                         "label": qualifier.value.label,
                         "constraints": [
                             c.model_dump() for c in qualifier.value.constraints

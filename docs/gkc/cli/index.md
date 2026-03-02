@@ -42,10 +42,14 @@ gkc mash qid Q42
 
 ### [Profiles](profiles.md)
 
-Validate items against YAML profiles, generate form schemas, and hydrate SPARQL lookups.
+Validate items against YAML profiles, generate form schemas, launch the Textual wizard, and hydrate SPARQL lookups.
 
 ```bash
 gkc profile validate --profile /path/to/SpiritSafe/profiles/TribalGovernmentUS/profile.yaml --qid Q123
+```
+
+```bash
+gkc profile form --profile /path/to/SpiritSafe/profiles/TribalGovernmentUS/profile.yaml
 ```
 
 ## Quick Start Examples
@@ -63,6 +67,12 @@ gkc mash qid Q42 --output summary
 Get raw Wikidata JSON output for scripting:
 ```bash
 gkc --json mash qid Q42 --output json
+```
+
+Launch the profile wizard shell:
+
+```bash
+gkc profile form --profile /path/to/SpiritSafe/profiles/TribalGovernmentUS/profile.yaml
 ```
 
 ## Getting Help
