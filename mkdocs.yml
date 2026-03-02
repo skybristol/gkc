@@ -54,6 +54,7 @@ nav:
     - Home: gkc/index.md
     - Background: gkc/background.md
     - Entity Profiles: gkc/profiles.md
+    - Entity JSON Schema: gkc/entity-json-schema.md
     - Getting Started:
       - Setup and Orientation: gkc/setup.md
       - Authentication: gkc/authentication.md

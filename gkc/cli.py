@@ -8,7 +8,10 @@ from __future__ import annotations
 import argparse
 import json
 import sys
+from pathlib import Path
 from typing import Any, Optional
+
+import requests
 
 import gkc
 from gkc.auth import AuthenticationError, OpenStreetMapAuth, WikiverseAuth
@@ -354,6 +357,7 @@ def _build_parser() -> argparse.ArgumentParser:
         default="lenient",
         help="Validation policy (default: lenient)",
     )
+    _add_profile_source_args(profile_validate)
     profile_validate.set_defaults(
         handler=_handle_profile_validate,
         command_path="profile.validate",
@@ -373,13 +377,14 @@ def _build_parser() -> argparse.ArgumentParser:
         type=str,
         help="Write output to file instead of stdout",
     )
+    _add_profile_source_args(profile_form)
     profile_form.set_defaults(
         handler=_handle_profile_form_schema,
         command_path="profile.form_schema",
     )
 
     profile_run_form = profile_subparsers.add_parser(
-        "form", help="Launch an interactive Textual form for a YAML profile"
+        "form", help="Launch an interactive Textual wizard for a YAML profile"
     )
     profile_run_form.add_argument(
         "--profile",
@@ -390,6 +395,7 @@ def _build_parser() -> argparse.ArgumentParser:
         "--qid",
         help="Optional Wikidata item ID for editing an existing item",
     )
+    _add_profile_source_args(profile_run_form)
     profile_run_form.set_defaults(
         handler=_handle_profile_form,
         command_path="profile.form",
@@ -491,6 +497,88 @@ def _add_osm_args(parser: argparse.ArgumentParser) -> None:
         action="store_true",
         help="Prompt for credentials if not found",
     )
+
+
+def _add_profile_source_args(parser: argparse.ArgumentParser) -> None:
+    """Add SpiritSafe source override args for profile-loading commands."""
+    parser.add_argument(
+        "--source",
+        choices=["github", "local"],
+        help="Override SpiritSafe source mode for this command",
+    )
+    parser.add_argument(
+        "--local-root",
+        help="Local SpiritSafe root (required with --source local)",
+    )
+    parser.add_argument(
+        "--repo",
+        help="GitHub repo slug when --source github (e.g., owner/SpiritSafe)",
+    )
+    parser.add_argument(
+        "--ref",
+        dest="github_ref",
+        help="Git reference when --source github (default: main)",
+    )
+
+
+def _apply_source_override(args: argparse.Namespace) -> tuple[Any, bool]:
+    """Apply temporary SpiritSafe source override from CLI args."""
+    previous_source = gkc.get_spirit_safe_source()
+    source_overridden = getattr(args, "source", None) is not None
+
+    if source_overridden:
+        if args.source == "local":
+            if not args.local_root:
+                raise CLIError("--local-root is required when --source local")
+            gkc.set_spirit_safe_source(mode="local", local_root=args.local_root)
+        else:
+            gkc.set_spirit_safe_source(
+                mode="github",
+                github_repo=args.repo or previous_source.github_repo,
+                github_ref=args.github_ref or previous_source.github_ref,
+            )
+
+    return previous_source, source_overridden
+
+
+def _restore_source_override(previous_source: Any, source_overridden: bool) -> None:
+    """Restore previous SpiritSafe source config after a temporary override."""
+    if source_overridden:
+        gkc.set_spirit_safe_source(
+            mode=previous_source.mode,
+            github_repo=previous_source.github_repo,
+            github_ref=previous_source.github_ref,
+            local_root=previous_source.local_root,
+        )
+
+
+def _load_profile_from_reference(
+    loader: ProfileLoader,
+    profile_ref: str,
+) -> tuple[Any, str]:
+    """Load profile from path or SpiritSafe profile reference.
+
+    Returns:
+        Tuple of (ProfileDefinition, resolved profile reference).
+    """
+    resolved_profile = gkc.resolve_profile_path(profile_ref)
+    resolved_profile_str = str(resolved_profile)
+
+    try:
+        profile = loader.load_from_file(resolved_profile_str)
+        return profile, resolved_profile_str
+    except FileNotFoundError:
+        source = gkc.get_spirit_safe_source()
+        resolved = source.resolve_relative(resolved_profile_str)
+
+        if isinstance(resolved, Path):
+            profile = loader.load_from_file(resolved)
+            return profile, str(resolved)
+
+        response = requests.get(resolved, timeout=30)
+        response.raise_for_status()
+        profile = loader.load_from_text(response.text)
+        return profile, resolved_profile_str
 
 
 def _handle_wikiverse_login(args: argparse.Namespace) -> dict[str, Any]:
@@ -1119,91 +1207,137 @@ def _handle_profile_validate(args: argparse.Namespace) -> dict[str, Any]:
     if args.qid and args.item_json:
         raise CLIError("Use only one of --qid or --item-json")
 
-    loader = ProfileLoader()
-    profile = loader.load_from_file(args.profile)
+    previous_source, source_overridden = _apply_source_override(args)
 
-    if args.qid:
-        item = WikidataLoader().load_item(args.qid)
-        entity_data = item.to_dict()
-        source = args.qid
-    else:
-        with open(args.item_json, "r") as f:
-            entity_data = json.load(f)
-        source = args.item_json
+    try:
+        loader = ProfileLoader()
+        profile, resolved_profile = _load_profile_from_reference(loader, args.profile)
 
-    validator = ProfileValidator(profile)
-    result = validator.validate_item(entity_data, policy=args.policy)
+        if args.qid:
+            item = WikidataLoader().load_item(args.qid)
+            entity_data = item.to_dict()
+            source = args.qid
+        else:
+            with open(args.item_json, "r") as f:
+                entity_data = json.load(f)
+            source = args.item_json
 
-    details = {
-        "profile": profile.name,
-        "policy": args.policy,
-        "source": source,
-        "errors": [issue.model_dump() for issue in result.errors],
-        "warnings": [issue.model_dump() for issue in result.warnings],
-    }
+        validator = ProfileValidator(profile)
+        result = validator.validate_item(entity_data, policy=args.policy)
 
-    if result.ok:
-        message = "✓ Profile validation passed"
-    else:
-        message = "✗ Profile validation failed"
+        details = {
+            "profile": profile.name,
+            "profile_ref": resolved_profile,
+            "policy": args.policy,
+            "source": source,
+            "errors": [issue.model_dump() for issue in result.errors],
+            "warnings": [issue.model_dump() for issue in result.warnings],
+        }
 
-    return {
-        "command": args.command_path,
-        "ok": result.ok,
-        "message": message,
-        "details": details,
-    }
+        if result.ok:
+            message = "✓ Profile validation passed"
+        else:
+            message = "✗ Profile validation failed"
+
+        return {
+            "command": args.command_path,
+            "ok": result.ok,
+            "message": message,
+            "details": details,
+        }
+    finally:
+        _restore_source_override(previous_source, source_overridden)
 
 
 def _handle_profile_form_schema(args: argparse.Namespace) -> dict[str, Any]:
     """Generate form schema from a YAML profile."""
-    loader = ProfileLoader()
-    profile = loader.load_from_file(args.profile)
+    previous_source, source_overridden = _apply_source_override(args)
 
-    schema = FormSchemaGenerator(profile).build_schema()
+    try:
+        loader = ProfileLoader()
+        profile, resolved_profile = _load_profile_from_reference(loader, args.profile)
 
-    if args.output:
-        with open(args.output, "w") as f:
-            json.dump(schema, f, indent=2)
-        message = f"Wrote form schema to {args.output}"
-    else:
-        print(json.dumps(schema))
-        message = "Form schema generated"
+        schema = FormSchemaGenerator(profile).build_schema()
 
-    return {
-        "command": args.command_path,
-        "ok": True,
-        "message": message,
-        "details": {"profile": profile.name, "output": args.output or "stdout"},
-    }
+        if args.output:
+            with open(args.output, "w") as f:
+                json.dump(schema, f, indent=2)
+            message = f"Wrote form schema to {args.output}"
+        else:
+            print(json.dumps(schema))
+            message = "Form schema generated"
+
+        return {
+            "command": args.command_path,
+            "ok": True,
+            "message": message,
+            "details": {
+                "profile": profile.name,
+                "profile_ref": resolved_profile,
+                "output": args.output or "stdout",
+            },
+        }
+    finally:
+        _restore_source_override(previous_source, source_overridden)
 
 
 def _handle_profile_form(args: argparse.Namespace) -> dict[str, Any]:
-    """Launch an interactive Textual form from a YAML profile."""
-    loader = ProfileLoader()
-    profile = loader.load_from_file(args.profile)
+    """Launch an interactive Streamlit wizard from a YAML profile.
+
+    Note: Starts a local Streamlit server at http://localhost:8501
+    """
+    import os
+    import subprocess
+    import sys
+    from pathlib import Path
+
+    previous_source, source_overridden = _apply_source_override(args)
 
     try:
-        from gkc.profiles.forms import TextualFormGenerator
-    except ImportError as exc:
-        raise CLIError(
-            "Textual UI dependencies are unavailable. Install `textual` to use "
-            "`gkc profile form`."
-        ) from exc
+        # Verify profile exists before launching Streamlit
+        loader = ProfileLoader()
+        profile, resolved_profile = _load_profile_from_reference(loader, args.profile)
 
-    generator = TextualFormGenerator(profile)
-    app = generator.create_form(qid=args.qid)
-    app.run()
+        try:
+            from gkc.profiles.forms import streamlit_app
+        except ImportError as exc:
+            raise CLIError(
+                "Streamlit UI dependencies are unavailable. Install `streamlit` to use "
+                "`gkc profile form`."
+            ) from exc
 
-    return {
-        "command": args.command_path,
-        "ok": True,
-        "message": "Form session ended",
-        "details": {
-            "profile": profile.name,
-            "qid": args.qid,
-        },
-    }
+        # Get path to streamlit_app.py module
+        app_path = Path(streamlit_app.__file__)
+
+        # Set environment variables for Streamlit app to read
+        env = os.environ.copy()
+        env["GKC_WIZARD_PROFILE"] = args.profile
+        if args.qid:
+            env["GKC_WIZARD_QID"] = args.qid
+
+        # Launch Streamlit in subprocess
+        print(f"🚀 Launching Streamlit wizard for profile: {profile.name}")
+        print("📍 URL: http://localhost:8501")
+        print("⌨️  Press Ctrl+C to stop the server")
+        print()
+
+        result = subprocess.run(
+            [sys.executable, "-m", "streamlit", "run", str(app_path)],
+            env=env,
+        )
+
+        return {
+            "command": args.command_path,
+            "ok": result.returncode == 0,
+            "message": "Streamlit wizard closed",
+            "details": {
+                "profile": profile.name,
+                "profile_ref": resolved_profile,
+                "qid": args.qid,
+            },
+        }
+    finally:
+        _restore_source_override(previous_source, source_overridden)
 
 
 def _handle_profile_lookups_hydrate(args: argparse.Namespace) -> dict[str, Any]:

@@ -1,5 +1,6 @@
 """Tests for YAML profile loading and schema generation."""
 
+import textwrap
 from pathlib import Path
 
 import pytest
@@ -98,3 +99,24 @@ def test_exemplar_profile_covers_datatypes_and_prompts(exemplar_fixture_path: Pa
     assert {"time", "string", "globecoordinate", "item", "monolingualtext"}.issubset(
         qualifier_types
     )
+
+
+def test_profile_loader_allows_missing_statement_required_flag():
+    """Statement-level required should be optional and default to false."""
+    yaml_text = textwrap.dedent(
+        """
+        name: Minimal Profile
+        description: Minimal test profile
+        statements:
+          - id: instance_of
+            label: Instance of
+            wikidata_property: P31
+            type: statement
+            value:
+              type: item
+        """
+    )
+
+    profile = ProfileLoader().load_from_text(yaml_text)
+    assert len(profile.statements) == 1
+    assert profile.statements[0].required is False

@@ -1,11 +1,22 @@
-"""Tests for Textual form generation."""
+"""Tests for Textual form generation.
+
+ARCHIVED: 2026-03-02
+This file was archived when pivoting from Textual to Streamlit.
+The logic tests (especially language scoping and draft persistence) should be ported
+to test_streamlit_wizard.py for use with the new Streamlit-based wizard.
+
+See also: .github/prompts/WizardEngineer.streamlit.md (Phase 7: Integration & Testing)
+"""
 
 from pathlib import Path
+from types import SimpleNamespace
 
 import pytest
-
+import gkc
 from gkc.profiles import ProfileLoader
 from gkc.profiles.forms import TextualFormGenerator
+from gkc.profiles.forms.wizard.steps import SitelinksStep
+from gkc.profiles.forms.wizard.steps import resolve_language_scope
 
 
 @pytest.fixture
@@ -20,7 +31,7 @@ def tribal_government_profile_path() -> Path:
 
 
 def test_textual_form_generator_creates_app(tribal_government_profile_path: Path):
-    """TextualFormGenerator should create a ProfileFormApp."""
+    """TextualFormGenerator should create a WizardApp shell."""
     profile = ProfileLoader().load_from_file(tribal_government_profile_path)
     generator = TextualFormGenerator(profile)
 
@@ -29,6 +40,9 @@ def test_textual_form_generator_creates_app(tribal_government_profile_path: Path
     assert app is not None
     assert app.profile == profile
     assert app.qid is None
+    assert len(app.steps) == 5
+    assert app.steps[0].id == "plan"
+    assert app.steps[-1].id == "review"
 
 
 def test_textual_form_generator_preloads_choice_lists(
@@ -48,6 +62,58 @@ def test_textual_form_generator_preloads_choice_lists(
     choices = app.choice_cache[cache_key]
     assert len(choices) > 0
     assert all(isinstance(choice, tuple) and len(choice) == 2 for choice in choices)
+
+
+def test_wizard_draft_path_is_timestamped(tribal_government_profile_path: Path):
+    """Wizard app should initialize a timestamped draft path under .drafts/."""
+    profile = ProfileLoader().load_from_file(tribal_government_profile_path)
+    generator = TextualFormGenerator(profile)
+
+    app = generator.create_form()
+
+    assert app.draft_path.parent.name == ".drafts"
+    assert profile.name.replace(" ", "_") in app.draft_path.name
+    assert app.draft_path.suffix == ".json"
+
+
+def test_wizard_uses_identification_step_class(tribal_government_profile_path: Path):
+    """Wizard step sequence should include a concrete IdentificationStep."""
+    profile = ProfileLoader().load_from_file(tribal_government_profile_path)
+    generator = TextualFormGenerator(profile)
+
+    app = generator.create_form()
+
+    assert app.steps[0].__class__.__name__ == "PlanStep"
+    assert app.steps[1].__class__.__name__ == "IdentificationStep"
+
+
+def test_wizard_uses_concrete_sitelinks_step(tribal_government_profile_path: Path):
+    """Wizard sequence should include concrete SitelinksStep."""
+    profile = ProfileLoader().load_from_file(tribal_government_profile_path)
+    generator = TextualFormGenerator(profile)
+
+    app = generator.create_form()
+
+    assert app.steps[3].id == "sitelinks"
+    assert app.steps[3].__class__.__name__ == "SitelinksStep"
+
+
+def test_wizard_persists_identification_data_shape(tribal_government_profile_path: Path):
+    """Wizard should pre-seed draft_data with expected identification keys."""
+    profile = ProfileLoader().load_from_file(tribal_government_profile_path)
+    generator = TextualFormGenerator(profile)
+
+    app = generator.create_form()
+    app.draft_data.setdefault("steps", {})["identification"] = {
+        "labels": {"en": "Example Label"},
+        "descriptions": {"en": "Example Description"},
+        "aliases": {"en": ["Example Alias"]},
+    }
+
+    step_data = app.draft_data["steps"]["identification"]
+    assert "labels" in step_data
+    assert "descriptions" in step_data
+    assert "aliases" in step_data
 
 
 def test_widget_factory_creates_type_ahead_for_items():
@@ -187,3 +253,97 @@ def test_type_ahead_search_index_builds_correctly():
     assert len(widget.search_index["nav"]) == 2
     assert ("Q2", "Navajo") in widget.search_index["nav"]
     assert ("Q3", "Navajo Nation") in widget.search_index["nav"]
+
+
+def test_resolve_language_scope_defaults_to_single_language_en():
+    """Resolver should return only configured default single language."""
+    original_languages = gkc.get_languages()
+    try:
+        gkc.set_languages("en")
+        available = {"en": object(), "es": object(), "fr": object()}
+
+        scoped = resolve_language_scope(available)
+
+        assert scoped == ["en"]
+    finally:
+        gkc.set_languages(original_languages)
+
+
+def test_resolve_language_scope_uses_language_list_order():
+    """Resolver should preserve configured order and skip unavailable languages."""
+    original_languages = gkc.get_languages()
+    try:
+        gkc.set_languages(["es", "en", "de"])
+        available = {"en": object(), "es": object(), "fr": object()}
+
+        scoped = resolve_language_scope(available)
+
+        assert scoped == ["es", "en"]
+    finally:
+        gkc.set_languages(original_languages)
+
+
+def test_resolve_language_scope_all_returns_all_profile_languages():
+    """Resolver should return all available languages when configured to all."""
+    original_languages = gkc.get_languages()
+    try:
+        gkc.set_languages("all")
+        available = {"en": object(), "es": object(), "fr": object()}
+
+        scoped = resolve_language_scope(available)
+
+        assert scoped == ["en", "es", "fr"]
+    finally:
+        gkc.set_languages(original_languages)
+
+
+def test_sitelinks_step_collect_data_respects_package_language_scope():
+    """Sitelinks collection should only include languages in package scope."""
+    original_languages = gkc.get_languages()
+    try:
+        gkc.set_languages("en")
+
+        sitelinks_languages = {
+            "en": SimpleNamespace(
+                project="wikipedia",
+                description="English Wikipedia article",
+                required=False,
+                guidance="Add if available",
+            ),
+            "es": SimpleNamespace(
+                project="wikipedia",
+                description="Spanish Wikipedia article",
+                required=False,
+                guidance="Agrega si existe",
+            ),
+        }
+
+        class FakeApp:
+            def __init__(self) -> None:
+                self.profile = SimpleNamespace(
+                    sitelinks=SimpleNamespace(
+                        guidance="",
+                        languages=sitelinks_languages,
+                    )
+                )
+                self.draft_data = {"steps": {"sitelinks": {"sitelinks": {}}}}
+                self._inputs = {
+                    "#sitelink_en": SimpleNamespace(value="Example_English_Article"),
+                    "#sitelink_es": SimpleNamespace(value="Articulo_Ejemplo"),
+                }
+
+            def query_one(self, selector: str, _widget_type: object) -> SimpleNamespace:
+                return self._inputs[selector]
+
+        step = SitelinksStep(
+            id="sitelinks",
+            title="Cross-platform Links",
+            description="Add sitelinks",
+        )
+        app = FakeApp()
+
+        collected = step.collect_data(app)
+
+        assert collected == {"sitelinks": {"en": "Example_English_Article"}}
+    finally:
+        gkc.set_languages(original_languages)

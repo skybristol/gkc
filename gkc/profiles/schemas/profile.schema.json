@@ -198,7 +198,6 @@
         "label",
         "wikidata_property",
         "type",
-        "required",
         "value"
       ],
       "properties": {

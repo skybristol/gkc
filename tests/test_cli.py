@@ -605,8 +605,42 @@ def test_profile_form_schema(monkeypatch, capsys):
     assert data["name"] == "Federally Recognized Tribe"
 
 
-def test_profile_form_launches_textual_app(monkeypatch):
-    """Profile form command loads profile and runs interactive app."""
+def test_profile_form_schema_resolves_profile_name_local_source(capsys):
+    """Profile form-schema accepts profile names via local SpiritSafe source."""
+    fixtures_root = Path(__file__).parent / "fixtures"
+    output_path = fixtures_root / "tmp_form_schema.json"
+
+    try:
+        exit_code = cli.main(
+            [
+                "--json",
+                "profile",
+                "form-schema",
+                "--profile",
+                "TribalGovernmentUS",
+                "--source",
+                "local",
+                "--local-root",
+                str(fixtures_root),
+                "--output",
+                str(output_path),
+            ]
+        )
+
+        assert exit_code == 0
+        output = capsys.readouterr().out.strip()
+        data = json.loads(output)
+        assert data["ok"] is True
+        assert data["details"]["profile_ref"].endswith(
+            "profiles/TribalGovernmentUS/profile.yaml"
+        )
+    finally:
+        if output_path.exists():
+            output_path.unlink()
+
+
+def test_profile_form_launches_streamlit_app(monkeypatch):
+    """Profile form command loads profile and runs Streamlit app."""
     profile_path = (
         Path(__file__).parent
         / "fixtures"
@@ -615,37 +649,59 @@ def test_profile_form_launches_textual_app(monkeypatch):
         / "profile.yaml"
     )
 
-    class FakeApp:
-        def __init__(self):
-            self.did_run = False
-
-        def run(self):
-            self.did_run = True
-
-    fake_app = FakeApp()
-
-    class FakeGenerator:
-        def __init__(self, profile):
-            self.profile = profile
-
-        def create_form(self, qid=None):
-            self.qid = qid
-            return fake_app
-
-    monkeypatch.setattr("gkc.profiles.forms.TextualFormGenerator", FakeGenerator)
-
     args = argparse.Namespace(
         profile=str(profile_path),
         qid="Q123",
+        source=None,
+        local_root=None,
+        repo=None,
+        github_ref=None,
         command_path="profile.form",
     )
 
-    result = cli._handle_profile_form(args)
+    class FakeResult:
+        returncode = 0
 
-    assert fake_app.did_run is True
+    def fake_run(*args, **kwargs):
+        return FakeResult()
+
+    monkeypatch.setattr("subprocess.run", fake_run)
+
+    result = cli._handle_profile_form(args)
     assert result["ok"] is True
-    assert result["command"] == "profile.form"
     assert result["details"]["qid"] == "Q123"
+
+
+def test_profile_form_from_profile_name_with_local_source(monkeypatch):
+    """Profile form command resolves profile names via local SpiritSafe source override.
+
+    This test verifies profile resolution with local source while mocking Streamlit launch.
+    """
+    fixtures_root = Path(__file__).parent / "fixtures"
+
+    class FakeResult:
+        returncode = 0
+
+    def fake_run(*args, **kwargs):
+        return FakeResult()
+
+    monkeypatch.setattr("subprocess.run", fake_run)
+
+    exit_code = cli.main(
+        [
+            "--json",
+            "profile",
+            "form",
+            "--profile",
+            "TribalGovernmentUS",
+            "--source",
+            "local",
+            "--local-root",
+            str(fixtures_root),
+        ]
+    )
+
+    assert exit_code == 0
 
 
 def test_shex_validate_local_files(monkeypatch, capsys):
