@@ -44,17 +44,17 @@ nav:
   - Home: index.md
   - Data Curation Narratives:
     - Tribal Governments: tribes.md
-  - SpiritSafe: SpiritSafe.md
   - Architecture:
     - Overview: architecture/index.md
+    - SpiritSafe Registry: architecture/SpiritSafe.md
     - Profile Loading: architecture/profile-loading.md
-    - SpiritSafe Infrastructure: architecture/spiritsafe-infrastructure.md
     - Validation Architecture: architecture/validation-architecture.md
   - GKC Documentation:
     - Home: gkc/index.md
     - Background: gkc/background.md
     - Entity Profiles: gkc/profiles.md
-    - Entity JSON Schema: gkc/entity-json-schema.md
+    - Entity JSON: gkc/entity-json-schema.md
+    - Wizard: gkc/wizard.md
     - Getting Started:
       - Setup and Orientation: gkc/setup.md
       - Authentication: gkc/authentication.md

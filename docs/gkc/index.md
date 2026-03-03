@@ -7,8 +7,14 @@ Welcome to the documentation for GKC (Global Knowledge Commons), a Python packag
 - [Installation and setup](setup.md) - setting up to operate the software (aka make whiskey)
 - [Authentication](authentication.md) - set up credentials for Wikimedia apps and OpenStreetMap
 - [Background](background.md) - read about where the project came from and its motivations
-- [Architecture](../architecture/index.md) - major architectural concepts for the GKC and Data Distillery
+- [Architecture Overview](../architecture/index.md) - comprehensive guide to GKC components, data flow, and design principles
 - [Profiles](profiles.md) - comprehensive guide to building and using YAML profiles
+- [Entity JSON Schema](entity-json-schema.md) - GKC Entity JSON format and multi-entity curation packets
+- [Wizard Documentation](wizard.md) - profile-driven UI generation and multi-step curation workflows
+
+## Advanced Architecture
+
+- [Implementation Architecture](../architecture/index.md) - detailed architecture documents for profile loading, SpiritSafe infrastructure, and validation
 
 ## Data Distillery Workflow
 

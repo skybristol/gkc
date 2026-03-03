@@ -1,12 +1,12 @@
 # GKC Entity JSON Schema
 
-**Purpose:** Define the canonical internal data format for entity curation within the GKC Wizard and broader Data Distillery ecosystem. This schema bridges [profile](./profiles.md) definitions (YAML) with curator input (form data) and eventual serialization (Wikidata JSON, Wikimedia Commons JSON, etc. distributed to Global Knowledge Commons partners).
+**Purpose:** Define the canonical internal data format for entity curation within the GKC Wizard and broader Data Distillery ecosystem. This schema bridges [profile](./profiles.md) definitions (YAML) with curator input (form data, bulk data, API data) and eventual serialization (Wikidata JSON, Wikimedia Commons JSON, etc. distributed to Global Knowledge Commons partners).
 
 ---
 
 ## Overview
 
-The **GKC Entity JSON** is a JSON object representing a single entity being curated through Data Distillery actions. When multiple related entities are created in sequence (e.g., primary tribal government + linked office entity), they exist as an array of GKC Entity JSON objects within a **Curation Packet**.
+The **GKC Entity JSON** is a JSON object representing a single entity being curated through Data Distillery actions. When multiple related entities are created in sequence (e.g., primary tribal government + linked office entity), they exist as an array of GKC Entity JSON objects within a **GKC Curation Packet**.
 
 ### Key Principles
 
@@ -303,29 +303,355 @@ When shipping to Wikidata:
 
 ---
 
-## Curation Packet Format
+## Multi-Entity Curation Packets
 
-When multiple entities exist in a single curation session:
+When multiple related entities are curated together (e.g., tribal government + executive office), they exist as a **Curation Packet** containing multiple GKC Entity JSON objects.
+
+### Packet Structure
 
 ```json
 {
   "packet_version": "1.0.0",
   "created_at": "2026-03-02T14:32:00Z",
   "entities": [
-    { /* GKC Entity JSON for entity 1 */ },
-    { /* GKC Entity JSON for entity 2 */ },
-    { /* ... */ }
+    {
+      "packet_id": "ent-001-primary",
+      "profile_name": "TribalGovernmentUS",
+      "creation_path": "primary",
+      "statements": {
+        "office_held_by_head_of_state": [
+          {
+            "value": "ent-002-office",  // References packet_id of related entity
+            "qualifiers": {},
+            "references": [...]
+          }
+        ]
+      }
+    },
+    {
+      "packet_id": "ent-002-office",
+      "profile_name": "OfficeHeldByHeadOfState",
+      "creation_path": "primary.office_held_by_head_of_state",
+      "statements": { ... }
+    }
   ]
 }
 ```
 
-### Packet Metadata
+### Packet Metadata Fields
 
 | Field | Type | Description |
 |-------|------|-------------|
-| `packet_version` | string | Schema version (for migrations) |
+| `packet_version` | string | Schema version (for migrations); current: "1.0.0" |
 | `created_at` | string (ISO 8601) | When packet was created |
 | `entities` | array | Array of GKC Entity JSON objects |
+
+### Cross-Entity References via `packet_id`
+
+Entities within a packet reference each other using **packet-local identifiers** rather than Wikidata QIDs:
+
+- **During curation**: Statement values use `packet_id` strings (e.g., `"ent-002-office"`)
+- **After shipping**: Shipper resolves `packet_id` → QID and replaces values before creating Wikidata items
+
+**Example workflow:**
+
+1. User creates tribal government entity (`ent-001-primary`)
+2. User creates office entity via sub-wizard (`ent-002-office`)
+3. Tribal government's `office_held_by_head_of_state` statement has value `"ent-002-office"`
+4. Shipper creates office first → receives QID `Q999888`
+5. Shipper replaces `"ent-002-office"` with `"Q999888"` in tribal government before shipping
+6. Tribal government created with correct P1906 reference
+
+### Creation Path Breadcrumbs
+
+The `creation_path` field tracks entity provenance:
+
+| Creation Path | Meaning |
+|---------------|---------|
+| `primary` | Root entity; loaded directly by wizard or bulk operation |
+| `primary.office_held_by_head_of_state` | Created via statement on primary entity |
+| `primary.headquarters.location` | Nested entity (location of headquarters of primary) |
+
+**Uses:**
+
+- **Dependency ordering**: Ship entities depth-first (leaves before roots)
+- **Audit trails**: Understand how curator created complex entity graphs
+- **Rollback logic**: If primary creation fails, skip dependent entities
+
+### Packet Lifecycle States
+
+Tracked via `status` field on individual entities:
+
+| Status | Meaning | Next Action |
+|--------|---------|-------------|
+| `in_progress` | Curator actively editing | Continue curation |
+| `ready_to_resolve_refs` | All data entered; awaiting cross-entity QID resolution | Ship to Wikidata |
+| `waiting_for_qid` | Shipped to Wikidata; awaiting item creation response | Poll API or mark complete |
+
+---
+
+## Profile Graph Integration
+
+Curation packets reflect the **profile graph** — the network of profiles connected via `entity_profile` statements.
+
+### Profile Graph Discovery
+
+When wizard loads `TribalGovernmentUS` profile, it:
+
+1. Scans statements for `entity_profile` type
+2. Finds `office_held_by_head_of_state` statement with `profile_name: OfficeHeldByHeadOfState`
+3. Recursively loads `OfficeHeldByHeadOfState` profile
+4. Creates packet with placeholders for both entities
+
+### Loading Strategy
+
+**Current implementation:** Depth = 1 (direct children only)
+
+- Primary profile → directly linked profiles
+- Does **not** recursively load links-of-links
+
+**Future:** Configurable depth or lazy loading:
+
+```yaml
+# In metadata.yaml
+profile_graph:
+  edges:
+    - target_profile: OfficeHeldByHeadOfState
+      loading_strategy: eager  # vs "lazy" (load on-demand)
+      max_depth: 2  # How many hops to traverse
+```
+
+### Multi-Entity Packet Example
+
+**Scenario:** User creates Cherokee Nation (tribal government) with its Principal Chief office
+
+**Profile linkage:**
+
+```
+TribalGovernmentUS (primary)
+  └─ office_held_by_head_of_state: OfficeHeldByHeadOfState (related)
+```
+
+**Resulting packet:**
+
+```json
+{
+  "packet_version": "1.0.0",
+  "created_at": "2026-03-03T10:00:00Z",
+  "entities": [
+    {
+      "packet_id": "ent-001-primary",
+      "profile_name": "TribalGovernmentUS",
+      "creation_path": "primary",
+      "labels": { "en": "Cherokee Nation" },
+      "statements": {
+        "office_held_by_head_of_state": [
+          { "value": "ent-002-office" }
+        ]
+      }
+    },
+    {
+      "packet_id": "ent-002-office",
+      "profile_name": "OfficeHeldByHeadOfState",
+      "creation_path": "primary.office_held_by_head_of_state",
+      "labels": { "en": "Principal Chief of the Cherokee Nation" },
+      "statements": {
+        "applies_to_jurisdiction": [
+          { "value": "ent-001-primary" }  // Bidirectional reference
+        ]
+      }
+    }
+  ]
+}
+```
+
+**Note:** Bidirectional references are allowed and encouraged for semantic clarity.
+
+---
+
+## Bulk Operations
+
+Curation packets support bulk data operations where multiple existing entities are loaded, modified, and re-shipped together.
+
+### Bulk vs Single-Entity Packets
+
+| Aspect | Single-Entity | Bulk Operation |
+|--------|---------------|----------------|
+| **Packet size** | 1-3 entities (primary + related) | 10-1000+ entities |
+| **Entity source** | New entities from scratch | Existing Wikidata items |
+| **Modification scope** | All statements editable | Subset of statements (filtered) |
+| **Workflow** | Wizard step-by-step | Automated or semi-automated |
+
+### Statement Filtration
+
+Bulk operations often target **specific statements** rather than full entities.
+
+**Example:** "Update member_count and office leadership for all federally recognized tribes"
+
+**Packet structure:**
+
+```json
+{
+  "packet_version": "1.0.0",
+  "operation_mode": "bulk",  // Indicates bulk operation
+  "enabled_statements": [     // Whitelist of editable statements
+    "member_count",
+    "office_held_by_head_of_state"
+  ],
+  "entities": [
+    {
+      "packet_id": "bulk-001-Q5093",  // QID embedded for existing items
+      "profile_name": "TribalGovernmentUS",
+      "wikidata_qid": "Q5093",  // Original QID
+      "statements": {
+        "member_count": [
+          { "value": { "amount": 450000, "unit": null } }
+        ]
+        // Other statements NOT loaded or editable
+      }
+    },
+    // ... 99 more tribal governments
+  ]
+}
+```
+
+**Dot notation** for nested statements:
+
+```json
+"enabled_statements": [
+  "office_held_by_head_of_state.inception",  // Only edit inception date of office
+  "office_held_by_head_of_state.references"  // Only add references, not change office
+]
+```
+
+### Validation in Bulk Operations
+
+- **Schema validation**: Same as single-entity (all fields must conform)
+- **Completeness validation**: **Relaxed** (can ship partial entities with only modified statements)
+- **Cross-entity validation**: Can span multiple entities in packet (e.g., "all member counts must be > 0")
+
+**Future:** Bulk operation templates that define:
+
+- Which profiles to query
+- Which statements are modifiable
+- Validation rules specific to bulk context
+
+---
+
+## Round-Trip Transformation
+
+Packets support **bidirectional transformation** between GKC Entity JSON and platform-specific formats (Wikidata JSON, Wikimedia Commons JSON, etc.).
+
+### Wikidata JSON → GKC Entity JSON
+
+**Use case:** Load existing Wikidata item into wizard for editing
+
+**Transformation steps:**
+
+1. Fetch Wikidata JSON via `wbgetentities` API
+2. Load profile for entity type (determined by P31 instance-of value)
+3. Transform Wikidata claims → GKC statements:
+   - Property IDs (P31) → statement IDs (instance_of)
+   - Wikidata datatypes → GKC value types
+   - Qualifiers and references preserved
+4. Generate `packet_id` and `creation_path` metadata
+5. Set `status: in_progress` for editing session
+
+**Example:**
+
+```json
+// Wikidata JSON (abbreviated)
+{
+  "entities": {
+    "Q5093": {
+      "labels": { "en": { "value": "Cherokee Nation" } },
+      "claims": {
+        "P31": [
+          {
+            "mainsnak": { "datavalue": { "value": { "id": "Q7840353" } } },
+            "references": [...]
+          }
+        ]
+      }
+    }
+  }
+}
+
+// GKC Entity JSON (transformed)
+{
+  "packet_id": "ent-001-primary",
+  "profile_name": "TribalGovernmentUS",
+  "wikidata_qid": "Q5093",  // Preserve original QID
+  "labels": { "en": "Cherokee Nation" },
+  "statements": {
+    "instance_of": [
+      { "value": "Q7840353", "references": [...] }
+    ]
+  }
+}
+```
+
+### GKC Entity JSON → Wikidata JSON
+
+**Use case:** Ship curation packet to Wikidata
+
+**Transformation steps:**
+
+1. Resolve `packet_id` references → QIDs (create secondary entities first)
+2. Transform GKC statements → Wikidata claims:
+   - Statement IDs (instance_of) → Property IDs (P31)
+   - GKC value types → Wikidata datatypes
+   - Validate all values conform to Wikidata constraints
+3. Generate Wikidata JSON structure
+4. Call `wbeditentity` API with bot credentials
+
+**Depth-first shipping:**
+
+```
+ent-002-office (no dependencies) → Ship first → Q999888
+ent-001-primary (depends on office) → Replace "ent-002-office" with "Q999888" → Ship second → Q999889
+```
+
+### Sitelinks: Wikidata Format ↔ URL Format
+
+**Current state:** Sitelinks stored in Wikidata format (`enwiki: "Article_Title"`)
+
+**Future enhancement:** URL-based curation format
+
+```json
+// GKC Entity JSON (curation format) - FUTURE
+{
+  "sitelinks": [
+    {
+      "url": "https://en.wikipedia.org/wiki/Cherokee_Nation",
+      "relationship": "primary",  // Article is exclusively about this entity
+      "verified": true  // URL existence validated
+    }
+  ]
+}
+
+// Transformed to Wikidata format for shipping
+{
+  "sitelinks": {
+    "enwiki": {
+      "site": "enwiki",
+      "title": "Cherokee_Nation"
+    }
+  }
+}
+```
+
+**Bidirectional:** Existing Wikidata sitelinks reconstruct URL for editing; saved URLs parse to Wikidata format.
+
+### Profile-Driven Transformation
+
+**Key principle:** All transformation logic derives from profile metadata
+
+- Profile declares Wikidata property mappings (`P31`, `P1906`, etc.)
+- Profile declares datatype conversions (quantity → Wikidata quantity format)
+- Profile declares sitelink rules (allowed languages, allowed projects)
+
+**No hardcoded entity-specific logic** — transformer reads profile and applies rules dynamically.
 
 ---
 
@@ -443,6 +769,9 @@ After each step or on explicit save:
 
 ## Related Documentation
 
-- [Profile Schema](./profiles.md) — How profiles define entity structure
-- Validation Requirements — Real-time validation/coercion specifications (see `.github/prompts/ValidationAgent.working.md`)
-- Shipper Module — How GKC Entity JSON → Wikidata JSON conversion happens (future)
+- [GKC Architecture Overview](../architecture/index.md) — Core architectural components and data flow
+- [GKC Entity Profiles](./profiles.md) — Complete profile schema reference
+- [GKC Wizard Documentation](./wizard.md) — Multi-entity curation workflows
+- [Profile Graphs & Cross-References](./profiles.md#profile-graphs-cross-references) — How profiles link together
+- [Validation Architecture](../architecture/validation-architecture.md) — Real-time validation/coercion engine
+

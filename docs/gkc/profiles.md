@@ -34,7 +34,7 @@ For architecture-level implementation details, see:
 
 - [Architecture Overview](../architecture/index.md)
 - [Profile Loading Architecture](../architecture/profile-loading.md)
-- [SpiritSafe Infrastructure](../architecture/spiritsafe-infrastructure.md)
+- [SpiritSafe Registry](../architecture/SpiritSafe.md)
 - [Validation Architecture](../architecture/validation-architecture.md)
 
 ## Theoretical Design Notes
@@ -1192,6 +1192,402 @@ In this pattern:
 
 ---
 
+## Profile Graphs & Cross-References
+
+**Profile graphs** are networks of interconnected profiles where entities of one type reference entities of another type. These graphs enable multi-entity curation workflows where curators work with a primary entity and all its related entities in a single session.
+
+### Profile Graph Structure
+
+A profile graph consists of:
+
+- **Nodes**: Individual profiles (e.g., `TribalGovernmentUS`, `OfficeHeldByHeadOfState`)
+- **Edges**: Statements with `entity_profile` references that link one profile to another
+- **Direction**: Edges have semantic direction (primary → related, or bidirectional)
+
+**Example graph:**
+
+```
+TribalGovernmentUS
+  └─ office_held_by_head_of_state → OfficeHeldByHeadOfState
+      └─ applies_to_jurisdiction → TribalGovernmentUS (bidirectional)
+```
+
+### Declaring Profile Relationships: Current State
+
+**Statement-level declaration** (in profile.yaml):
+
+```yaml
+statements:
+  - id: office_held_by_head_of_state
+    label: Office held by head of state
+    wikidata_property: P1906
+    entity_profile: OfficeHeldByHeadOfState  # Target profile name
+    
+    value:
+      type: item
+    
+    constraints:
+      - type: required
+        applies_to: [references]
+```
+
+**Metadata-level listing** (in metadata.yaml):
+
+```yaml
+name: Tribal Government (US)
+version: 1.0.0
+description: Federally recognized Native American tribes
+related_profiles:
+  - OfficeHeldByHeadOfState  # Simple list of connected profiles
+```
+
+### Future: Enhanced Profile Graph Metadata
+
+**Planned enhancement** to `metadata.yaml` for explicit graph semantics:
+
+```yaml
+name: Tribal Government (US)
+version: 1.0.0
+
+# NEW: Explicit profile linkage graph
+profile_graph:
+  edges:
+    - target_profile: OfficeHeldByHeadOfState
+      via_statement: office_held_by_head_of_state
+      direction: outbound  # This profile LINKS TO the target
+      cardinality: 1:1
+      
+      # Semantic metadata (for future cross-platform linking)
+      relationship_type: executive_leadership
+      wikidata_property: P1906
+      
+      # Curation packet generation hints
+      auto_load_from_wikidata: true  # When loading via QID, fetch related entities
+      
+      # UI presentation hints
+      presentation:
+        wizard_mode: separate_tab  # vs "inline_form" or "related_sidebar"
+        required_for_completion: false
+        loading_sequence: 1  # Load order if multiple related profiles
+```
+
+This enhancement (to be implemented in Phase 1) makes graph relationships explicitly queryable without scanning all statements.
+
+### Cardinality and Workflow Policies
+
+**Cardinality** defines how many related entities are allowed:
+
+| Cardinality | Meaning | Example |
+|-------------|---------|---------|
+| 1:1 | Exactly one related entity | Tribal government → one head-of-state office |
+| 1:many | Zero or more related entities | University → many academic departments |
+| 0:1 | Optional single entity | Organization → optional headquarters location |
+
+**Workflow policy** controls what curator actions are permitted:
+
+| Policy | Wizard Behavior |
+|--------|----------------|
+| `select_or_create` | Show "Select existing" AND "Create new" options (default) |
+| `select_only` | Only allow selection from existing Wikidata items |
+| `create_only` | Only allow creating new entities (rare; for tightly-coupled entities) |
+
+**Enhanced statement syntax** (planned):
+
+```yaml
+statements:
+  - id: office_held_by_head_of_state
+    entity_profile: OfficeHeldByHeadOfState
+    
+    value:
+      type: entity_profile  # NEW: explicit type (vs generic "item")
+      profile_name: OfficeHeldByHeadOfState
+      
+      # NEW: Relationship semantics
+      relationship:
+        type: executive_leadership
+        description: The executive office governing this entity
+      
+      # NEW: Cardinality constraints
+      cardinality:
+        min: 0
+        max: 1
+      
+      # NEW: Workflow policy
+      workflow_policy: select_or_create
+```
+
+### Bidirectional Profile Relationships
+
+Profile relationships are **logically bidirectional** even if only declared in one direction:
+
+- `TribalGovernmentUS` declares link to `OfficeHeldByHeadOfState` via `office_held_by_head_of_state` statement
+- `OfficeHeldByHeadOfState` declares link back via `applies_to_jurisdiction` statement
+
+**Key architectural principle:** Primary vs secondary is **session-specific**, not profile-intrinsic.
+
+When user loads:
+
+- **TribalGovernmentUS** → `OfficeHeldByHeadOfState` is the related entity
+- **OfficeHeldByHeadOfState** directly → `TribalGovernmentUS` may be the related entity (if editing office for existing tribe)
+
+### Multi-Entity Curation Packets
+
+When wizard loads a profile with related profiles, it creates a **curation packet** containing placeholders for all entities:
+
+```json
+{
+  "packet_version": "1.0.0",
+  "entities": [
+    {
+      "packet_id": "ent-001-primary",
+      "profile_name": "TribalGovernmentUS",
+      "creation_path": "primary",
+      "statements": {
+        "office_held_by_head_of_state": [
+          { "value": "ent-002-office" }  // Reference to related entity
+        ]
+      }
+    },
+    {
+      "packet_id": "ent-002-office",
+      "profile_name": "OfficeHeldByHeadOfState",
+      "creation_path": "primary.office_held_by_head_of_state"
+    }
+  ]
+}
+```
+
+See [GKC Entity JSON Schema](./entity-json-schema.md#multi-entity-curation-packets) for complete packet structure documentation.
+
+### Profile Graph Query Methods (Future)
+
+```python
+# Future GKC API for profile graphs
+from gkc import load_profile_with_graph
+
+profile_graph = load_profile_with_graph("TribalGovernmentUS")
+
+# Get all directly-related profiles
+related = profile_graph.get_related_profiles()
+# Returns: ["OfficeHeldByHeadOfState"]
+
+# Get linkage metadata
+edge = profile_graph.get_edge("OfficeHeldByHeadOfState")
+# Returns: { via_statement: "office_held_by_head_of_state", cardinality: "1:1", ... }
+
+# Build curation packet with placeholders
+packet = profile_graph.create_curation_packet(profile_data)
+# Returns: GKC Curation Packet with ent-001 (primary) and ent-002 (office) placeholders
+```
+
+---
+
+## Statement Types Reference
+
+All statement values have a `type` field that determines validation, serialization, and UI rendering. This table provides a comprehensive reference of supported types.
+
+### Core Wikidata Types
+
+| Type | Wikidata Datatype | Value Format | Example | Widget |
+|------|-------------------|--------------|---------|--------|
+| `item` | wikibase-item | QID string | `"Q7840353"` | QID input or autocomplete |
+| `string` | string | Plain text | `"Cherokee Nation"` | Text input |
+| `url` | url | URL string | `"https://example.com"` | URL input (validated) |
+| `time` | time | ISO 8601 + precision | `{"value": "+2020-01-15T00:00:00Z", "precision": 11}` | Date picker |
+| `quantity` | quantity | Amount + unit | `{"amount": 150000, "unit": null}` | Number input + unit selector |
+| `monolingualtext` | monolingualtext | Language + text | `{"language": "en", "text": "Example"}` | Text + language dropdown |
+| `commonsMedia` | commonsMedia | Filename | `"File:Example.jpg"` | File upload/selector |
+| `globe-coordinate` | globe-coordinate | Lat/lon + precision | `{"latitude": 35.5, "longitude": -95.3}` | Map picker |
+| `external-id` | external-id | ID string | `"12345"` | Text input (ID format) |
+
+### GKC-Specific Types
+
+| Type | Purpose | Value Format | Notes |
+|------|---------|--------------|-------|
+| `entity_profile` | Reference to another profile | `packet_id` (in curation) or QID (shipped) | Enables multi-entity workflows |
+| `itemlist` | Multiple items (deprecated) | Array of QIDs | Use `max_count: null` on `item` type instead |
+
+### Type-Specific Configuration
+
+#### `item`
+
+```yaml
+value:
+  type: item
+  constraints:
+    - type: instance_of
+      values: [Q5]  # Must be instance of "human"
+  
+  allowed_items:
+    source: sparql
+    query_ref: queries/all_countries.sparql
+```
+
+#### `entity_profile`
+
+```yaml
+value:
+  type: entity_profile  # NEW: explicit type
+  profile_name: OfficeHeldByHeadOfState
+  cardinality:
+    min: 0
+    max: 1
+  workflow_policy: select_or_create
+```
+
+#### `quantity`
+
+```yaml
+value:
+  type: quantity
+  constraints:
+    - type: integer_only  # No decimal values
+  
+  # Future: unit configuration
+  unit_behavior: none  # vs "optional", "required", "default"
+  allowed_units: [Q11573, Q3710]  # metre, foot
+  default_unit: Q11573  # metre
+```
+
+#### `time`
+
+```yaml
+value:
+  type: time
+  precision: day  # vs "year", "month", "day" (auto-derived from user input)
+  calendar: Q1985727  # Gregorian calendar (default)
+```
+
+### Datatype Validation
+
+Each type has built-in validation:
+
+- **item**: Must be valid QID format (`Q\d+`)
+- **url**: Must be valid URL (protocol, domain, path)
+- **time**: Must parse as ISO 8601; precision must be valid Wikidata precision level
+- **quantity**: Amount must be numeric; unit must be valid QID if present
+- **globe-coordinate**: Latitude [-90, 90], longitude [-180, 180]
+
+See [Datatypes Reference](./profiles.md#datatypes-reference) for detailed validation rules per type.
+
+---
+
+## Profile Metadata Schema
+
+Every profile has an associated `metadata.yaml` file in its profile directory. This file contains version control, governance, and graph relationship information.
+
+### Metadata File Structure
+
+```yaml
+# profiles/TribalGovernmentUS/metadata.yaml
+name: Tribal Government (US)
+version: 1.0.0
+status: stable  # vs "development", "deprecated"
+description: >
+  Federally recognized Native American tribes in the United States.
+  Comprehensive profile for documenting tribal nomenclature, federal
+  recognition, governmental structure, and cross-platform links.
+
+maintainer: Sky Bristol
+contributors:
+  - Jane Doe
+  - John Smith
+
+created: 2025-11-15
+last_updated: 2026-03-01
+
+# Related profiles (simple list)
+related_profiles:
+  - OfficeHeldByHeadOfState
+
+# Future: Explicit profile graph (see Profile Graphs section)
+# profile_graph:
+#   edges:
+#     - target_profile: OfficeHeldByHeadOfState
+#       via_statement: office_held_by_head_of_state
+#       ...
+
+# Tags for discovery/filtering
+tags:
+  - government
+  - indigenous_peoples
+  - united_states
+
+# External documentation links
+documentation:
+  - title: Wikidata Project Page
+    url: https://www.wikidata.org/wiki/Wikidata:WikiProject_Indigenous_peoples_of_North_America
+  - title: GKC Profile Documentation
+    url: https://datadistillery.org/gkc/profiles/
+
+# Changelog reference
+changelog: CHANGELOG.md
+```
+
+### Metadata Fields Reference
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `name` | string | ✅ | Human-readable profile name (short form) |
+| `version` | semver | ✅ | Semantic version (major.minor.patch) |
+| `status` | enum | ✅ | `stable`, `development`, `deprecated` |
+| `description` | string | ✅ | Long-form description (multiple paragraphs OK) |
+| `maintainer` | string | ✅ | Primary maintainer name |
+| `contributors` | array | ❌ | Additional contributor names |
+| `created` | date | ✅ | Profile creation date (YYYY-MM-DD) |
+| `last_updated` | date | ✅ | Last modification date |
+| `related_profiles` | array | ❌ | List of profile names this profile references |
+| `profile_graph` | object | ❌ | **Future**: Explicit graph edges (see above) |
+| `tags` | array | ❌ | Discovery tags for filtering/search |
+| `documentation` | array | ❌ | External links to documentation |
+| `changelog` | string | ✅ | Path to CHANGELOG.md (relative to profile dir) |
+
+### Metadata vs Profile.yaml
+
+**Key distinction:**
+
+- **profile.yaml**: Defines entity structure, statements, validation (executable specification)
+- **metadata.yaml**: Captures version control, contributors, documentation (governance metadata)
+
+**Name and description appear in both:**
+
+- `profile.yaml` — Short, 1-2 sentence description for UI display
+- `metadata.yaml` — Long, multi-paragraph description for documentation
+
+**Wizard behavior:** Uses `metadata.description` if available; falls back to `profile.description`
+
+### Version Control with CHANGELOG
+
+Every profile directory contains `CHANGELOG.md` tracking changes:
+
+```markdown
+# Changelog: Tribal Government (US)
+
+All notable changes to this profile will be documented in this file.
+
+## [1.0.1] - 2026-03-01
+
+### Added
+- SPARQL query for Federal Register issues (allowed-items for instance_of references)
+
+### Changed
+- Updated `office_held_by_head_of_state` statement to include relationship semantics
+
+## [1.0.0] - 2025-11-15
+
+### Initial Release
+- Core statements for tribal nomenclature, federal recognition, government structure
+- Sitelinks support for English Wikipedia and Cherokee Wikipedia
+```
+
+**Semantic versioning:**
+
+- **Major**: Breaking changes (e.g., removing required statement, changing validation policy)
+- **Minor**: Non-breaking additions (e.g., new optional statements, enhanced guidance)
+- **Patch**: Documentation, bugfixes, SPARQL query updates
+
+---
+
 ## Best Practices
 
 ### 1. Design Profiles for Curator Mental Models
@@ -1683,7 +2079,11 @@ As profiles are used in practice, expect iterative refinements:
 
 ## See Also
 
-- [Architecture Overview](../architecture/index.md) - Profile role in GKC pipeline
-- [API Reference](api/index.md) - Profile loading and validation utilities
-- [Validation Utilities](api/index.md) - Constraint enforcement
-- [SpiritSafe Repository](https://github.com/skybristol/SpiritSafe) - Canonical profile registrants and query assets
+- [GKC Architecture Overview](../architecture/index.md) — Core architectural components and design principles
+- [GKC Entity JSON Schema](./entity-json-schema.md) — Curation packet structure and multi-entity workflows
+- [GKC Wizard Documentation](./wizard.md) — How wizards consume profiles to generate UI
+- [SpiritSafe Registry](../architecture/SpiritSafe.md) — Profile registry structure and governance
+- [Validation Architecture](../architecture/validation-architecture.md) — How profiles drive validation engines
+- [API Reference](api/index.md) — Profile loading and validation utilities
+- [SpiritSafe Repository](https://github.com/skybristol/SpiritSafe) — Canonical profile registrants and query assets
+

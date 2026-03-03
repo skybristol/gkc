@@ -2,61 +2,233 @@
 
 **Purpose**: Capture issues, improvements, and enhancement requests for the SpiritSafe profile schema and metadata structure discovered during GKC Wizard development.
 
-**Status**: Active collection (handoff pending)
+**Status**: Working
 
 ---
 
 ## High-Priority Items
 
-### 1. README Reevaluation
+### 1. ~~README Reevaluation~~ ✅ COMPLETED
 
-**Current State**: Profile directories contain README.md files that are too dense to be useful in wizard context.
-
-**Problem**: 
-- READMEs are written as comprehensive documentation rather than user-facing guidance
-- They're not structured for programmatic consumption by the wizard
-- No clear separation between developer documentation and curator guidance
-
-**Needed**: 
-- Reevaluate what READMEs should contain and how they should be structured
-- Consider whether wizard-specific guidance belongs in metadata.yaml instead
-- Determine if READMEs should be:
-  - Human-readable documentation for profile developers
-  - Structured guidance for wizard interfaces
-  - Both (with clear separation)
-  - Something else entirely
-
-**Use Case**: Wizard needs brief, actionable guidance to show users. Current READMEs would overwhelm the interface.
+**Status**: Simplified both profile READMEs to 3-4 line descriptions with link to external documentation at https://datadistillery.org/gkc/profiles/. Removed dense prose about development dynamics; kept folder structure description only.
 
 ---
 
-### 2. Sub-Wizard Configuration
+### 2. Multi-profile Configuration & Cross-Entity Linking Architecture
 
-**Current State**: Profiles can reference other profiles via `entity_profile` field in statements (e.g., `office_held_by_head_of_state` references `OfficeHeldByHeadOfState` profile).
+**Current State**: 
+- Profiles can reference other profiles via `entity_profile` field in statements (e.g., `office_held_by_head_of_state` statement in TribalGovernmentUS references OfficeHeldByHeadOfState profile)
+- Metadata.yaml has `related_profiles` field listing connected profiles
+- GKC Entity JSON Schema (see attached) defines curation packet structure that bundles primary + related entities
+- Wizard MVP loads these as multi-entity curation packets but lacks explicit metadata about inter-profile relationships
 
-**Problem**:
-- No explicit metadata about how to present sub-entity creation
-- Wizard needs to know:
-  - When to offer "Create new" vs "Select existing" for entity_profile statements
-  - How to organize multi-entity workflows (primary + linked entities)
-  - Whether linked entities should be created inline or in separate steps
-  - What form_policy values mean and how they affect UI rendering
+**Design Direction** (informed by GKC Entity JSON work):
+When wizard is invoked with a profile name, it:
+1. Loads the primary profile
+2. Identifies all `entity_profile` statements and builds a graph of related profiles
+3. Creates a curation packet with placeholders for each related entity
+4. When loaded with a Wikidata QID (post-MVP), hydrates the packet by fetching the primary item + all linked items via statement traversal
+5. Presents to user as a multi-tab or multi-section curation interface where they edit primary + related entities together
 
-**Needed**:
-- Formalize sub-wizard invocation patterns in profile schema
-- Add metadata fields that describe:
-  - Workflow organization (inline, separate step, external)
-  - Creation vs selection policy
-  - Validation dependencies between primary and linked entities
-  - Display hints for nested entity forms
+Same architecture serves bulk operations: load one or more existing items, modify statements in primary + related entities, save/ship as a packet.
 
-**Use Case**: When creating a Tribal Government with an office_held_by_head_of_state, wizard needs to know whether to:
-1. Show inline mini-form for the office
-2. Launch separate wizard for office creation
-3. Only allow selection from existing items
-4. Present these as separate steps vs nested sections
+**Components That Need Definition**:
 
-**Current Workaround**: `form_policy: target_only` exists but semantics unclear to wizard engineer.
+#### 1. Statement-Level Linkage Metadata
+
+Each statement with `entity_profile` type needs to declare:
+- **Which profile name** is expected as the target
+- **Relationship semantics** (for future semantic linking to external systems)
+- **Cardinality rules** (min/max linked entities, 1:1 vs 1:many)
+- **Workflow policy** (create new, select existing, or both)
+
+**Current Syntax** (example from TribalGovernmentUS):
+```yaml
+statements:
+  - id: office_held_by_head_of_state
+    value:
+      type: entity_profile
+      profile_name: OfficeHeldByHeadOfState
+      # Missing: relationship semantics, cardinality, workflow policy
+```
+
+**Desired Enhanced Syntax**:
+```yaml
+statements:
+  - id: office_held_by_head_of_state
+    label: Head of State Office
+    value:
+      type: entity_profile
+      profile_name: OfficeHeldByHeadOfState
+      
+      # NEW: Relationship context for cross-system linking
+      relationship:
+        type: executive_leadership  # Semantic type for future Wikimedia discussions
+        description: The executive office governing this entity
+      
+      # NEW: Cardinality constraints
+      cardinality:
+        min: 0
+        max: 1  # Most tribal governments have one head-of-state office
+      
+      # NEW: Workflow policy - how wizard should handle this
+      workflow_policy: select_or_create  # vs "select_only" or "create_only"
+      
+      # Existing fields still present:
+      constraints:
+        - type: required
+          applies_to: [references]
+```
+
+#### 2. Metadata-Level Profile Graph
+
+Metadata.yaml needs explicit cross-reference declarations:
+
+**Current Syntax**:
+```yaml
+name: Tribal Government (US)
+description: ...
+related_profiles:
+  - OfficeHeldByHeadOfState
+```
+
+**Desired Enhanced Syntax**:
+```yaml
+name: Tribal Government (US)
+description: ...
+
+# NEW: Explicit profile linkage graph
+profile_graph:
+  edges:
+    - target_profile: OfficeHeldByHeadOfState
+      via_statement: office_held_by_head_of_state
+      direction: outbound  # This profile LINKS TO the target
+      cardinality: 1:1
+      
+      # Semantic metadata for future Wikidata/sister-project discussions
+      relationship_type: executive_leadership
+      wikidata_property: P1906  # office held by head of state
+      
+      # Curation packet generation hints
+      auto_load_from_wikidata: true
+      # When loading tribal gov Q5093 via QID, fetch P1906 target and auto-load
+      
+      # UI presentation hints
+      presentation:
+        wizard_mode: separate_tab  # vs "inline_form" or "related_sidebar"
+        required_for_completion: false
+        loading_sequence: 1  # Load order if multiple related profiles
+```
+
+#### 3. Curation Packet Structure (per GKC Entity JSON Schema)
+
+The packet already defines cross-entity reference pattern in GKC Entity JSON Schema:
+- **Packet-local references** (ent-001 → ent-002) that resolve post-shipping to Wikidata QIDs
+- **Creation path breadcrumb** tracking where each entity originated in the curation workflow
+
+#### 4. Bulk Operations Use Case
+
+Bulk data operations need to work with the same architecture:
+
+**Scenario**: "Add member count and update office leadership info for all federally recognized tribes"
+
+**Architecture implications**:
+- Operation loads N existing tribal government items from Wikidata
+- For each, fetches linked office items via P1906
+- Creates packet with multiple primary + related entities
+- Allows curator to edit 2-3 statements across primary + related (not entire entities)
+- Validates cross-entity constraints before shipping
+
+---
+
+**Major Design Decisions To Resolve**:
+
+1. **Graph Directionality**: Should metadata declare edges one direction (primary → related) or bidirectional? 
+   - Impact: Affects how wizard discovers related profiles and how bulk ops know what to load
+   - **Current thinking**: One-way from primary to related; nav UI can show "primary ← related" reverse link if needed
+   - **Architect Guidance** - I think we need to go both directions. I don't actually want to encode the idea that any one profile is primary. Pirmary is only a factor of the principal item type a "curation session" is concerned with. Primary in one circumstance will be secondary in another. It is an important concept in that the graph can't spool out forever, just from the primary point of curation to immediately related items. We should encode the graph structure in SpiritSafe metadata such that any profile is fully aware of all its neighbors.
+
+2. **Cardinality Constraints**: Future profiles may have 1:many (e.g., tribal leaders, band councils)
+   - How should packet structure handle multiple entities?
+   - **Current thinking**: Allow array of related entities per statement; UI renders tabs if multiple
+   - **Architect Guidance** - The basic framework in the UI is one where there are plan and review stages that bracket a set of three entity management screens. Entities being managed in the packet are listed out in a status section on the sidebar/menu. Users see the completion status for each entity and will be able to switch between them. We may need to work on further visual clues as things get more complicated with potentially many items making up a curation session.
+
+3. **Auto-Loading from Wikidata**: When user provides a QID to wizard (post-MVP):
+   - Should wizard fetch ALL related profiles recursively, or just direct children?
+   - **Current thinking**: Direct children only (depth=1); future versioning can add recursive modes
+   - **Architecture Guidance** This is exactly what I was getting at above. I can imagine a future level of maturity in an app where we can load an item and not fetch it's related items until called for, chaining on out as far as a user wants to provide edits. This is essentially what we do in Wikidata now if we are editing things in the UI - go from one related item to the next to the next, recording statements that we have information or judgments for.
+   - **Architecture Guidance** I think we do need to look at our load wikidata item utility functionality with this development. I believe we have a couple of different capabilities in the code currently, using both SPARQL and the wbgetentities API. The latter pulls an entire item, but those items have only identifier references to related items in wikidata-item properties. With SPARQL, we can construct a query to pull at least labels from related items for those linkages. We'll want to leverage that when we load an item so that the wizard or any presentation of a curation packet contains human-readable labels in addition to identifiers.
+
+4. **Presentation Strategy**: For wizard UI with multiple profiles:
+   - Tabs? Collapsible sections? Step sequence?
+   - **Current thinking**: Separate tabs (one per entity in packet); can edit in any order; review stage shows all
+   - **Architecture Guidance** As discussed above, this is kind of how it is now, but the separate items in a curation packet are shown on the left sidebar status section and in the review page. There's no switching functionality currently, but we'll start with the side menu listing and see what other visual clues are needed. I do think we will fundamentally change both the plan and review screens in the wizard so that these clearly present the curation packet (one or more items) and the three "middle" screens (identification, statements, sitelinks) present one item at a time.
+
+5. **Bulk Operations**: Should we unify bulk + single-entity under same architecture, or keep them separate?
+   - **Current thinking**: Unified packet; `operation_mode` flag distinguishes bulk from single; same validation/shipping logic
+   - **Architecture Guidance**: We should make this all part of the same architecture. At the end of the day, our GKC Entity Curation Packet needs to get spooled out via transformation logic into whatever items need to be shipped to Commons Partners (Wikidata, Wikimedia Commons, OSM, Wikipedia templates). Each Curation Packet will almost always have only some of the information needed for each linked thing we are working on, whether it comes from a wizard or some other operation.
+
+6. **Statement Filtration for Bulk Ops**: How to express "only edit these statements" across multiple entities?
+   - Whitelist or blacklist? How to express nested statements?
+   - **Current thinking**: Whitelist (safer); support dot notation (office.inception, office.references)
+   - **Architecture Guidance**: I agree with the whitelist approach in principle. We should build this into the mash part of the GKC architecture, and I think this is where we bring back in the Mash Bill metaphor. A Mash Bill works with the profiles that encode what is essentially the GKC's actionable menu of what it can successfully go after from mash sources and assemble into a Curation Packet that the GKC knows how to operate. One mode of operating is with a wizard instance. Other modes will handle bulk validation, transformation, and shipping.
+
+7. **Relationship Semantics Vocabulary**: The `relationship.type` field is preparatory for future Wikimedia discussions.
+   - Should we define controlled vocabulary now, or keep freeform and standardize later?
+   - **Current thinking**: Start with freeform but document examples; standardize once patterns emerge
+   - **Architecture Guidance**: Agreed. Some relationships will be influenced by point-in-time Wikidata or other partner system semantics. We need to be careful not to go too far into defining our own peculiar semantics but instead work to have those expressed in the partner systems themselves and then translated into actionable form for GKC operations.
+
+8. **Cross-Entity Validation**: Some constraints may span multiple entities (e.g., office inception ≤ tribal govt inception).
+   - Where do rules live? How does validation access related entities?
+   - **Current thinking**: Deferred to post-MVP; keep validation scoped to single-entity for now
+   - **Architecture Guidance**: We can only validate, coerce, transform, and otherwise act on entities for which we have created and are iterating GKC Entity Profiles. With that, we should be able to do every single thing that the GKC is capable of on every entity for which we have a registered profile.
+
+**Text for consideration in defining components**
+
+### GKC Entity Profiles
+GKC Entity Profiles define the canonical structure, semantics, and cross‑platform meaning of a real‑world entity in the Global Knowledge Commons. They are implemented as Pydantic models and serve as the authoritative source of truth for how an entity should be represented, validated, and transformed across Wikidata, Wikimedia Commons, Wikipedia, OpenStreetMap, and other platforms.
+
+### GKC Entity JSON Schemas
+GKC Entity JSON Schemas are the machine‑readable, serializable representations of GKC Entity Profiles. They provide a stable contract for API routes, profile composition, and external tools. JSON Schemas allow profiles to reference one another, form graphs of related entities, and support dynamic generation of user interfaces and curation workflows.
+
+### GKC Curation Packets
+A GKC Curation Packet is the actionable bundle of information required to create or edit one or more entities. It combines the relevant GKC Entity Profiles, the dynamically generated Mash Bill for the task, source data harvested from Wikidata or other systems, and the Modulation Profile that governs how the entity may be adjusted. Curation Packets are the units of work that flow through the GKC Wizard, batch processors, and automated bots.
+
+---
+
+**Implementation Plan**:
+
+0. **Phase 0: Documentation Foundation & Architectural Clarity**
+  - See ProfileArchitect.doc_updates.md
+
+1. **Phase 1 - Profile Schema & Metadata Evolution** (Profile Architect role):
+   - **SpiritSafe Manifest Builder**: Design and implement GitHub Actions workflow to generate registry manifest on each commit (profiles index, cache metadata, commit SHA, timestamp)
+   - Update TribalGovernmentUS profile.yaml with linkage metadata on office_held_by_head_of_state
+   - Update TribalGovernmentUS metadata.yaml with profile_graph section
+   - Create schema documentation
+   - Validate YAML against refined schema
+
+2. **Phase 2 - Pydantic Model Evolution** (gkc package):
+   - Extend EntityProfile model to parse new linkage fields
+   - Build ProfileGraph model (edges, nodes, traversal helpers)
+   - Add: `get_related_profiles()`, `get_linkage_statement()`, cardinality validation
+   - Tests for graph traversal
+
+3. **Phase 3 - GKC Spirit Safe Module**:
+   - Add `load_profile_with_graph()` helper
+   - Add `create_curation_packet()` with related entity placeholders
+   - Tests for packet creation and linkage resolution
+
+4. **Phase 4 - Wizard Integration** (Wizard Engineer):
+   - Update profile loading to build full packet with related profiles
+   - UI: tabs/sections for multiple entities
+   - Review stage: display cross-entity data
+   - (Post-MVP: QID loading and live Wikidata hydration)
+
+5. **Phase 5 - Bulk Operations** (Future):
+   - Design operation templates
+   - Extend packet for `operation_mode: bulk`
+   - Build bulk loader and statement filtration
 
 ---
 

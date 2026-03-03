@@ -52,6 +52,46 @@ The **gkc** Python package fetches profiles and controlled vocabularies from Spi
 
 ---
 
+## Current Implementation Status
+
+This section describes the currently implemented and committed SpiritSafe infrastructure.
+
+### Registry Package Shape
+
+SpiritSafe profile registrants use package directories:
+
+- `profiles/<ProfileID>/profile.yaml`
+- `profiles/<ProfileID>/metadata.yaml`
+- `profiles/<ProfileID>/queries/*.sparql` (when applicable)
+
+Additional documentation files (`README.md`, `CHANGELOG.md`) are supported as registry artifacts.
+
+### GKC Registry Abstractions
+
+GKC currently exposes registry-oriented utilities in `gkc.spirit_safe`:
+
+- `list_profiles()`
+- `profile_exists(profile_id)`
+- `get_profile_metadata(profile_id)`
+- `ProfileMetadata` dataclass for structured metadata access
+
+These APIs operate in both configured source modes (`github` and `local`).
+
+### Caching and Hydration
+
+SPARQL hydration is profile-driven and cache-backed:
+
+- Query templates can be inline (`query`) or referenced (`query_ref`).
+- Hydration deduplicates rendered query text per endpoint.
+- Cache files are written under source-specific cache directories.
+
+### Current Constraints
+
+- Profile discovery in GitHub mode currently depends on GitHub API directory listing.
+- Metadata validation currently enforces required fields at runtime (`name`, `version`, `status`) without a separate published schema contract.
+
+---
+
 ## Directory Structure: Profiles as Registry Entries
 
 ### Rationale for Per-Profile Organization
@@ -98,12 +138,12 @@ SpiritSafe/
 ├── cache/                              # Cached SPARQL results
 │   └── [managed by hydration process]
 │
-└── .github/
-    ├── workflows/
-    │   ├── validate-profile.yml       # Validate profile on PR
-    │   ├── hydrate-caches.yml         # Refresh choice lists
-    │   └── publish-release.yml        # Tag and release on merge to main
-    └── CONTRIBUTION.md                 # Community contribution guidelines
+├── .github/
+│   ├── workflows/
+│   │   ├── validate-profile.yml       # Validate profile on PR
+│   │   ├── hydrate-caches.yml         # Refresh choice lists
+│   │   └── publish-release.yml        # Tag and release on merge to main
+│   └── CONTRIBUTION.md                 # Community contribution guidelines
 ```
 
 ### Directory Descriptions
@@ -495,7 +535,7 @@ Then use local override in GKC runtime/CLI for branch validation and hydration t
 
 ---
 
-## Theoretical Design Notes for Infrastructure Development
+## Theoretical Design Notes
 
 The following elements are designed but not yet fully implemented. These notes guide infrastructure development:
 
@@ -549,16 +589,13 @@ The following elements are designed but not yet fully implemented. These notes g
 
 ### 4. Profile Lifecycle Management
 
-
 - `status: deprecated` in metadata sends signal to users
 - Automatic archive after X period of no updates
 - Formal retirement process with data migration guidance
 - Audit trail of profile creation → active → deprecated → archived
 
 **Open Questions**:
-ofile creation → active → deprecated → archived
 
-**Open Questions**:
 - What triggers deprecation (maintainer decision, community vote)?
 - How to handle curated data when profile retires?
 - How to preserve profile history (GitHub releases)?
@@ -595,3 +632,19 @@ Community members can propose new profiles or changes to existing profiles via P
 SpiritSafe reimagines entity schema management through a community-driven registry model. By treating profiles as curated, versioned, documented packages with transparent governance, we overcome adoption barriers that have hindered Wikidata EntitySchema. The per-profile folder structure keeps contributions manageable, the metadata and documentation make profiles discoverable, and CI/CD automation ensures quality.
 
 As the GKC ecosystem matures, SpiritSafe will become the standard registry of entity types for the Global Knowledge Commons—a reference point where users can find, understand, and contribute to canonical entity definitions across platforms.
+
+---
+
+## See Also
+
+- [GKC Architecture Overview](index.md) — How SpiritSafe fits in the larger GKC pipeline
+- [GKC Entity Profiles](../gkc/profiles.md) — Complete profile schema reference and design patterns
+- [GKC Entity JSON Schema](../gkc/entity-json-schema.md) — Serialization format for curation packets
+- [GKC Wizard Documentation](../gkc/wizard.md) — How wizards consume profiles to generate UIs
+- [SpiritSafe Repository](https://github.com/skybristol/SpiritSafe) — Canonical profile registrants and query assets
+
+---
+
+**Last Updated:** March 3, 2026  
+**Maintainer:** Profile Architect  
+**Status:** Stable (subject to enhancement as architecture evolves)
