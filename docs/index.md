@@ -1,7 +1,5 @@
 # Data Distillery
 
-> There are no bad data, just data that haven't yet been distilled.
-
 The Data Distillery project is an experimental framework for data cleaning, integration, and enhancement workflows geared toward data and information being contributed to the Global Knowledge Commons. That's the term of art I've adopted for the suite of open knowledge assets maintained by all of us in the commons - Wikidata and other parts of the Wikiverse, OpenStreetMap, and a handful of other platforms and helper services like ORCID. I'm writing some new software that I'll post about here shortly.
 
 # Global Knowledge Commons Python package
