@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: GKC Profiles Documentation
+    url: https://datadistillery.org/gkc/profiles/
+    about: Review profile architecture guidance before opening an issue.
+  - name: SpiritSafe Registry
+    url: https://github.com/skybristol/SpiritSafe
+    about: Registry source for profile metadata, queries, and cache artifacts.

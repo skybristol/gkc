@@ -1,0 +1,104 @@
+name: Profile Concept / Design Issue
+description: Track a profile schema or profile-driven behavior concept for implementation
+title: "[Profile Concept] "
+labels:
+  - refine
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use this template for profile schema, validation, packet, and profile-driven curation behavior design.
+
+        Notes:
+        - Keep descriptions implementation-oriented.
+        - Use existing labels to map workflow context (`refine`, `proof`, `blend`, `wikidata`, `wikipedia`, `commons`, `ship`).
+        - Do not use phase labels.
+
+  - type: input
+    id: problem
+    attributes:
+      label: Problem
+      description: What specific gap or pain point are we solving?
+      placeholder: Curators cannot...
+    validations:
+      required: true
+
+  - type: textarea
+    id: concept
+    attributes:
+      label: Proposed Concept
+      description: Describe the intended behavior and profile/schema shape.
+      placeholder: |
+        Add ... to profile schema so that ...
+        Example YAML:
+        ```yaml
+        ...
+        ```
+    validations:
+      required: true
+
+  - type: textarea
+    id: scope
+    attributes:
+      label: Scope & Constraints
+      description: Define exact in-scope and out-of-scope boundaries.
+      placeholder: |
+        In scope:
+        - ...
+
+        Out of scope:
+        - ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance Criteria
+      description: Concrete checks that indicate this is done.
+      placeholder: |
+        - [ ] Profile schema supports ...
+        - [ ] Validation enforces ...
+        - [ ] CLI/API behavior documented ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: dependencies
+    attributes:
+      label: Dependencies / Handoff
+      description: Note cross-agent or cross-module dependencies.
+      placeholder: |
+        - Profile Architect: ...
+        - Validation Agent: ...
+        - Wizard Engineer: ...
+    validations:
+      required: false
+
+  - type: dropdown
+    id: primary_stage
+    attributes:
+      label: Primary Workflow Label
+      description: Select the most relevant existing label for this issue.
+      options:
+        - refine
+        - proof
+        - blend
+        - wikidata
+        - wikipedia
+        - commons
+        - ship
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Author Checklist
+      options:
+        - label: I used existing labels and did not use phase terminology.
+          required: true
+        - label: I included concrete acceptance criteria.
+          required: true
+        - label: I documented dependencies/handoffs if applicable.
+          required: false
