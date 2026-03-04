@@ -4,6 +4,7 @@ Test Phase 3 spirit_safe module functions.
 Tests for manifest loading, profile loading, profile packages, and curation packet creation.
 """
 
+import os
 import pytest
 
 from gkc.spirit_safe import (
@@ -20,9 +21,17 @@ from gkc.spirit_safe import (
 
 @pytest.fixture(autouse=True)
 def setup_local_source():
-    """Configure spirit_safe to use local SpiritSafe repo."""
-    set_spirit_safe_source(mode="local", local_root="/Users/sky/code/SpiritSafe")
+    """Configure spirit_safe to use local SpiritSafe repo if available, otherwise GitHub."""
+    local_spiritsafe = "/Users/sky/code/SpiritSafe"
+    
+    # Use local if available (for faster local testing), otherwise use GitHub (for CI)
+    if os.path.exists(local_spiritsafe):
+        set_spirit_safe_source(mode="local", local_root=local_spiritsafe)
+    else:
+        set_spirit_safe_source(mode="github")
+    
     yield
+    
     # Reset to github after test
     set_spirit_safe_source(mode="github")
 
