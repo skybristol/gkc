@@ -1,0 +1,144 @@
+name: Office Held by Head of State
+description: >
+  Canonical form for representing a governmental position or office held by
+  the head of state or head of government of a political entity.
+
+# Entity labels (multilingual)
+labels:
+  en:
+    label: Label
+    input_prompt: >
+      official title of the office
+    guidance: >
+      Use the formal title of the office as it appears in governing documents.
+      Examples: "Principal Chief of the Cherokee Nation", "President of the Navajo Nation",
+      "Chairperson of the Oglala Sioux Tribe"
+
+# Entity descriptions (multilingual)
+descriptions:
+  en:
+    label: Description
+    input_prompt: >
+      short description identifying the office and jurisdiction
+    guidance: >
+      Format: "head of state/government office of [jurisdiction]"
+      Example: "head of government office of the Cherokee Nation"
+      Keep concise (under 250 characters) and informative.
+
+# Entity aliases (multilingual alternative names)
+aliases:
+  en:
+    label: Aliases
+    input_prompt: >
+      alternative titles or historical names for this office
+    guidance: >
+      Include common abbreviations, historical titles, or informal names.
+
+# Entity sitelinks (Wikipedia and other wiki language versions)
+sitelinks:
+  validation_policy: allow_existing_nonconforming
+  guidance: >
+    Sitelinks connect this item to Wikipedia articles about the office.
+  
+  languages:
+    en:
+      project: wikipedia
+      description: English Wikipedia article
+      input_prompt: title of the English Wikipedia article about this office
+
+# Reusable reference patterns
+standard_reference: &standard_reference
+  min_count: 1
+  input_prompt: Add at least one source reference for this statement.
+  validation_policy: allow_existing_nonconforming
+  allowed:
+    - id: stated_in
+      wikidata_property: P248
+      type: item
+      label: Stated in
+      input_prompt: Enter the QID of the source publication or source dataset.
+      description: Reference to source document or database
+    - id: reference_url
+      wikidata_property: P854
+      type: url
+      label: Reference URL
+      input_prompt: Enter the direct URL to the source used for this statement.
+      description: Direct URL to source
+
+statements:
+
+  - id: instance_of
+    label: Instance of
+    input_prompt: the primary classification for this office
+    wikidata_property: P31
+    type: statement
+    max_count: null
+    validation_policy: allow_existing_nonconforming
+    guidance: >
+      Typical classifications include "public office" (Q294414) or "position" (Q4164871).
+
+    value:
+      type: item
+
+    references: *standard_reference
+
+  - id: country
+    label: Country
+    input_prompt: the country where this office exists
+    wikidata_property: P17
+    type: statement
+    max_count: 1
+    validation_policy: allow_existing_nonconforming
+    guidance: >
+      For tribal government offices in the United States, use Q30 (United States of America).
+
+    value:
+      type: item
+
+    references: *standard_reference
+
+  - id: applies_to_jurisdiction
+    label: Applies to jurisdiction
+    input_prompt: the governmental jurisdiction this office administers
+    wikidata_property: P1001
+    type: statement
+    max_count: 1
+    validation_policy: allow_existing_nonconforming
+    guidance: >
+      Link to the tribal government or other political entity this office serves.
+      For example, the Principal Chief office applies to the jurisdiction of the Cherokee Nation.
+
+    value:
+      type: item
+
+    references: *standard_reference
+
+  - id: inception
+    label: Inception
+    input_prompt: date when this office was established or created
+    wikidata_property: P571
+    type: statement
+    max_count: 1
+    validation_policy: allow_existing_nonconforming
+
+    value:
+      type: time
+      constraints:
+        - type: precision
+          description: Time precision derived from input format
+          allowed_precisions:
+            - 9   # year
+            - 10  # month
+            - 11  # day
+          auto_derive: true
+        - type: calendar_model
+          description: Calendar system used for date interpretation
+          default: http://www.wikidata.org/entity/Q1985727  # Gregorian calendar
+        - type: format
+          description: Expected input formats
+          patterns:
+            - "YYYY"
+            - "YYYY-MM"
+            - "YYYY-MM-DD"
+
+    references: *standard_reference

@@ -6,6 +6,11 @@ Implement robust validation and data coercion functions that integrate directly 
 ## Current State
 The wizard emits data to a `draft_data` structure as users enter values. Existing validation infrastructure (`ProfileValidator`, `WikidataNormalizer`, Pydantic models) exists but is not integrated into the real-time data entry process.
 
+**Post-Phase-1 Evolution**: Curation packets now bundle multiple related entities (primary + linked profiles) in a single workflow. Validation must account for:
+- Individual entity validation (same as before)
+- Cross-profile validation (constraints spanning multiple entities)
+- Cardinality enforcement (profile_graph constraints on linked entities)
+
 ### Architectural Decision: GKC Entity JSON vs Wikidata JSON
 
 **Deferred**: Wikidata JSON output generation until validation/coercion is solid.
@@ -152,6 +157,75 @@ After all steps collect data, run full ProfileValidator:
 - Deprecated terms
 - Suggestions for related items
 
+## 7. Packet-Level Validation (Cross-Profile Constraints)
+
+**Context**: Curation packets now contain multiple entities (primary + related profiles connected via profile_graph). Validation must ensure consistency across entities and enforce inter-entity constraints.
+
+### 7.1 Cardinality Validation
+
+Profile graphs declare cardinality constraints (min/max) for linked entity relationships. Validator must enforce:
+
+```python
+class CardinalityConstraint:
+    min: int  # Minimum linked entities required
+    max: int  # Maximum linked entities allowed
+    via_statement: str  # Statement that creates the link
+    target_profile: str  # Name of linked profile
+```
+
+**Examples**:
+- TribalGovernmentUS → OfficeHeldByHeadOfState: min=0, max=1 (at most one head of state office)
+- TribalGovernmentUS → HeadOfficial: min=0, max=N (potentially many officials, but profile may constrain this)
+
+**Validation Logic**:
+```python
+def validate_cardinality(packet: CurationPacket, profile_graph: ProfileGraph):
+    """
+    For each linked entity type in packet:
+    - Count how many entities of that type are present
+    - Check min ≤ count ≤ max
+    - Return issues if outside bounds
+    """
+```
+
+### 7.2 Bidirectional Relationship Consistency
+
+When packet contains multiple related entities:
+- If primary entity has statement linking to related_entity, ensure related_entity is in packet
+- If related_entity is in packet, ensure it has reciprocal reference back to primary (if bidirectional)
+- Return warning if relationships are incomplete (incomplete packet)
+
+### 7.3 Entity-to-Entity Constraints
+
+Some profile pairs may have temporal or semantic constraints:
+
+**Example**: Office inception date ≤ Tribal government founding date
+- Validation must access both entities and compare values
+- Return error if constraint violated
+
+**Future Approach**: Could define constraints in profile metadata or profile_graph edges
+- For MVP: Handle case-by-case in validation logic
+- Document patterns as they emerge
+
+### 7.4 Integration Points
+
+**When**:
+- At review stage (before final submission) - comprehensive packet-level validation
+- Optional: After loading linked entities (early feedback to curator)
+
+**Input**: Full `CurationPacket` object containing all entities + ProfileGraph structure
+**Output**: Comprehensive issue list scoped by entity + cross-entity issues
+
+```python
+packet_issues = {
+    "primary_entity": [issue1, issue2, ...],
+    "related_entity_1": [issue3, ...],
+    "cross_entity": [issue4, issue5, ...]  # NEW: Spans multiple entities
+}
+```
+
+---
+
 ## Known Constraints & Context
 
 - Wizard uses Streamlit (reruns on every interaction)
@@ -169,24 +243,66 @@ Some coercion rules depend on profile schema being finalized:
 
 See ProfileArchitect.working.md for related schema work.
 
+## Profile Schema Dependencies
+
+Some coercion and validation rules depend on profile schema being finalized:
+- `unit_behavior` field for quantities (none/optional/required/default)
+- `auto_create` pattern for fixed-value statements (fixed value, focus on references only)
+- Constraint definitions (integer-only, valid language code, min/max dateTime, cardinality min/max)
+- **NEW (Phase 1-3)**: `profile_graph` edges with cardinality (min/max for linked entities)
+- **NEW (Phase 1-3)**: Statement-level `linkage` metadata defining cross-profile relationships
+- **NEW (Phase 1-3)**: `missing_consequence` field for guidance on optional statements
+
+See ProfileArchitect.working.md for related schema work and Phase 2-3 Pydantic model evolution.
+
 ## Testing Strategy
 
 1. **Unit tests** for each coercion function (test various input formats)
 2. **Integration tests** with wizard step rendering (test inline validation)
-3. **Comprehensive validation tests** with complete statement data
-4. **User scenarios** (entering date in multiple formats, adding quantities with/without units)
+3. **Comprehensive validation tests** with complete statement data (single entity)
+4. **Packet-level validation tests** with multiple related entities and cardinality constraints
+5. **User scenarios** (entering date in multiple formats, adding quantities with/without units, multi-entity packets)
 
-## Questions for Profile Architect
+## Alignment with Phase 2-3 Development
 
-- Should coercion rules be defined in profile schema, or hardcoded per datatype?
-- For date ambiguity (12-01), should we prompt user or pick a default interpretation?
-- Should failed coercion block data entry (error) or just record issues (warning)?
-- Any additional constraints or coercion patterns specific to tribal government profiles?
+**Phase 2 Dependencies**: 
+- Extended `EntityProfile` model will provide statement linkage metadata
+- New `ProfileGraph` model will provide cardinality constraints and traversal info
+- Validator can consume these to enforce packet-level rules
 
-## Next Steps (After Handoff)
+**Phase 3 Dependencies**:
+- `load_profile_package()` will return packet structure
+- Validator will receive packets from wizard after all entities are collected
+- `validate_packet_structure()` (in spirit_safe module) will ensure graph consistency
+- `ProfileValidator` will handle content validation (values, qualifiers, references within/across entities)
+
+---
+
+## Next Steps (Coordinated with Phase 2-3)
 
 1. Implement core coercion functions for each datatype
 2. Create a coercion registry/dispatcher
 3. Integrate with wizard layer (Update WidgetFactory or create validation hooks)
-4. Test with real user data from MVP collection
-5. Refine based on curator feedback
+4. **NEW (Phase 2-3 era)**: Implement packet-level validation functions (cardinality, bidirectional consistency, cross-entity constraints)
+5. Build comprehensive tests for single-entity and multi-entity (packet) validation
+6. Test with real user data from MVP collection
+7. Refine based on curator feedback
+
+## Questions Remaining for Profile Architect
+
+- Should coercion rules be defined in profile schema, or hardcoded per datatype?
+- For date ambiguity (12-01), should we prompt user or pick a default interpretation?
+- Should failed coercion block data entry (error) or just record issues (warning)?
+- What cross-profile constraints should be expressed in profile metadata vs handled as special cases?
+- How should entity-to-entity temporal constraints be declared (e.g., office inception ≤ government founding)?
+
+## Coordination with Phase 2-3 Development
+
+**Work in parallel**:
+- Profile Architect continues refining schema (Phase 1 wrap-up)
+- Validation Agent implements core coercion functions (can work independently)
+- gkc package extends EntityProfile and builds ProfileGraph models (Phase 2)
+- gkc package builds spirit_safe module with packet loading (Phase 3)
+- Validation Agent integrates with ProfileGraph/packet structures (after Phase 2-3 complete)
+
+**Integration point**: Once Phase 3 spirit_safe module is complete with `load_profile_package()`, Validation Agent incorporates packet-level validation into the workflow.

@@ -1,0 +1,193 @@
+{
+  "generated_at": "2026-03-03T20:14:53.718835+00:00",
+  "commit_sha": "eb6d4b760d1d643b475acdf902f8d5968f72f814",
+  "commit_timestamp": "2026-03-03T12:51:31-07:00",
+  "profiles": [
+    {
+      "id": "OfficeHeldByHeadOfState",
+      "name": "Office Held by Head of State",
+      "description": "Canonical form for representing governmental positions or offices held by heads of state or heads of government of political entities. This profile supports documentation of executive offices, their jurisdictions, establishment dates, and relationships to governing entities. Designed for use with tribal governments, but applicable to any governmental executive office.\n",
+      "version": "1.0.0",
+      "status": "stable",
+      "authors": [
+        {
+          "name": "Sky Bristol"
+        }
+      ],
+      "maintainers": [
+        {
+          "name": "Sky Bristol"
+        }
+      ],
+      "published_date": "2026-03-01",
+      "related_profiles": [
+        "TribalGovernmentUS"
+      ],
+      "source_references": [
+        {
+          "name": "Wikidata property P1906 documentation",
+          "url": "https://www.wikidata.org/wiki/Property:P1906"
+        }
+      ],
+      "datatypes_used": [
+        "item",
+        "time"
+      ],
+      "statements_count": 4,
+      "references_required": true,
+      "qualifiers_used": [],
+      "sparql_sources": [],
+      "profile_graph": {
+        "neighbors": [
+          "TribalGovernmentUS"
+        ],
+        "edges": [
+          {
+            "target_profile": "TribalGovernmentUS",
+            "via_statement": "applies_to_jurisdiction",
+            "relationship_type": "governs_jurisdiction",
+            "cardinality": {
+              "min": 0,
+              "max": 1
+            },
+            "traversal": {
+              "max_depth": 1
+            }
+          }
+        ]
+      },
+      "community_feedback": {
+        "issue_tracker": "https://github.com/skybristol/SpiritSafe/issues"
+      },
+      "files": {
+        "profile_yaml": "profiles/OfficeHeldByHeadOfState/profile.yaml",
+        "metadata_yaml": "profiles/OfficeHeldByHeadOfState/metadata.yaml",
+        "readme": "profiles/OfficeHeldByHeadOfState/README.md",
+        "changelog": "profiles/OfficeHeldByHeadOfState/CHANGELOG.md"
+      },
+      "cache_directory": "cache/profiles/OfficeHeldByHeadOfState/"
+    },
+    {
+      "id": "TribalGovernmentUS",
+      "name": "Federally Recognized Tribe",
+      "description": "Canonical form for representing a federally recognized Native American tribe in the United States. This profile provides comprehensive support for documenting tribal governments with a focus on official nomenclature, federal recognition status, government structure, and cultural attributes. Based on Wikidata EntitySchema E502 with additional properties and enhanced validation.\n",
+      "version": "1.0.0",
+      "status": "stable",
+      "authors": [
+        {
+          "name": "Sky Bristol"
+        }
+      ],
+      "maintainers": [
+        {
+          "name": "Sky Bristol"
+        }
+      ],
+      "published_date": "2026-03-01",
+      "related_profiles": [
+        "OfficeHeldByHeadOfState"
+      ],
+      "source_references": [
+        {
+          "name": "Wikidata EntitySchema E502",
+          "url": "https://www.wikidata.org/wiki/EntitySchema:E502"
+        },
+        {
+          "name": "Bureau of Indian Affairs Federal Register Notices",
+          "url": "https://www.federalregister.gov/agencies/bureau-of-indian-affairs"
+        }
+      ],
+      "datatypes_used": [
+        "item",
+        "url",
+        "quantity",
+        "monolingualtext",
+        "time",
+        "globecoordinate",
+        "external-id",
+        "commonsMedia"
+      ],
+      "statements_count": 11,
+      "references_required": true,
+      "qualifiers_used": [
+        "language_of_work",
+        "point_in_time",
+        "street_address",
+        "postal_code",
+        "coordinate_location"
+      ],
+      "sparql_sources": [
+        "bia_federal_register_issues",
+        "wikidata_language_items_en"
+      ],
+      "profile_graph": {
+        "neighbors": [
+          "OfficeHeldByHeadOfState"
+        ],
+        "edges": [
+          {
+            "target_profile": "OfficeHeldByHeadOfState",
+            "via_statement": "office_held_by_head_of_state",
+            "relationship_type": "office_of_head_of_state",
+            "cardinality": {
+              "min": 0,
+              "max": 1
+            },
+            "traversal": {
+              "max_depth": 1
+            }
+          }
+        ]
+      },
+      "community_feedback": {
+        "issue_tracker": "https://github.com/skybristol/SpiritSafe/issues"
+      },
+      "files": {
+        "profile_yaml": "profiles/TribalGovernmentUS/profile.yaml",
+        "metadata_yaml": "profiles/TribalGovernmentUS/metadata.yaml",
+        "readme": "profiles/TribalGovernmentUS/README.md",
+        "changelog": "profiles/TribalGovernmentUS/CHANGELOG.md"
+      },
+      "queries": [
+        {
+          "filename": "bia_federal_register_issues.sparql",
+          "source_path": "profiles/TribalGovernmentUS/queries/bia_federal_register_issues.sparql",
+          "cache_path": "cache/profiles/TribalGovernmentUS/bia_federal_register_issues.json"
+        },
+        {
+          "filename": "wikidata_language_items_en.sparql",
+          "source_path": "profiles/TribalGovernmentUS/queries/wikidata_language_items_en.sparql",
+          "cache_path": "cache/profiles/TribalGovernmentUS/wikidata_language_items_en.json"
+        }
+      ],
+      "statement_linkages": [
+        {
+          "statement_id": "office_held_by_head_of_state",
+          "wikidata_property": "P1906",
+          "target_profile": "OfficeHeldByHeadOfState",
+          "form_policy": "target_only",
+          "linkage": {
+            "target_profile": "OfficeHeldByHeadOfState",
+            "relationship": {
+              "type": "office_of_head_of_state",
+              "direction": "bidirectional",
+              "reverse_statement_hint": "applies_to_jurisdiction"
+            },
+            "cardinality": {
+              "min": 0,
+              "max": 1
+            },
+            "workflow_policy": {
+              "create": "allowed",
+              "select_existing": "allowed"
+            },
+            "traversal": {
+              "max_depth": 1
+            }
+          }
+        }
+      ],
+      "cache_directory": "cache/profiles/TribalGovernmentUS/"
+    }
+  ]
+}

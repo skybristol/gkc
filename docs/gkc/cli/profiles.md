@@ -1,151 +1,382 @@
 # Profiles CLI
 
-Plain meaning: Validate data and generate schemas from YAML profiles.
+Plain meaning: Work with SpiritSafe-backed Entity Profiles from the command line.
 
 ## Overview
 
-The `profile` command group supports three active workflows:
+The `gkc` command provides comprehensive CLI access to profile validation, form generation, lookup hydration, registry operations, profile packages, and curation packets.
 
-- Validate Wikidata item JSON against an Entity Profile.
-- Generate a normalized form schema from an Entity Profile.
-- Launch the Textual-based profile wizard shell for guided curation.
+Top-level command groups:
 
-It also supports lookup hydration for SPARQL-backed allowed-item lists.
+- `gkc profile` - Profile validation, form generation, and lookups
+- `gkc registry` - SpiritSafe registry operations
+- `gkc packet` - Curation packet operations
 
-## Commands
+## Profile Commands
 
-### Validate a Wikidata Item
+### `gkc profile validate`
+
+Validate a Wikidata item using either a profile path or profile name.
 
 ```bash
-gkc profile validate --profile /path/to/SpiritSafe/profiles/TribalGovernmentUS/profile.yaml --qid Q123
+gkc profile validate --profile /path/to/profile.yaml --qid Q123
 ```
-
-Validate by profile name (default GitHub SpiritSafe source):
 
 ```bash
 gkc profile validate --profile TribalGovernmentUS --qid Q123
 ```
-
-Validate by profile name from a local SpiritSafe clone:
 
 ```bash
 gkc profile validate \
   --profile TribalGovernmentUS \
   --source local \
   --local-root /path/to/SpiritSafe \
-  --qid Q123
+  --item-json path/to/item.json
 ```
 
-Validate a local JSON file:
+Supported flags:
+
+- `--profile` (required)
+- `--qid`
+- `--item-json`
+- `--policy {strict,lenient}`
+- `--source {github,local}`
+- `--local-root`
+- `--repo`
+- `--ref`
+
+### `gkc profile form-schema`
+
+Generate form schema JSON from a profile.
 
 ```bash
-gkc profile validate --profile /path/to/SpiritSafe/profiles/TribalGovernmentUS/profile.yaml --item-json path/to/item.json
+gkc profile form-schema --profile TribalGovernmentUS --source local --local-root /path/to/SpiritSafe
 ```
-
-Use strict validation:
 
 ```bash
-gkc profile validate --profile /path/to/SpiritSafe/profiles/TribalGovernmentUS/profile.yaml --qid Q123 --policy strict
+gkc profile form-schema --profile /path/to/profile.yaml --output form_schema.json
 ```
 
-### Generate a Form Schema
+Supported flags:
 
-```bash
-gkc profile form-schema --profile /path/to/SpiritSafe/profiles/TribalGovernmentUS/profile.yaml
-```
+- `--profile` (required)
+- `-o, --output`
+- `--source {github,local}`
+- `--local-root`
+- `--repo`
+- `--ref`
 
-Generate from profile name via local SpiritSafe clone:
+### `gkc profile form`
 
-```bash
-gkc profile form-schema \
-  --profile TribalGovernmentUS \
-  --source local \
-  --local-root /path/to/SpiritSafe
-```
-
-Write schema to a file:
-
-```bash
-gkc profile form-schema --profile /path/to/SpiritSafe/profiles/TribalGovernmentUS/profile.yaml --output form_schema.json
-```
-
-### Launch the Textual Wizard (Current Phase)
-
-Launch the wizard shell for a profile:
-
-```bash
-gkc profile form --profile /path/to/SpiritSafe/profiles/TribalGovernmentUS/profile.yaml
-```
-
-Launch by profile name via GitHub SpiritSafe source:
+Launch the interactive wizard shell for a profile.
 
 ```bash
 gkc profile form --profile TribalGovernmentUS
 ```
 
-Launch in edit context with a QID (currently tracked as session metadata):
-
 ```bash
-gkc profile form --profile /path/to/SpiritSafe/profiles/TribalGovernmentUS/profile.yaml --qid Q123
+gkc profile form --profile TribalGovernmentUS --qid Q123
 ```
 
-Current implemented behavior in this phase:
+```bash
+gkc profile form \
+  --profile TribalGovernmentUS \
+  --packet /path/to/packet.json
+```
 
-- 5-step wizard frame is active (Plan, Identification, Statements, Sitelinks, Review).
-- Identification step renders profile-driven labels, descriptions, and aliases.
-- Draft data auto-saves on step navigation to `.drafts/<profile>_<timestamp>.json`.
+```bash
+gkc profile form \
+  --profile TribalGovernmentUS \
+  --depth 2 \
+  --source local \
+  --local-root /path/to/SpiritSafe
+```
 
-Current known limits in this phase:
+Supported flags:
 
-- Statements, sitelinks, and review steps are scaffold placeholders.
-- No `--resume-draft` CLI flag yet.
-- No export/ship action yet from the wizard UI.
-- Destination-level checks (for example sitelink uniqueness) are not yet executed in the wizard.
+- `--profile` (required)
+- `--qid` - Optional Wikidata item ID for editing
+- `--packet` - Path to curation packet JSON for multi-entity workflow
+- `--depth` - Related profile depth when creating packet on-the-fly (default: 1)
+- `--source {github,local}`
+- `--local-root`
+- `--repo`
+- `--ref`
 
-### Hydrate SPARQL Lookups
+### `gkc profile lookups hydrate`
 
-Use profile names with default GitHub source mode:
+Hydrate SPARQL lookup caches from one or more profiles.
 
 ```bash
 gkc profile lookups hydrate --profile TribalGovernmentUS --dry-run
 ```
-
-Use a local SpiritSafe clone (recommended for branch development):
 
 ```bash
 gkc profile lookups hydrate \
   --profile TribalGovernmentUS \
   --source local \
   --local-root /path/to/SpiritSafe \
-  --dry-run
+  --refresh weekly \
+  --page-size 500
 ```
 
-Override GitHub repo/ref for testing:
+Supported flags:
+
+- `--profile` (required, repeatable)
+- `--refresh {manual,daily,weekly,on_release}`
+- `--force-refresh`
+- `--page-size`
+- `--max-results`
+- `--endpoint`
+- `--dry-run`
+- `--fail-on-query-error`
+- `--source {github,local}`
+- `--local-root`
+- `--repo`
+- `--ref`
+
+### `gkc profile package`
+
+Work with profile packages (primary profile plus related profiles).
+
+#### `gkc profile package load`
+
+Load a profile package with dependencies.
 
 ```bash
-gkc profile lookups hydrate \
-  --profile TribalGovernmentUS \
-  --source github \
-  --repo skybristol/SpiritSafe \
-  --ref main \
-  --dry-run
+gkc profile package load --profile TribalGovernmentUS --depth 1
 ```
 
-## Flags
+```bash
+gkc profile package load \
+  --profile TribalGovernmentUS \
+  --depth 2 \
+  --source local \
+  --local-root /path/to/SpiritSafe
+```
 
-- `--profile`: Profile path or profile name
-- `--qid`: Wikidata item ID to fetch and validate
-- `--item-json`: Path to a Wikidata item JSON file
-- `--policy`: Validation policy (`strict` or `lenient`)
-- `--output`: Output file path for form schemas
-- `--qid` (with `form`): Optional edit-context item ID metadata
-- `--source`: SpiritSafe source mode override (`github` or `local`)
-- `--local-root`: Local SpiritSafe clone root (required with `--source local`)
-- `--repo`: GitHub repo slug override (with `--source github`)
-- `--ref`: Git reference override (with `--source github`)
+Supported flags:
+
+- `--profile` (required) - Primary profile ID
+- `--depth` - Depth of related profiles to include (default: 1)
+- `--source {github,local}`
+- `--local-root`
+- `--repo`
+- `--ref`
+
+#### `gkc profile package cardinality`
+
+Show cardinality report for profile linkages.
+
+```bash
+gkc profile package cardinality --profile TribalGovernmentUS
+```
+
+Supported flags:
+
+- `--profile` (required)
+- `--depth` - Depth of related profiles to include (default: 1)
+- `--source {github,local}`
+- `--local-root`
+- `--repo`
+- `--ref`
+
+#### `gkc profile package validate`
+
+Validate profile package structure.
+
+```bash
+gkc profile package validate --profile TribalGovernmentUS --depth 1
+```
+
+Supported flags:
+
+- `--profile` (required)
+- `--depth` - Depth of related profiles to include (default: 1)
+- `--source {github,local}`
+- `--local-root`
+- `--repo`
+- `--ref`
+
+## Registry Commands
+
+### `gkc registry list`
+
+List all profiles in the SpiritSafe registry.
+
+```bash
+gkc registry list
+```
+
+```bash
+gkc registry list --source local --local-root /path/to/SpiritSafe
+```
+
+Supported flags:
+
+- `--source {github,local}`
+- `--local-root`
+- `--repo`
+- `--ref`
+
+### `gkc registry search`
+
+Search profiles by keyword in names, descriptions, or tags.
+
+```bash
+gkc registry search tribal
+```
+
+```bash
+gkc registry search government --source local --local-root /path/to/SpiritSafe
+```
+
+Arguments:
+
+- `keyword` (required) - Keyword to search for
+
+Supported flags:
+
+- `--source {github,local}`
+- `--local-root`
+- `--repo`
+- `--ref`
+
+### `gkc registry info`
+
+Show detailed metadata for a specific profile.
+
+```bash
+gkc registry info --profile TribalGovernmentUS
+```
+
+Supported flags:
+
+- `--profile` (required)
+- `--source {github,local}`
+- `--local-root`
+- `--repo`
+- `--ref`
+
+### `gkc registry validate`
+
+Validate the manifest structure.
+
+```bash
+gkc registry validate
+```
+
+```bash
+gkc registry validate --source local --local-root /path/to/SpiritSafe
+```
+
+Supported flags:
+
+- `--source {github,local}`
+- `--local-root`
+- `--repo`
+- `--ref`
+
+### `gkc registry graph`
+
+Show profile graph relationships.
+
+```bash
+# Show full graph
+gkc registry graph
+```
+
+```bash
+# Show neighbors for specific profile
+gkc registry graph --profile TribalGovernmentUS
+```
+
+Supported flags:
+
+- `--profile` - Optional profile ID to show neighbors for
+- `--source {github,local}`
+- `--local-root`
+- `--repo`
+- `--ref`
+
+## Packet Commands
+
+### `gkc packet create`
+
+Create a curation packet for multi-entity workflows.
+
+```bash
+gkc packet create --profile TribalGovernmentUS --mode single
+```
+
+```bash
+gkc packet create \
+  --profile TribalGovernmentUS \
+  --mode bulk \
+  --depth 2 \
+  --output packet.json
+```
+
+Supported flags:
+
+- `--profile` (required) - Primary profile ID
+- `--mode {single,bulk}` - Operation mode (default: single)
+- `--depth` - Related profile depth for bulk mode (default: 1)
+- `-o, --output` - Write packet to file instead of stdout
+- `--source {github,local}`
+- `--local-root`
+- `--repo`
+- `--ref`
+
+### `gkc packet info`
+
+Show packet metadata and summary.
+
+```bash
+gkc packet info --packet-file packet.json
+```
+
+Supported flags:
+
+- `--packet-file` (required) - Path to packet JSON file
+
+### `gkc packet validate`
+
+Validate packet structure and cardinality constraints.
+
+```bash
+gkc packet validate --packet-file packet.json
+```
+
+Supported flags:
+
+- `--packet-file` (required) - Path to packet JSON file
+
+## Common Flags
+
+Most commands support source override flags to switch between GitHub and local SpiritSafe:
+
+- `--source {github,local}` - Override SpiritSafe source mode
+- `--local-root` - Local SpiritSafe root (required with `--source local`)
+- `--repo` - GitHub repo slug when `--source github` (e.g., owner/SpiritSafe)
+- `--ref` - Git reference when `--source github` (default: main)
+
+## Output Format
+
+All commands support:
+
+- `--json` - Emit machine-readable JSON output
+- `--verbose` - Show detailed output
+
+Example:
+
+```bash
+gkc registry list --json --verbose
+```
 
 ## See Also
 
-- [Profiles API](../api/profiles.md) - Programmatic profile usage
-- [Entity Profiles](../profiles.md) - Profile model and wizard architecture notes
-- [Mash CLI](mash.md) - Load Wikidata items for validation
+- [Profiles API](../api/profiles.md)
+- [Entity Profiles](../profiles.md)
+- [Mash CLI](mash.md)
+

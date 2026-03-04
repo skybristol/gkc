@@ -358,6 +358,143 @@ class QualifierDefinition(BaseModel):
         return value
 
 
+class LinkageRelationship(BaseModel):
+    """Define the relationship type between profiles.
+
+    Args:
+        type: Relationship type identifier (e.g., "office_of_head_of_state").
+        direction: Relationship directionality (unidirectional or bidirectional).
+        reverse_statement_hint: Optional statement ID hint for reverse traversal.
+
+    Example:
+        >>> LinkageRelationship(
+        ...     type="office_of_head_of_state",
+        ...     direction="bidirectional",
+        ...     reverse_statement_hint="applies_to_jurisdiction"
+        ... )
+
+    Plain meaning: How this statement connects to another profile's entity.
+    """
+
+    type: str = Field(..., description="Relationship type identifier")
+    direction: Literal["unidirectional", "bidirectional"] = Field(
+        ..., description="Relationship directionality"
+    )
+    reverse_statement_hint: Optional[str] = Field(
+        default=None, description="Statement ID hint for reverse traversal"
+    )
+
+
+class LinkageCardinality(BaseModel):
+    """Define cardinality constraints for linked entities.
+
+    Args:
+        min: Minimum required linked entities (0 = optional).
+        max: Maximum allowed linked entities.
+
+    Example:
+        >>> LinkageCardinality(min=0, max=1)
+
+    Plain meaning: How many linked entities are required or allowed.
+    """
+
+    min: int = Field(default=0, ge=0, description="Minimum linked entities")
+    max: int = Field(default=1, ge=1, description="Maximum linked entities")
+
+    @model_validator(mode="after")
+    def _validate_min_max(self):
+        if self.min > self.max:
+            raise ValueError(
+                f"Cardinality min ({self.min}) cannot exceed max ({self.max})"
+            )
+        return self
+
+
+class LinkageWorkflowPolicy(BaseModel):
+    """Define allowed workflow actions for linked entities.
+
+    Args:
+        create: Whether new linked entities can be created.
+        select_existing: Whether existing entities can be selected.
+
+    Example:
+        >>> LinkageWorkflowPolicy(create=True, select_existing=True)
+        >>> LinkageWorkflowPolicy(create="allowed", select_existing="allowed")
+
+    Plain meaning: What curator actions are allowed for this link.
+    """
+
+    create: bool = Field(
+        default=False,
+        description="Allow creating new linked entities",
+    )
+    select_existing: bool = Field(
+        default=True, description="Allow selecting existing entities"
+    )
+
+    @field_validator("create", "select_existing", mode="before")
+    @classmethod
+    def _normalize_policy(cls, value):
+        """Convert 'allowed'/'disallowed' strings to boolean."""
+        if isinstance(value, str):
+            if value.lower() == "allowed":
+                return True
+            elif value.lower() == "disallowed":
+                return False
+            else:
+                raise ValueError(f"Invalid workflow policy value: {value}")
+        return value
+
+
+class LinkageTraversal(BaseModel):
+    """Define graph traversal depth for linked entities.
+
+    Args:
+        max_depth: Maximum traversal depth from source entity.
+
+    Example:
+        >>> LinkageTraversal(max_depth=1)
+
+    Plain meaning: How far to traverse when loading related entities.
+    """
+
+    max_depth: int = Field(default=1, ge=1, description="Maximum traversal depth")
+
+
+class StatementLinkage(BaseModel):
+    """Define cross-profile linkage metadata for a statement.
+
+    Args:
+        target_profile: Profile name that this statement links to.
+        relationship: Relationship metadata.
+        cardinality: Cardinality constraints.
+        workflow_policy: Workflow action permissions.
+        traversal: Graph traversal configuration.
+
+    Example:
+        >>> StatementLinkage(
+        ...     target_profile="OfficeHeldByHeadOfState",
+        ...     relationship=LinkageRelationship(
+        ...         type="office_of_head_of_state",
+        ...         direction="bidirectional"
+        ...     ),
+        ...     cardinality=LinkageCardinality(min=0, max=1),
+        ...     workflow_policy=LinkageWorkflowPolicy(create=True),
+        ...     traversal=LinkageTraversal(max_depth=1)
+        ... )
+
+    Plain meaning: Complete linkage specification for multi-entity workflows.
+    """
+
+    target_profile: str = Field(..., description="Target profile name")
+    relationship: LinkageRelationship = Field(..., description="Relationship metadata")
+    cardinality: LinkageCardinality = Field(..., description="Cardinality constraints")
+    workflow_policy: LinkageWorkflowPolicy = Field(
+        ..., description="Workflow action permissions"
+    )
+    traversal: LinkageTraversal = Field(..., description="Traversal configuration")
+
+
 class ProfileFieldDefinition(BaseModel):
     """Define a field in a YAML profile.
 
@@ -371,6 +508,9 @@ class ProfileFieldDefinition(BaseModel):
         max_count: Maximum number of statements (None = unlimited).
         validation_policy: Validation policy for existing items.
         form_policy: Form visibility policy.
+        guidance: Optional curator guidance text.
+        entity_profile: Optional linked entity profile name.
+        linkage: Optional cross-profile linkage metadata.
         value: Value definition for the statement.
         qualifiers: Qualifier definitions.
         references: Reference definition.
@@ -403,6 +543,13 @@ class ProfileFieldDefinition(BaseModel):
     )
     form_policy: FormPolicy = Field(
         default="target_only", description="Field form policy"
+    )
+    guidance: str = Field(default="", description="Curator guidance text")
+    entity_profile: Optional[str] = Field(
+        default=None, description="Linked entity profile name"
+    )
+    linkage: Optional[StatementLinkage] = Field(
+        default=None, description="Cross-profile linkage metadata"
     )
     value: ValueDefinition = Field(..., description="Value definition")
     qualifiers: List[QualifierDefinition] = Field(
@@ -510,3 +657,63 @@ class ProfileDefinition(BaseModel):
     def field_by_property(self, property_id: str) -> Optional[ProfileFieldDefinition]:
         """Backward-compatible alias for statement_by_property."""
         return self.statement_by_property(property_id)
+
+    def get_statement_linkages(self) -> List[ProfileFieldDefinition]:
+        """Get all statements that have linkage metadata.
+
+        Returns:
+            List of ProfileFieldDefinition instances with linkage metadata.
+
+        Side effects:
+            None.
+
+        Example:
+            >>> linked_statements = profile.get_statement_linkages()
+            >>> for stmt in linked_statements:
+            ...     print(stmt.linkage.target_profile)
+
+        Plain meaning: Find all statements that link to other profiles.
+        """
+        return [stmt for stmt in self.statements if stmt.linkage is not None]
+
+    def get_linked_profile_names(self) -> List[str]:
+        """Get a list of all profile names linked from this profile.
+
+        Returns:
+            List of unique profile names referenced in linkage metadata.
+
+        Side effects:
+            None.
+
+        Example:
+            >>> profile.get_linked_profile_names()
+            ['OfficeHeldByHeadOfState']
+
+        Plain meaning: Find all other profiles this one can link to.
+        """
+        names = {stmt.linkage.target_profile for stmt in self.get_statement_linkages()}
+        return sorted(names)
+
+    def get_link_definition(self, target_profile: str) -> Optional[StatementLinkage]:
+        """Get linkage metadata for a specific target profile.
+
+        Args:
+            target_profile: Name of the target profile to find linkage for.
+
+        Returns:
+            StatementLinkage instance or None if no linkage to that profile.
+
+        Side effects:
+            None.
+
+        Example:
+            >>> linkage = profile.get_link_definition("OfficeHeldByHeadOfState")
+            >>> linkage.cardinality.max
+            1
+
+        Plain meaning: Get the linkage rules for a specific connected profile.
+        """
+        for stmt in self.get_statement_linkages():
+            if stmt.linkage.target_profile == target_profile:
+                return stmt.linkage
+        return None

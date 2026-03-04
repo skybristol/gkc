@@ -18,6 +18,13 @@ from gkc.auth import AuthenticationError, OpenStreetMapAuth, WikiverseAuth
 from gkc.mash import WikidataLoader, WikipediaLoader
 from gkc.profiles import FormSchemaGenerator, ProfileLoader, ProfileValidator
 from gkc.sparql import fetch_entity_labels
+from gkc.spirit_safe import (
+    create_curation_packet,
+    get_profile_graph,
+    load_manifest,
+    load_profile_package,
+    validate_packet_structure,
+)
 
 
 class CLIError(Exception):
@@ -395,6 +402,16 @@ def _build_parser() -> argparse.ArgumentParser:
         "--qid",
         help="Optional Wikidata item ID for editing an existing item",
     )
+    profile_run_form.add_argument(
+        "--packet",
+        help="Path to curation packet JSON file for multi-entity workflow",
+    )
+    profile_run_form.add_argument(
+        "--depth",
+        type=int,
+        default=1,
+        help="Related profile depth when creating packet on-the-fly (default: 1)",
+    )
     _add_profile_source_args(profile_run_form)
     profile_run_form.set_defaults(
         handler=_handle_profile_form,
@@ -474,6 +491,199 @@ def _build_parser() -> argparse.ArgumentParser:
     profile_lookups_hydrate.set_defaults(
         handler=_handle_profile_lookups_hydrate,
         command_path="profile.lookups.hydrate",
+    )
+
+    # Profile package commands
+    profile_package = profile_subparsers.add_parser(
+        "package", help="Profile package operations"
+    )
+    profile_package_subparsers = profile_package.add_subparsers(
+        dest="profile_package_command"
+    )
+
+    profile_package_load = profile_package_subparsers.add_parser(
+        "load", help="Load a profile package with dependencies"
+    )
+    profile_package_load.add_argument(
+        "--profile",
+        required=True,
+        help="Profile ID to load",
+    )
+    profile_package_load.add_argument(
+        "--depth",
+        type=int,
+        default=1,
+        help="Depth of related profiles to include (default: 1)",
+    )
+    _add_profile_source_args(profile_package_load)
+    profile_package_load.set_defaults(
+        handler=_handle_profile_package_load,
+        command_path="profile.package.load",
+    )
+
+    profile_package_cardinality = profile_package_subparsers.add_parser(
+        "cardinality", help="Show cardinality report for profile linkages"
+    )
+    profile_package_cardinality.add_argument(
+        "--profile",
+        required=True,
+        help="Profile ID to analyze",
+    )
+    profile_package_cardinality.add_argument(
+        "--depth",
+        type=int,
+        default=1,
+        help="Depth of related profiles to include (default: 1)",
+    )
+    _add_profile_source_args(profile_package_cardinality)
+    profile_package_cardinality.set_defaults(
+        handler=_handle_profile_package_cardinality,
+        command_path="profile.package.cardinality",
+    )
+
+    profile_package_validate = profile_package_subparsers.add_parser(
+        "validate", help="Validate profile package structure"
+    )
+    profile_package_validate.add_argument(
+        "--profile",
+        required=True,
+        help="Profile ID to validate",
+    )
+    profile_package_validate.add_argument(
+        "--depth",
+        type=int,
+        default=1,
+        help="Depth of related profiles to include (default: 1)",
+    )
+    _add_profile_source_args(profile_package_validate)
+    profile_package_validate.set_defaults(
+        handler=_handle_profile_package_validate,
+        command_path="profile.package.validate",
+    )
+
+    # Registry commands
+    registry_parser = subparsers.add_parser(
+        "registry", help="SpiritSafe registry operations"
+    )
+    registry_subparsers = registry_parser.add_subparsers(dest="registry_command")
+
+    registry_list = registry_subparsers.add_parser(
+        "list", help="List all profiles in the registry"
+    )
+    _add_profile_source_args(registry_list)
+    registry_list.set_defaults(
+        handler=_handle_registry_list,
+        command_path="registry.list",
+    )
+
+    registry_search = registry_subparsers.add_parser(
+        "search", help="Search profiles by keyword"
+    )
+    registry_search.add_argument(
+        "keyword",
+        help="Keyword to search for in profile names, descriptions, or tags",
+    )
+    _add_profile_source_args(registry_search)
+    registry_search.set_defaults(
+        handler=_handle_registry_search,
+        command_path="registry.search",
+    )
+
+    registry_info = registry_subparsers.add_parser(
+        "info", help="Show detailed profile metadata"
+    )
+    registry_info.add_argument(
+        "--profile",
+        required=True,
+        help="Profile ID to show info for",
+    )
+    _add_profile_source_args(registry_info)
+    registry_info.set_defaults(
+        handler=_handle_registry_info,
+        command_path="registry.info",
+    )
+
+    registry_validate = registry_subparsers.add_parser(
+        "validate", help="Validate manifest structure"
+    )
+    _add_profile_source_args(registry_validate)
+    registry_validate.set_defaults(
+        handler=_handle_registry_validate,
+        command_path="registry.validate",
+    )
+
+    registry_graph = registry_subparsers.add_parser(
+        "graph", help="Show profile graph relationships"
+    )
+    registry_graph.add_argument(
+        "--profile",
+        help="Optional profile ID to show neighbors for",
+    )
+    _add_profile_source_args(registry_graph)
+    registry_graph.set_defaults(
+        handler=_handle_registry_graph,
+        command_path="registry.graph",
+    )
+
+    # Packet commands
+    packet_parser = subparsers.add_parser("packet", help="Curation packet operations")
+    packet_subparsers = packet_parser.add_subparsers(dest="packet_command")
+
+    packet_create = packet_subparsers.add_parser(
+        "create", help="Create a curation packet"
+    )
+    packet_create.add_argument(
+        "--profile",
+        required=True,
+        help="Primary profile ID for the packet",
+    )
+    packet_create.add_argument(
+        "--mode",
+        choices=["single", "bulk"],
+        default="single",
+        help="Operation mode: single or bulk (default: single)",
+    )
+    packet_create.add_argument(
+        "--depth",
+        type=int,
+        default=1,
+        help="Related profile depth for bulk mode (default: 1)",
+    )
+    packet_create.add_argument(
+        "-o",
+        "--output",
+        help="Write packet to file (JSON) instead of stdout",
+    )
+    _add_profile_source_args(packet_create)
+    packet_create.set_defaults(
+        handler=_handle_packet_create,
+        command_path="packet.create",
+    )
+
+    packet_info = packet_subparsers.add_parser(
+        "info", help="Show packet metadata and summary"
+    )
+    packet_info.add_argument(
+        "--packet-file",
+        required=True,
+        help="Path to packet JSON file",
+    )
+    packet_info.set_defaults(
+        handler=_handle_packet_info,
+        command_path="packet.info",
+    )
+
+    packet_validate = packet_subparsers.add_parser(
+        "validate", help="Validate packet structure"
+    )
+    packet_validate.add_argument(
+        "--packet-file",
+        required=True,
+        help="Path to packet JSON file",
+    )
+    packet_validate.set_defaults(
+        handler=_handle_packet_validate,
+        command_path="packet.validate",
     )
 
     return parser
@@ -1419,6 +1629,456 @@ def _handle_profile_lookups_hydrate(args: argparse.Namespace) -> dict[str, Any]:
         "message": message,
         "details": details,
     }
+
+
+def _handle_registry_list(args: argparse.Namespace) -> dict[str, Any]:
+    """List all profiles in the SpiritSafe registry."""
+    previous_source, source_overridden = _apply_source_override(args)
+
+    try:
+        manifest = load_manifest()
+        profiles = []
+
+        for profile_id in manifest.profile_ids:
+            entry = manifest.get_profile_entry(profile_id)
+            if entry:
+                profiles.append(
+                    {
+                        "id": profile_id,
+                        "name": entry.get("name", profile_id),
+                        "description": entry.get("description", ""),
+                        "version": entry.get("version", ""),
+                    }
+                )
+
+        message = f"Found {len(profiles)} profiles in registry"
+        details = {"profiles": profiles, "manifest_commit": manifest.commit_sha}
+
+        return {
+            "command": args.command_path,
+            "ok": True,
+            "message": message,
+            "details": details,
+        }
+    except Exception as exc:
+        raise CLIError(str(exc)) from exc
+    finally:
+        _restore_source_override(previous_source, source_overridden)
+
+
+def _handle_registry_search(args: argparse.Namespace) -> dict[str, Any]:
+    """Search profiles by keyword."""
+    previous_source, source_overridden = _apply_source_override(args)
+
+    try:
+        manifest = load_manifest()
+        keyword = args.keyword.lower()
+        matching_profiles = []
+
+        for profile_id in manifest.profile_ids:
+            entry = manifest.get_profile_entry(profile_id)
+            if not entry:
+                continue
+
+            # Search in name, description, tags
+            searchable_text = (
+                f"{profile_id} {entry.get('name', '')} "
+                f"{entry.get('description', '')} "
+                f"{' '.join(entry.get('tags', []))}"
+            ).lower()
+
+            if keyword in searchable_text:
+                matching_profiles.append(
+                    {
+                        "id": profile_id,
+                        "name": entry.get("name", profile_id),
+                        "description": entry.get("description", ""),
+                    }
+                )
+
+        message = f"Found {len(matching_profiles)} profiles matching '{args.keyword}'"
+        details = {"keyword": args.keyword, "matches": matching_profiles}
+
+        return {
+            "command": args.command_path,
+            "ok": True,
+            "message": message,
+            "details": details,
+        }
+    except Exception as exc:
+        raise CLIError(str(exc)) from exc
+    finally:
+        _restore_source_override(previous_source, source_overridden)
+
+
+def _handle_registry_info(args: argparse.Namespace) -> dict[str, Any]:
+    """Show detailed profile metadata."""
+    previous_source, source_overridden = _apply_source_override(args)
+
+    try:
+        manifest = load_manifest()
+        entry = manifest.get_profile_entry(args.profile)
+
+        if not entry:
+            raise CLIError(
+                f"Profile '{args.profile}' not found. "
+                f"Available: {', '.join(manifest.profile_ids)}"
+            )
+
+        message = f"Profile: {entry.get('name', args.profile)}"
+        details = {
+            "profile_id": args.profile,
+            "name": entry.get("name"),
+            "description": entry.get("description"),
+            "version": entry.get("version"),
+            "tags": entry.get("tags", []),
+            "related_profiles": entry.get("related_profiles", []),
+            "statement_linkages": len(entry.get("statement_linkages", [])),
+            "files": entry.get("files", {}),
+        }
+
+        return {
+            "command": args.command_path,
+            "ok": True,
+            "message": message,
+            "details": details,
+        }
+    except Exception as exc:
+        raise CLIError(str(exc)) from exc
+    finally:
+        _restore_source_override(previous_source, source_overridden)
+
+
+def _handle_registry_validate(args: argparse.Namespace) -> dict[str, Any]:
+    """Validate manifest structure."""
+    previous_source, source_overridden = _apply_source_override(args)
+
+    try:
+        manifest = load_manifest()
+        errors = []
+
+        # Basic validation checks
+        if not manifest.profiles:
+            errors.append("No profiles found in manifest")
+
+        # Check each profile has required fields
+        for profile_id in manifest.profile_ids:
+            entry = manifest.get_profile_entry(profile_id)
+            if not entry:
+                errors.append(f"Profile {profile_id} has no entry")
+                continue
+
+            if not entry.get("name"):
+                errors.append(f"Profile {profile_id} missing name")
+            if not entry.get("files", {}).get("profile_yaml"):
+                errors.append(f"Profile {profile_id} missing profile_yaml path")
+
+        ok = len(errors) == 0
+        message = "✓ Manifest is valid" if ok else "✗ Manifest validation failed"
+
+        details = {
+            "profile_count": len(manifest.profile_ids),
+            "manifest_commit": manifest.commit_sha,
+            "generated_at": manifest.generated_at,
+            "errors": errors,
+        }
+
+        return {
+            "command": args.command_path,
+            "ok": ok,
+            "message": message,
+            "details": details,
+        }
+    except Exception as exc:
+        raise CLIError(str(exc)) from exc
+    finally:
+        _restore_source_override(previous_source, source_overridden)
+
+
+def _handle_registry_graph(args: argparse.Namespace) -> dict[str, Any]:
+    """Show profile graph relationships."""
+    previous_source, source_overridden = _apply_source_override(args)
+
+    try:
+        manifest = load_manifest()
+        graph = get_profile_graph(manifest)
+
+        if args.profile:
+            # Show neighbors for specific profile
+            if args.profile not in graph.nodes:
+                raise CLIError(
+                    f"Profile '{args.profile}' not found in graph. "
+                    f"Available: {', '.join(sorted(graph.nodes.keys()))}"
+                )
+
+            neighbors = graph.get_neighbors(args.profile)
+            message = f"Profile '{args.profile}' has {len(neighbors)} neighbors"
+            details = {
+                "profile": args.profile,
+                "neighbors": list(neighbors),
+                "total_nodes": len(graph.nodes),
+            }
+        else:
+            # Show full graph summary
+            edges = []
+            for source_profile in graph.nodes:
+                for edge in graph.get_edges(source_profile):
+                    edges.append(
+                        (source_profile, edge.target_profile, edge.via_statement)
+                    )
+            message = f"Profile graph: {len(graph.nodes)} nodes, {len(edges)} edges"
+            details = {
+                "nodes": list(graph.nodes.keys()),
+                "edges": edges,
+                "total_nodes": len(graph.nodes),
+                "total_edges": len(edges),
+            }
+
+        return {
+            "command": args.command_path,
+            "ok": True,
+            "message": message,
+            "details": details,
+        }
+    except Exception as exc:
+        raise CLIError(str(exc)) from exc
+    finally:
+        _restore_source_override(previous_source, source_overridden)
+
+
+def _handle_profile_package_load(args: argparse.Namespace) -> dict[str, Any]:
+    """Load a profile package with dependencies."""
+    previous_source, source_overridden = _apply_source_override(args)
+
+    try:
+        package = load_profile_package(args.profile, depth=args.depth)
+
+        message = (
+            f"Loaded package for '{args.profile}' "
+            f"with {len(package['profiles'])} profiles at depth {args.depth}"
+        )
+
+        details = {
+            "primary_profile": package["primary_profile"],
+            "depth": package["depth"],
+            "profiles_included": list(package["profiles"].keys()),
+            "manifest_commit": package["manifest_commit_sha"],
+        }
+
+        return {
+            "command": args.command_path,
+            "ok": True,
+            "message": message,
+            "details": details,
+        }
+    except Exception as exc:
+        raise CLIError(str(exc)) from exc
+    finally:
+        _restore_source_override(previous_source, source_overridden)
+
+
+def _handle_profile_package_cardinality(args: argparse.Namespace) -> dict[str, Any]:
+    """Show cardinality report for profile linkages."""
+    previous_source, source_overridden = _apply_source_override(args)
+
+    try:
+        manifest = load_manifest()
+        package = load_profile_package(
+            args.profile, depth=args.depth, manifest=manifest
+        )
+
+        # Build cardinality report from linkages
+        cardinality_info = []
+        for profile_id in package["profiles"].keys():
+            entry = manifest.get_profile_entry(profile_id)
+            if not entry:
+                continue
+
+            linkages = entry.get("statement_linkages", [])
+            for linkage in linkages:
+                linkage_meta = linkage.get("linkage", {})
+                cardinality = linkage_meta.get("cardinality", {})
+                cardinality_info.append(
+                    {
+                        "from": profile_id,
+                        "to": linkage_meta.get("target_profile"),
+                        "via": linkage.get("statement_id"),
+                        "min": cardinality.get("min", 0),
+                        "max": cardinality.get("max", -1),
+                    }
+                )
+
+        message = f"Found {len(cardinality_info)} linkages with cardinality constraints"
+        details = {
+            "primary_profile": args.profile,
+            "depth": args.depth,
+            "cardinality_constraints": cardinality_info,
+        }
+
+        return {
+            "command": args.command_path,
+            "ok": True,
+            "message": message,
+            "details": details,
+        }
+    except Exception as exc:
+        raise CLIError(str(exc)) from exc
+    finally:
+        _restore_source_override(previous_source, source_overridden)
+
+
+def _handle_profile_package_validate(args: argparse.Namespace) -> dict[str, Any]:
+    """Validate profile package structure."""
+    previous_source, source_overridden = _apply_source_override(args)
+
+    try:
+        package = load_profile_package(args.profile, depth=args.depth)
+        errors = []
+
+        # Check package structure
+        if "primary_profile" not in package:
+            errors.append("Missing primary_profile field")
+        if "profiles" not in package:
+            errors.append("Missing profiles field")
+        if "graph" not in package:
+            errors.append("Missing graph field")
+
+        # Check all profiles loaded
+        if package.get("primary_profile") not in package.get("profiles", {}):
+            errors.append("Primary profile not in loaded profiles")
+
+        ok = len(errors) == 0
+        message = (
+            "✓ Package is valid"
+            if ok
+            else f"✗ Package validation failed with {len(errors)} errors"
+        )
+
+        details = {
+            "primary_profile": package.get("primary_profile"),
+            "depth": package.get("depth"),
+            "profiles_count": len(package.get("profiles", {})),
+            "errors": errors,
+        }
+
+        return {
+            "command": args.command_path,
+            "ok": ok,
+            "message": message,
+            "details": details,
+        }
+    except Exception as exc:
+        raise CLIError(str(exc)) from exc
+    finally:
+        _restore_source_override(previous_source, source_overridden)
+
+
+def _handle_packet_create(args: argparse.Namespace) -> dict[str, Any]:
+    """Create a curation packet."""
+    previous_source, source_overridden = _apply_source_override(args)
+
+    try:
+        packet = create_curation_packet(
+            profile_id=args.profile, operation_mode=args.mode, depth=args.depth
+        )
+
+        # Optionally write to file
+        if args.output:
+            with open(args.output, "w") as f:
+                json.dump(packet, f, indent=2, default=str)
+            message = f"Created packet {packet['packet_id']} and saved to {args.output}"
+        else:
+            message = f"Created packet {packet['packet_id']}"
+
+        details = {
+            "packet_id": packet["packet_id"],
+            "operation_mode": packet["operation_mode"],
+            "primary_profile": packet["primary_profile"],
+            "entity_count": len(packet["entities"]),
+            "cross_reference_count": len(packet["cross_references"]),
+            "output_file": args.output,
+        }
+
+        return {
+            "command": args.command_path,
+            "ok": True,
+            "message": message,
+            "details": details,
+        }
+    except Exception as exc:
+        raise CLIError(str(exc)) from exc
+    finally:
+        _restore_source_override(previous_source, source_overridden)
+
+
+def _handle_packet_info(args: argparse.Namespace) -> dict[str, Any]:
+    """Show packet metadata and summary."""
+    try:
+        with open(args.packet_file, "r") as f:
+            packet = json.load(f)
+
+        message = f"Packet {packet.get('packet_id', 'unknown')}"
+        details = {
+            "packet_id": packet.get("packet_id"),
+            "operation_mode": packet.get("operation_mode"),
+            "created_at": packet.get("created_at"),
+            "primary_profile": packet.get("primary_profile"),
+            "entity_count": len(packet.get("entities", [])),
+            "cross_reference_count": len(packet.get("cross_references", [])),
+            "cardinality_constraint_count": len(
+                packet.get("cardinality_constraints", [])
+            ),
+            "manifest_commit": packet.get("manifest_commit_sha"),
+        }
+
+        return {
+            "command": args.command_path,
+            "ok": True,
+            "message": message,
+            "details": details,
+        }
+    except FileNotFoundError:
+        raise CLIError(f"Packet file not found: {args.packet_file}")
+    except json.JSONDecodeError as exc:
+        raise CLIError(f"Invalid JSON in packet file: {exc}") from exc
+    except Exception as exc:
+        raise CLIError(str(exc)) from exc
+
+
+def _handle_packet_validate(args: argparse.Namespace) -> dict[str, Any]:
+    """Validate packet structure."""
+    try:
+        with open(args.packet_file, "r") as f:
+            packet = json.load(f)
+
+        is_valid, errors = validate_packet_structure(packet)
+
+        message = (
+            f"✓ Packet {packet.get('packet_id', 'unknown')} is valid"
+            if is_valid
+            else f"✗ Packet validation failed with {len(errors)} errors"
+        )
+
+        details = {
+            "packet_id": packet.get("packet_id"),
+            "is_valid": is_valid,
+            "errors": errors,
+            "entity_count": len(packet.get("entities", [])),
+            "cross_reference_count": len(packet.get("cross_references", [])),
+        }
+
+        return {
+            "command": args.command_path,
+            "ok": is_valid,
+            "message": message,
+            "details": details,
+        }
+    except FileNotFoundError:
+        raise CLIError(f"Packet file not found: {args.packet_file}")
+    except json.JSONDecodeError as exc:
+        raise CLIError(f"Invalid JSON in packet file: {exc}") from exc
+    except Exception as exc:
+        raise CLIError(str(exc)) from exc
 
 
 def _emit_output(output: dict[str, Any], json_output: bool, verbose: bool) -> None:

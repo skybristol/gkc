@@ -13,6 +13,7 @@ theme:
     - navigation.sections
     - navigation.top
     - toc.follow
+    - content.code.copy
   custom_dir: docs
 
 plugins:
@@ -47,7 +48,9 @@ nav:
   - Architecture:
     - Overview: architecture/index.md
     - SpiritSafe Registry: architecture/SpiritSafe.md
+    - SpiritSafe Models & API: architecture/spirit_safe_models.md
     - Profile Loading: architecture/profile-loading.md
+    - SpiritSafe Testing: architecture/SpiritSafe-testing.md
     - Validation Architecture: architecture/validation-architecture.md
   - GKC Documentation:
     - Home: gkc/index.md
