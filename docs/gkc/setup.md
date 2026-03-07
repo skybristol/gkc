@@ -77,7 +77,7 @@ If you intend to publish data to Wikidata, Wikimedia Commons, or OpenStreetMap, 
 - [Authentication](authentication.md) walks through setting up API credentials.
 - You can skip this for now if you are only running local transformations.
 
-### Data Distillery Wikibase Environment (Phase 0/0.5/0.9)
+### Data Distillery Wikibase Environment
 
 If you are working with processes that interface with the [Data Distillery Wikibase](https://datadistillery.wikibase.cloud/) you may find it useful to set the following additional environment variables:
 

@@ -50,6 +50,7 @@ nav:
   - Architecture:
     - Overview: architecture/index.md
     - Data Distillery Wikibase: architecture/DataDistillery-Wikibase.md
+    - Cross-Module Contracts: architecture/module-contracts.md
     - SpiritSafe Registry: architecture/SpiritSafe.md
     - SpiritSafe Models & API: architecture/spirit_safe_models.md
     - Profile Loading: architecture/profile-loading.md
@@ -59,6 +60,7 @@ nav:
     - Home: gkc/index.md
     - Background: gkc/background.md
     - Entity Profiles: gkc/profiles.md
+    - Mash: gkc/mash.md
     - Entity JSON: gkc/entity-json-schema.md
     - Wizard: gkc/wizard.md
     - Getting Started:
@@ -71,6 +73,8 @@ nav:
       - Authentication: gkc/api/auth.md
       - Mash: gkc/api/mash.md
       - Mash Formatters: gkc/api/mash_formatters.md
+      - Cooperage: gkc/api/cooperage.md
+      - Bottler: gkc/api/bottler.md
       - Profiles: gkc/api/profiles.md
       - SpiritSafe: gkc/api/spirit_safe.md
       - ShEx: gkc/api/shex.md

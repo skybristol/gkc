@@ -82,5 +82,6 @@ export DD_WB_PASSWORD="your_dd_password"
 
 - [Setup and Orientation](../gkc/setup.md)
 - [Authentication Guide](../gkc/authentication.md)
+- [Cross-Module Contracts](module-contracts.md)
 - [Shipper API](../gkc/api/shipper.md)
 - [CLI Reference](../gkc/cli/index.md)

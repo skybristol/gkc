@@ -42,17 +42,16 @@ from gkc.bottler import (
     SnakBuilder,
 )
 
-# Cooperage (Barrel Schema and reference management)
-from gkc.cooperage import (
-    CooperageError,
-    fetch_entity_rdf,
-    fetch_schema_specification,
-    get_entity_uri,
-    validate_entity_reference,
-)
-
 # Entity Profiles (GKC Entity Profile definitions)
 from gkc.entity_profile import GKCEntityProfile
+
+# Mash (inbound data retrieval)
+from gkc.mash import (
+    fetch_entity_rdf,
+)
+from gkc.mash import (
+    fetch_entity_schema_specification as fetch_schema_specification,
+)
 
 # YAML-first profiles (SpiritSafe)
 from gkc.profiles import (
@@ -64,6 +63,9 @@ from gkc.profiles import (
     ValidationIssue,
     ValidationResult,
 )
+
+# Runtime configuration
+from gkc.runtime_config import DEFAULT_USER_AGENT
 
 # ShEx validation utilities
 from gkc.shex import ShexValidationError, ShexValidator
@@ -98,6 +100,12 @@ from gkc.spirit_safe import (
     resolve_profile_path,
     resolve_query_ref,
     set_spirit_safe_source,
+)
+
+# Utilities (common helpers)
+from gkc.utilities import (
+    get_entity_uri,
+    validate_entity_reference,
 )
 
 # Language Configuration
@@ -138,6 +146,8 @@ def get_languages() -> Union[str, list[str]]:
 
 
 __all__ = [
+    # Runtime Configuration
+    "DEFAULT_USER_AGENT",
     # Language Configuration
     "get_languages",
     "set_languages",
@@ -150,12 +160,12 @@ __all__ = [
     "DataTypeTransformer",
     "Distillate",
     "SnakBuilder",
-    # Cooperage (new names)
-    "CooperageError",
-    "fetch_entity_rdf",
-    "fetch_schema_specification",
+    # Utilities
     "get_entity_uri",
     "validate_entity_reference",
+    # Mash schema functions
+    "fetch_entity_rdf",
+    "fetch_schema_specification",
     # Entity Profiles
     "GKCEntityProfile",
     # YAML-first profiles

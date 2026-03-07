@@ -26,6 +26,8 @@ from urllib.parse import urlparse
 
 import requests
 
+from gkc.mash.protocols import MashSourceAdapter
+from gkc.runtime_config import DEFAULT_USER_AGENT
 from gkc.sparql import fetch_entity_labels
 
 
@@ -47,8 +49,17 @@ class WikibaseApiClient:
         self.api_url = api_url
         self.timeout = timeout
         self.session = session or requests.Session()
-        if user_agent:
-            self.session.headers.update({"User-Agent": user_agent})
+        self.user_agent = user_agent or DEFAULT_USER_AGENT
+        session_headers = getattr(self.session, "headers", None)
+        if session_headers is None:
+            try:
+                setattr(self.session, "headers", {})
+                session_headers = self.session.headers
+            except Exception:
+                session_headers = None
+
+        if hasattr(session_headers, "update"):
+            session_headers.update({"User-Agent": self.user_agent})
 
     def search_entities(
         self,
@@ -257,7 +268,7 @@ class ClaimSummary:
 
 
 @dataclass
-class WikidataTemplate:
+class WikibaseItemTemplate:
     """An extracted Wikidata item ready for filtering and export.
 
     This is the Wikidata-specific implementation of the DataTemplate protocol.
@@ -271,42 +282,6 @@ class WikidataTemplate:
     aliases: dict[str, list[str]]
     claims: list[ClaimSummary]
     entity_data: dict[str, Any]
-
-    def filter_properties(
-        self,
-        include_properties: Optional[list[str]] = None,
-        exclude_properties: Optional[list[str]] = None,
-    ) -> None:
-        """Filter properties from the template in-place.
-
-        Plain meaning: Keep only specified properties, then drop excluded ones.
-        """
-
-        if include_properties:
-            include_set = set(include_properties)
-            self.claims = [
-                claim for claim in self.claims if claim.property_id in include_set
-            ]
-            claims = self.entity_data.get("claims")
-            if isinstance(claims, dict):
-                self.entity_data["claims"] = {
-                    prop_id: statements
-                    for prop_id, statements in claims.items()
-                    if prop_id in include_set
-                }
-
-        if exclude_properties:
-            exclude_set = set(exclude_properties)
-            self.claims = [
-                claim for claim in self.claims if claim.property_id not in exclude_set
-            ]
-            claims = self.entity_data.get("claims")
-            if isinstance(claims, dict):
-                self.entity_data["claims"] = {
-                    prop_id: statements
-                    for prop_id, statements in claims.items()
-                    if prop_id not in exclude_set
-                }
 
     def filter_qualifiers(self) -> None:
         """Remove all qualifiers from claims in-place.
@@ -344,58 +319,6 @@ class WikidataTemplate:
                 for statement in statements:
                     if isinstance(statement, dict):
                         statement.pop("references", None)
-
-    def filter_languages(
-        self, languages: Optional[Union[str, list[str]]] = None
-    ) -> None:
-        """Filter labels, descriptions, and aliases to specified languages.
-
-        Args:
-            languages: Either:
-                - A single language code (e.g., "en")
-                - A list of language codes (e.g., ["en", "es", "fr"])
-                - The string "all" to keep all languages
-                - None to use the package-level language configuration
-
-        Plain meaning: Keep only the specified language versions.
-        """
-        import gkc
-
-        if languages is None:
-            languages = gkc.get_languages()
-
-        # If "all", don't filter anything
-        if languages == "all":
-            return
-
-        # Convert single string to list for uniform handling
-        if isinstance(languages, str):
-            languages = [languages]
-
-        # Filter each field
-        self.labels = {k: v for k, v in self.labels.items() if k in languages}
-        self.descriptions = {
-            k: v for k, v in self.descriptions.items() if k in languages
-        }
-        self.aliases = {k: v for k, v in self.aliases.items() if k in languages}
-
-        labels = self.entity_data.get("labels")
-        if isinstance(labels, dict):
-            self.entity_data["labels"] = {
-                lang: value for lang, value in labels.items() if lang in languages
-            }
-
-        descriptions = self.entity_data.get("descriptions")
-        if isinstance(descriptions, dict):
-            self.entity_data["descriptions"] = {
-                lang: value for lang, value in descriptions.items() if lang in languages
-            }
-
-        aliases = self.entity_data.get("aliases")
-        if isinstance(aliases, dict):
-            self.entity_data["aliases"] = {
-                lang: value for lang, value in aliases.items() if lang in languages
-            }
 
     def summary(self) -> dict[str, Any]:
         """Return a summary of the template for display.
@@ -493,7 +416,7 @@ class WikidataTemplate:
 
 
 @dataclass
-class WikidataPropertyTemplate:
+class WikibasePropertyTemplate:
     """An extracted Wikidata property ready for filtering and export.
 
     This is the property-specific implementation of the DataTemplate protocol.
@@ -508,58 +431,6 @@ class WikidataPropertyTemplate:
     datatype: Optional[str]
     formatter_url: Optional[str]
     entity_data: dict[str, Any]
-
-    def filter_languages(
-        self, languages: Optional[Union[str, list[str]]] = None
-    ) -> None:
-        """Filter labels, descriptions, and aliases to specified languages.
-
-        Args:
-            languages: Either:
-                - A single language code (e.g., "en")
-                - A list of language codes (e.g., ["en", "es", "fr"])
-                - The string "all" to keep all languages
-                - None to use the package-level language configuration
-
-        Plain meaning: Keep only the specified language versions.
-        """
-        import gkc
-
-        if languages is None:
-            languages = gkc.get_languages()
-
-        # If "all", don't filter anything
-        if languages == "all":
-            return
-
-        # Convert single string to list for uniform handling
-        if isinstance(languages, str):
-            languages = [languages]
-
-        # Filter each field
-        self.labels = {k: v for k, v in self.labels.items() if k in languages}
-        self.descriptions = {
-            k: v for k, v in self.descriptions.items() if k in languages
-        }
-        self.aliases = {k: v for k, v in self.aliases.items() if k in languages}
-
-        labels = self.entity_data.get("labels")
-        if isinstance(labels, dict):
-            self.entity_data["labels"] = {
-                lang: value for lang, value in labels.items() if lang in languages
-            }
-
-        descriptions = self.entity_data.get("descriptions")
-        if isinstance(descriptions, dict):
-            self.entity_data["descriptions"] = {
-                lang: value for lang, value in descriptions.items() if lang in languages
-            }
-
-        aliases = self.entity_data.get("aliases")
-        if isinstance(aliases, dict):
-            self.entity_data["aliases"] = {
-                lang: value for lang, value in aliases.items() if lang in languages
-            }
 
     def summary(self) -> dict[str, Any]:
         """Return a summary of the template for display.
@@ -615,7 +486,7 @@ class WikidataPropertyTemplate:
 
 
 @dataclass
-class WikidataEntitySchemaTemplate:
+class WikibaseEntitySchemaTemplate:
     """An extracted Wikidata EntitySchema ready for filtering and export.
 
     This is the EntitySchema-specific implementation of the DataTemplate protocol.
@@ -628,51 +499,6 @@ class WikidataEntitySchemaTemplate:
     descriptions: dict[str, str]
     schema_text: str
     entity_data: dict[str, Any]
-
-    def filter_languages(
-        self, languages: Optional[Union[str, list[str]]] = None
-    ) -> None:
-        """Filter labels and descriptions to specified languages.
-
-        Args:
-            languages: Either:
-                - A single language code (e.g., "en")
-                - A list of language codes (e.g., ["en", "es", "fr"])
-                - The string "all" to keep all languages
-                - None to use the package-level language configuration
-
-        Plain meaning: Keep only the specified language versions.
-        """
-        import gkc
-
-        if languages is None:
-            languages = gkc.get_languages()
-
-        # If "all", don't filter anything
-        if languages == "all":
-            return
-
-        # Convert single string to list for uniform handling
-        if isinstance(languages, str):
-            languages = [languages]
-
-        # Filter each field
-        self.labels = {k: v for k, v in self.labels.items() if k in languages}
-        self.descriptions = {
-            k: v for k, v in self.descriptions.items() if k in languages
-        }
-
-        labels = self.entity_data.get("labels")
-        if isinstance(labels, dict):
-            self.entity_data["labels"] = {
-                lang: value for lang, value in labels.items() if lang in languages
-            }
-
-        descriptions = self.entity_data.get("descriptions")
-        if isinstance(descriptions, dict):
-            self.entity_data["descriptions"] = {
-                lang: value for lang, value in descriptions.items() if lang in languages
-            }
 
     def summary(self) -> dict[str, Any]:
         """Return a summary of the template for display.
@@ -726,7 +552,258 @@ class WikidataEntitySchemaTemplate:
         )
 
 
-class WikidataLoader:
+def _resolve_languages(
+    languages: Optional[Union[str, list[str]]] = None,
+) -> Optional[set[str]]:
+    """Resolve language input to a normalized set or ``None`` for all languages."""
+    import gkc
+
+    resolved_languages = languages
+    if resolved_languages is None:
+        resolved_languages = gkc.get_languages()
+
+    if resolved_languages == "all":
+        return None
+
+    if isinstance(resolved_languages, str):
+        return {resolved_languages}
+
+    return set(resolved_languages)
+
+
+def apply_template_language_filter(
+    template: Union[
+        WikibaseItemTemplate,
+        WikibasePropertyTemplate,
+        WikibaseEntitySchemaTemplate,
+    ],
+    languages: Optional[Union[str, list[str]]] = None,
+) -> None:
+    """Apply language filtering to a mash template in-place.
+
+    Plain meaning: Keep only the selected languages for labels/descriptions/aliases.
+    """
+
+    language_filter = _resolve_languages(languages)
+    if language_filter is None:
+        return
+
+    template.labels = {
+        key: value for key, value in template.labels.items() if key in language_filter
+    }
+    template.descriptions = {
+        key: value
+        for key, value in template.descriptions.items()
+        if key in language_filter
+    }
+
+    if isinstance(template, (WikibaseItemTemplate, WikibasePropertyTemplate)):
+        template.aliases = {
+            key: value
+            for key, value in template.aliases.items()
+            if key in language_filter
+        }
+
+    labels = template.entity_data.get("labels")
+    if isinstance(labels, dict):
+        template.entity_data["labels"] = {
+            key: value for key, value in labels.items() if key in language_filter
+        }
+
+    descriptions = template.entity_data.get("descriptions")
+    if isinstance(descriptions, dict):
+        template.entity_data["descriptions"] = {
+            key: value for key, value in descriptions.items() if key in language_filter
+        }
+
+    if isinstance(template, (WikibaseItemTemplate, WikibasePropertyTemplate)):
+        aliases = template.entity_data.get("aliases")
+        if isinstance(aliases, dict):
+            template.entity_data["aliases"] = {
+                key: value for key, value in aliases.items() if key in language_filter
+            }
+
+
+def apply_item_property_filters(
+    template: WikibaseItemTemplate,
+    include_properties: Optional[list[str]] = None,
+    exclude_properties: Optional[list[str]] = None,
+) -> None:
+    """Apply item property include/exclude filtering in-place.
+
+    Plain meaning: Keep selected properties first, then remove excluded properties.
+    """
+
+    if include_properties:
+        include_set = set(include_properties)
+        template.claims = [
+            claim for claim in template.claims if claim.property_id in include_set
+        ]
+        claims = template.entity_data.get("claims")
+        if isinstance(claims, dict):
+            template.entity_data["claims"] = {
+                prop_id: statements
+                for prop_id, statements in claims.items()
+                if prop_id in include_set
+            }
+
+    if exclude_properties:
+        exclude_set = set(exclude_properties)
+        template.claims = [
+            claim for claim in template.claims if claim.property_id not in exclude_set
+        ]
+        claims = template.entity_data.get("claims")
+        if isinstance(claims, dict):
+            template.entity_data["claims"] = {
+                prop_id: statements
+                for prop_id, statements in claims.items()
+                if prop_id not in exclude_set
+            }
+
+
+def fetch_entity_schema_json(
+    eid: str, user_agent: Optional[str] = None
+) -> dict[str, Any]:
+    """
+    Fetch the JSON content for a Wikidata EntitySchema.
+
+    Uses the MediaWiki raw action endpoint to retrieve the full EntitySchema
+    JSON, which includes labels, descriptions, aliases, and schemaText.
+
+    Args:
+        eid: EntitySchema ID (e.g., 'E502')
+        user_agent: Custom user agent string
+
+    Returns:
+        Parsed JSON dictionary for the EntitySchema
+
+    Raises:
+        RuntimeError: If fetch or parsing fails
+
+    Plain meaning: Retrieve an EntitySchema JSON document from Wikibase.
+    """
+    if not eid:
+        raise ValueError("EntitySchema ID (eid) is required")
+
+    url = f"https://www.wikidata.org/wiki/EntitySchema:{eid}?action=raw"
+    headers = {"User-Agent": user_agent or DEFAULT_USER_AGENT}
+
+    try:
+        response = requests.get(url, headers=headers, timeout=30)
+        response.raise_for_status()
+        data = response.json()
+        if not isinstance(data, dict):
+            raise RuntimeError(f"Unexpected EntitySchema JSON content for {eid}")
+        return data
+    except requests.RequestException as exc:
+        raise RuntimeError(
+            f"Failed to fetch EntitySchema JSON for {eid} from {url}: {str(exc)}"
+        ) from exc
+    except ValueError as exc:
+        raise RuntimeError(
+            f"Failed to parse EntitySchema JSON for {eid}: {str(exc)}"
+        ) from exc
+
+
+def fetch_entity_schema_specification(
+    eid: str, user_agent: Optional[str] = None
+) -> str:
+    """
+    Fetch Wikidata EntitySchema specification text (ShExC format).
+
+    Retrieves a Wikidata EntitySchema's schemaText from the raw action endpoint.
+    EntitySchemas define the shape and structure constraints that form part of
+    Wikibase's validation schema (along with property constraints).
+
+    Args:
+        eid: EntitySchema ID (e.g., 'E502')
+        user_agent: Custom user agent string
+
+    Returns:
+        ShExC schema text as string
+
+    Raises:
+        RuntimeError: If fetch fails
+
+    Plain meaning: Get the shape/structure specification for a Wikibase entity type.
+
+    Example:
+        >>> schema = fetch_entity_schema_specification('E502')  # Schema for tribes
+    """
+    if not eid:
+        raise ValueError("EntitySchema ID (eid) is required")
+
+    # Prefer the EntitySchema JSON content (action=raw), which includes schemaText
+    try:
+        schema_json = fetch_entity_schema_json(eid, user_agent=user_agent)
+        schema_text = schema_json.get("schemaText")
+        if isinstance(schema_text, str) and schema_text.strip():
+            return schema_text
+    except RuntimeError:
+        # Fall back to the Special:EntitySchemaText endpoint
+        pass
+
+    url = f"https://www.wikidata.org/wiki/Special:EntitySchemaText/{eid}"
+    headers = {"User-Agent": user_agent or DEFAULT_USER_AGENT}
+
+    try:
+        response = requests.get(url, headers=headers, timeout=30)
+        response.raise_for_status()
+        return response.text
+    except requests.RequestException as exc:
+        raise RuntimeError(
+            f"Failed to fetch EntitySchema {eid} from {url}: {str(exc)}"
+        ) from exc
+
+
+def fetch_entity_rdf(
+    qid: str, format: str = "ttl", user_agent: Optional[str] = None
+) -> str:
+    """
+    Fetch RDF data for a Wikidata entity.
+
+    Retrieves entity data in RDF format using Wikibase's Special:EntityData endpoint,
+    which supports multiple RDF serialization formats (Turtle, RDF/XML, N-Triples).
+
+    Args:
+        qid: Wikidata entity ID (e.g., 'Q42', 'P31')
+        format: RDF format - 'ttl' (Turtle), 'rdf' (RDF/XML), 'nt' (N-Triples)
+        user_agent: Custom user agent string
+
+    Returns:
+        RDF data as string
+
+    Raises:
+        RuntimeError: If fetch fails
+
+    Plain meaning: Download entity data in RDF format.
+
+    Example:
+        >>> rdf = fetch_entity_rdf('Q42')  # Get Douglas Adams RDF
+        >>> rdf = fetch_entity_rdf('P31', format='nt')  # Get property in N-Triples
+    """
+    if not qid:
+        raise ValueError("Entity ID (qid) is required")
+
+    # Validate format
+    valid_formats = {"ttl", "rdf", "nt"}
+    if format not in valid_formats:
+        raise ValueError(f"Invalid format '{format}'. Must be one of: {valid_formats}")
+
+    url = f"https://www.wikidata.org/wiki/Special:EntityData/{qid}.{format}"
+    headers = {"User-Agent": user_agent or DEFAULT_USER_AGENT}
+
+    try:
+        response = requests.get(url, headers=headers, timeout=30)
+        response.raise_for_status()
+        return response.text
+    except requests.RequestException as exc:
+        raise RuntimeError(
+            f"Failed to fetch RDF for {qid} from {url}: {str(exc)}"
+        ) from exc
+
+
+class WikibaseLoader:
     """Load a Wikidata item as a template for bulk modification.
 
     This is the Wikidata-specific implementation of a data loader.
@@ -749,7 +826,7 @@ class WikidataLoader:
         """
 
         if user_agent is None:
-            user_agent = "GKC/1.0 (https://github.com/skybristol/gkc; data integration)"
+            user_agent = DEFAULT_USER_AGENT
 
         self.user_agent = user_agent
         self.api_url = api_url
@@ -758,14 +835,14 @@ class WikidataLoader:
             user_agent=user_agent,
         )
 
-    def load_item(self, qid: str) -> WikidataTemplate:
+    def load_item(self, qid: str) -> WikibaseItemTemplate:
         """Load a Wikidata item and return it as a template.
 
         Args:
             qid: The Wikidata item ID (e.g., 'Q42').
 
         Returns:
-            WikidataTemplate with the item's structure.
+            WikibaseItemTemplate with the item's structure.
 
         Raises:
             RuntimeError: If the item cannot be fetched or parsed.
@@ -773,7 +850,7 @@ class WikidataLoader:
         Plain meaning: Retrieve the item and return it ready for use.
 
         Example:
-            >>> loader = WikidataLoader()
+            >>> loader = WikibaseLoader()
             >>> template = loader.load_item("Q42")
             >>> print(template.summary())
         """
@@ -785,7 +862,7 @@ class WikidataLoader:
 
         return template
 
-    def load(self, qid: str) -> WikidataTemplate:
+    def load(self, qid: str) -> WikibaseItemTemplate:
         """Load a Wikidata item and return it as a template.
 
         .. deprecated:: 1.0
@@ -796,13 +873,13 @@ class WikidataLoader:
             qid: The Wikidata item ID (e.g., 'Q42').
 
         Returns:
-            WikidataTemplate with the item's structure.
+            WikibaseItemTemplate with the item's structure.
 
         Plain meaning: Retrieve the item and return it ready for use.
         """
         return self.load_item(qid)
 
-    def load_items(self, qids: list[str]) -> dict[str, WikidataTemplate]:
+    def load_items(self, qids: list[str]) -> dict[str, WikibaseItemTemplate]:
         """Load multiple Wikidata items in batch and return them as templates.
 
         Uses the wbgetentities API to efficiently fetch multiple items in batches
@@ -821,7 +898,7 @@ class WikidataLoader:
         Plain meaning: Load multiple items efficiently in batch.
 
         Example:
-            >>> loader = WikidataLoader()
+            >>> loader = WikibaseLoader()
             >>> templates = loader.load_items(["Q42", "Q5", "Q30"])
             >>> print(len(templates))
             3
@@ -829,7 +906,7 @@ class WikidataLoader:
         if not qids:
             return {}
 
-        result: dict[str, WikidataTemplate] = {}
+        result: dict[str, WikibaseItemTemplate] = {}
 
         # Process in batches of 50 (wbgetentities limit)
         batch_size = 50
@@ -848,14 +925,14 @@ class WikidataLoader:
 
         return result
 
-    def load_property(self, pid: str) -> WikidataPropertyTemplate:
+    def load_property(self, pid: str) -> WikibasePropertyTemplate:
         """Load a Wikidata property and return it as a template.
 
         Args:
             pid: The Wikidata property ID (e.g., 'P31').
 
         Returns:
-            WikidataPropertyTemplate with the property's metadata.
+            WikibasePropertyTemplate with the property's metadata.
 
         Raises:
             RuntimeError: If the property cannot be fetched or parsed.
@@ -863,21 +940,21 @@ class WikidataLoader:
         Plain meaning: Retrieve a property definition and return it ready for use.
 
         Example:
-            >>> loader = WikidataLoader()
+            >>> loader = WikibaseLoader()
             >>> prop = loader.load_property("P31")
             >>> print(prop.summary())
         """
         entity_data = self.load_entity_data(pid)
         return self._build_property_template(pid, entity_data)
 
-    def load_entity_schema(self, eid: str) -> WikidataEntitySchemaTemplate:
+    def load_entity_schema(self, eid: str) -> WikibaseEntitySchemaTemplate:
         """Load a Wikidata EntitySchema and return it as a template.
 
         Args:
             eid: The Wikidata EntitySchema ID (e.g., 'E502').
 
         Returns:
-            WikidataEntitySchemaTemplate with the schema content.
+            WikibaseEntitySchemaTemplate with the schema content.
 
         Raises:
             RuntimeError: If the EntitySchema cannot be fetched or parsed.
@@ -885,12 +962,10 @@ class WikidataLoader:
         Plain meaning: Retrieve an EntitySchema and return it ready for use.
 
         Example:
-            >>> loader = WikidataLoader()
+            >>> loader = WikibaseLoader()
             >>> schema = loader.load_entity_schema("E502")
             >>> print(schema.summary())
         """
-        from gkc.cooperage import fetch_entity_schema_json
-
         entity_data = fetch_entity_schema_json(eid, user_agent=self.user_agent)
         return self._build_entity_schema_template(eid, entity_data)
 
@@ -1008,8 +1083,8 @@ class WikidataLoader:
 
     def _build_template(
         self, qid: str, entity_data: dict[str, Any]
-    ) -> WikidataTemplate:
-        """Convert entity data to a WikidataTemplate.
+    ) -> WikibaseItemTemplate:
+        """Convert entity data to a WikibaseItemTemplate.
 
         Plain meaning: Transform API data into our simplified format.
         """
@@ -1039,7 +1114,7 @@ class WikidataLoader:
         # Extract claims
         claims = self._extract_claims(entity_data.get("claims", {}))
 
-        return WikidataTemplate(
+        return WikibaseItemTemplate(
             qid=qid,
             labels=labels_dict,
             descriptions=descriptions_dict,
@@ -1062,7 +1137,7 @@ class WikidataLoader:
                 continue
 
             for statement in statements:
-                claim = WikidataLoader._statement_to_claim(prop_id, statement)
+                claim = WikibaseLoader._statement_to_claim(prop_id, statement)
                 if claim:
                     claims.append(claim)
 
@@ -1070,8 +1145,8 @@ class WikidataLoader:
 
     def _build_property_template(
         self, pid: str, entity_data: dict[str, Any]
-    ) -> WikidataPropertyTemplate:
-        """Convert entity data to a WikidataPropertyTemplate.
+    ) -> WikibasePropertyTemplate:
+        """Convert entity data to a WikibasePropertyTemplate.
 
         Plain meaning: Transform API data into our simplified property format.
         """
@@ -1111,7 +1186,7 @@ class WikidataLoader:
             if datavalue.get("type") == "string":
                 formatter_url = datavalue.get("value")
 
-        return WikidataPropertyTemplate(
+        return WikibasePropertyTemplate(
             pid=pid,
             labels=labels_dict,
             descriptions=descriptions_dict,
@@ -1123,8 +1198,8 @@ class WikidataLoader:
 
     def _build_entity_schema_template(
         self, eid: str, entity_data: dict[str, Any]
-    ) -> WikidataEntitySchemaTemplate:
-        """Convert entity data to a WikidataEntitySchemaTemplate.
+    ) -> WikibaseEntitySchemaTemplate:
+        """Convert entity data to a WikibaseEntitySchemaTemplate.
 
         Plain meaning: Transform API data into our simplified EntitySchema format.
         """
@@ -1147,7 +1222,7 @@ class WikidataLoader:
         # Extract schema text
         schema_text = entity_data.get("schemaText", "")
 
-        return WikidataEntitySchemaTemplate(
+        return WikibaseEntitySchemaTemplate(
             eid=eid,
             labels=labels_dict,
             descriptions=descriptions_dict,
@@ -1166,7 +1241,7 @@ class WikidataLoader:
 
         # Extract main value
         mainsnak = statement.get("mainsnak", {})
-        value, value_metadata = WikidataLoader._snak_to_value(mainsnak)
+        value, value_metadata = WikibaseLoader._snak_to_value(mainsnak)
         if value is None:
             return None
 
@@ -1177,7 +1252,7 @@ class WikidataLoader:
             if snaks:
                 # Extract value from the first snak of each qualifier property
                 snak = snaks[0]
-                qual_value, qual_metadata = WikidataLoader._snak_to_value(snak)
+                qual_value, qual_metadata = WikibaseLoader._snak_to_value(snak)
                 if qual_value:
                     qualifier_dict = {"property": prop, "value": qual_value}
                     if qual_metadata:
@@ -1333,7 +1408,7 @@ class WikipediaLoader:
         Plain meaning: Set up the loader with optional custom user agent.
         """
         if user_agent is None:
-            user_agent = "GKC/1.0 (https://github.com/skybristol/gkc; data integration)"
+            user_agent = DEFAULT_USER_AGENT
 
         self.user_agent = user_agent
         self.base_url = "https://en.wikipedia.org/w/api.php"
@@ -1422,3 +1497,108 @@ class WikipediaLoader:
             param_order=param_order,
             raw_data=page_data,
         )
+
+
+class WikibaseMashSourceAdapter(MashSourceAdapter):
+    """Mash source adapter for Wikibase entity references.
+
+    Supports item/property/schema IDs and delegates loading to ``WikibaseLoader``.
+    """
+
+    source_name = "wikibase"
+
+    def __init__(self, loader: Optional[WikibaseLoader] = None):
+        self.loader = loader or WikibaseLoader()
+
+    @staticmethod
+    def _is_wikibase_entity_ref(source_ref: str) -> bool:
+        if not source_ref or len(source_ref) < 2:
+            return False
+
+        prefix = source_ref[0]
+        suffix = source_ref[1:]
+        return prefix in {"Q", "P", "E"} and suffix.isdigit()
+
+    def can_load(self, source_ref: str) -> bool:
+        """Return True for Wikibase entity IDs (Q/P/E)."""
+        return self._is_wikibase_entity_ref(source_ref)
+
+    def load(self, source_ref: str) -> DataTemplate:
+        """Load a Wikibase entity ID into the appropriate template type."""
+        if not self.can_load(source_ref):
+            raise ValueError(
+                f"WikibaseMashSourceAdapter cannot load source reference: {source_ref}"
+            )
+
+        prefix = source_ref[0]
+        if prefix == "Q":
+            return self.loader.load_item(source_ref)
+        if prefix == "P":
+            return self.loader.load_property(source_ref)
+        if prefix == "E":
+            return self.loader.load_entity_schema(source_ref)
+
+        raise ValueError(f"Unsupported Wikibase entity reference: {source_ref}")
+
+    def load_many(self, source_refs: list[str]) -> dict[str, DataTemplate]:
+        """Load multiple Wikibase references into templates keyed by source ref."""
+        if not source_refs:
+            return {}
+
+        invalid_refs = [
+            source_ref for source_ref in source_refs if not self.can_load(source_ref)
+        ]
+        if invalid_refs:
+            raise ValueError(
+                f"Invalid Wikibase source references: {', '.join(invalid_refs)}"
+            )
+
+        loaded: dict[str, DataTemplate] = {}
+
+        qids = [source_ref for source_ref in source_refs if source_ref.startswith("Q")]
+        if qids:
+            loaded.update(self.loader.load_items(qids))
+
+        for source_ref in source_refs:
+            if source_ref in loaded:
+                continue
+            loaded[source_ref] = self.load(source_ref)
+
+        return loaded
+
+
+class WikipediaMashSourceAdapter(MashSourceAdapter):
+    """Mash source adapter for Wikipedia template references."""
+
+    source_name = "wikipedia-template"
+
+    def __init__(self, loader: Optional[WikipediaLoader] = None):
+        self.loader = loader or WikipediaLoader()
+
+    @staticmethod
+    def _normalize_template_name(source_ref: str) -> str:
+        name = source_ref.strip()
+        if name.startswith("Template:"):
+            return name.removeprefix("Template:")
+        return name
+
+    def can_load(self, source_ref: str) -> bool:
+        """Return True for non-empty template references."""
+        return bool(source_ref and source_ref.strip())
+
+    def load(self, source_ref: str) -> WikipediaTemplate:
+        """Load a Wikipedia template by name."""
+        if not self.can_load(source_ref):
+            raise ValueError(
+                "WikipediaMashSourceAdapter requires a non-empty template reference"
+            )
+
+        template_name = self._normalize_template_name(source_ref)
+        return self.loader.load_template(template_name)
+
+    def load_many(self, source_refs: list[str]) -> dict[str, WikipediaTemplate]:
+        """Load multiple Wikipedia templates keyed by the original source ref."""
+        loaded: dict[str, WikipediaTemplate] = {}
+        for source_ref in source_refs:
+            loaded[source_ref] = self.load(source_ref)
+        return loaded

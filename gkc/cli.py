@@ -17,7 +17,12 @@ import requests
 
 import gkc
 from gkc.auth import AuthenticationError, OpenStreetMapAuth, WikiverseAuth
-from gkc.mash import WikidataLoader, WikipediaLoader
+from gkc.mash import (
+    WikibaseLoader,
+    WikipediaLoader,
+    apply_item_property_filters,
+    apply_template_language_filter,
+)
 from gkc.profiles import FormSchemaGenerator, ProfileLoader, ProfileValidator
 from gkc.runtime_config import get_wikibase_runtime_config
 from gkc.sparql import fetch_entity_labels
@@ -1081,7 +1086,7 @@ def _handle_mash_qid(args: argparse.Namespace) -> dict[str, Any]:
         exclude_properties = [p.strip() for p in args.exclude_properties.split(",")]
 
     try:
-        loader = WikidataLoader()
+        loader = WikibaseLoader()
 
         # Load items (single or batch)
         if len(qids) == 1:
@@ -1091,9 +1096,10 @@ def _handle_mash_qid(args: argparse.Namespace) -> dict[str, Any]:
 
         # Apply filters to all templates
         for template in templates.values():
-            template.filter_languages()
+            apply_template_language_filter(template)
             if include_properties or exclude_properties:
-                template.filter_properties(
+                apply_item_property_filters(
+                    template,
                     include_properties=include_properties,
                     exclude_properties=exclude_properties,
                 )
@@ -1238,7 +1244,7 @@ def _handle_mash_pid(args: argparse.Namespace) -> dict[str, Any]:
     pids = [pid for pid in pids if not (pid in seen or seen.add(pid))]  # type: ignore[func-returns-value]
 
     try:
-        loader = WikidataLoader()
+        loader = WikibaseLoader()
 
         # Load properties individually (batch loading removed with EntityCatalog)
         templates = {}
@@ -1247,7 +1253,7 @@ def _handle_mash_pid(args: argparse.Namespace) -> dict[str, Any]:
 
         # Apply filters to all templates
         for template in templates.values():
-            template.filter_languages()
+            apply_template_language_filter(template)
 
         # Check if --summary was requested
         if getattr(args, "summary", False):
@@ -1318,11 +1324,11 @@ def _handle_mash_eid(args: argparse.Namespace) -> dict[str, Any]:
     transform = getattr(args, "transform", None)
 
     try:
-        loader = WikidataLoader()
+        loader = WikibaseLoader()
         template = loader.load_entity_schema(eid)
 
         # Apply filters
-        template.filter_languages()
+        apply_template_language_filter(template)
 
         # Check if --summary was requested
         if getattr(args, "summary", False):
@@ -1462,7 +1468,7 @@ def _handle_shex_validate(args: argparse.Namespace) -> dict[str, Any]:
 
         if args.qid:
             details["entity"] = args.qid
-            from gkc.cooperage import get_entity_uri
+            from gkc.utilities import get_entity_uri
 
             details["entity_uri"] = get_entity_uri(args.qid)
         elif args.rdf_file:
@@ -1552,7 +1558,7 @@ def _handle_profile_validate(args: argparse.Namespace) -> dict[str, Any]:
         profile, resolved_profile = _load_profile_from_reference(loader, args.profile)
 
         if args.qid:
-            item = WikidataLoader().load_item(args.qid)
+            item = WikibaseLoader().load_item(args.qid)
             entity_data = item.to_dict()
             source = args.qid
         else:

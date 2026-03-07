@@ -596,3 +596,11 @@ Planned implementation sequencing:
 2. Implement thin client/resolver layer with timeout and fallback semantics.
 3. Add fixture-driven tests for online and offline parity.
 4. Expand to richer cross-entity resolver usage in post-V1 phases.
+## Implementation Notes
+
+### Helper Functions in Utilities Module
+
+During cooperage module consolidation (2026-03-07), the `validate_entity_reference()` function was temporarily placed in `gkc.utilities` as a lightweight helper. The Validation Agent should move this into fermenter's validation logic once the fermenter module is initialized, as entity reference validation is a foundational validation concern that belongs within the fermenter validation scope.
+
+Current location: `gkc/utilities.py:validate_entity_reference()`
+Future location: `gkc/fermenter/validation/` (to be determined by Validation Agent)

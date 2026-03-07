@@ -11,6 +11,7 @@ from typing import Optional
 
 DEFAULT_WIKIBASE_API_URL = "https://datadistillery.wikibase.cloud/w/api.php"
 DEFAULT_SPARQL_ENDPOINT = "https://query.wikidata.org/sparql"
+DEFAULT_USER_AGENT = "GKC/1.0 (https://github.com/skybristol/gkc; data integration)"
 
 
 @dataclass(frozen=True)

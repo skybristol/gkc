@@ -3,12 +3,14 @@
 import gkc
 from gkc.mash import (
     ClaimSummary,
-    WikidataEntitySchemaTemplate,
-    WikidataLoader,
-    WikidataPropertyTemplate,
-    WikidataTemplate,
+    WikibaseEntitySchemaTemplate,
+    WikibaseItemTemplate,
+    WikibaseLoader,
+    WikibasePropertyTemplate,
     WikipediaLoader,
     WikipediaTemplate,
+    apply_item_property_filters,
+    apply_template_language_filter,
     strip_entity_identifiers,
 )
 
@@ -38,7 +40,7 @@ def test_language_configuration_setter():
 
 def test_wikidata_template_summary():
     """Test the summary method returns expected fields."""
-    template = WikidataTemplate(
+    template = WikibaseItemTemplate(
         qid="Q42",
         labels={"en": "Life, the Universe, and Everything"},
         descriptions={"en": "Answer to everything"},
@@ -60,7 +62,7 @@ def test_wikidata_template_summary():
 
 def test_wikidata_template_filter_properties():
     """Test filtering properties from template."""
-    template = WikidataTemplate(
+    template = WikibaseItemTemplate(
         qid="Q42",
         labels={"en": "Test"},
         descriptions={"en": "Test"},
@@ -77,8 +79,8 @@ def test_wikidata_template_filter_properties():
         },
     )
 
-    template.filter_properties(
-        include_properties=["P31", "P21"], exclude_properties=["P31"]
+    apply_item_property_filters(
+        template, include_properties=["P31", "P21"], exclude_properties=["P31"]
     )
     assert len(template.claims) == 1
     assert template.claims[0].property_id == "P21"
@@ -94,7 +96,7 @@ def test_wikidata_template_filter_qualifiers():
         references=[],
     )
 
-    template = WikidataTemplate(
+    template = WikibaseItemTemplate(
         qid="Q42",
         labels={"en": "Test"},
         descriptions={"en": "Test"},
@@ -120,7 +122,7 @@ def test_wikidata_template_filter_references():
         references=[{"count": 1}],
     )
 
-    template = WikidataTemplate(
+    template = WikibaseItemTemplate(
         qid="Q42",
         labels={"en": "Test"},
         descriptions={"en": "Test"},
@@ -139,7 +141,7 @@ def test_wikidata_template_filter_references():
 
 def test_wikidata_template_filter_languages_updates_entity_data():
     """Filter languages should update round-trip JSON output."""
-    template = WikidataTemplate(
+    template = WikibaseItemTemplate(
         qid="Q42",
         labels={"en": "Test", "fr": "Essai"},
         descriptions={"en": "Test", "fr": "Essai"},
@@ -163,7 +165,7 @@ def test_wikidata_template_filter_languages_updates_entity_data():
         },
     )
 
-    template.filter_languages("en")
+    apply_template_language_filter(template, "en")
 
     data = template.to_dict()
     assert template.labels == {"en": "Test"}
@@ -176,7 +178,7 @@ def test_wikidata_template_filter_languages_updates_entity_data():
 
 def test_wikidata_template_to_dict_roundtrip():
     """Test converting template to round-trip-safe dictionary."""
-    template = WikidataTemplate(
+    template = WikibaseItemTemplate(
         qid="Q42",
         labels={"en": "Test"},
         descriptions={"en": "Test"},
@@ -283,7 +285,7 @@ def test_wikidata_loader_snak_to_value_entity():
         },
     }
 
-    value, metadata = WikidataLoader._snak_to_value(snak)
+    value, metadata = WikibaseLoader._snak_to_value(snak)
     assert value == "Q5"
     assert metadata is None
 
@@ -298,7 +300,7 @@ def test_wikidata_loader_snak_to_value_string():
         },
     }
 
-    value, metadata = WikidataLoader._snak_to_value(snak)
+    value, metadata = WikibaseLoader._snak_to_value(snak)
     assert value == "test string"
     assert metadata is None
 
@@ -306,14 +308,14 @@ def test_wikidata_loader_snak_to_value_string():
 def test_wikidata_loader_snak_to_value_novalue():
     """Test converting novalue snak."""
     snak = {"snaktype": "novalue"}
-    value, metadata = WikidataLoader._snak_to_value(snak)
+    value, metadata = WikibaseLoader._snak_to_value(snak)
     assert value == "[no value]"
     assert metadata is None
 
 
 def test_wikidata_template_to_shell():
     """Test converting template to shell format."""
-    template = WikidataTemplate(
+    template = WikibaseItemTemplate(
         qid="Q42",
         labels={"en": "Test"},
         descriptions={"en": "Test"},
@@ -341,7 +343,7 @@ def test_wikidata_template_to_shell():
 
 def test_wikidata_template_to_qsv1():
     """Test converting template to QuickStatements V1 format."""
-    template = WikidataTemplate(
+    template = WikibaseItemTemplate(
         qid="Q42",
         labels={"en": "Test"},
         descriptions={"en": "Test"},
@@ -367,7 +369,7 @@ def test_wikidata_template_to_qsv1():
 
 def test_wikidata_template_to_gkc_entity_profile_not_implemented():
     """Test that to_gkc_entity_profile raises NotImplementedError."""
-    template = WikidataTemplate(
+    template = WikibaseItemTemplate(
         qid="Q42",
         labels={"en": "Test"},
         descriptions={"en": "Test"},
@@ -384,8 +386,8 @@ def test_wikidata_template_to_gkc_entity_profile_not_implemented():
 
 
 def test_wikidata_property_template_summary():
-    """Test WikidataPropertyTemplate summary method."""
-    template = WikidataPropertyTemplate(
+    """Test WikibasePropertyTemplate summary method."""
+    template = WikibasePropertyTemplate(
         pid="P31",
         labels={"en": "instance of"},
         descriptions={"en": "that class of which this subject is a particular example"},
@@ -403,7 +405,7 @@ def test_wikidata_property_template_summary():
 
 def test_wikidata_property_template_filter_languages():
     """Test filtering languages on property template."""
-    template = WikidataPropertyTemplate(
+    template = WikibasePropertyTemplate(
         pid="P31",
         labels={"en": "instance of", "fr": "nature de l'élément"},
         descriptions={"en": "test", "fr": "test"},
@@ -420,7 +422,7 @@ def test_wikidata_property_template_filter_languages():
         },
     )
 
-    template.filter_languages("en")
+    apply_template_language_filter(template, "en")
     assert len(template.labels) == 1
     assert "en" in template.labels
     assert "fr" not in template.labels
@@ -428,7 +430,7 @@ def test_wikidata_property_template_filter_languages():
 
 def test_wikidata_property_template_to_shell():
     """Test converting property template to shell format."""
-    template = WikidataPropertyTemplate(
+    template = WikibasePropertyTemplate(
         pid="P31",
         labels={"en": "instance of"},
         descriptions={},
@@ -452,8 +454,8 @@ def test_wikidata_property_template_to_shell():
 
 
 def test_wikidata_entity_schema_template_summary():
-    """Test WikidataEntitySchemaTemplate summary method."""
-    template = WikidataEntitySchemaTemplate(
+    """Test WikibaseEntitySchemaTemplate summary method."""
+    template = WikibaseEntitySchemaTemplate(
         eid="E502",
         labels={"en": "Tribe"},
         descriptions={"en": "An ethnic group"},
@@ -469,7 +471,7 @@ def test_wikidata_entity_schema_template_summary():
 
 def test_wikidata_entity_schema_template_filter_languages():
     """Test filtering languages on entity schema template."""
-    template = WikidataEntitySchemaTemplate(
+    template = WikibaseEntitySchemaTemplate(
         eid="E502",
         labels={"en": "Tribe", "fr": "Tribu"},
         descriptions={"en": "test", "fr": "test"},
@@ -481,7 +483,7 @@ def test_wikidata_entity_schema_template_filter_languages():
         },
     )
 
-    template.filter_languages("en")
+    apply_template_language_filter(template, "en")
     assert len(template.labels) == 1
     assert "en" in template.labels
     assert "fr" not in template.labels
@@ -489,7 +491,7 @@ def test_wikidata_entity_schema_template_filter_languages():
 
 def test_wikidata_loader_load_items_empty():
     """Test loading empty list of items."""
-    loader = WikidataLoader()
+    loader = WikibaseLoader()
     result = loader.load_items([])
     assert result == {}
 

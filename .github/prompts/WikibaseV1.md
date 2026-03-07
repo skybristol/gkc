@@ -132,6 +132,29 @@ Wikibase supports the following query patterns for Fermenter and other GKC compo
 - **Cross-profile relationships**: Given profile QID, retrieve neighbor profiles and edge metadata (for packet assembly)
 - **Multilingual message lookup**: Given message key + language code, retrieve localized text with fallback
 
+### Module Responsibility Boundaries (2026-03-07 alignment)
+
+- `gkc.mash` is the canonical read/retrieval layer for Wikibase/Wikidata-compatible APIs. Do not reimplement generic retrieval clients inside `gkc.wikibase`.
+- `gkc.shipper` is the canonical write/delivery layer for Wikibase-compatible APIs, including Data Distillery. Do not duplicate write operators in `gkc.wikibase`.
+- `gkc.wikibase` is Data Distillery semantic-backbone orchestration: ontology profile loading, audit/init orchestration, semantic planning, and coordination of read/write flows through mash + shipper.
+- `gkc.cooperage` is the preferred home for reusable transformation/packaging logic that turns retrieved semantic structures into shippable runtime artifacts (e.g., SpiritSafe-oriented projections, indexes, parity-ready cache bundles).
+- SpiritSafe remains the operational artifact and runtime cache surface; synchronization logic must preserve lossless round-trip behavior.
+
+### Existing Capability Reuse (Current Code Reality)
+
+- Generic Wikibase reads already exist in `gkc.mash.WikibaseApiClient` (`wbsearchentities`, `wbgetentities`, entity fetch wrappers).
+- Generic Wikibase writes already exist in `gkc.shipper.WikibaseShipper` (`write_item`, `write_property`, `plan_batch`) and are already validated against Data Distillery contracts.
+- Foundation audit/init in `gkc.wikibase.foundation` already composes mash + shipper rather than owning low-level HTTP contracts.
+- Planned work must extend these layers, not fork them.
+
+### Documentation Fitment Requirements (Identified Gaps)
+
+- `docs/gkc/api/mash.md` is still Wikidata-forward and does not yet document `WikibaseApiClient` as the generic read path for Data Distillery and other Wikibase targets.
+- `docs/gkc/api/shipper.md` documents public routes well, but needs a stronger architecture boundary statement clarifying that all Wikibase writes (including Data Distillery ontology operations) flow through shipper.
+- `docs/gkc/api/index.md` lists Cooperage but has only a placeholder section; this is insufficient for architectural fitment decisions.
+- No dedicated `docs/gkc/api/cooperage.md` exists yet; this blocks clear scoping for transformation/packaging responsibilities.
+- We need one cross-module contract page describing mash/shipper/cooperage/wikibase handoffs to orient custom Copilot agents and reduce reinvention.
+
 ## Outstanding Design Inputs (Deferred)
 
 The following are explicitly deferred for post-V1 planning:
@@ -425,644 +448,209 @@ Exit criteria:
 
 ---
 
-### Phase 1 - Wikibase Client Library
+### Phase 1 - Cross-Module Boundary Hardening and Gap Closure
 
-**Purpose**: Build core Wikibase API client for authenticated read/write operations.
+**Purpose**: Lock in architecture boundaries so we extend existing mash/shipper capabilities instead of recreating clients in `gkc.wikibase`.
 
-**Status Notes**: Some CRUD operations already implemented via shipper module (write_item, write_property); property-create datatype contract documented in Phase 0.9; rate limiting and retry logic inherit from existing shipper patterns. Phase 1 should consolidate these into unified client class and add dedicated read operations.
+Work items by module:
 
-Deliverables:
-
-- `gkc.wikibase` module with client class for Data Distillery operations (consolidate/refactor existing shipper write paths)
-- Authentication integration via WikiverseAuth API (existing `gkc.auth` module, already in use)
-- CRUD operations: create item (works via shipper), update item, add claim, query items by criteria (needs implementation)
-- Error handling, rate limiting, retry logic for network operations (inherit from shipper patterns)
-- Wikibase JSON serialization/deserialization utilities (partially in place via shipper)
-- Read operations for retrieving entity data, claims, labels, descriptions (new, needs implementation)
+- **Mash**
+  - Document and test `WikibaseApiClient` as the default generic read path for Data Distillery and other Wikibase targets.
+  - Add any missing read helpers needed by future phases (only if absent), keeping endpoint-agnostic contracts.
+- **Shipper**
+  - Keep Wikibase write behavior centralized in `WikibaseShipper`.
+  - Identify and implement any missing write primitives required by ontology workflows (for example, claim/reference helper surfaces) in shipper, not in `gkc.wikibase`.
+- **Wikibase**
+  - Restrict `gkc.wikibase` responsibilities to orchestration and semantic planning.
+  - Refactor planned APIs that duplicate mash/shipper concerns into thin orchestration wrappers.
+- **Documentation**
+  - Add/expand docs to make these boundaries explicit for custom agents.
 
 Scope anchors:
 
 - Issue #121 (Define Data Distillery semantic model)
-- New issue: Wikibase client library implementation
+- New issue: Cross-module Wikibase responsibility consolidation
 
 Exit criteria:
 
-- Client can authenticate with bot account via WikiverseAuth
-- Basic CRUD operations tested against Data Distillery Wikibase
-- Read operations support retrieving complete entity JSON
-- Write operations support creating items and adding claims with references
-- Client handles errors gracefully with actionable messages
-
-Target API Patterns:
-
-```python
-# Client initialization
-from gkc.wikibase import WikibaseClient
-
-client = WikibaseClient(
-    endpoint="https://datadistillery.wikibase.cloud",
-    auth_handler=None  # Uses gkc.auth.get_authenticated_session
-)
-
-# Read operations
-entity_data = client.get_entity("Q4")  # Tribal Government profile
-property_claims = client.get_claims("Q5", property_id="P5")  # same-as claims
-
-# Write operations
-new_item = client.create_item(
-    labels={"en": "Test Property"},
-    descriptions={"en": "A test GKC Entity Property"},
-    instance_of="Q5"  # GKC Entity Property
-)
-
-client.add_claim(
-    entity_id=new_item["id"],
-    property_id="P5",  # same as
-    value="P31"  # Wikidata:instance of
-)
-
-# Query operations
-query_result = client.sparql_query("""
-    SELECT ?item ?itemLabel WHERE {
-        ?item wdt:P1 wd:Q5 .
-        SERVICE wikibase:label { bd:serviceParam wikibase:language "en". }
-    }
-    LIMIT 10
-""")
-```
-
-Target CLI Patterns:
-
-```bash
-# Test client operations
-gkc wikibase get Q4
-gkc wikibase get Q5 --format json --output property_q5.json
-
-# Create test item
-gkc wikibase create-item \
-  --label "en:Test Property" \
-  --description "en:Test description" \
-  --instance-of Q5
-
-# Add claim
-gkc wikibase add-claim Q999 \
-  --property P5 \
-  --value P31 \
-  --reference-url "https://www.wikidata.org/wiki/Property:P31"
-
-# SPARQL query
-gkc wikibase query \
-  --sparql ./query.sparql \
-  --output results.json
-```
+- No new generic read/write client created under `gkc.wikibase`.
+- All Data Distillery read paths resolve through mash primitives.
+- All Data Distillery write paths resolve through shipper primitives.
+- Architecture docs explicitly describe ownership boundaries and extension points.
 
 ---
 
-### Phase 2 - Profile Import Pipeline
+### Phase 2 - Dogfooding Ontology Entity Profiles in Data Distillery
 
-**Purpose**: Import existing SpiritSafe profiles to Wikibase, establishing modeling patterns.
+**Purpose**: Continue ontology buildout by authoring GKC Entity Profiles for Data Distillery-resident semantic entities (for example, GKC Property Specification entities) and using those profiles to create/update Wikibase entities.
 
-**Status Notes**: SpiritSafe Phase 1 recently completed (PR skybristol/SpiritSafe#4, 2026-03-06) with manifest builder, profile_graph metadata, and linkage validation. This provides structured foundation for import mapping. Profiles now include statement linkage metadata and cross-profile relationships explicitly declared, enabling richer Wikibase entity construction. YAML structure is stable for import consumption.
+Work items by module:
 
-Deliverables:
-
-- Profile YAML parser that extracts entity types, properties, specifications (consume SpiritSafe manifest + profile YAML)
-- Wikibase entity constructor that creates items for profiles, properties, specifications
-- Import script that processes SpiritSafe profiles and creates corresponding Wikibase structure
-- Mapping logic for profile YAML features → Wikibase claims (statements, qualifiers, references), including statement linkage from profile_graph metadata
-- Handling for existing items (update vs. skip vs. error modes)
-- Import provenance tracking (which YAML file generated which QID, source commit hash)
+- **Wikibase**
+  - Add ontology-profile sets that describe semantic backbone entities beyond the current foundation seed.
+  - Implement orchestration commands that load profile definitions, compute target entity plans, and call mash/shipper for execution.
+- **Mash**
+  - Provide retrieval support for plan reconciliation (label/QID lookup, existing-claim fetch).
+- **Shipper**
+  - Execute create/update plans produced by ontology profile orchestration.
+  - Preserve Data Distillery-specific request-shape contracts already validated in Phase 0.
+- **SpiritSafe**
+  - Keep profile/metadata structures aligned with ontology profile authoring needs and provenance metadata.
 
 Scope anchors:
 
 - Issue #122 (Build SpiritSafe manifest projection + sync pipeline)
-- New issue: Profile YAML to Wikibase import implementation
+- New issue: Ontology entity dogfooding profiles and orchestration
 
 Exit criteria:
 
-- Both existing profiles (TribalGovernmentUS, OfficeHeldByHeadOfState) imported successfully (from SpiritSafe YAML after Phase 1 export)
-- All profile statements represented as GKC Entity Property items with correct cardinality and datatype
-- Cross-profile relationships (profile_graph) encoded as claims with proper directional semantics
-- Statement linkage metadata preserved in Wikibase structure
-- SPARQL queries stored in discussion pages or as query entities with source attribution
-- Import can run incrementally (updates existing items, creates new ones, skips on conflict per mode)
-- Import log shows mapping from YAML structure to QIDs with provenance hash and timestamp
-- Round-trip validation: imported profiles can be exported back to YAML with structural equivalence
-
-Target API Patterns:
-
-```python
-# Profile import
-from gkc.wikibase.importers import ProfileImporter
-
-importer = ProfileImporter(client=wikibase_client)
-
-result = importer.import_profile(
-    profile_yaml_path="./profiles/TribalGovernmentUS/profile.yaml",
-    metadata_yaml_path="./profiles/TribalGovernmentUS/metadata.yaml",
-    update_existing=True  # Update if profile QID exists
-)
-
-# result contains:
-# - profile_qid: Q4
-# - property_qids: {"instance_of": "Q10", "official_website": "Q11", ...}
-# - specification_qids: {"integer_only": "Q20", ...}
-# - sparql_query_qids: {"bia_federal_register_issues": "Q30", ...}
-
-# Batch import
-from gkc.wikibase.importers import import_spiritsafe_profiles
-
-import_result = import_spiritsafe_profiles(
-    spiritsafe_path="./SpiritSafe/profiles",
-    client=wikibase_client,
-    dry_run=False
-)
-```
-
-Target CLI Patterns:
-
-```bash
-# Import single profile
-gkc wikibase import-profile \
-  ./SpiritSafe/profiles/TribalGovernmentUS/profile.yaml \
-  --metadata ./SpiritSafe/profiles/TribalGovernmentUS/metadata.yaml \
-  --update-existing
-
-# Batch import all profiles
-gkc wikibase import-spiritsafe \
-  ./SpiritSafe/profiles \
-  --dry-run  # Preview changes without writing
-
-# Import with mapping output
-gkc wikibase import-profile \
-  ./profile.yaml \
-  --output-mapping ./import_mapping.json
-
-# Verify import
-gkc wikibase verify-profile Q4 \
-  --compare-yaml ./SpiritSafe/profiles/TribalGovernmentUS/profile.yaml
-```
+- New ontology entity families are defined as machine-readable profiles and provisioned through the same profile-driven flow.
+- Provisioning run uses mash for reads and shipper for writes with no duplicated client logic.
+- Reconciliation output includes clear create/update/no-op decisions and provenance mapping.
 
 ---
 
-### Phase 3 - Export and Transformation Pipeline
+### Phase 3 - Transformation and Packaging Pipeline (Cooperage-led)
 
-**Purpose**: Generate SpiritSafe YAML artifacts from Wikibase entities.
+**Purpose**: Build the reusable transformation layer that projects Data Distillery semantic entities into SpiritSafe-ready runtime artifacts.
 
-**Status Notes**: Phase 0.9 documentation consolidated export contract expectations. Profile import (Phase 2) will validate how Wikibase claim structures map back to YAML. Round-trip testing will be critical validation. Note that SpiritSafe Phase 1 added profile_graph metadata with explicit linking semantics; export must preserve these cross-profile relationships with correct cardinality and directional claims.
+Work items by module:
 
-Deliverables:
-
-- Wikibase entity reader that fetches profile/property/specification items with all claims and claim metadata
-- YAML profile generator that transforms Wikibase JSON → profile.yaml structure, including profile_graph metadata reconstruction
-- YAML metadata generator for metadata.yaml files with source attribution (Wikibase QID, revision, sync timestamp)
-- SPARQL query extractor (from discussion pages or query entities) with source preservation
-- Allowed-items cache hydration (execute SPARQL queries, store results with generated_at timestamp)
-- Manifest builder that incorporates Wikibase-sourced metadata and sync provenance
-- Round-trip validation: Wikibase → YAML → Wikibase fidelity check with structural equivalence reporting
+- **Cooperage**
+  - Own transformation contracts: Wikibase entity graph → SpiritSafe profile/metadata/query/cache artifacts.
+  - Implement canonical projection helpers and round-trip structural comparison utilities.
+  - Define packaging contracts for shippable semantic bundles consumed by Fermenter and shipper workflows.
+- **Mash**
+  - Supply input retrieval adapters for entities needed by projection.
+- **Wikibase**
+  - Orchestrate phase execution and pass retrieved entities into cooperage projection pipelines.
+- **SpiritSafe**
+  - Validate generated artifacts against schema/linkage checks and manifest expectations.
 
 Scope anchors:
 
 - Issue #122 (SpiritSafe manifest projection + sync pipeline)
 - Issue #125 (Design Data Distillery snapshot/export path)
-- New issue: Wikibase to SpiritSafe export implementation
+- New issue: Cooperage transformation contracts for Wikibase projections
 
 Exit criteria:
 
-- Can export any GKC Entity Profile from Wikibase to valid YAML matching SpiritSafe schema conventions
-- Exported YAML passes existing SpiritSafe schema validation and CI checks
-- Round-trip import/export produces structurally identical Wikibase entities (validated via Phase 2 test suite)
-- SPARQL queries extracted and saved to `.sparql` files with source QID attribution
-- Manifest.json includes Wikibase sync metadata (last_synced_revision, entity mappings, sync timestamp, source revision hash)
-- Export handles multilingual content (labels, descriptions, messages) with fallback chain
-- Profile_graph cross-profile relationships preserved and correctly directional
-- Claim qualifiers and references preserved with full semantic structure
-
-Target API Patterns:
-
-```python
-# Export single profile
-from gkc.wikibase.exporters import ProfileExporter
-
-exporter = ProfileExporter(client=wikibase_client)
-
-profile_yaml = exporter.export_profile(
-    profile_qid="Q4",
-    output_dir="./output/TribalGovernmentUS"
-)
-
-# Returns paths:
-# - ./output/TribalGovernmentUS/profile.yaml
-# - ./output/TribalGovernmentUS/metadata.yaml
-# - ./output/TribalGovernmentUS/queries/*.sparql
-
-# Batch export
-from gkc.wikibase.exporters import export_all_profiles
-
-export_result = export_all_profiles(
-    client=wikibase_client,
-    output_dir="./SpiritSafe/profiles",
-    include_cache_hydration=True  # Run SPARQL queries and build cache
-)
-
-# Round-trip validation
-from gkc.wikibase.validators import validate_roundtrip
-
-validation = validate_roundtrip(
-    profile_qid="Q4",
-    client=wikibase_client,
-    temp_dir="./tmp/roundtrip"
-)
-
-assert validation.success
-assert len(validation.differences) == 0
-```
-
-Target CLI Patterns:
-
-```bash
-# Export single profile
-gkc wikibase export-profile Q4 \
-  --output ./output/TribalGovernmentUS \
-  --include-queries \
-  --hydrate-cache
-
-# Export all profiles
-gkc wikibase export-spiritsafe \
-  --output ./SpiritSafe \
-  --update-manifest
-
-# Round-trip test
-gkc wikibase test-roundtrip Q4 \
-  --verbose \
-  --output-diff ./roundtrip_diff.json
-
-# Batch round-trip validation
-gkc wikibase test-roundtrip-all \
-  --report ./roundtrip_report.json
-```
+- Projection logic is implemented in cooperage (not in `gkc.wikibase`) and is reusable beyond Data Distillery.
+- Generated artifacts pass SpiritSafe validation flows.
+- Round-trip checks report structural equivalence and actionable diffs when mismatches occur.
 
 ---
 
-### Phase 4 - Sync Automation and Change Detection
+### Phase 4 - Sync Automation and Drift Management
 
-**Purpose**: Automate bidirectional sync with change detection and conflict resolution.
+**Purpose**: Automate bidirectional synchronization while keeping module boundaries intact.
 
-**Status Notes**: Phase 0.9 documentation consolidated sync strategy expectations. Sync manifest tracking will leverage pattern from SpiritSafe Phase 1 manifest work. GitHub Actions workflow can build on existing GKC CI experience.
+Work items by module:
 
-Deliverables:
-
-- Wikibase change detection (poll revision API for updates since last sync)
-- GitHub Action workflow for scheduled sync (Wikibase → SpiritSafe)
-- Conflict detection when both sides modified between syncs
-- Sync strategy configuration (Wikibase-preferred, SpiritSafe-preferred, manual-review)
-- Manifest tracking of sync state (revision IDs, timestamps, conflict flags)
-- Notification system for sync failures or conflicts
+- **Mash**
+  - Provide revision/change read helpers used for drift detection.
+- **Cooperage**
+  - Compare projected artifacts vs. current SpiritSafe state and produce deterministic diff sets.
+- **Shipper**
+  - Apply writes when sync direction targets Wikibase.
+- **Wikibase**
+  - Orchestrate sync flows (`from-wikibase`, `to-wikibase`), conflict policy application, and reporting.
+- **CI/Docs**
+  - Implement scheduled workflow and conflict/runbook documentation.
 
 Scope anchors:
 
 - Issue #122 (SpiritSafe manifest projection + sync pipeline)
-- New issue: Automated sync workflow implementation
+- New issue: Sync orchestration with module-split execution
 
 Exit criteria:
 
-- GitHub Action runs on schedule (e.g., daily) and checks for Wikibase changes
-- Successful sync updates SpiritSafe YAML files and commits changes
-- Conflict detection identifies simultaneous edits to same profile/property
-- Manual sync trigger available via CLI and GitHub workflow dispatch
-- Sync failures reported via GitHub issue or notification
-- Manifest includes full sync provenance (last check, last sync, revision IDs)
-
-Target workflow file:
-
-```yaml
-# .github/workflows/sync-wikibase.yml
-name: Sync from Data Distillery Wikibase
-
-on:
-  schedule:
-    - cron: '0 2 * * *'  # Daily at 2 AM UTC
-  workflow_dispatch:
-
-jobs:
-  sync:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.11'
-      - name: Install dependencies
-        run: |
-          pip install poetry
-          poetry install
-      - name: Sync from Wikibase
-        run: |
-          poetry run gkc wikibase sync \
-            --check-conflicts \
-            --commit-changes \
-            --conflict-strategy manual-review
-        env:
-          GKC_WIKIBASE_ENDPOINT: ${{ secrets.WIKIBASE_ENDPOINT }}
-          WIKIVERSE_AUTH_TOKEN: ${{ secrets.WIKIVERSE_AUTH_TOKEN }}
-      - name: Commit changes
-        if: success()
-        run: |
-          git config user.name "GKC Wikibase Sync Bot"
-          git config user.email "bot@gkc.example"
-          git add .
-          git commit -m "Sync from Wikibase (automated)" || echo "No changes"
-          git push
-```
-
-Target CLI Patterns:
-
-```bash
-# Manual sync (Wikibase → SpiritSafe)
-gkc wikibase sync \
-  --direction from-wikibase \
-  --check-conflicts \
-  --dry-run
-
-# Sync with conflict strategy
-gkc wikibase sync \
-  --conflict-strategy wikibase-preferred \
-  --commit-message "Sync from Wikibase"
-
-# Reverse sync (SpiritSafe → Wikibase)
-gkc wikibase sync \
-  --direction to-wikibase \
-  --profiles ./SpiritSafe/profiles/TribalGovernmentUS
-
-# Check sync status
-gkc wikibase sync-status
-
-# Output:
-# Last sync: 2026-03-06 02:00:00 UTC
-# Wikibase revision: 1234
-# SpiritSafe commit: abc123
-# Conflicts: None
-# Next scheduled sync: 2026-03-07 02:00:00 UTC
-```
+- Scheduled and manual sync operations run through mash/cooperage/shipper orchestration.
+- Conflict decisions are explicit, reviewable, and reproducible.
+- Manifest/provenance metadata captures revision baselines and conflict outcomes.
 
 ---
 
-### Phase 5 - Fermenter Integration
+### Phase 5 - Fermenter Resolver Integration and Offline/Online Parity
 
-**Purpose**: Enable Fermenter to consume Wikibase-backed metadata with deterministic fallback.
+**Purpose**: Use cooperage-produced semantic artifacts and optional mash live reads to satisfy Fermenter contracts with deterministic fallback.
 
-**Status Notes**: Phase 0.9 documentation (and Phase 0.5 ontology expansion) established the foundation for Fermenter contracts. Multilingual message model is in place. Offline-first requirement confirmed as hard constraint. Phase 5 must ensure cache-only operation works identically to online mode for all Fermenter resolvers.
+Work items by module:
 
-Deliverables:
-
-- Fermenter read interface to SpiritSafe-cached Wikibase metadata
-- Property metadata resolver with fallback chain (cache → SpiritSafe YAML → profile-local)
-- Specification resolver for validation/coercion rules
-- Multilingual message resolver with language fallback
-- Online mode: direct Wikibase queries for live metadata (optional enhancement)
-- Offline mode: fully functional with SpiritSafe cache only
-- Integration tests demonstrating online/offline parity
+- **Cooperage**
+  - Finalize resolver-facing package/index structures for property metadata, specifications, and multilingual messages.
+- **Mash**
+  - Provide optional live refresh retrieval path for parity checks and cache miss diagnostics.
+- **Fermenter + SpiritSafe**
+  - Consume cache-first indexes with fallback chain guarantees.
+- **Wikibase**
+  - Publish query contracts and semantic assumptions used by resolver construction.
 
 Scope anchors:
 
 - Issue #124 (Specify Data Distillery query contracts for Fermenter resolvers)
 - Issue #126 (Fermenter contract tests for Data Distillery online/offline parity)
-- FermenterV1 Phase 1 (Data Distillery integration contracts)
 
 Exit criteria:
 
-- Fermenter can resolve property metadata from Wikibase-sourced cache
-- Specification rules fetched from SpiritSafe-optimized indexes
-- Multilingual message lookup works with language fallback chain (requested language → English → profile default → system default)
-- Offline mode (cache-only) passes all Fermenter contract tests identically to online mode (hard requirement)
-- Online mode (direct Wikibase query) demonstrated for property metadata lookup with deterministic parity testing
-- Provenance tracking shows whether metadata came from cache vs. live Wikibase vs. profile-local defaults
-
-Target API Patterns:
-
-```python
-# Fermenter integration
-from gkc.fermenter.resolvers import PropertyMetadataResolver
-
-resolver = PropertyMetadataResolver(
-    spiritsafe_cache_path="./SpiritSafe/cache",
-    wikibase_client=None  # Offline mode
-)
-
-# Resolve property metadata
-property_meta = resolver.resolve_property("instance_of")
-# Returns:
-# {
-#   "id": "instance_of",
-#   "wikidata_property": "P31",
-#   "wikibase_qid": "Q10",
-#   "datatype": "item",
-#   "specifications": ["Q20", "Q21"],
-#   "source": "cache"  # or "wikibase" or "profile"
-# }
-
-# Resolve specification
-from gkc.fermenter.resolvers import SpecificationResolver
-
-spec_resolver = SpecificationResolver(
-    spiritsafe_cache_path="./SpiritSafe/cache"
-)
-
-spec = spec_resolver.resolve_specification("Q20")  # integer_only
-# Returns:
-# {
-#   "qid": "Q20",
-#   "type": "integer_only",
-#   "messages": {
-#     "en": {"error": "Must be an integer", "guidance": "..."},
-#     "es": {"error": "Debe ser un entero", "guidance": "..."}
-#   },
-#   "parameters": {},
-#   "source": "cache"
-# }
-
-# Online mode (optional)
-online_resolver = PropertyMetadataResolver(
-    spiritsafe_cache_path="./SpiritSafe/cache",
-    wikibase_client=wikibase_client,
-    prefer_online=True
-)
-
-property_meta = online_resolver.resolve_property("instance_of")
-# May query Wikibase directly if cache is stale or missing
-```
-
-Target CLI Patterns:
-
-```bash
-# Test property resolution
-gkc fermenter resolve property instance_of \
-  --cache ./SpiritSafe/cache \
-  --mode offline
-
-# Test specification resolution
-gkc fermenter resolve specification Q20 \
-  --cache ./SpiritSafe/cache \
-  --language en
-
-# Test multilingual message resolution
-gkc fermenter resolve message gkc.fermenter.coercion.invalid_qid \
-  --language es \
-  --fallback en
-
-# Validate offline/online parity
-gkc fermenter test parity \
-  --cache ./SpiritSafe/cache \
-  --wikibase-endpoint https://datadistillery.wikibase.cloud \
-  --report ./parity_report.json
-```
+- Offline cache-only mode remains first-class and deterministic.
+- Online enhancement mode yields equivalent functional outcomes for covered contracts.
+- Source provenance is visible in resolver outputs (cache/live/profile-default).
 
 ---
 
-### Phase 6 - Synthetic Test Fixtures
+### Phase 6 - Synthetic Fixtures and Contract Test Harness
 
-**Purpose**: Create synthetic test profiles in Wikibase for integration testing.
+**Purpose**: Validate end-to-end behavior with synthetic Data Distillery entities while preserving production isolation.
 
-**Status Notes**: Phase 0.9 documentation and Phase 0 execution provide foundation for test fixture scope. Fixtures should align with patterns established in SpiritSafe test infrastructure and GKC profile structure. Implement early to decouple testing from production profile dependencies.
+Work items by module:
 
-Deliverables:
-
-- Synthetic test profile definitions (minimal valid profiles for various scenarios)
-- Test fixture import script (creates test profiles in Wikibase under test namespace)
-- Test data cleanup utilities (remove test profiles after testing)
-- Integration test suite using synthetic profiles
-- Round-trip tests with synthetic data
-- Performance baseline tests with synthetic profiles
+- **Wikibase**
+  - Define synthetic ontology/profile fixtures and orchestration commands.
+- **Mash**
+  - Support fixture-state retrieval and verification reads.
+- **Shipper**
+  - Provision and cleanup fixture entities safely in test ranges/namespaces.
+- **Cooperage**
+  - Produce projected fixture artifacts used for round-trip and parity assertions.
+- **Testing/Docs**
+  - Document fixture lifecycle, safety guards, and CI integration boundaries.
 
 Scope anchors:
 
 - Issue #126 (Fermenter contract tests for Data Distillery online/offline parity)
-- New issue: Synthetic test fixtures implementation
+- New issue: Synthetic fixture orchestration across mash/shipper/cooperage
 
 Exit criteria:
 
-- At least 3 synthetic test profiles created in Wikibase (simple, complex, edge-case)
-- Test profiles isolated in dedicated namespace (e.g., Q9000-Q9999 range)
-- Integration tests use synthetic profiles exclusively (no dependency on production profiles)
-- Cleanup script can remove all test fixtures
-- CI can run tests against Wikibase test fixtures without affecting production data
-
-Target test profiles:
-
-```yaml
-# Synthetic profile: MinimalEntity
-# QID: Q9001
-# Purpose: Bare minimum valid profile with one statement
-
-# Synthetic profile: ComplexEntity
-# QID: Q9002
-# Purpose: Full-featured profile with qualifiers, references, multilingual content
-
-# Synthetic profile: EdgeCaseEntity
-# QID: Q9003
-# Purpose: Tests edge cases (max cardinality, regex validation, allowed-items)
-```
-
-Target API Patterns:
-
-```python
-# Create test fixtures
-from gkc.wikibase.testing import create_synthetic_fixtures
-
-fixtures = create_synthetic_fixtures(
-    client=wikibase_client,
-    qid_range_start=9001,
-    profiles=["minimal", "complex", "edge_case"]
-)
-
-# Returns:
-# {
-#   "minimal": {"profile_qid": "Q9001", "property_qids": {...}},
-#   "complex": {"profile_qid": "Q9002", "property_qids": {...}},
-#   "edge_case": {"profile_qid": "Q9003", "property_qids": {...}}
-# }
-
-# Cleanup test fixtures
-from gkc.wikibase.testing import cleanup_synthetic_fixtures
-
-cleanup_synthetic_fixtures(
-    client=wikibase_client,
-    qid_range=(9001, 9999)
-)
-```
-
-Target CLI Patterns:
-
-```bash
-# Create synthetic fixtures
-gkc wikibase create-test-fixtures \
-  --qid-start 9001 \
-  --profiles minimal,complex,edge_case
-
-# Run integration tests against fixtures
-gkc wikibase test integration \
-  --use-fixtures \
-  --fixture-range 9001-9999
-
-# Cleanup test fixtures
-gkc wikibase cleanup-test-fixtures \
-  --qid-range 9001-9999 \
-  --confirm
-```
+- Fixture setup/teardown is automated, safe, and isolated from production entities.
+- Round-trip and parity tests run fully on synthetic fixtures.
+- Failures identify whether root cause is retrieval (mash), transformation (cooperage), write contract (shipper), or orchestration (wikibase).
 
 ---
 
-## Initial Module Layout (V1)
+## Coordinated Module Layout (V1)
 
-Proposed package structure:
+The V1 layout should align with existing responsibilities and avoid client duplication.
 
 ```
-gkc/wikibase/
-  __init__.py
-  client.py              # WikibaseClient class, CRUD operations
-  auth.py                # Authentication integration (uses gkc.auth)
-  serializers.py         # Wikibase JSON ↔ Python object conversion
-  
-  foundation_profiles/   # Foundation ontology as GKC Entity Profiles
-    foundation_entities.yaml     # Q1-Q6 entity definitions
-    foundation_properties.yaml   # P1-P5 property definitions
-    foundation_metadata.yaml     # Ontology metadata
-    README.md                    # Generated documentation
-  
-  foundation/
+gkc/
+  mash.py                # Generic Wikibase/Wikidata read primitives and loaders
+  shipper.py             # Generic Wikibase-compatible write primitives and planning
+  cooperage.py           # Reusable transformation/projection/packaging contracts
+
+  wikibase/
     __init__.py
-    audit.py             # Foundation ontology audit against profiles
-    init.py              # Foundation entity creation from profiles
-    profile_loader.py    # Load and parse foundation profiles
-  
-  importers/
-    __init__.py
-    profile_importer.py  # Profile YAML → Wikibase entities
-    mapping.py           # YAML structure → Wikibase claim mapping
-  
-  exporters/
-    __init__.py
-    profile_exporter.py  # Wikibase entities → Profile YAML
-    manifest_builder.py  # Manifest generation with Wikibase metadata
-    query_extractor.py   # SPARQL query extraction from discussion pages
-  
-  sync/
-    __init__.py
-    change_detector.py   # Wikibase revision polling
-    conflict_resolver.py # Conflict detection and resolution
-    sync_engine.py       # Orchestrates sync operations
-  
-  testing/
-    __init__.py
-    fixtures.py          # Synthetic test profile creation
-    validators.py        # Round-trip validation utilities
-  
-  resolvers/
-    __init__.py
-    property_resolver.py # Property metadata resolution for Fermenter
-    spec_resolver.py     # Specification resolution for Fermenter
-    message_resolver.py  # Multilingual message resolution
+    foundation.py        # Data Distillery ontology audit/init orchestration
+    foundation_profiles/ # Dogfooded ontology/entity profile definitions
+      foundation_entities.yaml
+      foundation_properties.yaml
+      foundation_metadata.yaml
+      README.md
+    ontology_profiles/   # Next-wave semantic entity profiles for dogfooding
+    orchestration/       # Data Distillery-specific orchestration over mash+shipper+cooperage
+    sync/                # Sync orchestration and policy handling (not low-level clients)
+    testing/             # Fixture definitions + orchestration entrypoints
 ```
 
 SpiritSafe additions:
@@ -1085,12 +673,12 @@ Migration is phased and test-gated, with parallel operation during transition.
 
 Approach:
 
-1. **Phase 0-1**: Build foundation without disrupting existing workflows
-2. **Phase 2**: Import existing profiles to Wikibase (additive operation, no changes to SpiritSafe yet)
-3. **Phase 3**: Test export pipeline in isolation; validate round-trip fidelity before replacing any SpiritSafe files
-4. **Phase 4**: Enable automated sync as background process; manual review of changes initially
-5. **Phase 5**: Fermenter consumes Wikibase-sourced cache alongside existing profile data (parallel validation)
-6. **Phase 6**: Full integration testing with synthetic fixtures before trusting production data
+1. **Phase 0-1**: Complete ontology seed and lock boundary contracts (`mash` read, `shipper` write, `wikibase` orchestration)
+2. **Phase 2**: Dogfood additional ontology entity profiles and provision via existing read/write layers
+3. **Phase 3**: Move export/projection logic into cooperage and validate round-trip fidelity
+4. **Phase 4**: Automate sync using orchestration that composes mash/cooperage/shipper
+5. **Phase 5**: Drive Fermenter integration from cooperage-built cache artifacts with optional mash live reads
+6. **Phase 6**: Validate all contracts with synthetic fixtures and fault-localized tests
 
 Rollback strategy:
 
@@ -1127,3 +715,13 @@ Between phases:
 - Community testing with early adopters (if applicable)
 - Performance profiling and optimization
 - Documentation refinement based on usage patterns
+
+## Required Documentation Deliverables Before Phase 2+ Execution
+
+To reduce reinvention risk for custom agents and maintain architectural fitment clarity, the following docs are required:
+
+- `docs/gkc/api/mash.md`: add explicit generic Wikibase read contract section with Data Distillery examples.
+- `docs/gkc/api/shipper.md`: add boundary section clarifying shipper as the single write surface for Wikibase-compatible targets.
+- `docs/gkc/api/cooperage.md` (new): define transformation/projection responsibilities, extension points, and examples tied to semantic artifact packaging.
+- `docs/gkc/api/index.md`: replace Cooperage placeholder with live link and concise scope summary.
+- `docs/architecture/` cross-module contract page (new): mash ↔ cooperage ↔ shipper ↔ wikibase orchestration handoffs for agent orientation.

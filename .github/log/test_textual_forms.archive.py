@@ -12,11 +12,11 @@ from pathlib import Path
 from types import SimpleNamespace
 
 import pytest
+
 import gkc
 from gkc.profiles import ProfileLoader
 from gkc.profiles.forms import TextualFormGenerator
-from gkc.profiles.forms.wizard.steps import SitelinksStep
-from gkc.profiles.forms.wizard.steps import resolve_language_scope
+from gkc.profiles.forms.wizard.steps import SitelinksStep, resolve_language_scope
 
 
 @pytest.fixture
@@ -98,7 +98,9 @@ def test_wizard_uses_concrete_sitelinks_step(tribal_government_profile_path: Pat
     assert app.steps[3].__class__.__name__ == "SitelinksStep"
 
 
-def test_wizard_persists_identification_data_shape(tribal_government_profile_path: Path):
+def test_wizard_persists_identification_data_shape(
+    tribal_government_profile_path: Path,
+):
     """Wizard should pre-seed draft_data with expected identification keys."""
     profile = ProfileLoader().load_from_file(tribal_government_profile_path)
     generator = TextualFormGenerator(profile)

@@ -1,15 +1,15 @@
-"""Formatters for converting WikidataTemplate to different output formats.
+"""Formatters for converting WikibaseItemTemplate to different output formats.
 
 Plain meaning: Convert Wikidata templates to formats like QuickStatements V1.
 """
 
 from __future__ import annotations
 
-from gkc.mash import WikidataTemplate
+from gkc.mash import WikibaseItemTemplate
 
 
 class QSV1Formatter:
-    """Format a WikidataTemplate as QuickStatements V1 syntax.
+    """Format a WikibaseItemTemplate as QuickStatements V1 syntax.
 
     Plain meaning: Convert a template to bulk-edit format for Wikidata.
     """
@@ -38,11 +38,11 @@ class QSV1Formatter:
         self.exclude_references = exclude_references
         self.entity_labels = entity_labels or {}
 
-    def format(self, template: WikidataTemplate, for_new_item: bool = True) -> str:
+    def format(self, template: WikibaseItemTemplate, for_new_item: bool = True) -> str:
         """Convert template to QuickStatements V1 format.
 
         Args:
-            template: The WikidataTemplate to format.
+            template: The WikibaseItemTemplate to format.
             for_new_item: If True, use "CREATE" and "LAST" syntax for new items.
                          If False, use the QID and "P" syntax for updates.
 

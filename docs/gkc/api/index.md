@@ -16,9 +16,9 @@ GKC modules are grouped by their role in the distillery pipeline:
 |-----------|-----------|-------------|
 | **Mash** | [mash](mash.md) | Load data from Wikidata and other sources |
 | | [mash_formatters](mash_formatters.md) | Convert templates to output formats |
-| **Barrel Schema** | cooperage | Fetch schemas and metadata from target systems |
+| **Barrel Schema** | [cooperage](cooperage.md) | Fetch schemas and metadata from target systems |
 | **Validation / Registry** | [spirit_safe](spirit_safe.md) | SpiritSafe source config, registry discovery, query hydration, and caching |
-| **Transform** | bottler | Transform data into Wikidata format |
+| **Transform** | [bottler](bottler.md) | Transform data into Wikidata format |
 | **Deliver** | [shipper](shipper.md) | Submit data to Wikibase-compatible APIs |
 | **Registry / Foundation** | [wikibase](wikibase.md) | Audit and initialize Data Distillery foundation ontology |
 | **Utilities** | auth | Authentication for Wikidata and OSM |
@@ -33,9 +33,9 @@ GKC modules are grouped by their role in the distillery pipeline:
 ### Load a Wikidata Item
 
 ```python
-from gkc.mash import WikidataLoader
+from gkc.mash import WikibaseLoader
 
-loader = WikidataLoader()
+loader = WikibaseLoader()
 template = loader.load("Q42")
 ```
 
@@ -44,10 +44,10 @@ template = loader.load("Q42")
 ### Format as QuickStatements
 
 ```python
-from gkc.mash import WikidataLoader
+from gkc.mash import WikibaseLoader
 from gkc.mash_formatters import QSV1Formatter
 
-loader = WikidataLoader()
+loader = WikibaseLoader()
 template = loader.load("Q42")
 
 formatter = QSV1Formatter()
@@ -106,8 +106,8 @@ auth.login(username="YourUsername", password="YourPassword")
 Load data from Wikidata and other sources as templates for processing.
 
 **Key classes:**
-- `WikidataLoader` - Load Wikidata items
-- `WikidataTemplate` - Manipulate loaded data
+- `WikibaseLoader` - Load Wikidata items
+- `WikibaseItemTemplate` - Manipulate loaded data
 
 **Key functions:**
 - `strip_entity_identifiers()` - Prepare for new item creation
@@ -120,17 +120,18 @@ Convert templates to different output formats.
 **Key classes:**
 - `QSV1Formatter` - Format as QuickStatements V1
 
-### Cooperage
+### [Cooperage](cooperage.md)
 
 Fetch schemas and metadata from target systems (Barrel Schemas).
 
 **Key functions:**
-- `fetch_schema_specification()` - Get EntitySchema ShEx
-- `fetch_entity_schema_json()` - Get EntitySchema metadata
-- `fetch_entity_rdf()` - Get entity RDF data
-- `validate_entity_reference()` - Check if entity exists
 
-_Documentation coming soon_
+- `fetch_entity_rdf()` - Get entity RDF data
+- `fetch_schema_specification()` - Get EntitySchema ShEx
+- `fetch_entity_schema_json()` - Get EntitySchema JSON
+- `fetch_entity_schema_metadata()` - Get EntitySchema label/description metadata
+- `get_entity_uri()` - Build canonical entity URI
+- `validate_entity_reference()` - Validate ID format (`Q`, `P`, `L`, `E`)
 
 ### [Spirit Safe](spirit_safe.md)
 
@@ -144,15 +145,16 @@ Configure SpiritSafe source mode, discover profile registrants, resolve profile/
 - `resolve_profile_path()`, `resolve_query_ref()`
 - `hydrate_profile_lookups()`, `LookupCache`, `LookupFetcher`
 
-### Bottler
+### [Bottler](bottler.md)
 
 Transform data into Wikidata item structure.
 
 **Key classes:**
-- `DataTypeTransformer` - Transform values to Wikidata format
-- `Bottler` - Create Wikidata items from recipes
 
-_Documentation coming soon_
+- `DataTypeTransformer` - Build Wikibase datavalues by datatype
+- `SnakBuilder` - Create snak structures from transformed values
+- `ClaimBuilder` - Build statement objects with qualifiers/references
+- `Distillate` - Load and hold mapping configuration for transformation flows
 
 ### [Shipper](shipper.md)
 

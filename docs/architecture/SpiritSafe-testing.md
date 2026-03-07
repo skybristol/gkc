@@ -21,7 +21,7 @@ This document describes:
 
 ### The Problem
 
-GKC's Phase 2-3 functionality (and beyond) requires:
+GKC's profile registry and curation functionality (and beyond) requires:
 
 - **Profile loading**: Parse YAML + metadata
 - **Manifest operations**: Discover profiles, query registry metadata
@@ -119,7 +119,7 @@ Rather than creating synthetic test data only for GKC, we maintain **purpose-bui
 
 In addition to purpose-built test profiles, we use **real production profiles** from SpiritSafe:
 
-- **TribalGovernmentUS**: Real profile with Phase 1 linkage metadata (office_held_by_head_of_state)
+- **TribalGovernmentUS**: Real profile with linkage metadata (office_held_by_head_of_state)
 - **OfficeHeldByHeadOfState**: Reciprocal profile with bidirectional edge back to TribalGovernmentUS
 
 These provide realistic test scenarios for:
@@ -147,7 +147,7 @@ GKC's `tests/fixtures/spiritsafe/` is a **periodic snapshot** of the SpiritSafe 
 
 **When to sync**:
 
-- After SpiritSafe profile schema changes (Phase 1 linkage metadata, Phase 2 extensions)
+- After SpiritSafe profile schema changes (linkage metadata and metadata graph extensions)
 - When new test profiles are added to SpiritSafe
 - When production profiles are significantly updated (new statements, restructured metadata)
 - When manifest format changes
@@ -378,7 +378,7 @@ With the complete local SpiritSafe replica, tests should cover:
 tests/fixtures/
 ├── spiritsafe/           # Latest (current main)
 ├── spiritsafe-v1.0/      # Stable release version
-└── spiritsafe-legacy/    # Pre-Phase-1 profile format
+└── spiritsafe-legacy/    # Legacy profile format
 ```
 
 ---
@@ -488,7 +488,7 @@ The SpiritSafe testing architecture provides GKC with robust, fast, and network-
 - **Maintainability**: Single source of truth (SpiritSafe main), clear sync process
 - **Quality**: Test profiles validated in SpiritSafe CI before use in GKC tests
 
-This architecture supports current Phase 2-3 development and scales to future GKC enhancements.
+This architecture supports current development and scales to future GKC enhancements.
 
 ---
 
@@ -503,4 +503,4 @@ This architecture supports current Phase 2-3 development and scales to future GK
 
 **Last Updated:** March 4, 2026  
 **Maintainer:** Profile Architect  
-**Status:** Implementation in progress (Phase 2 fixture sync)
+**Status:** Implementation in progress (fixture sync)
