@@ -1,0 +1,13 @@
+name: Data Distillery Foundation Ontology
+version: 1.0.0
+status: draft
+authors:
+  - name: GKC Semantic Engineering
+summary: >
+  Machine-readable foundation ontology definitions used by `gkc wikibase audit`
+  and `gkc wikibase init` workflows.
+notes:
+  - Identifiers are optional in early setup to support brand new Wikibase instances.
+  - Labels are treated as authoritative matching keys during initial audit.
+  - Validation messaging is modeled with addressable keys plus monolingualtext properties to support multilingual fermenter lookups.
+  - Phase 0.5 extends the ontology seed with profile structure behavior policy query hydration and sync provenance terms.

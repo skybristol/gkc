@@ -388,6 +388,15 @@ class WikiverseAuth(AuthBase):
             return self.username.split("@", 1)[0]
         return None
 
+    def should_mark_bot_edits(self) -> bool:
+        """Return whether edits should default to bot-tagged.
+
+        Plain meaning: If credentials are in bot-password username format
+        (Account@BotName), default write operations to bot mode.
+        """
+
+        return bool(self.username and "@" in self.username)
+
     def test_authentication(self) -> dict:
         """
         Test authentication and return diagnostic information.

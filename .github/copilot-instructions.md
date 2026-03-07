@@ -40,3 +40,4 @@
 - Always run Python tests from the repo root with poetry run ... so they execute in the project .venv (not the system Python).
 - Follow existing test patterns for structure and style; when in doubt, ask for guidance before writing new tests.
 - For new features, write tests that cover both expected success cases and edge cases/failure modes
+- Write testing and other temporary output to /tmp or other non‑repo locations to avoid cluttering the project directory. Do not write test output to the repo unless explicitly instructed to do so.

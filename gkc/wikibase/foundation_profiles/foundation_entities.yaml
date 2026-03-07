@@ -1,0 +1,83 @@
+name: Data Distillery Foundation Entities
+description: >
+  Foundation entity definitions for the Data Distillery Wikibase.
+  Labels are the primary identity key for audit and init workflows.
+
+version: 1.0.0
+status: draft
+
+entities:
+  - label: entity
+    description: anything that can be labeled and described; root item in this wikibase
+
+  - label: Global Knowledge Commons Entity
+    description: digital representation of an entity with a formal profile specifying the exact shape and content model for the representation
+    required_claims:
+      - property: subclass of
+        value: entity
+
+  - label: GKC Entity Profile
+    description: formal specification for the content model used to build, validate, and organize GKC Entities
+    required_claims:
+      - property: subclass of
+        value: entity
+
+  - label: GKC Entity Property
+    description: a property used to define a characteristic of or facts about a GKC Entity
+    required_claims:
+      - property: subclass of
+        value: entity
+
+  - label: GKC Property Specification
+    description: conceptual specification for the value of a property defining constraints; used as a housing for messaging associated with the specification
+    required_claims:
+      - property: subclass of
+        value: entity
+
+  - label: GKC SPARQL Query
+    description: recorded SPARQL query used for validation or other purposes related to GKC Entity Profiles or Property Specifications
+    required_claims:
+      - property: subclass of
+        value: entity
+
+  - label: GKC Validation Message
+    description: addressable validation or guidance message template used by fermenter and wizard flows
+    required_claims:
+      - property: subclass of
+        value: entity
+
+  - label: GKC Validation Policy
+    description: policy term controlling validation strictness and acceptance behavior
+    required_claims:
+      - property: subclass of
+        value: entity
+
+  - label: GKC Statement Behavior
+    description: behavior term controlling whether statement values qualifiers and references are editable fixed hidden or auto-derived
+    required_claims:
+      - property: subclass of
+        value: entity
+
+  - label: GKC Suggestion Type
+    description: suggestion classification for actionable feedback such as try alternative or auto fix available
+    required_claims:
+      - property: subclass of
+        value: entity
+
+  - label: GKC Refresh Policy
+    description: refresh cadence term used for SPARQL-backed lookup hydration
+    required_claims:
+      - property: subclass of
+        value: entity
+
+  - label: GKC Artifact Type
+    description: classification for generated cache and transformed artifacts such as profile yaml manifest and lookup index
+    required_claims:
+      - property: subclass of
+        value: entity
+
+  - label: GKC Message Severity
+    description: severity classifier for message templates such as error warning and info
+    required_claims:
+      - property: subclass of
+        value: entity
