@@ -536,9 +536,7 @@ class WikibaseShipper(Shipper):
             AuthenticationError: If login fails
         """
         if not self.auth.is_logged_in():
-            logger.debug(
-                "Not authenticated; attempting login to %s", self.api_url
-            )
+            logger.debug("Not authenticated; attempting login to %s", self.api_url)
             self.auth.login()
             logger.debug("Authentication successful")
 
@@ -550,12 +548,12 @@ class WikibaseShipper(Shipper):
         language: str,
     ) -> DiffOperation:
         """Plan a single create/update/noop operation for batch processing.
-        
+
         Determines what operation to perform on an entity based on:
         - Whether entity_id is provided (update) or needs lookup (create/lookup)
         - Whether an exact label match exists
         - Differences between desired and existing state
-        
+
         Args:
             operation: Dict with keys:
                 - kind: "item" or "property" (default: "item")
@@ -565,15 +563,15 @@ class WikibaseShipper(Shipper):
                 - datatype: For property creates, the datatype (e.g., "string")
             api: WikibaseApiClient for lookups during planning
             language: Language code for label matching (e.g., "en")
-        
+
         Returns:
             DiffOperation with status ("blocked"|"ambiguous"|"create"|"update"|"noop"),
             entity_id (None for creates), reasons (list of explanations), and
             request_payload (None for noop/blocked or ready-to-POST dict)
-        
+
         Raises:
             RuntimeError: If label search fails (propagated from _search_exact_label)
-        
+
         Note:
             - "blocked" = validation failed or required params missing
             - "ambiguous" = multiple entities match the label
@@ -741,9 +739,7 @@ class WikibaseShipper(Shipper):
             )
             return exact_matches
         except Exception as exc:
-            logger.error(
-                "Label search failed for %r (%s): %s", label, entity_type, exc
-            )
+            logger.error("Label search failed for %r (%s): %s", label, entity_type, exc)
             raise
 
     def _build_patch_payload(
@@ -756,25 +752,25 @@ class WikibaseShipper(Shipper):
         desired_datatype: Optional[str],
     ) -> tuple[dict[str, Any], list[str]]:
         """Compute minimal patch from existing entity to desired state.
-        
+
         Compares existing and desired entity data to identify what actually
         needs to change. This optimization reduces API traffic and prevents
         unnecessary edits that would create redundant revision history.
-        
+
         Args:
             existing: Current entity state from API
             desired: Target entity state with desired labels/descriptions/claims
             language: Language code for multilingual field comparisons
             kind: "item" or "property" to guide datatype comparison
             desired_datatype: For properties, the target datatype
-        
+
         Returns:
             Tuple of (patch_dict, reasons_list):
             - patch_dict: None-like empty dict if no changes; else has only
               the fields that differ (labels, descriptions, claims)
             - reasons_list: ["labels differ", "claims differ", ...] explaining
               what was detected as changed
-        
+
         Note:
             - Patch respects multilingual structure (lang → {value, remove})
             - Claims are compared by property + datavalue for exact matching
@@ -865,9 +861,7 @@ class WikibaseShipper(Shipper):
         existing_property_claims = existing_claims.get(desired_property) or []
         for existing_claim in existing_property_claims:
             existing_value = (
-                existing_claim.get("mainsnak", {})
-                .get("datavalue", {})
-                .get("value")
+                existing_claim.get("mainsnak", {}).get("datavalue", {}).get("value")
             )
             if existing_value == desired_value:
                 return True
@@ -876,13 +870,13 @@ class WikibaseShipper(Shipper):
 
     def _normalize_payload(self, payload: dict) -> dict:
         """Create a deep copy of a payload for safe internal manipulation.
-        
+
         Ensures that modifications to the returned dict don't affect the caller's
         original payload object.
-        
+
         Args:
             payload: Entity payload to normalize
-        
+
         Returns:
             Deep copy of the payload
         """
@@ -935,10 +929,10 @@ class WikibaseShipper(Shipper):
         bot: bool,
     ) -> dict:
         """Build MediaWiki API request parameters for item create/update.
-        
+
         Constructs the wbeditentity action parameters using the provided
         entity_id (for updates) or marking "new": "item" (for creates).
-        
+
         Args:
             payload: Wikibase entity JSON (labels, descriptions, claims)
             summary: Edit summary explaining the change
@@ -946,11 +940,11 @@ class WikibaseShipper(Shipper):
             csrf_token: CSRF token obtained from API
             tags: Optional list of change tags (e.g., ["bot", "import"])
             bot: Whether to mark edit with bot flag
-        
+
         Returns:
             Dict with action="wbeditentity" and all required parameters
             ready to POST to MediaWiki
-        
+
         Note:
             This method handles items; see _build_property_request_data
             for property-specific datatype handling.
@@ -987,11 +981,11 @@ class WikibaseShipper(Shipper):
         bot: bool,
     ) -> dict:
         """Build MediaWiki API request parameters for property create/update.
-        
+
         Constructs wbeditentity parameters with special handling for properties:
         - For updates: Send payload and entity_id
         - For creates: Embed datatype in payload and set "new": "property"
-        
+
         Args:
             payload: Wikibase property JSON (labels, descriptions, claims)
             summary: Edit summary explaining the change
@@ -1000,10 +994,10 @@ class WikibaseShipper(Shipper):
             csrf_token: CSRF token obtained from API
             tags: Optional list of change tags
             bot: Whether to mark edit with bot flag
-        
+
         Returns:
             Dict with action="wbeditentity" configured for property operations
-        
+
         Note:
             Properties require datatype to be set on creation. Updates may also
             modify the datatype if validation allows.

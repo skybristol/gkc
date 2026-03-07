@@ -645,3 +645,58 @@ refactor(shipper): code quality improvements
 - Extracted reusable helper methods
 - Added logging for write operations
 ```
+
+---
+
+## Completion Notes (Moved to Sprint Log)
+
+This sprint plan has been completed and is now archived as implementation log history.
+
+### Completed Scope
+
+**Phase 1-3: Removal & Consolidation**
+- Removed redundant `WikidataShipper` class from gkc/shipper.py
+- Consolidated all tests from test_wikidata_shipper.py into unified test_shipper.py
+- Updated documentation (API docs, architecture docs, migration guide)
+- Created CommonsShipperInvestigation.md research document for future work
+
+**Phase 4-5: Extensibility & Code Quality**
+- Enhanced Shipper base class with comprehensive 80+ line implementation guidance docstring
+- Added logging infrastructure with `import logging` and `logger = logging.getLogger(__name__)`
+- Added comprehensive docstrings to all internal helper methods:
+  - `_plan_single_operation()`: 35+ lines explaining create/update/noop/blocked/ambiguous logic
+  - `_build_patch_payload()`: 30+ lines documenting minimal diff optimization
+  - `_normalize_payload()`: Clarified deep copy behavior
+  - `_build_request_data()`: 25+ lines for item create/update parameters
+  - `_build_property_request_data()`: 30+ lines for property-specific handling
+  - Existing helpers already had Args/Returns/Raises
+
+### Validation Outcomes
+
+- ✅ 12/12 shipper module tests passing
+- ✅ 301/301 total repository tests passing
+- ✅ 60% test coverage maintained (no regression)
+- ✅ All 8 foundation integration tests passing
+- ✅ Ruff linter checks: PASSED
+- ✅ Black code formatting: PASSED
+- ✅ MkDocs build: PASSED
+- ✅ Package build (sdist + wheel): PASSED
+- ✅ All pre-merge checks passing
+
+### Technical Outcomes
+
+- WikibaseShipper API remains unchanged and backward compatible
+- Public API exports (gkc/__init__.py, gkc/shipper.py) properly updated
+- No breaking changes outside WikidataShipper removal
+- Architecture prepared for future CommonsShipper and OpenStreetMapShipper implementations
+- CommonsShipperInvestigation.md provides roadmap for next investigator
+
+### Key Decisions Preserved
+
+- **Removal vs Deprecation**: WikidataShipper removed cleanly (not deprecated) since it was not in public stable API exports
+- **Architecture Strategy**: Kept simple Shipper base class + target-specific implementations (avoided complex adapter pattern prematurely)
+- **Future Investigation**: Deferred Commons API research to separate investigation phase (documented in CommonsShipperInvestigation.md)
+
+## Proposed Commit Message
+
+`docs(log): archive ShipperRefactor plan with phase 4-5 completion notes and validation outcomes`
