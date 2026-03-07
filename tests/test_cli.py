@@ -780,6 +780,42 @@ def test_profile_lookups_hydrate_dry_run(monkeypatch, capsys):
     assert data["details"]["unique_queries"] == 1
 
 
+def test_profile_lookups_hydrate_uses_dd_wb_sparql_env_default(monkeypatch, capsys):
+    """Profile lookups hydrate defaults endpoint from DD_WB_SPARQL_ENDPOINT."""
+
+    def fake_hydrate_profile_lookups(**kwargs):
+        assert kwargs["endpoint"] == "https://dd.example/query/sparql"
+        return {
+            "profiles_scanned": 1,
+            "lookup_specs_found": 0,
+            "unique_queries": 0,
+            "unique_queries_executed": 0,
+            "cache_dir": "/tmp/cache",
+            "cache_file_count": 0,
+            "failures": [],
+        }
+
+    monkeypatch.setenv("DD_WB_SPARQL_ENDPOINT", "https://dd.example/query/sparql")
+    monkeypatch.setattr("gkc.hydrate_profile_lookups", fake_hydrate_profile_lookups)
+
+    exit_code = cli.main(
+        [
+            "--json",
+            "profile",
+            "lookups",
+            "hydrate",
+            "--profile",
+            "profiles/example.yaml",
+            "--dry-run",
+        ]
+    )
+
+    assert exit_code == 0
+    output = capsys.readouterr().out.strip()
+    data = json.loads(output)
+    assert data["ok"] is True
+
+
 def test_profile_lookups_hydrate_local_source_override(monkeypatch, capsys):
     """Profile lookups hydrate applies local source override and restores source."""
     set_calls = []
@@ -880,3 +916,264 @@ def test_profile_lookups_hydrate_profile_name_resolution(monkeypatch, capsys):
     output = capsys.readouterr().out.strip()
     data = json.loads(output)
     assert data["ok"] is True
+
+
+def test_wikibase_audit_json(monkeypatch, capsys, tmp_path):
+    """Wikibase audit command emits structured audit details."""
+
+    class FakeWikiverseAuth:
+        def __init__(
+            self,
+            username=None,
+            password=None,
+            interactive=False,
+            api_url=None,
+        ):
+            self.api_url = api_url
+            self.session = object()
+            self.username = username
+            self.password = password
+
+        def is_authenticated(self):
+            return False
+
+    class FakeReport:
+        ok = True
+
+        def to_dict(self):
+            return {
+                "ok": True,
+                "summary": {
+                    "total": 2,
+                    "conformant": 2,
+                    "missing": 0,
+                    "ambiguous": 0,
+                    "nonconforming": 0,
+                },
+                "records": [],
+                "resolved_identifiers": {
+                    "entity:GKC Entity Profile": "Q3",
+                },
+            }
+
+    captured = {}
+
+    def fake_audit_wikibase_foundation(**kwargs):
+        captured.update(kwargs)
+        return FakeReport()
+
+    output_file = tmp_path / "audit.json"
+
+    monkeypatch.setattr(cli, "WikiverseAuth", FakeWikiverseAuth)
+    monkeypatch.setattr(
+        cli, "audit_wikibase_foundation", fake_audit_wikibase_foundation
+    )
+
+    exit_code = cli.main(
+        [
+            "--json",
+            "wikibase",
+            "audit",
+            "--api-url",
+            "https://example.org/w/api.php",
+            "--foundation-profiles",
+            "/tmp/foundation",
+            "--language",
+            "en",
+            "--output",
+            str(output_file),
+        ]
+    )
+
+    assert exit_code == 0
+    output = capsys.readouterr().out.strip()
+    data = json.loads(output)
+
+    assert data["command"] == "wikibase.audit"
+    assert data["ok"] is True
+    assert data["details"]["auth_mode"] == "anonymous"
+    assert data["details"]["summary"]["conformant"] == 2
+    assert captured["api_url"] == "https://example.org/w/api.php"
+    assert captured["profile_dir"] == "/tmp/foundation"
+    assert output_file.exists()
+
+    written = json.loads(output_file.read_text(encoding="utf-8"))
+    assert written["metadata"]["api_url"] == "https://example.org/w/api.php"
+    assert "generated_at" in written["metadata"]
+
+
+def test_wikibase_audit_env_defaults(monkeypatch, capsys):
+    """Wikibase audit uses DD_WB_* defaults when CLI flags are omitted."""
+
+    class FakeWikiverseAuth:
+        def __init__(
+            self,
+            username=None,
+            password=None,
+            interactive=False,
+            api_url=None,
+        ):
+            self.api_url = api_url
+            self.session = object()
+            self.username = username
+            self.password = password
+
+        def is_authenticated(self):
+            return bool(self.username and self.password)
+
+        def login(self):
+            return True
+
+    class FakeReport:
+        ok = True
+
+        def to_dict(self):
+            return {
+                "ok": True,
+                "summary": {
+                    "total": 0,
+                    "conformant": 0,
+                    "missing": 0,
+                    "ambiguous": 0,
+                    "nonconforming": 0,
+                },
+                "records": [],
+                "resolved_identifiers": {},
+            }
+
+    captured = {}
+
+    def fake_audit_wikibase_foundation(**kwargs):
+        captured.update(kwargs)
+        return FakeReport()
+
+    monkeypatch.setenv("DD_WB_API_URL", "https://dd.example/w/api.php")
+    monkeypatch.setenv("DD_WB_SPARQL_ENDPOINT", "https://dd.example/query/sparql")
+    monkeypatch.setenv("DD_WB_USERNAME", "u")
+    monkeypatch.setenv("DD_WB_PASSWORD", "p")
+
+    monkeypatch.setattr(cli, "WikiverseAuth", FakeWikiverseAuth)
+    monkeypatch.setattr(
+        cli, "audit_wikibase_foundation", fake_audit_wikibase_foundation
+    )
+
+    exit_code = cli.main(
+        [
+            "--json",
+            "wikibase",
+            "audit",
+            "--foundation-profiles",
+            "/tmp/foundation",
+        ]
+    )
+
+    assert exit_code == 0
+    output = capsys.readouterr().out.strip()
+    data = json.loads(output)
+    assert data["details"]["api_url"] == "https://dd.example/w/api.php"
+    assert data["details"]["sparql_endpoint"] == "https://dd.example/query/sparql"
+    assert data["details"]["auth_mode"] == "authenticated"
+    assert captured["api_url"] == "https://dd.example/w/api.php"
+
+
+def test_wikibase_audit_auth_failure_falls_back_anonymous(monkeypatch, capsys):
+    """Wikibase audit falls back to anonymous mode when login fails."""
+
+    class FakeWikiverseAuth:
+        def __init__(
+            self,
+            username=None,
+            password=None,
+            interactive=False,
+            api_url=None,
+        ):
+            self.api_url = api_url
+            self.session = object()
+
+        def is_authenticated(self):
+            return True
+
+        def login(self):
+            raise cli.AuthenticationError("bad credentials")
+
+    class FakeReport:
+        ok = True
+
+        def to_dict(self):
+            return {
+                "ok": True,
+                "summary": {
+                    "total": 0,
+                    "conformant": 0,
+                    "missing": 0,
+                    "ambiguous": 0,
+                    "nonconforming": 0,
+                },
+                "records": [],
+                "resolved_identifiers": {},
+            }
+
+    def fake_audit_wikibase_foundation(**kwargs):
+        return FakeReport()
+
+    monkeypatch.setattr(cli, "WikiverseAuth", FakeWikiverseAuth)
+    monkeypatch.setattr(
+        cli, "audit_wikibase_foundation", fake_audit_wikibase_foundation
+    )
+
+    exit_code = cli.main(
+        [
+            "--json",
+            "wikibase",
+            "audit",
+            "--api-url",
+            "https://example.org/w/api.php",
+        ]
+    )
+
+    assert exit_code == 0
+    output = capsys.readouterr().out.strip()
+    data = json.loads(output)
+    assert data["ok"] is True
+    assert data["details"]["auth_mode"] == "anonymous"
+    assert "bad credentials" in data["details"]["warning"]
+
+
+def test_wikibase_audit_auth_failure_require_auth(monkeypatch, capsys):
+    """Wikibase audit fails when --require-auth is set and login fails."""
+
+    class FakeWikiverseAuth:
+        def __init__(
+            self,
+            username=None,
+            password=None,
+            interactive=False,
+            api_url=None,
+        ):
+            self.api_url = api_url
+            self.session = object()
+
+        def is_authenticated(self):
+            return True
+
+        def login(self):
+            raise cli.AuthenticationError("bad credentials")
+
+    monkeypatch.setattr(cli, "WikiverseAuth", FakeWikiverseAuth)
+
+    exit_code = cli.main(
+        [
+            "--json",
+            "wikibase",
+            "audit",
+            "--api-url",
+            "https://example.org/w/api.php",
+            "--require-auth",
+        ]
+    )
+
+    assert exit_code == 1
+    output = capsys.readouterr().out.strip()
+    data = json.loads(output)
+    assert data["ok"] is False
+    assert "bad credentials" in data["message"]

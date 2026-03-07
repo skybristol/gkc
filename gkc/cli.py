@@ -6,8 +6,10 @@ Plain meaning: Run GKC tasks from the terminal.
 from __future__ import annotations
 
 import argparse
+import getpass
 import json
 import sys
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Optional
 
@@ -17,6 +19,7 @@ import gkc
 from gkc.auth import AuthenticationError, OpenStreetMapAuth, WikiverseAuth
 from gkc.mash import WikidataLoader, WikipediaLoader
 from gkc.profiles import FormSchemaGenerator, ProfileLoader, ProfileValidator
+from gkc.runtime_config import get_wikibase_runtime_config
 from gkc.sparql import fetch_entity_labels
 from gkc.spirit_safe import (
     create_curation_packet,
@@ -24,6 +27,13 @@ from gkc.spirit_safe import (
     load_manifest,
     load_profile_package,
     validate_packet_structure,
+)
+from gkc.wikibase import (
+    FoundationAuditError,
+    FoundationInitError,
+    FoundationProfileError,
+    audit_wikibase_foundation,
+    init_wikibase_foundation,
 )
 
 
@@ -34,6 +44,26 @@ class CLIError(Exception):
     """
 
 
+def _normalize_global_flag_positions(argv: list[str]) -> list[str]:
+    """Allow global flags to be passed after nested subcommands.
+
+    Moves known global flags to the front while preserving relative order,
+    so invocations like ``gkc wikibase init --verbose`` are accepted.
+    """
+
+    global_flags = {"--json", "--verbose"}
+    extracted: list[str] = []
+    remaining: list[str] = []
+
+    for token in argv:
+        if token in global_flags:
+            extracted.append(token)
+        else:
+            remaining.append(token)
+
+    return extracted + remaining
+
+
 def main(argv: Optional[list[str]] = None) -> int:
     """Run the GKC CLI.
 
@@ -41,7 +71,9 @@ def main(argv: Optional[list[str]] = None) -> int:
     """
 
     parser = _build_parser()
-    args = parser.parse_args(argv)
+    effective_argv = list(argv) if argv is not None else sys.argv[1:]
+    effective_argv = _normalize_global_flag_positions(effective_argv)
+    args = parser.parse_args(effective_argv)
 
     if not hasattr(args, "handler"):
         parser.print_help()
@@ -62,6 +94,8 @@ def main(argv: Optional[list[str]] = None) -> int:
 
 
 def _build_parser() -> argparse.ArgumentParser:
+    runtime_config = get_wikibase_runtime_config()
+
     parser = argparse.ArgumentParser(prog="gkc")
     parser.add_argument(
         "--json",
@@ -457,8 +491,11 @@ def _build_parser() -> argparse.ArgumentParser:
     )
     profile_lookups_hydrate.add_argument(
         "--endpoint",
-        default="https://query.wikidata.org/sparql",
-        help="SPARQL endpoint URL",
+        default=runtime_config.sparql_endpoint,
+        help=(
+            "SPARQL endpoint URL "
+            "(default: DD_WB_SPARQL_ENDPOINT env var or Wikidata Query Service)"
+        ),
     )
     profile_lookups_hydrate.add_argument(
         "--dry-run",
@@ -684,6 +721,97 @@ def _build_parser() -> argparse.ArgumentParser:
     packet_validate.set_defaults(
         handler=_handle_packet_validate,
         command_path="packet.validate",
+    )
+
+    # Wikibase commands
+    wikibase_parser = subparsers.add_parser(
+        "wikibase", help="Data Distillery Wikibase operations"
+    )
+    wikibase_subparsers = wikibase_parser.add_subparsers(dest="wikibase_command")
+
+    wikibase_audit = wikibase_subparsers.add_parser(
+        "audit", help="Audit a Wikibase instance against foundation profiles"
+    )
+    _add_wikiverse_args(wikibase_audit)
+    wikibase_audit.add_argument(
+        "--foundation-profiles",
+        default=str(
+            Path(__file__).resolve().parent / "wikibase" / "foundation_profiles"
+        ),
+        help="Path to foundation profile YAML directory",
+    )
+    wikibase_audit.add_argument(
+        "--language",
+        default="en",
+        help="Language code for label matching (default: en)",
+    )
+    wikibase_audit.add_argument(
+        "--output",
+        help="Optional output path for full audit JSON report",
+    )
+    wikibase_audit.add_argument(
+        "--require-auth",
+        action="store_true",
+        help="Fail if login with provided credentials does not succeed",
+    )
+    wikibase_audit.set_defaults(
+        handler=_handle_wikibase_audit,
+        command_path="wikibase.audit",
+    )
+
+    wikibase_init = wikibase_subparsers.add_parser(
+        "init", help="Initialize a Wikibase instance with foundation ontology"
+    )
+    # Note: init is Data Distillery-only; no generic Wikiverse args
+    wikibase_init.add_argument(
+        "--interactive",
+        action="store_true",
+        help="Prompt for credentials if not found",
+    )
+    wikibase_init.add_argument(
+        "--api-url",
+        help="Override the Data Distillery API URL (default: DD_WB_API_URL env var)",
+    )
+    wikibase_init.add_argument(
+        "--foundation-profiles",
+        default=str(
+            Path(__file__).resolve().parent / "wikibase" / "foundation_profiles"
+        ),
+        help="Path to foundation profile YAML directory",
+    )
+    wikibase_init.add_argument(
+        "--language",
+        default="en",
+        help="Language code for label matching (default: en)",
+    )
+    wikibase_init.add_argument(
+        "--output",
+        help="Optional output path for full init JSON report",
+    )
+    wikibase_init.add_argument(
+        "--dry-run",
+        action="store_true",
+        default=True,
+        help="Preview changes without writing (default: true)",
+    )
+    wikibase_init.add_argument(
+        "--execute",
+        action="store_true",
+        help="Execute writes (overrides dry-run default)",
+    )
+    wikibase_init.add_argument(
+        "--bot",
+        action="store_true",
+        help="Mark edits as bot edits",
+    )
+    wikibase_init.add_argument(
+        "--summary",
+        default="initiating Data Distillery wikibase with items and properties",
+        help="Edit summary used for wbeditentity writes",
+    )
+    wikibase_init.set_defaults(
+        handler=_handle_wikibase_init,
+        command_path="wikibase.init",
     )
 
     return parser
@@ -2081,6 +2209,256 @@ def _handle_packet_validate(args: argparse.Namespace) -> dict[str, Any]:
         raise CLIError(str(exc)) from exc
 
 
+def _handle_wikibase_audit(args: argparse.Namespace) -> dict[str, Any]:
+    """Audit Wikibase foundation ontology conformance using profile definitions."""
+    runtime_config = get_wikibase_runtime_config()
+    api_url = args.api_url or runtime_config.api_url
+
+    dd_username = runtime_config.username
+    dd_password = runtime_config.password
+    sparql_endpoint = runtime_config.sparql_endpoint
+
+    auth = WikiverseAuth(
+        username=dd_username,
+        password=dd_password,
+        interactive=args.interactive,
+        api_url=api_url,
+    )
+    session = requests.Session()
+    auth_mode = "anonymous"
+    auth_warning: Optional[str] = None
+
+    try:
+        if auth.is_authenticated():
+            try:
+                auth.login()
+                session = auth.session
+                auth_mode = "authenticated"
+            except AuthenticationError as exc:
+                if args.require_auth:
+                    raise
+                auth_warning = (
+                    "Authentication failed; proceeding with anonymous session: "
+                    f"{exc}"
+                )
+
+        report = audit_wikibase_foundation(
+            api_url=api_url,
+            profile_dir=args.foundation_profiles,
+            language=args.language,
+            session=session,
+        )
+    except (AuthenticationError, FoundationProfileError, FoundationAuditError) as exc:
+        raise CLIError(str(exc)) from exc
+
+    report_data = report.to_dict()
+    generated_at = datetime.now(timezone.utc).isoformat()
+    audit_metadata = {
+        "api_url": api_url,
+        "generated_at": generated_at,
+    }
+    output_payload = {
+        "metadata": audit_metadata,
+        **report_data,
+    }
+
+    if args.output:
+        output_path = Path(args.output)
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+        output_path.write_text(json.dumps(output_payload, indent=2), encoding="utf-8")
+
+    summary = report_data["summary"]
+    status_prefix = "✓" if report.ok else "✗"
+    message = (
+        f"{status_prefix} Wikibase foundation audit: "
+        f"{summary['conformant']}/{summary['total']} conformant"
+    )
+
+    details: dict[str, Any] = {
+        "api_url": api_url,
+        "generated_at": generated_at,
+        "sparql_endpoint": sparql_endpoint,
+        "foundation_profiles": args.foundation_profiles,
+        "language": args.language,
+        "auth_mode": auth_mode,
+        **report_data,
+    }
+
+    if auth_warning:
+        details["warning"] = auth_warning
+
+    if args.output:
+        details["output_file"] = str(Path(args.output).resolve())
+
+    return {
+        "command": args.command_path,
+        "ok": report.ok,
+        "message": message,
+        "details": details,
+    }
+
+
+def _handle_wikibase_init(args: argparse.Namespace) -> dict[str, Any]:
+    """Initialize Wikibase foundation ontology by creating missing entities/properties."""
+    runtime_config = get_wikibase_runtime_config()
+    api_url = args.api_url or runtime_config.api_url
+    dd_username = runtime_config.username
+    dd_password = runtime_config.password
+
+    auth = WikiverseAuth(
+        username=dd_username,
+        password=dd_password,
+        interactive=args.interactive,
+        api_url=api_url,
+    )
+
+    try:
+        # Attempt login with provided/env credentials
+        try:
+            if auth.is_authenticated():
+                auth.login()
+            else:
+                # No credentials available; if interactive, prompt now
+                if args.interactive:
+                    username = input(
+                        "Enter Data Distillery username (format: Username@BotName): "
+                    ).strip()
+                    password = getpass.getpass(
+                        "Enter Data Distillery password: "
+                    ).strip()
+                    auth = WikiverseAuth(
+                        username=username,
+                        password=password,
+                        interactive=False,
+                        api_url=api_url,
+                    )
+                    auth.login()
+                else:
+                    raise CLIError(
+                        "Wikibase init requires authentication; set DD_WB_USERNAME and DD_WB_PASSWORD or use --interactive"
+                    )
+        except AuthenticationError:
+            # Login failed; if interactive, prompt for new credentials
+            if args.interactive:
+                print("Authentication failed. Please enter new credentials.")
+                username = input(
+                    "Enter Data Distillery username (format: Username@BotName): "
+                ).strip()
+                password = getpass.getpass("Enter Data Distillery password: ").strip()
+                auth = WikiverseAuth(
+                    username=username,
+                    password=password,
+                    interactive=False,
+                    api_url=api_url,
+                )
+                auth.login()
+            else:
+                raise
+
+        # Resolve dry-run flag: --dry-run is default; --execute overrides it
+        dry_run = not args.execute
+        default_bot = bool(getattr(auth, "should_mark_bot_edits", lambda: False)())
+        bot_mode = bool(args.bot or default_bot)
+
+        report = init_wikibase_foundation(
+            auth=auth,
+            api_url=api_url,
+            profile_dir=args.foundation_profiles,
+            language=args.language,
+            dry_run=dry_run,
+            bot=bot_mode,
+            summary=args.summary,
+        )
+    except (
+        AuthenticationError,
+        FoundationProfileError,
+        FoundationAuditError,
+        FoundationInitError,
+    ) as exc:
+        raise CLIError(str(exc)) from exc
+
+    report_data = report.to_dict()
+    generated_at = datetime.now(timezone.utc).isoformat()
+    init_metadata = {
+        "api_url": api_url,
+        "generated_at": generated_at,
+        "dry_run": dry_run,
+        "bot": bot_mode,
+        "summary": args.summary,
+    }
+    output_payload = {
+        "metadata": init_metadata,
+        **report_data,
+    }
+
+    if args.output:
+        output_path = Path(args.output)
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+        output_path.write_text(json.dumps(output_payload, indent=2), encoding="utf-8")
+
+    summary = report_data["summary"]
+    status_prefix = "✓" if report.ok else "✗"
+    mode_label = "DRY RUN" if dry_run else "EXECUTED"
+    if dry_run:
+        pending = summary.get("dry_run", 0)
+        if pending == 0 and summary["skipped"] == 0:
+            message = (
+                f"{status_prefix} Wikibase foundation init ({mode_label}): "
+                "no changes required (foundation already aligned)"
+            )
+        else:
+            message = (
+                f"{status_prefix} Wikibase foundation init ({mode_label}): "
+                f"{pending} would create, {summary['skipped']} skipped"
+            )
+    else:
+        message = (
+            f"{status_prefix} Wikibase foundation init ({mode_label}): "
+            f"{summary['created']} created, {summary.get('updated', 0)} updated, "
+            f"{summary['skipped']} skipped"
+        )
+
+    details: dict[str, Any] = {
+        "api_url": api_url,
+        "generated_at": generated_at,
+        "foundation_profiles": args.foundation_profiles,
+        "language": args.language,
+        "dry_run": dry_run,
+        "bot": bot_mode,
+        "summary": args.summary,
+        **report_data,
+    }
+
+    if args.verbose:
+        actions = report_data.get("actions", [])
+        if isinstance(actions, list):
+            would_create_labels = [
+                action.get("label")
+                for action in actions
+                if isinstance(action, dict)
+                and action.get("action") in {"dry_run", "created"}
+            ]
+            skipped_labels = [
+                action.get("label")
+                for action in actions
+                if isinstance(action, dict) and action.get("action") == "skipped"
+            ]
+
+            details["would_create_count"] = len(would_create_labels)
+            details["would_create_labels_preview"] = would_create_labels[:10]
+            details["skipped_labels_preview"] = skipped_labels[:10]
+
+    if args.output:
+        details["output_file"] = str(Path(args.output).resolve())
+
+    return {
+        "command": args.command_path,
+        "ok": report.ok,
+        "message": message,
+        "details": details,
+    }
+
+
 def _emit_output(output: dict[str, Any], json_output: bool, verbose: bool) -> None:
     if json_output:
         print(json.dumps(output))
@@ -2092,6 +2470,48 @@ def _emit_output(output: dict[str, Any], json_output: bool, verbose: bool) -> No
 
     # Show details for summary format or when verbose is requested
     details = output.get("details") or {}
+    command = output.get("command", "")
+
+    if verbose and command == "wikibase.init" and details:
+        if message:
+            print()
+
+        summary = details.get("summary") or {}
+        print(
+            "plan: "
+            f"created={summary.get('created', 0)}, "
+            f"updated={summary.get('updated', 0)}, "
+            f"dry_run={summary.get('dry_run', 0)}, "
+            f"skipped={summary.get('skipped', 0)}"
+        )
+
+        actions = details.get("actions") or []
+        if isinstance(actions, list):
+            max_actions = 20
+            for action in actions[:max_actions]:
+                if not isinstance(action, dict):
+                    continue
+                action_state = action.get("action", "?")
+                kind = action.get("kind", "?")
+                label = action.get("label", "")
+                entity_id = action.get("entity_id") or "-"
+                action_details = action.get("details", "")
+                print(
+                    f"- {action_state:8} {kind:8} {label} "
+                    f"(id={entity_id}) :: {action_details}"
+                )
+
+                request_payload = action.get("request_payload")
+                if request_payload:
+                    print("  payload: " + json.dumps(request_payload, sort_keys=True))
+
+            if len(actions) > max_actions:
+                print(f"... ({len(actions) - max_actions} more actions)")
+
+        if details.get("output_file"):
+            print(f"output_file: {details['output_file']}")
+        return
+
     if details and (verbose or output.get("command", "").endswith(".qid")):
         if verbose and message:
             # Add blank line before details if message was printed

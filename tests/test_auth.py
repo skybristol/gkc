@@ -127,6 +127,16 @@ class TestWikiverseAuth:
         auth = WikiverseAuth()
         assert auth.get_account_name() is None
 
+    def test_should_mark_bot_edits_true_for_bot_username(self):
+        """Bot-style username defaults edits to bot mode."""
+        auth = WikiverseAuth(username="alice@mybot", password="pass")
+        assert auth.should_mark_bot_edits() is True
+
+    def test_should_mark_bot_edits_false_for_plain_username(self):
+        """Non-bot username does not default edits to bot mode."""
+        auth = WikiverseAuth(username="alice", password="pass")
+        assert auth.should_mark_bot_edits() is False
+
     @patch("gkc.auth.requests.Session")
     def test_login_success(self, mock_session_class):
         """Test successful login."""

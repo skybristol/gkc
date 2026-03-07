@@ -22,10 +22,101 @@ import copy
 import json
 from dataclasses import dataclass, field
 from typing import Any, Optional, Protocol, Union
+from urllib.parse import urlparse
 
 import requests
 
 from gkc.sparql import fetch_entity_labels
+
+
+class WikibaseApiClient:
+    """Generic MediaWiki/Wikibase API helper.
+
+    Plain meaning: Reusable client for wbsearchentities and wbgetentities across
+    Wikidata, Data Distillery, or any compatible Wikibase API endpoint.
+    """
+
+    def __init__(
+        self,
+        api_url: str = "https://www.wikidata.org/w/api.php",
+        *,
+        session: Optional[requests.Session] = None,
+        user_agent: Optional[str] = None,
+        timeout: int = 30,
+    ):
+        self.api_url = api_url
+        self.timeout = timeout
+        self.session = session or requests.Session()
+        if user_agent:
+            self.session.headers.update({"User-Agent": user_agent})
+
+    def search_entities(
+        self,
+        *,
+        label: str,
+        entity_type: str,
+        language: str,
+        limit: int = 10,
+    ) -> list[dict[str, Any]]:
+        payload = self.request(
+            {
+                "action": "wbsearchentities",
+                "format": "json",
+                "search": label,
+                "language": language,
+                "type": entity_type,
+                "limit": limit,
+            }
+        )
+        return payload.get("search", [])
+
+    def get_entities(self, entity_ids: list[str]) -> dict[str, dict[str, Any]]:
+        if not entity_ids:
+            return {}
+
+        payload = self.request(
+            {
+                "action": "wbgetentities",
+                "format": "json",
+                "ids": "|".join(entity_ids),
+            }
+        )
+        entities = payload.get("entities", {})
+        if not isinstance(entities, dict):
+            return {}
+
+        return {
+            eid: entity_data
+            for eid, entity_data in entities.items()
+            if isinstance(entity_data, dict) and "missing" not in entity_data
+        }
+
+    def get_entity(self, entity_id: str) -> dict[str, Any]:
+        entities = self.get_entities([entity_id])
+        if entity_id not in entities:
+            raise RuntimeError(f"Entity '{entity_id}' not found")
+        return entities[entity_id]
+
+    def request(self, params: dict[str, Any]) -> dict[str, Any]:
+        try:
+            response = self.session.get(
+                self.api_url,
+                params=params,
+                timeout=self.timeout,
+            )
+            response.raise_for_status()
+        except requests.RequestException as exc:
+            raise RuntimeError(f"Wikibase API request failed: {exc}") from exc
+
+        try:
+            payload = response.json()
+        except ValueError as exc:
+            raise RuntimeError("Wikibase API returned non-JSON response") from exc
+
+        if "error" in payload:
+            raise RuntimeError(f"Wikibase API returned error: {payload['error']}")
+
+        return payload
 
 
 class DataTemplate(Protocol):
@@ -644,7 +735,12 @@ class WikidataLoader:
     Plain meaning: Fetch and parse a Wikidata item into a usable template.
     """
 
-    def __init__(self, user_agent: Optional[str] = None):
+    def __init__(
+        self,
+        user_agent: Optional[str] = None,
+        api_url: str = "https://www.wikidata.org/w/api.php",
+        api_client: Optional[WikibaseApiClient] = None,
+    ):
         """Initialize the loader.
 
         Args:
@@ -656,6 +752,11 @@ class WikidataLoader:
             user_agent = "GKC/1.0 (https://github.com/skybristol/gkc; data integration)"
 
         self.user_agent = user_agent
+        self.api_url = api_url
+        self.api_client = api_client or WikibaseApiClient(
+            api_url=api_url,
+            user_agent=user_agent,
+        )
 
     def load_item(self, qid: str) -> WikidataTemplate:
         """Load a Wikidata item and return it as a template.
@@ -807,33 +908,9 @@ class WikidataLoader:
 
         Plain meaning: Fetch a batch of entities from Wikidata.
         """
-        url = "https://www.wikidata.org/w/api.php"
-        params = {
-            "action": "wbgetentities",
-            "ids": "|".join(entity_ids),
-            "format": "json",
-        }
-
-        headers = {}
-        if self.user_agent:
-            headers["User-Agent"] = self.user_agent
-
         try:
-            response = requests.get(url, params=params, headers=headers, timeout=30)
-            response.raise_for_status()
-            data = response.json()
-
-            # Extract entities from response
-            entities = data.get("entities", {})
-
-            # Filter out entities with "missing" key (not found)
-            return {
-                eid: entity_data
-                for eid, entity_data in entities.items()
-                if "missing" not in entity_data
-            }
-
-        except requests.RequestException as exc:
+            return self.api_client.get_entities(entity_ids)
+        except RuntimeError as exc:
             raise RuntimeError(f"Failed to fetch entities batch: {exc}") from exc
 
     def load_entity_data(self, qid: str) -> dict[str, Any]:
@@ -864,7 +941,11 @@ class WikidataLoader:
         Plain meaning: Download the item from Wikidata as JSON.
         """
 
-        url = f"https://www.wikidata.org/wiki/Special:EntityData/{qid}.json"
+        parsed = urlparse(self.api_url)
+        if not parsed.scheme or not parsed.netloc:
+            raise RuntimeError(f"Invalid API URL configured: {self.api_url}")
+
+        url = f"{parsed.scheme}://{parsed.netloc}/wiki/Special:EntityData/{qid}.json"
 
         headers = {}
         if self.user_agent:
