@@ -23,6 +23,7 @@ include = ["gkc/profiles/schemas/*.json"]
 [tool.poetry.dependencies]
 python = "^3.10"
 requests = "^2.31.0"
+chardet = ">=5,<6"
 pyshex = "^0.8.1"
 pydantic = "^2.0.0"
 pyyaml = "^6.0.2"
@@ -48,6 +49,11 @@ mkdocs-material = "^9.6.7"
 mkdocstrings = {version = "^0.27.0", extras = ["python"]}
 griffe = ">=1.0.0,<2.0.0"
 pymdown-extensions = "^10.11.0"
+
+[tool.poetry.group.notebooks]
+optional = true
+
+[tool.poetry.group.notebooks.dependencies]
 jupyter = "^1.0.0"
 jupyterlab = "^4.0.0"
 ipykernel = "^6.29.0"

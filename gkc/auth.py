@@ -29,6 +29,7 @@ DEFAULT_WIKIMEDIA_APIS = {
     "wikidata_test": "https://test.wikidata.org/w/api.php",
     "wikipedia": "https://en.wikipedia.org/w/api.php",
     "commons": "https://commons.wikimedia.org/w/api.php",
+    "datadistillery_wikibase": "https://datadistillery.wikibase.cloud/w/api.php",
 }
 
 

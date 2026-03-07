@@ -10,7 +10,7 @@ from typing import Optional
 
 import requests
 
-from gkc.cooperage import DEFAULT_USER_AGENT
+from gkc.runtime_config import DEFAULT_USER_AGENT
 
 
 class SitelinkValidator:

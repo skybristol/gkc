@@ -2,7 +2,7 @@
 
 The `gkc wikibase` command group supports Data Distillery foundation ontology maintenance.
 
-Current phase scope includes:
+Current scope includes:
 
 - read-only conformance auditing (`audit`)
 - foundation initialization planning and execution (`init`)

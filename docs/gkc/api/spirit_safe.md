@@ -276,6 +276,125 @@ is_valid, errors = validate_packet_structure(loaded_packet)
 print(f"Loaded packet is valid: {is_valid}")
 ```
 
+## Public API Quick Starts by Route
+
+### `set_spirit_safe_source` and `get_spirit_safe_source`
+
+```python
+from gkc.spirit_safe import set_spirit_safe_source, get_spirit_safe_source
+
+set_spirit_safe_source(mode="github", github_repo="skybristol/SpiritSafe", github_ref="main")
+source = get_spirit_safe_source()
+print(source.mode, source.github_repo, source.github_ref)
+```
+
+### `list_profiles`, `profile_exists`, and `get_profile_metadata`
+
+```python
+from gkc.spirit_safe import list_profiles, profile_exists, get_profile_metadata
+
+profiles = list_profiles()
+print(profiles)
+
+if profile_exists("TribalGovernmentUS"):
+    metadata = get_profile_metadata("TribalGovernmentUS")
+    print(metadata.name, metadata.version, metadata.status)
+```
+
+### `resolve_profile_path` and `resolve_query_ref`
+
+```python
+from gkc.spirit_safe import resolve_profile_path, resolve_query_ref
+
+profile_path = resolve_profile_path("TribalGovernmentUS")
+query_path = resolve_query_ref("queries/wikidata_language_items_en.sparql", profile_path)
+print(profile_path)
+print(query_path)
+```
+
+### `LookupCache` and `LookupFetcher`
+
+```python
+from gkc.spirit_safe import LookupCache, LookupFetcher
+
+cache = LookupCache()
+fetcher = LookupFetcher(cache=cache)
+
+query = """
+SELECT ?item ?itemLabel WHERE {
+  ?item wdt:P31 wd:Q5 .
+  SERVICE wikibase:label { bd:serviceParam wikibase:language \"en\" . }
+}
+LIMIT 5
+"""
+
+results = fetcher.fetch(query, refresh_policy="manual", max_results=5)
+print(len(results))
+```
+
+### `hydrate_profile_lookups`
+
+```python
+from gkc.spirit_safe import hydrate_profile_lookups, resolve_profile_path
+
+summary = hydrate_profile_lookups(
+    [resolve_profile_path("TribalGovernmentUS")],
+    dry_run=True,
+)
+
+print(summary["profiles_scanned"], summary["lookup_specs_found"], summary["unique_queries"])
+```
+
+### `Manifest` and `load_manifest`
+
+```python
+from gkc.spirit_safe import load_manifest
+
+manifest = load_manifest()
+print(manifest.generated_at, manifest.commit_sha)
+print(manifest.profile_ids)
+print(manifest.get_profile_entry("TribalGovernmentUS"))
+```
+
+### `load_profile` and `load_profile_package`
+
+```python
+from gkc.spirit_safe import load_profile, load_profile_package
+
+profile = load_profile("TribalGovernmentUS")
+package = load_profile_package("TribalGovernmentUS", depth=1)
+
+print(profile.get("name"))
+print(package["primary_profile"], sorted(package["profiles"].keys()))
+```
+
+### `get_profile_graph` and `resolve_profile_link`
+
+```python
+from gkc.spirit_safe import get_profile_graph, resolve_profile_link
+
+graph = get_profile_graph()
+print(graph.profile_count())
+
+linkage = resolve_profile_link("TribalGovernmentUS", "office_held_by_head_of_state")
+print(linkage)
+```
+
+### `create_curation_packet` and `validate_packet_structure`
+
+```python
+from gkc.spirit_safe import create_curation_packet, validate_packet_structure
+
+packet = create_curation_packet(
+    profile_id="TribalGovernmentUS",
+    operation_mode="bulk",
+    depth=1,
+)
+
+is_valid, errors = validate_packet_structure(packet)
+print(packet["packet_id"], packet["operation_mode"], is_valid, errors)
+```
+
 ## Source Configuration
 
 ### `SpiritSafeSourceConfig`
@@ -364,6 +483,64 @@ print(f"Loaded packet is valid: {is_valid}")
 ### `LookupFetcher`
 
 ::: gkc.spirit_safe.LookupFetcher
+    options:
+      show_root_heading: false
+      heading_level: 4
+
+## Manifest and Curation Workflows
+
+### `Manifest`
+
+::: gkc.spirit_safe.Manifest
+    options:
+      show_root_heading: false
+      heading_level: 4
+
+### `load_manifest`
+
+::: gkc.spirit_safe.load_manifest
+    options:
+      show_root_heading: false
+      heading_level: 4
+
+### `load_profile`
+
+::: gkc.spirit_safe.load_profile
+    options:
+      show_root_heading: false
+      heading_level: 4
+
+### `load_profile_package`
+
+::: gkc.spirit_safe.load_profile_package
+    options:
+      show_root_heading: false
+      heading_level: 4
+
+### `get_profile_graph`
+
+::: gkc.spirit_safe.get_profile_graph
+    options:
+      show_root_heading: false
+      heading_level: 4
+
+### `resolve_profile_link`
+
+::: gkc.spirit_safe.resolve_profile_link
+    options:
+      show_root_heading: false
+      heading_level: 4
+
+### `create_curation_packet`
+
+::: gkc.spirit_safe.create_curation_packet
+    options:
+      show_root_heading: false
+      heading_level: 4
+
+### `validate_packet_structure`
+
+::: gkc.spirit_safe.validate_packet_structure
     options:
       show_root_heading: false
       heading_level: 4

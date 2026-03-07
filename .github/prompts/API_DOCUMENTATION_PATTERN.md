@@ -161,7 +161,7 @@ def function_name(param1: str, param2: int = 10) -> dict:
 - **Be concise**: Keep explanations short and clear
 - **Be explicit**: Don't assume the user knows internal details
 - **Use examples**: Show, don't just tell
-- **Prefer tasks over features**: "Load a Wikidata item" not "WikidataLoader class"
+- **Prefer tasks over features**: "Load a Wikidata item" not "WikibaseLoader class"
 - **Use real data**: Q42, E502, etc., not foo/bar
 - **Link generously**: Cross-reference related docs
 

@@ -2,26 +2,9 @@
 
 ## Overview
 
-The Shipper module provides write operations for delivering Bottled data to external knowledge systems. The current implementation centers on `WikibaseShipper` for MediaWiki/Wikibase APIs (including Data Distillery and Wikidata-compatible targets), with scaffolding for Wikimedia Commons and OpenStreetMap.
+The shipper module is the write/delivery layer for GKC outputs.
 
-**Current implementations:** Wikibase item/property write operations and diff planning  
-**Future implementations:** Wikimedia Commons uploads, OpenStreetMap data contribution
-
-## Phase 0 Execution Validation
-
-Phase 0 included the first thorough end-to-end test of the shipper API against Data Distillery Wikibase.
-
-Validated outcomes:
-
-- Item and property write flows authenticated and executed successfully with API write permissions.
-
-- Property creation required `datatype` inside the serialized JSON `data` payload for `new=property` requests.
-
-- Dry-run and executed flows returned stable `WriteResult` objects with request payload visibility.
-
-- API errors were surfaced in `warnings` and `api_response` for troubleshooting.
-
-- Summary enforcement prevented empty-write summaries for `wbeditentity` calls.
+For Wikibase-compatible targets (including Data Distillery and Wikidata), use `WikibaseShipper` or `WikidataShipper`.
 
 ## Quick Start
 
@@ -29,43 +12,10 @@ Validated outcomes:
 from gkc import WikiverseAuth
 from gkc.shipper import WikibaseShipper
 
-# Authenticate to Wikidata
 auth = WikiverseAuth(
-    username="MyUsername@MyBot",
-    password="abc123def456ghi789"
-)
-auth.login()
-
-# Create a shipper with dry-run enabled by default
-shipper = WikibaseShipper(auth=auth)
-
-# Write an item (dry-run, no actual submission)
-payload = {
-    "labels": {"en": {"language": "en", "value": "Test Item"}},
-    "descriptions": {"en": {"language": "en", "value": "A test item"}},
-}
-
-result = shipper.write_item(
-    payload=payload,
-    summary="Creating test item via GKC",
-    dry_run=True
-)
-
-print(f"Status: {result.status}")
-print(f"Warnings: {result.warnings}")
-```
-
-## Quick Start by Public API Route
-
-### `WikibaseShipper.write_item()`
-
-```python
-from gkc import WikiverseAuth
-from gkc.shipper import WikibaseShipper
-
-auth = WikiverseAuth(
-    username="MyUsername@MyBot",
-    password="abc123def456ghi789",
+    username="my_username",
+    password="my_password",
+    api_url="https://datadistillery.wikibase.cloud/w/api.php",
 )
 auth.login()
 
@@ -74,46 +24,65 @@ shipper = WikibaseShipper(auth=auth, dry_run_default=True)
 result = shipper.write_item(
     payload={
         "labels": {"en": {"language": "en", "value": "Test item"}},
-        "descriptions": {"en": {"language": "en", "value": "Shipper quick start"}},
+        "descriptions": {"en": {"language": "en", "value": "Created from shipper docs"}},
     },
     summary="Create test item",
 )
 
-print(result.status)  # dry_run by default
+print(result.status)
 ```
 
-### `WikibaseShipper.write_property()`
+## Public API Quick Starts
+
+### `WriteResult`
 
 ```python
-from gkc import WikiverseAuth
-from gkc.shipper import WikibaseShipper
+from gkc.shipper import WriteResult
 
-auth = WikiverseAuth(
-    username="MyDDUsername",
-    password="my_dd_password",
-    api_url="https://datadistillery.wikibase.cloud/w/api.php",
-)
-auth.login()
-
-shipper = WikibaseShipper(auth=auth, dry_run_default=False)
-
-result = shipper.write_property(
-    payload={
-        "labels": {"en": {"language": "en", "value": "has statement"}},
-        "descriptions": {"en": {"language": "en", "value": "Links profile to statement definitions"}},
-    },
-    datatype="wikibase-item",
-    summary="Create has statement property",
-    dry_run=True,
+result = WriteResult(
+    entity_id="Q123",
+    revision_id=456,
+    status="submitted",
+    warnings=[],
+    api_response={"success": 1},
 )
 
-print(result.status)
-print(result.request_payload)
+as_dict = result.to_dict()
+as_json = result.to_json()
+print(as_dict["entity_id"], as_json)
 ```
 
-Data Distillery contract note: property creation requests embed `datatype` in the JSON `data` payload for `new=property` writes.
+### `DiffOperation` and `DiffPlan`
 
-For Data Distillery this is an implementation contract observed in live testing, and should be preserved when modifying property write request construction.
+```python
+from gkc.shipper import DiffOperation, DiffPlan
+
+operation = DiffOperation(
+    kind="item",
+    label="GKC Property Specification",
+    status="create",
+    reasons=["label_not_found"],
+)
+
+plan = DiffPlan(operations=[operation], summary={"total": 1, "create": 1})
+print(operation.to_dict())
+print(plan.to_dict())
+```
+
+### `Shipper` (base interface)
+
+```python
+from gkc.shipper import Shipper, ShipperError
+
+class DemoShipper(Shipper):
+    def write(self, payload, **kwargs):
+        raise ShipperError("Demo write failure")
+
+try:
+    DemoShipper().write({"foo": "bar"})
+except ShipperError:
+    pass
+```
 
 ### `WikibaseShipper.plan_batch()`
 
@@ -122,8 +91,8 @@ from gkc import WikiverseAuth
 from gkc.shipper import WikibaseShipper
 
 auth = WikiverseAuth(
-    username="MyDDUsername",
-    password="my_dd_password",
+    username="my_username",
+    password="my_password",
     api_url="https://datadistillery.wikibase.cloud/w/api.php",
 )
 auth.login()
@@ -137,7 +106,7 @@ plan = shipper.plan_batch(
             "label": "GKC Query Entity",
             "payload": {
                 "labels": {"en": {"language": "en", "value": "GKC Query Entity"}},
-                "descriptions": {"en": {"language": "en", "value": "Classifier for reusable SPARQL query entities"}},
+                "descriptions": {"en": {"language": "en", "value": "Classifier for query entities"}},
             },
         },
         {
@@ -146,11 +115,10 @@ plan = shipper.plan_batch(
             "datatype": "wikibase-item",
             "payload": {
                 "labels": {"en": {"language": "en", "value": "query reference"}},
-                "descriptions": {"en": {"language": "en", "value": "Links a statement to a query entity"}},
+                "descriptions": {"en": {"language": "en", "value": "Links to query entities"}},
             },
         },
-    ],
-    language="en",
+    ]
 )
 
 print(plan.summary)
@@ -158,361 +126,199 @@ for op in plan.operations:
     print(op.status, op.kind, op.label)
 ```
 
-## Classes
+### `WikibaseShipper.write_item()`
 
-### ShipperError
+```python
+from gkc import WikiverseAuth
+from gkc.shipper import WikibaseShipper
+
+auth = WikiverseAuth(
+    username="my_username",
+    password="my_password",
+    api_url="https://datadistillery.wikibase.cloud/w/api.php",
+)
+auth.login()
+
+shipper = WikibaseShipper(auth=auth, dry_run_default=True)
+
+# Validation-only call
+validated = shipper.write_item(
+    payload={
+        "labels": {"en": {"language": "en", "value": "Validation sample"}},
+        "descriptions": {"en": {"language": "en", "value": "Validate item payload"}},
+    },
+    summary="Validate item payload",
+    validate_only=True,
+)
+
+# Dry-run update call
+update_preview = shipper.write_item(
+    payload={"descriptions": {"en": {"language": "en", "value": "Updated description"}}},
+    summary="Preview item update",
+    entity_id="Q1",
+    dry_run=True,
+)
+
+print(validated.status, update_preview.status)
+```
+
+### `WikibaseShipper.write_property()`
+
+```python
+from gkc import WikiverseAuth
+from gkc.shipper import WikibaseShipper
+
+auth = WikiverseAuth(
+    username="my_username",
+    password="my_password",
+    api_url="https://datadistillery.wikibase.cloud/w/api.php",
+)
+auth.login()
+
+shipper = WikibaseShipper(auth=auth, dry_run_default=True)
+
+property_preview = shipper.write_property(
+    payload={
+        "labels": {"en": {"language": "en", "value": "has specification"}},
+        "descriptions": {"en": {"language": "en", "value": "Links a property to specification entities"}},
+    },
+    datatype="wikibase-item",
+    summary="Preview property create",
+    dry_run=True,
+)
+
+print(property_preview.status)
+print(property_preview.request_payload)
+```
+
+### `CommonsShipper`
+
+```python
+from gkc import WikiverseAuth
+from gkc.shipper import CommonsShipper
+
+auth = WikiverseAuth(api_url="https://commons.wikimedia.org/w/api.php")
+shipper = CommonsShipper(auth=auth)
+
+try:
+    shipper.write(payload={"filename": "example.jpg"})
+except NotImplementedError:
+    pass
+```
+
+### `OpenStreetMapShipper`
+
+```python
+from gkc.auth import OpenStreetMapAuth
+from gkc.shipper import OpenStreetMapShipper
+
+auth = OpenStreetMapAuth(username="my_osm_user", password="my_osm_password")
+shipper = OpenStreetMapShipper(auth=auth)
+
+try:
+    shipper.write(payload={"type": "node"})
+except NotImplementedError:
+    pass
+```
+
+### `WikidataShipper`
+
+```python
+from gkc import WikiverseAuth
+from gkc.shipper import WikidataShipper
+
+auth = WikiverseAuth(
+    username="my_username",
+    password="my_password",
+    api_url="https://www.wikidata.org/w/api.php",
+)
+auth.login()
+
+shipper = WikidataShipper(auth=auth, dry_run_default=True)
+result = shipper.write_item(
+    payload={
+        "labels": {"en": {"language": "en", "value": "Wikidata alias shipper test"}},
+        "descriptions": {"en": {"language": "en", "value": "Uses WikidataShipper alias"}},
+    },
+    summary="Alias shipper dry run",
+)
+
+print(result.status)
+```
+
+## Data Distillery Write Contract Note
+
+For Data Distillery property creation requests (`new=property`), `datatype` is embedded in serialized `data` payload JSON.
+
+Use `write_property()` to preserve this request shape.
+
+## API Reference (mkdocstrings)
+
+### `ShipperError`
 
 ::: gkc.shipper.ShipperError
     options:
       show_root_heading: false
       heading_level: 4
 
-### WriteResult
+### `WriteResult`
 
 ::: gkc.shipper.WriteResult
     options:
       show_root_heading: false
       heading_level: 4
 
-### Shipper
+### `DiffOperation`
+
+::: gkc.shipper.DiffOperation
+    options:
+      show_root_heading: false
+      heading_level: 4
+
+### `DiffPlan`
+
+::: gkc.shipper.DiffPlan
+    options:
+      show_root_heading: false
+      heading_level: 4
+
+### `Shipper`
 
 ::: gkc.shipper.Shipper
     options:
       show_root_heading: false
       heading_level: 4
 
-### WikidataShipper
+### `WikibaseShipper`
 
-::: gkc.shipper.WikidataShipper
+::: gkc.shipper.WikibaseShipper
     options:
       show_root_heading: false
       heading_level: 4
 
-### CommonsShipper
+### `CommonsShipper`
 
 ::: gkc.shipper.CommonsShipper
     options:
       show_root_heading: false
       heading_level: 4
 
-### OpenStreetMapShipper
+### `OpenStreetMapShipper`
 
 ::: gkc.shipper.OpenStreetMapShipper
     options:
       show_root_heading: false
       heading_level: 4
 
-## Examples
+### `WikidataShipper`
 
-### Create a new Wikidata item with dry-run
-
-Test your payload structure without actually submitting to Wikidata:
-
-```python
-from gkc import WikiverseAuth
-from gkc.shipper import WikidataShipper
-
-auth = WikiverseAuth()
-auth.login()
-
-shipper = WikidataShipper(auth=auth, dry_run_default=True)
-
-# Prepare a minimal item payload
-payload = {
-    "labels": {
-        "en": {"language": "en", "value": "Douglas Adams"},
-        "de": {"language": "de", "value": "Douglas Adams"}
-    },
-    "descriptions": {
-        "en": {"language": "en", "value": "English science fiction writer"}
-    },
-    "claims": {
-        "P31": [{  # instance of
-            "mainsnak": {
-                "snaktype": "value",
-                "property": "P31",
-                "datavalue": {
-                    "value": {"entity-type": "item", "id": "Q5"},
-                    "type": "wikibase-entityid"
-                }
-            },
-            "type": "statement",
-            "rank": "normal"
-        }]
-    }
-}
-
-# Dry-run write (no actual submission)
-result = shipper.write_item(
-    payload=payload,
-    summary="Creating Douglas Adams item",
-    dry_run=True
-)
-
-print(f"Dry-run status: {result.status}")
-print(f"Payload validated: {len(result.warnings) == 0}")
-if result.warnings:
-    print(f"Warnings: {result.warnings}")
-```
-
-### Validate payload without submitting
-
-Use validation-only mode to check payload structure:
-
-```python
-from gkc import WikiverseAuth
-from gkc.shipper import WikidataShipper
-
-auth = WikiverseAuth()
-shipper = WikidataShipper(auth=auth)
-
-# Missing required fields
-incomplete_payload = {
-    "labels": {"en": {"language": "en", "value": "Test"}}
-    # Missing descriptions
-}
-
-result = shipper.write_item(
-    payload=incomplete_payload,
-    summary="Test validation",
-    validate_only=True
-)
-
-if result.status == "blocked":
-    print("Validation failed:")
-    for warning in result.warnings:
-        print(f"  - {warning}")
-else:
-    print("Payload is valid")
-```
-
-### Submit to test.wikidata.org for testing
-
-Use the test instance before submitting to production:
-
-```python
-from gkc import WikiverseAuth
-from gkc.shipper import WikidataShipper
-
-# Authenticate to test.wikidata.org
-auth = WikiverseAuth(
-    username="TestBot@BotAccount",
-    password="test_password_123",
-    api_url="wikidata_test"
-)
-auth.login()
-
-# Create shipper with dry-run disabled for actual submission
-shipper = WikidataShipper(auth=auth, dry_run_default=False)
-
-payload = {
-    "labels": {"en": {"language": "en", "value": "Test Item"}},
-    "descriptions": {"en": {"language": "en", "value": "Testing item creation"}},
-}
-
-# Submit to test instance
-result = shipper.write_item(
-    payload=payload,
-    summary="Test item creation via GKC",
-    dry_run=False,
-    tags=["gkc", "test"],
-    bot=True
-)
-
-if result.status == "submitted":
-    print(f"Created item: {result.entity_id}")
-    print(f"Revision ID: {result.revision_id}")
-elif result.status == "error":
-    print(f"Submission failed: {result.warnings}")
-```
-
-### Update an existing Wikidata item
-
-Add claims to an existing item by providing the entity ID:
-
-```python
-from gkc import WikiverseAuth
-from gkc.shipper import WikidataShipper
-
-auth = WikiverseAuth()
-auth.login()
-
-shipper = WikidataShipper(auth=auth, dry_run_default=False)
-
-# Add a new claim to Q42 (Douglas Adams)
-payload = {
-    "claims": {
-        "P106": [{  # occupation
-            "mainsnak": {
-                "snaktype": "value",
-                "property": "P106",
-                "datavalue": {
-                    "value": {"entity-type": "item", "id": "Q36180"},
-                    "type": "wikibase-entityid"
-                }
-            },
-            "type": "statement",
-            "rank": "normal"
-        }]
-    }
-}
-
-result = shipper.write_item(
-    payload=payload,
-    summary="Adding occupation claim",
-    entity_id="Q42",  # Update existing item
-    dry_run=True,  # Use dry-run for this example
-    bot=True
-)
-
-print(f"Update status: {result.status}")
-```
-
-### Batch operations with metadata tracking
-
-Track multiple write operations with custom metadata:
-
-```python
-from gkc import WikiverseAuth
-from gkc.shipper import WikidataShipper
-
-auth = WikiverseAuth()
-auth.login()
-
-shipper = WikidataShipper(auth=auth, dry_run_default=True)
-
-items_to_create = [
-    {"name": "Item 1", "description": "First test item"},
-    {"name": "Item 2", "description": "Second test item"},
-    {"name": "Item 3", "description": "Third test item"},
-]
-
-results = []
-for idx, item_data in enumerate(items_to_create):
-    payload = {
-        "labels": {"en": {"language": "en", "value": item_data["name"]}},
-        "descriptions": {"en": {"language": "en", "value": item_data["description"]}},
-    }
-    
-    result = shipper.write_item(
-        payload=payload,
-        summary=f"Batch creation: {item_data['name']}",
-        dry_run=True,
-        metadata={
-            "batch_id": "batch_001",
-            "item_index": idx,
-            "source": "test_dataset"
-        }
-    )
-    
-    results.append(result)
-
-# Analyze batch results
-successful = [r for r in results if r.status in ("dry_run", "submitted")]
-blocked = [r for r in results if r.status == "blocked"]
-
-print(f"Successful: {len(successful)}, Blocked: {len(blocked)}")
-```
-
-## Data Distillery Troubleshooting
-
-- `summary is required for Wikibase write operations`: pass a non-empty `summary` string to `write_item()` or `write_property()`.
-
-- `datatype is required when creating a new property`: provide `datatype` unless you are updating an existing property via `entity_id`.
-
-- API returns a property-create error despite valid payload: verify datatype and ensure you are creating via `write_property()` so request shape is generated correctly.
-
-- Authenticated but write still fails: verify account group permissions on Data Distillery include edit/write capability.
-
-## Error Handling
-
-### Handle validation errors
-
-```python
-from gkc import WikiverseAuth
-from gkc.shipper import WikidataShipper
-
-auth = WikiverseAuth()
-shipper = WikidataShipper(auth=auth)
-
-payload = {
-    # Missing required labels and descriptions
-}
-
-result = shipper.write_item(
-    payload=payload,
-    summary="Test",
-    validate_only=True
-)
-
-if result.status == "blocked":
-    print("Payload validation failed:")
-    for warning in result.warnings:
-        print(f"  - {warning}")
-    # Fix issues before retrying
-```
-
-### Handle API errors
-
-```python
-from gkc import WikiverseAuth, AuthenticationError
-from gkc.shipper import WikidataShipper
-
-try:
-    auth = WikiverseAuth()
-    auth.login()
-    
-    shipper = WikidataShipper(auth=auth, dry_run_default=False)
-    
-    payload = {
-        "labels": {"en": {"language": "en", "value": "Test"}},
-        "descriptions": {"en": {"language": "en", "value": "Test item"}},
-    }
-    
-    result = shipper.write_item(
-        payload=payload,
-        summary="Test submission",
-        dry_run=False
-    )
-    
-    if result.status == "error":
-        print(f"API error occurred: {result.warnings}")
-        print(f"Full API response: {result.api_response}")
-    elif result.status == "submitted":
-        print(f"Successfully created: {result.entity_id}")
-        
-except AuthenticationError as e:
-    print(f"Authentication failed: {e}")
-except ValueError as e:
-    print(f"Invalid input: {e}")
-```
-
-### Missing or invalid authentication
-
-```python
-from gkc import WikiverseAuth, AuthenticationError
-from gkc.shipper import WikidataShipper
-
-try:
-    # Missing credentials
-    auth = WikiverseAuth()
-    auth.login()
-    
-    shipper = WikidataShipper(auth=auth, dry_run_default=False)
-    
-    # This will fail if not authenticated
-    result = shipper.write_item(
-        payload={"labels": {}, "descriptions": {}},
-        summary="Test",
-        dry_run=False
-    )
-    
-except AuthenticationError as e:
-    print(f"Please set WIKIVERSE_USERNAME and WIKIVERSE_PASSWORD: {e}")
-```
+::: gkc.shipper.WikidataShipper
+    options:
+      show_root_heading: false
+      heading_level: 4
 
 ## See Also
 
-- [Authentication API](auth.md) - Required for all write operations
-- [Shipping](../shipping.md) - Conceptual overview of the shipping stage
-- [MediaWiki Wikibase API](https://www.mediawiki.org/wiki/Wikibase/API) - Underlying API documentation
+- [Mash API](mash.md)
+- [Wikibase API](wikibase.md)
+- [Authentication API](auth.md)

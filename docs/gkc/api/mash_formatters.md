@@ -7,11 +7,15 @@ Convert Wikidata templates to different output formats for bulk editing, validat
 ## Quick Start
 
 ```python
-from gkc.mash import WikidataLoader
+from gkc.mash import (
+    WikibaseLoader,
+    apply_item_property_filters,
+    apply_template_language_filter,
+)
 from gkc.mash_formatters import QSV1Formatter
 
 # Load a template
-loader = WikidataLoader()
+loader = WikibaseLoader()
 template = loader.load("Q42")
 
 # Format for new item creation
@@ -38,15 +42,15 @@ print(qs_text)
 ### Format for new item creation
 
 ```python
-from gkc.mash import WikidataLoader
+from gkc.mash import WikibaseLoader
 from gkc.mash_formatters import QSV1Formatter
 
-loader = WikidataLoader()
+loader = WikibaseLoader()
 template = loader.load("Q42")
 
 # Filter to simplify output
-template.filter_languages("en")
-template.filter_properties(["P18", "P373"])  # Exclude images
+apply_template_language_filter(template, "en")
+apply_item_property_filters(template, exclude_properties=["P18", "P373"])
 
 # Format with CREATE/LAST syntax
 formatter = QSV1Formatter()
@@ -63,10 +67,10 @@ print(qs_text)
 ### Format for updating existing item
 
 ```python
-from gkc.mash import WikidataLoader
+from gkc.mash import WikibaseLoader
 from gkc.mash_formatters import QSV1Formatter
 
-loader = WikidataLoader()
+loader = WikibaseLoader()
 template = loader.load("Q42")
 
 # Format with QID syntax for updates
@@ -83,10 +87,10 @@ print(qs_text)
 ### Add human-readable comments
 
 ```python
-from gkc.mash import WikidataLoader, fetch_property_labels
+from gkc.mash import WikibaseLoader, fetch_property_labels
 from gkc.mash_formatters import QSV1Formatter
 
-loader = WikidataLoader()
+loader = WikibaseLoader()
 template = loader.load("Q42")
 
 # Collect all property and item IDs
@@ -116,10 +120,10 @@ print(qs_text)
 ### Exclude qualifiers and references
 
 ```python
-from gkc.mash import WikidataLoader
+from gkc.mash import WikibaseLoader
 from gkc.mash_formatters import QSV1Formatter
 
-loader = WikidataLoader()
+loader = WikibaseLoader()
 template = loader.load("Q42")
 
 # Create formatter that excludes qualifiers and references
@@ -135,10 +139,10 @@ qs_text = formatter.format(template, for_new_item=True)
 ### Exclude specific properties
 
 ```python
-from gkc.mash import WikidataLoader
+from gkc.mash import WikibaseLoader
 from gkc.mash_formatters import QSV1Formatter
 
-loader = WikidataLoader()
+loader = WikibaseLoader()
 template = loader.load("Q42")
 
 # Exclude properties that aren't relevant
@@ -152,17 +156,22 @@ qs_text = formatter.format(template, for_new_item=True)
 ### Complete workflow with all options
 
 ```python
-from gkc.mash import WikidataLoader, fetch_property_labels
+from gkc.mash import (
+    WikibaseLoader,
+    apply_item_property_filters,
+    apply_template_language_filter,
+    fetch_property_labels,
+)
 from gkc.mash_formatters import QSV1Formatter
 from gkc.sparql import fetch_entity_labels
 
 # Load template
-loader = WikidataLoader()
+loader = WikibaseLoader()
 template = loader.load("Q42")
 
 # Filter template
-template.filter_languages("en")
-template.filter_properties(["P18", "P373"])
+apply_template_language_filter(template, "en")
+apply_item_property_filters(template, exclude_properties=["P18", "P373"])
 
 # Fetch entity labels for comments
 entity_ids = set()

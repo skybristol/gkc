@@ -1,12 +1,12 @@
 """Tests for Mash formatters."""
 
-from gkc.mash import ClaimSummary, WikidataTemplate
+from gkc.mash import ClaimSummary, WikibaseItemTemplate
 from gkc.mash_formatters import QSV1Formatter
 
 
 def test_qsv1_formatter_new_item():
     """Format template for new item creation."""
-    template = WikidataTemplate(
+    template = WikibaseItemTemplate(
         qid="Q42",
         labels={"en": "Test Item", "fr": "Élément de Test"},
         descriptions={"en": "A test item"},
@@ -33,7 +33,7 @@ def test_qsv1_formatter_new_item():
 
 def test_qsv1_formatter_exclude_properties():
     """Exclude properties from QS output."""
-    template = WikidataTemplate(
+    template = WikibaseItemTemplate(
         qid="Q42",
         labels={"en": "Test"},
         descriptions={"en": "Test"},
@@ -56,7 +56,7 @@ def test_qsv1_formatter_exclude_properties():
 
 def test_qsv1_formatter_with_entity_labels():
     """Format QS output with entity labels in comments."""
-    template = WikidataTemplate(
+    template = WikibaseItemTemplate(
         qid="Q42",
         labels={"en": "Test"},
         descriptions={"en": "Test"},
@@ -95,7 +95,7 @@ def test_qsv1_formatter_with_entity_labels():
 
 def test_qsv1_formatter_with_qualifiers_and_labels():
     """Format QS output with qualifiers and labels in comments."""
-    template = WikidataTemplate(
+    template = WikibaseItemTemplate(
         qid="Q42",
         labels={"en": "Test"},
         descriptions={"en": "Test"},
@@ -139,7 +139,7 @@ def test_qsv1_formatter_with_qualifiers_and_labels():
 
 def test_qsv1_formatter_without_entity_labels():
     """Format QS output without entity labels (no comments)."""
-    template = WikidataTemplate(
+    template = WikibaseItemTemplate(
         qid="Q42",
         labels={"en": "Test"},
         descriptions={"en": "Test"},
@@ -165,7 +165,7 @@ def test_qsv1_formatter_without_entity_labels():
 
 def test_qsv1_formatter_with_string_values():
     """Format QS output with string values (not entity IDs)."""
-    template = WikidataTemplate(
+    template = WikibaseItemTemplate(
         qid="Q42",
         labels={"en": "Test"},
         descriptions={"en": "Test"},
@@ -196,7 +196,7 @@ def test_qsv1_formatter_with_string_values():
 
 def test_qsv1_formatter_existing_item():
     """Format QS output for updating an existing item."""
-    template = WikidataTemplate(
+    template = WikibaseItemTemplate(
         qid="Q42",
         labels={"en": "Test"},
         descriptions={"en": "Test"},
@@ -228,7 +228,7 @@ def test_qsv1_formatter_existing_item():
 
 def test_qsv1_formatter_with_date_precision():
     """Format QS output with date values that include precision."""
-    template = WikidataTemplate(
+    template = WikibaseItemTemplate(
         qid="Q42",
         labels={"en": "Test"},
         descriptions={"en": "Test"},
@@ -265,7 +265,7 @@ def test_qsv1_formatter_with_date_precision():
 
 def test_qsv1_formatter_with_qualifier_date_precision():
     """Format QS output with date qualifiers that include precision."""
-    template = WikidataTemplate(
+    template = WikibaseItemTemplate(
         qid="Q42",
         labels={"en": "Test"},
         descriptions={"en": "Test"},

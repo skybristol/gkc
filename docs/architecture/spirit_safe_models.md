@@ -5,21 +5,23 @@ description: Technical design for profile graph, linkage metadata, and multi-ent
 
 # Spirit Safe Integration Architecture
 
-This document describes the technical architecture for integrating SpiritSafe registry data into GKC for multi-entity curation workflows. It covers profile graphs, linkage metadata, and data models introduced in Phase 2.
+This document describes the technical architecture for integrating SpiritSafe registry data into GKC for multi-entity curation workflows. It covers profile graphs, linkage metadata, and data models for multi-entity workflows.
 
 ## Overview
 
-**Phase 1** (SpiritSafe) established the registry infrastructure:
+The architecture comprises three interconnected layers:
+
+**Registry Infrastructure** (SpiritSafe):
 - Manifest builder that generates `cache/manifest.json` from profile directories
 - Profile YAML with linkage metadata at the statement level
 - Metadata YAML with profile_graph sections showing bidirectional relationships
 
-**Phase 2** (GKC) implements Python models to consume this data:
+**Python Models** (gkc/profiles/models.py):
 - Pydantic models to parse linkage metadata from profiles
 - ProfileGraph model to traverse relationships between profiles
 - Helper methods on ProfileDefinition for multi-entity operations
 
-**Phase 3** (spirit_safe module) will provide higher-level APIs:
+**High-Level APIs** (spirit_safe module):
 - Manifest loading and caching
 - Profile package loading (primary + related)
 - Curation packet creation with cross-references
@@ -290,7 +292,7 @@ Linkage metadata is split into focused models that each handle one concern:
 - **WorkflowPolicy**: What actions are allowed
 - **Traversal**: How to navigate the graph
 
-This allows Phase 3 (spirit_safe module) to apply constraints independently.
+This allows the spirit_safe module to apply constraints independently.
 
 ### 2. Manifest as Source of Truth
 
@@ -321,9 +323,9 @@ Traversal uses visited set to prevent infinite loops on bidirectional edges whil
 
 ---
 
-## Integration with Phase 3
+## Integration with Higher-Level APIs
 
-Phase 3 (spirit_safe module) will build on these models:
+The spirit_safe module builds on these models:
 
 ### Profile Package Loading
 ```python
@@ -413,7 +415,7 @@ Fixtures synced from SpiritSafe main branch. Sync tracked by `SYNC_SHA.txt` and 
 - Empty list = valid graph
 - Non-empty = validation must be addressed before use
 
-### Cardinality Violations (Phase 3)
+### Cardinality Violations
 - Validation Agent will check during packet construction
 - Raises ValidationError with specific constraint details
 - Suggests fixes (reduce count, add required entity, etc.)
@@ -432,7 +434,7 @@ Fixtures synced from SpiritSafe main branch. Sync tracked by `SYNC_SHA.txt` and 
 - Depth limiting stops search early
 - O(V + E) in worst case, but typically limited by max_depth
 
-### Caching Opportunities (Phase 3)
+### Caching Opportunities
 - Cache manifest by commit SHA
 - Cache loaded profiles by name
 - Pre-compute transitive closures if needed
@@ -517,6 +519,5 @@ print(f"Reachable within depth 2: {reachable}")
 ---
 
 **Last Updated**: March 4, 2026  
-**Phase**: 2 (Pydantic Models)  
 **Status**: Implementation complete, documentation in progress  
 **Related Documentation**: UserDocWriter.working.md for curator-facing guides

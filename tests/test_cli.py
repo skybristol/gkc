@@ -5,7 +5,7 @@ import json
 from pathlib import Path
 
 from gkc import cli
-from gkc.mash import ClaimSummary, WikidataTemplate
+from gkc.mash import ClaimSummary, WikibaseItemTemplate
 
 
 class FakeWikiverseAuth:
@@ -85,7 +85,7 @@ def test_mash_qid_filter_properties(monkeypatch, capsys):
 
     class FakeWikidataLoader:
         def load_item(self, qid):
-            return WikidataTemplate(
+            return WikibaseItemTemplate(
                 qid=qid,
                 labels={"en": "Test"},
                 descriptions={"en": "Test"},
@@ -110,7 +110,7 @@ def test_mash_qid_filter_properties(monkeypatch, capsys):
                 },
             )
 
-    monkeypatch.setattr(cli, "WikidataLoader", FakeWikidataLoader)
+    monkeypatch.setattr(cli, "WikibaseLoader", FakeWikidataLoader)
 
     args = argparse.Namespace(
         qid="Q42",
@@ -141,7 +141,7 @@ def test_mash_qid_shell_transform(monkeypatch, capsys):
 
     class FakeWikidataLoader:
         def load_item(self, qid):
-            return WikidataTemplate(
+            return WikibaseItemTemplate(
                 qid=qid,
                 labels={"en": "Test"},
                 descriptions={"en": "Test"},
@@ -157,7 +157,7 @@ def test_mash_qid_shell_transform(monkeypatch, capsys):
                 },
             )
 
-    monkeypatch.setattr(cli, "WikidataLoader", FakeWikidataLoader)
+    monkeypatch.setattr(cli, "WikibaseLoader", FakeWikidataLoader)
 
     args = argparse.Namespace(
         qid="Q42",
@@ -187,11 +187,11 @@ def test_mash_qid_shell_transform(monkeypatch, capsys):
 
 def test_mash_pid_basic(monkeypatch, capsys):
     """Mash pid loads a property."""
-    from gkc.mash import WikidataPropertyTemplate
+    from gkc.mash import WikibasePropertyTemplate
 
     class FakeWikidataLoader:
         def load_property(self, pid):
-            return WikidataPropertyTemplate(
+            return WikibasePropertyTemplate(
                 pid=pid,
                 labels={"en": "instance of"},
                 descriptions={"en": "test"},
@@ -201,7 +201,7 @@ def test_mash_pid_basic(monkeypatch, capsys):
                 entity_data={"id": pid, "datatype": "wikibase-item"},
             )
 
-    monkeypatch.setattr(cli, "WikidataLoader", FakeWikidataLoader)
+    monkeypatch.setattr(cli, "WikibaseLoader", FakeWikidataLoader)
 
     args = argparse.Namespace(
         pid="P31",
@@ -224,11 +224,11 @@ def test_mash_pid_basic(monkeypatch, capsys):
 
 def test_mash_eid_basic(monkeypatch, capsys):
     """Mash eid loads an EntitySchema."""
-    from gkc.mash import WikidataEntitySchemaTemplate
+    from gkc.mash import WikibaseEntitySchemaTemplate
 
     class FakeWikidataLoader:
         def load_entity_schema(self, eid):
-            return WikidataEntitySchemaTemplate(
+            return WikibaseEntitySchemaTemplate(
                 eid=eid,
                 labels={"en": "Tribe"},
                 descriptions={"en": "test"},
@@ -239,7 +239,7 @@ def test_mash_eid_basic(monkeypatch, capsys):
                 },
             )
 
-    monkeypatch.setattr(cli, "WikidataLoader", FakeWikidataLoader)
+    monkeypatch.setattr(cli, "WikibaseLoader", FakeWikidataLoader)
 
     args = argparse.Namespace(
         eid="E502",
@@ -262,7 +262,7 @@ def test_mash_qid_summary(monkeypatch, capsys):
 
     class FakeWikidataLoader:
         def load_item(self, qid):
-            return WikidataTemplate(
+            return WikibaseItemTemplate(
                 qid=qid,
                 labels={"en": "Test Item"},
                 descriptions={"en": "A test"},
@@ -275,7 +275,7 @@ def test_mash_qid_summary(monkeypatch, capsys):
                 entity_data={"id": qid, "claims": {"P31": [{"mainsnak": {}}]}},
             )
 
-    monkeypatch.setattr(cli, "WikidataLoader", FakeWikidataLoader)
+    monkeypatch.setattr(cli, "WikibaseLoader", FakeWikidataLoader)
 
     args = argparse.Namespace(
         qid="Q42",
@@ -307,9 +307,9 @@ def test_mash_pid_summary(monkeypatch, capsys):
 
     class FakeWikidataLoader:
         def load_property(self, pid):
-            from gkc.mash import WikidataPropertyTemplate
+            from gkc.mash import WikibasePropertyTemplate
 
-            return WikidataPropertyTemplate(
+            return WikibasePropertyTemplate(
                 pid=pid,
                 labels={"en": "instance of"},
                 descriptions={"en": "Generic property"},
@@ -319,7 +319,7 @@ def test_mash_pid_summary(monkeypatch, capsys):
                 entity_data={"id": pid},
             )
 
-    monkeypatch.setattr(cli, "WikidataLoader", FakeWikidataLoader)
+    monkeypatch.setattr(cli, "WikibaseLoader", FakeWikidataLoader)
 
     args = argparse.Namespace(
         pid="P31",
@@ -346,9 +346,9 @@ def test_mash_eid_summary(monkeypatch, capsys):
 
     class FakeWikidataLoader:
         def load_entity_schema(self, eid):
-            from gkc.mash import WikidataEntitySchemaTemplate
+            from gkc.mash import WikibaseEntitySchemaTemplate
 
-            return WikidataEntitySchemaTemplate(
+            return WikibaseEntitySchemaTemplate(
                 eid=eid,
                 labels={"en": "Test Schema"},
                 descriptions={"en": "A test schema"},
@@ -356,7 +356,7 @@ def test_mash_eid_summary(monkeypatch, capsys):
                 entity_data={"id": eid},
             )
 
-    monkeypatch.setattr(cli, "WikidataLoader", FakeWikidataLoader)
+    monkeypatch.setattr(cli, "WikibaseLoader", FakeWikidataLoader)
 
     args = argparse.Namespace(
         eid="E502",

@@ -12,12 +12,13 @@ from typing import Optional
 
 from pyshex import ShExEvaluator  # type: ignore[import-untyped]
 
-from gkc.cooperage import (
-    CooperageError,
+from gkc.mash import (
     fetch_entity_rdf,
-    fetch_schema_specification,
-    get_entity_uri,
 )
+from gkc.mash import (
+    fetch_entity_schema_specification as fetch_schema_specification,
+)
+from gkc.utilities import get_entity_uri
 
 
 class ShexValidationError(Exception):
@@ -122,7 +123,7 @@ class ShexValidator:
                     "No schema source provided. "
                     "Specify eid, schema_text, or schema_file."
                 )
-        except CooperageError as e:
+        except RuntimeError as e:
             raise ShexValidationError(f"Failed to load schema: {str(e)}") from e
         except OSError as e:
             msg = f"Failed to read schema file: {str(e)}"
@@ -159,7 +160,7 @@ class ShexValidator:
                 raise ShexValidationError(
                     "No RDF source provided. Specify qid, rdf_text, or rdf_file."
                 )
-        except CooperageError as e:
+        except RuntimeError as e:
             raise ShexValidationError(f"Failed to load RDF: {str(e)}") from e
         except OSError as e:
             raise ShexValidationError(f"Failed to read RDF file: {str(e)}") from e

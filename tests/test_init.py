@@ -33,8 +33,18 @@ def test_spirit_safe_config_imports():
     assert hasattr(gkc, "hydrate_profile_lookups")
 
 
-def test_cooperage_imports():
-    """Test that Cooperage functions are importable."""
-    assert hasattr(gkc, "CooperageError")
+def test_mash_and_utilities_imports():
+    """Test that mash and utilities functions are importable via gkc namespace."""
     assert hasattr(gkc, "fetch_schema_specification")
     assert hasattr(gkc, "validate_entity_reference")
+    assert hasattr(gkc, "fetch_entity_rdf")
+    assert hasattr(gkc, "get_entity_uri")
+
+
+def test_mash_adapter_contract_imports():
+    """Test that mash adapter contracts are importable from the mash package."""
+    import gkc.mash as mash
+
+    assert hasattr(mash, "MashSourceAdapter")
+    assert hasattr(mash, "WikibaseMashSourceAdapter")
+    assert hasattr(mash, "WikipediaMashSourceAdapter")

@@ -11,6 +11,8 @@ from urllib.parse import unquote, urlparse
 
 import requests
 
+from gkc.runtime_config import DEFAULT_USER_AGENT
+
 try:
     import pandas as pd
 
@@ -20,11 +22,6 @@ except ImportError:
 
 
 DEFAULT_WIKIDATA_ENDPOINT = "https://query.wikidata.org/sparql"
-
-try:
-    from gkc.cooperage import DEFAULT_USER_AGENT
-except ImportError:
-    DEFAULT_USER_AGENT = "GKC-SPARQL/1.0 (https://github.com/skybristol/gkc)"
 
 
 class SPARQLError(Exception):
