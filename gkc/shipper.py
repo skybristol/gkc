@@ -3,7 +3,66 @@ Shipper: Deliver Bottled output to external systems.
 
 This module defines shippers responsible for write operations to external
 systems such as Wikibase instances, Wikimedia Commons, and OpenStreetMap.
+## Architecture
 
+Each target system has its own shipper class:
+
+**WikibaseShipper**: MediaWiki Wikibase API (wbeditentity)
+
+- Works with any Wikibase instance (Wikidata, Data Distillery, etc.)
+- Methods: write_item(), write_property(), plan_batch()
+- Uses WikiverseAuth for authentication
+- Supports dry-run, validate-only, and batch planning
+
+**CommonsShipper**: Wikimedia Commons (placeholder)
+
+- May reuse WikibaseShipper for structured data on Commons (SDC)
+- Will add file upload capabilities
+- Future implementation pending API investigation
+
+**OpenStreetMapShipper**: OpenStreetMap API (placeholder)
+
+- Completely different API (XML-based, not MediaWiki)
+- Will use OpenStreetMapAuth for OAuth
+- Methods: write_node(), write_way(), write_relation()
+- Future implementation pending API investigation
+
+## Extending Shippers
+
+To add a new target:
+
+1. Subclass Shipper
+2. Implement target-specific write methods
+3. Return WriteResult from all write operations
+4. Follow dry_run, validate_only, summary patterns where applicable
+5. Use target-appropriate auth classes (WikiverseAuth, OpenStreetMapAuth, etc.)
+
+## Usage Example
+
+```python
+from gkc import WikiverseAuth
+from gkc.shipper import WikibaseShipper
+
+# Works with any Wikibase instance
+auth = WikiverseAuth(
+    username="my_username",
+    password="my_password",
+    api_url="https://www.wikidata.org/w/api.php",  # or Data Distillery
+)
+auth.login()
+
+shipper = WikibaseShipper(auth=auth, dry_run_default=True)
+
+result = shipper.write_item(
+    payload={
+        "labels": {"en": {"language": "en", "value": "Test item"}},
+        "descriptions": {"en": {"language": "en", "value": "Created via shipper"}},
+    },
+    summary="Create test item",
+)
+
+print(result.status)  # 'dry_run' or 'submitted'
+```
 Plain meaning: Send Bottled output to target APIs in a safe, testable way.
 """
 
@@ -773,10 +832,3 @@ class OpenStreetMapShipper(Shipper):
         """
 
         raise NotImplementedError("OpenStreetMapShipper.write is not implemented yet")
-
-
-class WikidataShipper(WikibaseShipper):
-    """Backward-compatible alias for WikibaseShipper.
-
-    Plain meaning: Existing imports using WikidataShipper keep working.
-    """

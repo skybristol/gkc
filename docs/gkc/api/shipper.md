@@ -4,7 +4,9 @@
 
 The shipper module is the write/delivery layer for GKC outputs.
 
-For Wikibase-compatible targets (including Data Distillery and Wikidata), use `WikibaseShipper` or `WikidataShipper`.
+For Wikibase-compatible targets (including Data Distillery and Wikidata), use `WikibaseShipper`.
+
+**Note**: `WikibaseShipper` works with any Wikibase instance. Configure the target via the `api_url` parameter in your `WikiverseAuth` object.
 
 ## Quick Start
 
@@ -12,12 +14,20 @@ For Wikibase-compatible targets (including Data Distillery and Wikidata), use `W
 from gkc import WikiverseAuth
 from gkc.shipper import WikibaseShipper
 
+# Example: Wikidata
 auth = WikiverseAuth(
     username="my_username",
     password="my_password",
-    api_url="https://datadistillery.wikibase.cloud/w/api.php",
+    api_url="https://www.wikidata.org/w/api.php",
 )
 auth.login()
+
+# Or Data Distillery
+# auth = WikiverseAuth(
+#     username="my_username",
+#     password="my_password",
+#     api_url="https://datadistillery.wikibase.cloud/w/api.php",
+# )
 
 shipper = WikibaseShipper(auth=auth, dry_run_default=True)
 
@@ -221,31 +231,6 @@ except NotImplementedError:
     pass
 ```
 
-### `WikidataShipper`
-
-```python
-from gkc import WikiverseAuth
-from gkc.shipper import WikidataShipper
-
-auth = WikiverseAuth(
-    username="my_username",
-    password="my_password",
-    api_url="https://www.wikidata.org/w/api.php",
-)
-auth.login()
-
-shipper = WikidataShipper(auth=auth, dry_run_default=True)
-result = shipper.write_item(
-    payload={
-        "labels": {"en": {"language": "en", "value": "Wikidata alias shipper test"}},
-        "descriptions": {"en": {"language": "en", "value": "Uses WikidataShipper alias"}},
-    },
-    summary="Alias shipper dry run",
-)
-
-print(result.status)
-```
-
 ## Data Distillery Write Contract Note
 
 For Data Distillery property creation requests (`new=property`), `datatype` is embedded in serialized `data` payload JSON.
@@ -310,12 +295,20 @@ Use `write_property()` to preserve this request shape.
       show_root_heading: false
       heading_level: 4
 
-### `WikidataShipper`
+## Migration Note
 
-::: gkc.shipper.WikidataShipper
-    options:
-      show_root_heading: false
-      heading_level: 4
+**Deprecated**: `WikidataShipper` has been removed as of this version. Use `WikibaseShipper` instead—it works with all Wikibase instances including Wikidata.
+
+**Migration**:
+```python
+# Before (deprecated)
+from gkc.shipper import WikidataShipper
+shipper = WikidataShipper(auth=auth)
+
+# After
+from gkc.shipper import WikibaseShipper
+shipper = WikibaseShipper(auth=auth)
+```
 
 ## See Also
 
