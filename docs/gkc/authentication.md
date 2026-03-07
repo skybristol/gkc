@@ -95,6 +95,8 @@ Use a dedicated Data Distillery service account (or user account) and do not ass
 
 Note: the class name `WikiverseAuth` is historical; in practice it is used as a MediaWiki-compatible auth client when you supply an explicit `api_url`.
 
+For Data Distillery command-line workflows, GKC uses dedicated `DD_WB_*` environment variables and treats this as a separate authentication context from `WIKIVERSE_*`.
+
 ### Python Usage
 
 ```python
@@ -127,6 +129,21 @@ Authentication in audit mode is optional by default:
 - If credentials work, audit runs authenticated.
 - If login fails, audit continues anonymously and reports a warning.
 - Use `--require-auth` to fail fast on login errors.
+
+`gkc wikibase init` is stricter than `audit` and requires successful authentication (environment credentials or `--interactive`).
+
+### Validate Authentication and Session Behavior
+
+```bash
+# Data Distillery foundation audit (anonymous allowed unless --require-auth)
+gkc wikibase audit --require-auth
+
+# Data Distillery foundation init preview (dry-run default)
+gkc wikibase init
+
+# Execute writes explicitly
+gkc wikibase init --execute
+```
 
 ## Making Authenticated API Requests
 
@@ -213,6 +230,16 @@ You can set the following environment variables for automatic authentication:
 - `DD_WB_SPARQL_ENDPOINT` - SPARQL endpoint for Data Distillery profile lookup hydration and related query operations
 
 `DD_WB_*` variables are used for Data Distillery flows (for example `gkc wikibase audit`) and are intentionally separate from `WIKIVERSE_*`.
+
+If you do not set `DD_WB_API_URL`, GKC defaults to Data Distillery (`https://datadistillery.wikibase.cloud/w/api.php`).
+
+If you do not set `DD_WB_SPARQL_ENDPOINT`, GKC currently falls back to `https://query.wikidata.org/sparql`; for Data Distillery operations you should set this explicitly to the Data Distillery query service endpoint.
+
+### Data Distillery Authentication Troubleshooting
+
+- **Login fails with valid-looking credentials**: verify you are using a Data Distillery account, not Wikimedia SUL bot-password credentials.
+- **`gkc wikibase init` exits with auth requirement message**: export both `DD_WB_USERNAME` and `DD_WB_PASSWORD`, or run with `--interactive`.
+- **Write succeeds in manual UI but fails via API**: confirm account permissions/group membership on Data Distillery include edit rights.
 
 ### OpenStreetMap
 

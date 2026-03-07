@@ -52,6 +52,15 @@ gkc profile validate --profile /path/to/SpiritSafe/profiles/TribalGovernmentUS/p
 gkc profile form --profile /path/to/SpiritSafe/profiles/TribalGovernmentUS/profile.yaml
 ```
 
+### [Wikibase](wikibase.md)
+
+Audit and initialize Data Distillery foundation ontology terms from profile definitions.
+
+```bash
+gkc wikibase audit --require-auth
+gkc wikibase init --execute
+```
+
 ## Quick Start Examples
 
 Check authentication status:

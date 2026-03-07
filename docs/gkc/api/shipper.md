@@ -2,16 +2,32 @@
 
 ## Overview
 
-The Shipper module provides write operations for delivering Bottled data to external knowledge systems. Currently it supports Wikidata write operations using the MediaWiki API, with planned support for Wikimedia Commons and OpenStreetMap.
+The Shipper module provides write operations for delivering Bottled data to external knowledge systems. The current implementation centers on `WikibaseShipper` for MediaWiki/Wikibase APIs (including Data Distillery and Wikidata-compatible targets), with scaffolding for Wikimedia Commons and OpenStreetMap.
 
-**Current implementations:** Wikidata production and test instance write operations  
+**Current implementations:** Wikibase item/property write operations and diff planning  
 **Future implementations:** Wikimedia Commons uploads, OpenStreetMap data contribution
+
+## Phase 0 Execution Validation
+
+Phase 0 included the first thorough end-to-end test of the shipper API against Data Distillery Wikibase.
+
+Validated outcomes:
+
+- Item and property write flows authenticated and executed successfully with API write permissions.
+
+- Property creation required `datatype` inside the serialized JSON `data` payload for `new=property` requests.
+
+- Dry-run and executed flows returned stable `WriteResult` objects with request payload visibility.
+
+- API errors were surfaced in `warnings` and `api_response` for troubleshooting.
+
+- Summary enforcement prevented empty-write summaries for `wbeditentity` calls.
 
 ## Quick Start
 
 ```python
 from gkc import WikiverseAuth
-from gkc.shipper import WikidataShipper
+from gkc.shipper import WikibaseShipper
 
 # Authenticate to Wikidata
 auth = WikiverseAuth(
@@ -21,7 +37,7 @@ auth = WikiverseAuth(
 auth.login()
 
 # Create a shipper with dry-run enabled by default
-shipper = WikidataShipper(auth=auth)
+shipper = WikibaseShipper(auth=auth)
 
 # Write an item (dry-run, no actual submission)
 payload = {
@@ -37,6 +53,109 @@ result = shipper.write_item(
 
 print(f"Status: {result.status}")
 print(f"Warnings: {result.warnings}")
+```
+
+## Quick Start by Public API Route
+
+### `WikibaseShipper.write_item()`
+
+```python
+from gkc import WikiverseAuth
+from gkc.shipper import WikibaseShipper
+
+auth = WikiverseAuth(
+    username="MyUsername@MyBot",
+    password="abc123def456ghi789",
+)
+auth.login()
+
+shipper = WikibaseShipper(auth=auth, dry_run_default=True)
+
+result = shipper.write_item(
+    payload={
+        "labels": {"en": {"language": "en", "value": "Test item"}},
+        "descriptions": {"en": {"language": "en", "value": "Shipper quick start"}},
+    },
+    summary="Create test item",
+)
+
+print(result.status)  # dry_run by default
+```
+
+### `WikibaseShipper.write_property()`
+
+```python
+from gkc import WikiverseAuth
+from gkc.shipper import WikibaseShipper
+
+auth = WikiverseAuth(
+    username="MyDDUsername",
+    password="my_dd_password",
+    api_url="https://datadistillery.wikibase.cloud/w/api.php",
+)
+auth.login()
+
+shipper = WikibaseShipper(auth=auth, dry_run_default=False)
+
+result = shipper.write_property(
+    payload={
+        "labels": {"en": {"language": "en", "value": "has statement"}},
+        "descriptions": {"en": {"language": "en", "value": "Links profile to statement definitions"}},
+    },
+    datatype="wikibase-item",
+    summary="Create has statement property",
+    dry_run=True,
+)
+
+print(result.status)
+print(result.request_payload)
+```
+
+Data Distillery contract note: property creation requests embed `datatype` in the JSON `data` payload for `new=property` writes.
+
+For Data Distillery this is an implementation contract observed in live testing, and should be preserved when modifying property write request construction.
+
+### `WikibaseShipper.plan_batch()`
+
+```python
+from gkc import WikiverseAuth
+from gkc.shipper import WikibaseShipper
+
+auth = WikiverseAuth(
+    username="MyDDUsername",
+    password="my_dd_password",
+    api_url="https://datadistillery.wikibase.cloud/w/api.php",
+)
+auth.login()
+
+shipper = WikibaseShipper(auth=auth)
+
+plan = shipper.plan_batch(
+    [
+        {
+            "kind": "item",
+            "label": "GKC Query Entity",
+            "payload": {
+                "labels": {"en": {"language": "en", "value": "GKC Query Entity"}},
+                "descriptions": {"en": {"language": "en", "value": "Classifier for reusable SPARQL query entities"}},
+            },
+        },
+        {
+            "kind": "property",
+            "label": "query reference",
+            "datatype": "wikibase-item",
+            "payload": {
+                "labels": {"en": {"language": "en", "value": "query reference"}},
+                "descriptions": {"en": {"language": "en", "value": "Links a statement to a query entity"}},
+            },
+        },
+    ],
+    language="en",
+)
+
+print(plan.summary)
+for op in plan.operations:
+    print(op.status, op.kind, op.label)
 ```
 
 ## Classes
@@ -294,6 +413,16 @@ blocked = [r for r in results if r.status == "blocked"]
 
 print(f"Successful: {len(successful)}, Blocked: {len(blocked)}")
 ```
+
+## Data Distillery Troubleshooting
+
+- `summary is required for Wikibase write operations`: pass a non-empty `summary` string to `write_item()` or `write_property()`.
+
+- `datatype is required when creating a new property`: provide `datatype` unless you are updating an existing property via `entity_id`.
+
+- API returns a property-create error despite valid payload: verify datatype and ensure you are creating via `write_property()` so request shape is generated correctly.
+
+- Authenticated but write still fails: verify account group permissions on Data Distillery include edit/write capability.
 
 ## Error Handling
 

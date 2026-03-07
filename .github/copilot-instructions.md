@@ -35,6 +35,7 @@
 # Documentation guidelines
 - Write Markdown for MkDocs (Python-Markdown strict mode), not GitHub-flavored Markdown: always include a blank line before and after bullet/numbered lists, and ensure nested list indentation is consistent.
 - Run a final pass to normalize list formatting so all lists render correctly in mkdocs serve.
+- When writing official documentation during development work, do not reference things like "Phase 1" or other internal process terms that are not relevant to the end user. Instead, write documentation as if the final product is already complete and these internal phases never existed.
 
 # Test guidelines
 - Always run Python tests from the repo root with poetry run ... so they execute in the project .venv (not the system Python).

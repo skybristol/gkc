@@ -61,6 +61,7 @@ print(current)  # Returns: "en" or ["en", "es", "fr"] or "all"
 ```
 
 **When to configure:**
+
 - Before loading Wikidata items if you need labels in specific languages
 - When working with multilingual datasets
 - When you want to filter or display data in languages other than English
@@ -69,12 +70,33 @@ print(current)  # Returns: "en" or ["en", "es", "fr"] or "all"
 
 ---
 
-## 4. Configure Credentials (Optional for Now)
+## 4. Configure Credentials (Optional for Local-Only Work)
 
 If you intend to publish data to Wikidata, Wikimedia Commons, or OpenStreetMap, you will need credentials.
 
 - [Authentication](authentication.md) walks through setting up API credentials.
 - You can skip this for now if you are only running local transformations.
+
+### Data Distillery Wikibase Environment (Phase 0/0.5/0.9)
+
+If you are working with processes that interface with the [Data Distillery Wikibase](https://datadistillery.wikibase.cloud/) you may find it useful to set the following additional environment variables:
+
+```bash
+export DD_WB_API_URL="https://datadistillery.wikibase.cloud/w/api.php"
+export DD_WB_SPARQL_ENDPOINT="https://datadistillery.wikibase.cloud/query/sparql"
+export DD_WB_USERNAME="your_dd_username"
+export DD_WB_PASSWORD="your_dd_password"
+```
+
+Then verify command availability and connectivity:
+
+```bash
+# Show command help
+gkc wikibase --help
+
+# Read-only conformance check against foundation profiles
+gkc wikibase audit --require-auth
+```
 
 ---
 
@@ -83,16 +105,25 @@ If you intend to publish data to Wikidata, Wikimedia Commons, or OpenStreetMap, 
 Most users begin with one of these paths:
 
 ### Path A: Link my data to Wikidata
+
 - Mash Tun -> Fermentation -> Distillation -> Bottling
 - Good for basic reconciliation and export
 
 ### Path B: Integrate multiple sources first
+
 - Mash Tun (multiple sources) -> Fermentation -> Distillation -> Refinement -> Proofing -> Blending -> Bottling
 - Good for multi-source consolidation
 
 ### Path C: Explore without publishing
+
 - Mash Tun -> Fermentation -> Distillation
 - Stop before output; focus on data cleaning and linking
+
+### Path D: Data Distillery foundation maintenance
+
+- Run `gkc wikibase audit` to check foundation ontology conformance.
+- Run `gkc wikibase init` to preview missing entities/properties.
+- Run `gkc wikibase init --execute` only when you are ready to write.
 
 ---
 

@@ -19,7 +19,8 @@ GKC modules are grouped by their role in the distillery pipeline:
 | **Barrel Schema** | cooperage | Fetch schemas and metadata from target systems |
 | **Validation / Registry** | [spirit_safe](spirit_safe.md) | SpiritSafe source config, registry discovery, query hydration, and caching |
 | **Transform** | bottler | Transform data into Wikidata format |
-| **Deliver** | [shipper](shipper.md) | Submit data to Wikidata |
+| **Deliver** | [shipper](shipper.md) | Submit data to Wikibase-compatible APIs |
+| **Registry / Foundation** | [wikibase](wikibase.md) | Audit and initialize Data Distillery foundation ontology |
 | **Utilities** | auth | Authentication for Wikidata and OSM |
 | | sitelinks | Manage Wikipedia sitelinks |
 | | [sparql](sparql.md) | Query Wikidata with SPARQL |
@@ -94,7 +95,7 @@ auth = WikiverseAuth()
 auth.login(username="YourUsername", password="YourPassword")
 ```
 
-📖 Authentication Documentation (coming soon)
+📖 [Authentication Documentation](../authentication.md)
 
 ---
 
@@ -155,12 +156,23 @@ _Documentation coming soon_
 
 ### [Shipper](shipper.md)
 
-Submit data to Wikidata via the API.
+Submit data to Wikibase via the API.
 
 **Key classes:**
 - `WikidataShipper` - Submit QuickStatements or JSON to Wikidata
+- `WikibaseShipper` - Primary write interface for Wikibase item/property operations
 - `CommonsShipper` - Wikimedia Commons submission (planned)
 - `OpenStreetMapShipper` - OSM submission (planned)
+
+### [Wikibase](wikibase.md)
+
+Audit and initialize foundation ontology definitions for Data Distillery.
+
+**Key functions:**
+
+- `load_foundation_profiles()`
+- `audit_wikibase_foundation()`
+- `init_wikibase_foundation()`
 
 ---
 
