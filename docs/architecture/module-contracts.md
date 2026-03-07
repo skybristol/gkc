@@ -73,6 +73,7 @@ Responsibility:
 - Execute write operations against Wikibase-compatible APIs.
 - Enforce write safety behavior (summary checks, dry-run paths, request shaping).
 - Provide plan/preview behavior for create/update/no-op decisions.
+- Support writes to any Wikibase instance (Wikidata, Data Distillery, etc.).
 
 Out of scope:
 
@@ -81,8 +82,9 @@ Out of scope:
 
 Current anchor surface:
 
-- `WikibaseShipper`
-- `WikidataShipper`
+- `WikibaseShipper` (works with any Wikibase instance)
+- `CommonsShipper` (placeholder)
+- `OpenStreetMapShipper` (placeholder)
 - `DiffPlan`, `DiffOperation`, `WriteResult`
 
 ### Wikibase (`gkc.wikibase`)
