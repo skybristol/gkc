@@ -18,6 +18,14 @@
 - Maintain strict separation between profile definition, modulation, and serialization.
 - Never mix UI logic with profile logic.
 - Never modify SpiritSafe artifacts without explicit instruction to do so.
+- Do not build code for backwards compatibility unless explicitly instructed to do so; we are in a greenfield development phase and can iterate quickly without maintaining legacy support.
+- Do not edit or create code in Python notebooks unless explicitly instructed to do so; notebooks are for experimentation and prototyping, not for production code.
+
+# Curation philosophy (Wikidata-first, enablement-first)
+- We are fundamentally aligned with Wikidata modality and the Freebase-inspired model: curators use judgment in modeling choices while the system provides strong guidance.
+- Product intent is enablement over constraint. Design profile and wizard behavior to make better choices obvious and fast, not to over-restrict valid expert workflows.
+- Wizard UX exists to reduce friction versus open-ended manual item/claim creation across multiple interfaces; it should accelerate high-quality curation without hiding model expressiveness.
+- Focused lookup lists and pre-hydrated allowed-item sets are guidance tools for speed and consistency, not hard-coded conceptual limits unless explicitly required by profile semantics.
 
 # Agent awareness and handoffs
 - Custom agents are at work in this workspace with guideline files at `.github/agents`

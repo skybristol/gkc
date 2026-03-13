@@ -41,6 +41,11 @@ from gkc.bottler import (
     Distillate,
     SnakBuilder,
 )
+from gkc.cooperage import (
+    BarrelIssue,
+    BarrelPlanReport,
+    barrel_curation_packet_to_wikibase_plan,
+)
 
 # Entity Profiles (GKC Entity Profile definitions)
 from gkc.entity_profile import GKCEntityProfile
@@ -101,12 +106,16 @@ from gkc.spirit_safe import (
     resolve_query_ref,
     set_spirit_safe_source,
 )
+from gkc.still_charger import ChargeIssue, ChargeReport, charge_curation_packet
 
 # Utilities (common helpers)
 from gkc.utilities import (
     get_entity_uri,
+    resolve_name_to_identifier,
+    search_exact_label,
     validate_entity_reference,
 )
+from gkc.wikibase import WikibaseWritePlanResult, build_wikibase_write_plan
 
 # Language Configuration
 # Package-level language settings for multilingual data handling
@@ -160,9 +169,22 @@ __all__ = [
     "DataTypeTransformer",
     "Distillate",
     "SnakBuilder",
+    # Cooperage (barreling transforms)
+    "BarrelIssue",
+    "BarrelPlanReport",
+    "barrel_curation_packet_to_wikibase_plan",
     # Utilities
     "get_entity_uri",
+    "search_exact_label",
+    "resolve_name_to_identifier",
     "validate_entity_reference",
+    # Wikibase orchestration
+    "WikibaseWritePlanResult",
+    "build_wikibase_write_plan",
+    # Still Charger
+    "ChargeIssue",
+    "ChargeReport",
+    "charge_curation_packet",
     # Mash schema functions
     "fetch_entity_rdf",
     "fetch_schema_specification",

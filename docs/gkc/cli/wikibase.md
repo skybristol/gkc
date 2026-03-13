@@ -1,11 +1,13 @@
 # Wikibase CLI
 
-The `gkc wikibase` command group supports Data Distillery foundation ontology maintenance.
+The `gkc wikibase` command group supports Data Distillery foundation ontology maintenance and write-plan orchestration.
 
 Current scope includes:
 
 - read-only conformance auditing (`audit`)
 - foundation initialization planning and execution (`init`)
+- profile-driven write-plan preview (`plan-write`)
+- authenticated write replay with dry-run-by-default execution control (`execute-write`)
 
 ## Prerequisites
 
@@ -24,6 +26,8 @@ You can inspect all options with:
 gkc wikibase --help
 gkc wikibase audit --help
 gkc wikibase init --help
+gkc wikibase plan-write --help
+gkc wikibase execute-write --help
 ```
 
 ## `gkc wikibase audit`
@@ -102,4 +106,135 @@ When `--output` is used, command output includes:
 - **Init reports auth requirement**: set `DD_WB_USERNAME` and `DD_WB_PASSWORD`, or run with `--interactive`.
 - **Audit warns and falls back to anonymous mode**: add `--require-auth` during CI or strict checks.
 - **Unexpected no-op/skipped actions**: inspect JSON report records/actions and run with `--verbose` for additional preview detail.
-## Output Artifacts
+
+## `gkc wikibase plan-write`
+
+`plan-write` runs the shared pipeline:
+
+- `spirit_safe.create_curation_packet`
+- `still_charger.charge_curation_packet`
+- `cooperage.barrel_curation_packet_to_wikibase_plan`
+- optional `shipper.plan_batch`
+
+### Common usage
+
+```bash
+# build packet -> charge -> barrel plan only
+poetry run gkc wikibase plan-write \
+  --profile TribalGovernmentUS \
+  --source-values-file /tmp/gkc_plan_source_values.json \
+  --mode single
+```
+
+```bash
+# include shipper diff planning
+poetry run gkc wikibase plan-write \
+  --profile TribalGovernmentUS \
+  --source-values-file /tmp/gkc_plan_source_values.json \
+  --mode single \
+  --with-shipper-plan
+```
+
+```bash
+# strict charging and JSON artifact output
+poetry run gkc wikibase plan-write \
+  --profile TribalGovernmentUS \
+  --source-values-file /tmp/gkc_plan_source_values.json \
+  --strict-charging \
+  --output /tmp/wikibase_plan_write.json
+```
+
+### Key options
+
+- `--profile`: primary profile ID used for packet generation
+- `--source-values-file`: JSON mapping of entity/profile IDs to values
+- `--property-map-file`: optional statement ID to property ID mapping
+- `--mode`: `single` or `bulk`
+- `--depth`: related-profile traversal depth for bulk mode
+- `--strict-charging`: disable specificationless charging behavior
+- `--with-shipper-plan`: run `shipper.plan_batch` and include diff summary
+- `--api-url`: override Data Distillery API URL for shipper planning
+- `--interactive`: prompt for Data Distillery credentials when needed
+- `--require-auth`: fail if authenticated shipper planning cannot be established
+- `--source` and `--local-root`: override SpiritSafe source mode
+- `--output`: write full logical path + reports + operations JSON
+
+### Output details
+
+Without `--with-shipper-plan`, output includes logical path, packet/charge/barrel summary, and operation preview.
+
+With `--with-shipper-plan`, output also includes:
+
+- `shipper_plan_summary` with create/update/noop/ambiguous/blocked counts
+- `shipper_plan_preview` operation-level diff details
+- authentication context (`auth_mode`, optional warning)
+
+## `gkc wikibase execute-write`
+
+`execute-write` reuses the same shared pipeline as `plan-write` and then replays operations through shipper write methods.
+
+Execution path:
+
+- `spirit_safe.create_curation_packet`
+- `still_charger.charge_curation_packet`
+- `cooperage.barrel_curation_packet_to_wikibase_plan`
+- `shipper.write_item` / `shipper.write_property`
+
+Authentication is required for this command.
+
+### Common usage
+
+```bash
+# default: authenticated dry-run replay (no write submission)
+poetry run gkc wikibase execute-write \
+  --profile TribalGovernmentUS \
+  --source-values-file /tmp/gkc_plan_source_values.json
+```
+
+```bash
+# authenticated write submission
+poetry run gkc wikibase execute-write \
+  --profile TribalGovernmentUS \
+  --source-values-file /tmp/gkc_plan_source_values.json \
+  --summary "Create TribalGovernmentUS seed item" \
+  --execute
+```
+
+```bash
+# strict charging plus JSON artifact output
+poetry run gkc wikibase execute-write \
+  --profile TribalGovernmentUS \
+  --source-values-file /tmp/gkc_plan_source_values.json \
+  --strict-charging \
+  --output /tmp/wikibase_execute_write.json
+```
+
+### Key options
+
+- `--profile`: primary profile ID used for packet generation
+- `--source-values-file`: JSON mapping of entity/profile IDs to values
+- `--property-map-file`: optional statement ID to property ID mapping
+- `--mode`: `single` or `bulk`
+- `--depth`: related-profile traversal depth for bulk mode
+- `--strict-charging`: disable specificationless charging behavior
+- `--execute`: submit writes (default behavior is dry-run replay)
+- `--summary`: edit summary prefix used for each write operation
+- `--bot`: mark edits as bot edits
+- `--interactive`: prompt for Data Distillery credentials if missing or invalid
+- `--api-url`: override Data Distillery API URL for this run
+- `--source` and `--local-root`: override SpiritSafe source mode
+- `--output`: write full logical path + reports + write-results JSON
+
+### Output details
+
+Output includes:
+
+- `write_summary` counters (`submitted`, `dry_run`, `validated`, `blocked`, `error`)
+- `write_results_preview` operation-level write statuses
+- full packet/charge/barrel diagnostics aligned with `plan-write`
+
+### Relationship to `plan-write`
+
+- `plan-write` remains the mandatory preflight stage
+- `execute-write` is the authenticated promotion stage using the same logical pipeline and operation payloads
+- logical path/reporting remains consistent so users can trace plan-to-execute parity

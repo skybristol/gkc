@@ -11,12 +11,12 @@ These utilities are independent, reusable components that work both as Python li
 
 ## SPARQL Query Utilities
 
-The GKC SPARQL module provides utilities for executing SPARQL queries against Wikidata, DBpedia, or any other SPARQL endpoint. It supports multiple input formats (raw queries, Wikidata URLs) and output types (JSON, DataFrames, CSV).
+The GKC SPARQL module provides utilities for executing SPARQL queries against Wikidata, DBpedia, or any other SPARQL endpoint. It supports multiple input formats (raw queries, Wikidata URLs) and output types (JSON, dictionary lists, CSV, optional DataFrames).
 
 ### Features
 
 - **Multiple Input Formats**: Raw SPARQL queries or Wikidata Query Service URLs
-- **Multiple Output Types**: JSON objects, Python dictionaries, pandas DataFrames, CSV
+- **Multiple Output Types**: JSON objects, Python dictionary lists, CSV, optional pandas DataFrames
 - **Error Handling**: Comprehensive error messages and custom exceptions
 - **Custom Endpoints**: Query any SPARQL endpoint, not just Wikidata
 - **Pandas Integration**: Optional pandas support for data analysis
@@ -59,7 +59,21 @@ url = "https://query.wikidata.org/#SELECT%20?item%20WHERE%20..."
 results = executor.query(url)
 ```
 
-#### Convert to DataFrame
+#### Convert to Dictionary List (Default)
+
+```python
+rows = executor.to_dict_list("""
+    SELECT ?item ?itemLabel WHERE {
+      ?item wdt:P31 wd:Q146 .
+      SERVICE wikibase:label {
+        bd:serviceParam wikibase:language "en" .
+      }
+    }
+""")
+print(rows[:3])
+```
+
+#### Convert to DataFrame (Optional)
 
 ```python
 df = executor.to_dataframe("""
@@ -84,13 +98,13 @@ executor.to_csv(query, filepath="results.csv")
 #### One-off Queries
 
 ```python
-from gkc import execute_sparql, execute_sparql_to_dataframe
+from gkc import SPARQLQuery, execute_sparql
 
 # Simple query
 results = execute_sparql("SELECT ?item WHERE { ?item wdt:P31 wd:Q5 } LIMIT 10")
 
-# Get DataFrame directly
-df = execute_sparql_to_dataframe("SELECT ?item WHERE { ?item wdt:P31 wd:Q5 } LIMIT 10")
+# Get plain Python rows directly
+rows = SPARQLQuery().to_dict_list("SELECT ?item WHERE { ?item wdt:P31 wd:Q5 } LIMIT 10")
 ```
 
 #### Custom Endpoints

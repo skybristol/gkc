@@ -21,17 +21,25 @@ results = executor.query("""
     LIMIT 10
 """)
 
-# Convert to DataFrame
-df = executor.to_dataframe(query)
+# Convert to list of plain Python dicts (default shape)
+rows = executor.to_dict_list("""
+    SELECT ?item ?itemLabel WHERE {
+      ?item wdt:P31 wd:Q146 .
+      SERVICE wikibase:label {
+        bd:serviceParam wikibase:language "en" .
+      }
+    }
+    LIMIT 10
+""")
 
 # Export to CSV
-executor.to_csv(query, filepath="results.csv")
+executor.to_csv("SELECT ?item WHERE { ?item wdt:P31 wd:Q146 } LIMIT 10", filepath="results.csv")
 ```
 
 ## Features
 
 - **Multiple Input Formats**: Raw SPARQL or Wikidata Query Service URLs
-- **Multiple Output Formats**: JSON, DataFrames, CSV, Dictionary lists
+- **Multiple Output Formats**: JSON, dictionary lists, CSV, and optional DataFrames
 - **Flexible Configuration**: Custom endpoints, timeouts, user agents
 - **Robust Error Handling**: Comprehensive error messages and exception handling
 - **Optional Pandas Support**: Works with or without pandas
@@ -66,7 +74,15 @@ url = "https://query.wikidata.org/#SELECT%20?item%20WHERE%20..."
 results = executor.query(url)  # Automatically extracts and executes
 ```
 
-### Convert to DataFrame
+### Convert to Dictionary List (Default)
+
+```python
+rows = executor.to_dict_list(query)
+for row in rows[:5]:
+  print(row)
+```
+
+### Convert to DataFrame (Optional)
 
 ```python
 df = executor.to_dataframe(query)
@@ -98,8 +114,8 @@ Main class for executing SPARQL queries.
 
 **Methods:**
 - `query(query, format='json', raw=False)` - Execute query
-- `to_dict_list(query)` - Convert to list of dicts
-- `to_dataframe(query)` - Convert to DataFrame
+- `to_dict_list(query)` - Convert to list of dicts (recommended default)
+- `to_dataframe(query)` - Convert to DataFrame (requires pandas)
 - `to_csv(query, filepath=None)` - Export to CSV
 - `parse_wikidata_query_url(url)` - Extract query from URL (static)
 - `normalize_query(query)` - Normalize query string (static)
@@ -150,7 +166,28 @@ for row in results:
     print(f"{row['itemLabel']}: {row['population']}")
 ```
 
-### Example 2: Data Analysis with DataFrame
+### Example 2: Data Analysis Without Pandas
+
+```python
+from gkc import SPARQLQuery
+
+executor = SPARQLQuery()
+rows = executor.to_dict_list("""
+SELECT ?item ?itemLabel ?population WHERE {
+  ?item wdt:P31 wd:Q3624078 .
+  ?item wdt:P1082 ?population .
+}
+""")
+
+rows_sorted = sorted(
+    rows,
+    key=lambda r: int(r.get("population", "0")),
+    reverse=True,
+)
+print(rows_sorted[:10])
+```
+
+### Example 3: Data Analysis With Optional DataFrame
 
 ```python
 from gkc import execute_sparql_to_dataframe

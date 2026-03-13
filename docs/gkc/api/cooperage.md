@@ -2,146 +2,150 @@
 
 ## Overview
 
-The cooperage module manages schema and reference retrieval utilities used to shape barrel profiles and transformation inputs.
+The cooperage module is the active packet-to-operation barreling layer between `still_charger` and `shipper`.
 
-Current public functionality focuses on Wikidata entity and EntitySchema retrieval helpers.
+Current primary functionality converts charged curation packet entities into operation payloads compatible with `WikibaseShipper.plan_batch` and write methods.
+
+Legacy schema/RDF helpers remain available as compatibility re-exports.
 
 ## Quick Start
 
 ```python
-from gkc.cooperage import fetch_schema_specification, fetch_entity_schema_metadata
+from gkc.cooperage import barrel_curation_packet_to_wikibase_plan
 
-schema_text = fetch_schema_specification("E502")
-metadata = fetch_entity_schema_metadata("E502", language="en")
+packet = {
+    "packet_id": "pkt-demo",
+    "entities": [
+        {
+            "id": "ent-001",
+            "profile": "TribalGovernmentUS",
+            "profile_structure": {
+                "statements": [{"id": "instance_of", "io_map": [{"to": "https://www.wikidata.org/entity/P31"}]}]
+            },
+            "data": {
+                "labels": {"en": "Cherokee Nation"},
+                "statements": {"instance_of": [{"value": "Q7840353"}]},
+            },
+        }
+    ],
+}
 
-print(len(schema_text), metadata["label"])
+operations, report = barrel_curation_packet_to_wikibase_plan(packet)
+
+print(report.operations_created)
+print(operations[0]["kind"], operations[0]["label"])
 ```
 
 ## Public API Quick Starts
 
-### `fetch_entity_rdf()`
+### `barrel_curation_packet_to_wikibase_plan()`
 
 ```python
-from gkc.cooperage import fetch_entity_rdf
+from gkc.cooperage import barrel_curation_packet_to_wikibase_plan
+
+operations, report = barrel_curation_packet_to_wikibase_plan(
+    packet,
+    property_id_map={"instance_of": "P31"},
+)
+
+print(report.operations_created)
+print(report.entities_skipped)
+print([issue.message for issue in report.issues])
+```
+
+### `BarrelIssue` and `BarrelPlanReport`
+
+```python
+from gkc.cooperage import BarrelIssue, BarrelPlanReport
+
+issue = BarrelIssue(
+    severity="warning",
+    entity_id="ent-001",
+    field="statements.instance_of",
+    message="No property mapping found",
+)
+
+report = BarrelPlanReport(operations_created=0, entities_skipped=1, issues=[issue])
+print(report.entities_skipped, report.issues[0].severity)
+```
+
+### Compatibility re-exports
+
+```python
+from gkc.cooperage import fetch_entity_rdf, fetch_schema_specification
 
 rdf_ttl = fetch_entity_rdf("Q42", format="ttl")
-rdf_nt = fetch_entity_rdf("P31", format="nt")
+schema_text = fetch_schema_specification("E502")
 
-print(rdf_ttl[:120])
-print(rdf_nt[:120])
-```
-
-### `fetch_schema_specification()`
-
-```python
-from gkc.cooperage import fetch_schema_specification
-
-schema = fetch_schema_specification("E502")
-print(schema[:200])
-```
-
-### `fetch_entity_schema_json()`
-
-```python
-from gkc.cooperage import fetch_entity_schema_json
-
-schema_json = fetch_entity_schema_json("E502")
-print(schema_json.keys())
-```
-
-### `fetch_entity_schema_metadata()`
-
-```python
-from gkc.cooperage import fetch_entity_schema_metadata
-
-metadata = fetch_entity_schema_metadata("E502", language="en")
-print(metadata["label"], metadata["description"], metadata["source"])
-```
-
-### `get_entity_uri()`
-
-```python
-from gkc.cooperage import get_entity_uri
-
-qid_uri = get_entity_uri("Q42")
-pid_uri = get_entity_uri("P31")
-
-print(qid_uri)
-print(pid_uri)
-```
-
-### `validate_entity_reference()`
-
-```python
-from gkc.cooperage import validate_entity_reference
-
-print(validate_entity_reference("Q42"))
-print(validate_entity_reference("P31"))
-print(validate_entity_reference("E502"))
-print(validate_entity_reference("invalid"))
-```
-
-### `CooperageError`
-
-```python
-from gkc.cooperage import CooperageError, fetch_entity_rdf
-
-try:
-    fetch_entity_rdf("", format="ttl")
-except ValueError:
-    pass
-
-try:
-    raise CooperageError("example cooperage failure")
-except CooperageError:
-    pass
+print(len(rdf_ttl), len(schema_text))
 ```
 
 ## API Reference (mkdocstrings)
 
-### `CooperageError`
+### `BarrelIssue`
+
+::: gkc.cooperage.BarrelIssue
+    options:
+      show_root_heading: false
+      heading_level: 4
+
+### `BarrelPlanReport`
+
+::: gkc.cooperage.BarrelPlanReport
+    options:
+      show_root_heading: false
+      heading_level: 4
+
+### `barrel_curation_packet_to_wikibase_plan()`
+
+::: gkc.cooperage.barrel_curation_packet_to_wikibase_plan
+    options:
+      show_root_heading: false
+      heading_level: 4
+
+### `CooperageError` (compatibility)
 
 ::: gkc.cooperage.CooperageError
     options:
       show_root_heading: false
       heading_level: 4
 
-### `fetch_entity_rdf()`
+### `fetch_entity_rdf()` (compatibility)
 
 ::: gkc.cooperage.fetch_entity_rdf
     options:
       show_root_heading: false
       heading_level: 4
 
-### `fetch_schema_specification()`
+### `fetch_schema_specification()` (compatibility)
 
 ::: gkc.cooperage.fetch_schema_specification
     options:
       show_root_heading: false
       heading_level: 4
 
-### `fetch_entity_schema_json()`
+### `fetch_entity_schema_json()` (compatibility)
 
 ::: gkc.cooperage.fetch_entity_schema_json
     options:
       show_root_heading: false
       heading_level: 4
 
-### `fetch_entity_schema_metadata()`
+### `fetch_entity_schema_metadata()` (compatibility)
 
 ::: gkc.cooperage.fetch_entity_schema_metadata
     options:
       show_root_heading: false
       heading_level: 4
 
-### `get_entity_uri()`
+### `get_entity_uri()` (compatibility)
 
 ::: gkc.cooperage.get_entity_uri
     options:
       show_root_heading: false
       heading_level: 4
 
-### `validate_entity_reference()`
+### `validate_entity_reference()` (compatibility)
 
 ::: gkc.cooperage.validate_entity_reference
     options:
@@ -150,6 +154,6 @@ except CooperageError:
 
 ## See Also
 
-- [Mash API](mash.md)
+- [Still Charger API](still_charger.md)
 - [Shipper API](shipper.md)
 - [Wikibase API](wikibase.md)

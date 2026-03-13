@@ -31,7 +31,13 @@ class SPARQLError(Exception):
 
 
 class SPARQLQuery:
-    """Execute SPARQL queries against a SPARQL endpoint."""
+    """Execute SPARQL queries against a SPARQL endpoint.
+
+    Canonical result-shape methods:
+    - query(): raw JSON dict (or raw text for csv/tsv/xml)
+    - to_dict_list(): flattened Python row dictionaries (no pandas dependency)
+    - to_dataframe(): optional pandas DataFrame conversion
+    """
 
     def __init__(
         self,

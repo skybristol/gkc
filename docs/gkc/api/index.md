@@ -16,15 +16,17 @@ GKC modules are grouped by their role in the distillery pipeline:
 |-----------|-----------|-------------|
 | **Mash** | [mash](mash.md) | Load data from Wikidata and other sources |
 | | [mash_formatters](mash_formatters.md) | Convert templates to output formats |
-| **Barrel Schema** | [cooperage](cooperage.md) | Fetch schemas and metadata from target systems |
+| **Packet Fill** | [still_charger](still_charger.md) | Fill curation packet scaffolds with concrete source values |
+| **Barreling Transform** | [cooperage](cooperage.md) | Convert charged packet data into shippable operation plans |
 | **Validation / Registry** | [spirit_safe](spirit_safe.md) | SpiritSafe source config, registry discovery, query hydration, and caching |
 | **Transform** | [bottler](bottler.md) | Transform data into Wikidata format |
 | **Deliver** | [shipper](shipper.md) | Submit data to Wikibase-compatible APIs |
-| **Registry / Foundation** | [wikibase](wikibase.md) | Audit and initialize Data Distillery foundation ontology |
+| **Registry / Orchestration** | [wikibase](wikibase.md) | Foundation audit/init and profile-driven write planning orchestration |
 | **Utilities** | auth | Authentication for Wikidata and OSM |
 | | sitelinks | Manage Wikipedia sitelinks |
 | | [sparql](sparql.md) | Query Wikidata with SPARQL |
 | **Profiles** | [profiles](profiles.md) | YAML profile loading and validation |
+| **Ontology** | [ontology](ontology.md) | Two-layer ontology extraction from Data Distillery Wikibase |
 
 ---
 
@@ -122,16 +124,27 @@ Convert templates to different output formats.
 
 ### [Cooperage](cooperage.md)
 
-Fetch schemas and metadata from target systems (Barrel Schemas).
+Convert charged curation packet content into shippable write operations.
 
 **Key functions:**
 
+- `barrel_curation_packet_to_wikibase_plan()` - Build operation plans from charged packets
+- `BarrelPlanReport` and `BarrelIssue` - Structured barreling diagnostics
 - `fetch_entity_rdf()` - Get entity RDF data
 - `fetch_schema_specification()` - Get EntitySchema ShEx
 - `fetch_entity_schema_json()` - Get EntitySchema JSON
 - `fetch_entity_schema_metadata()` - Get EntitySchema label/description metadata
 - `get_entity_uri()` - Build canonical entity URI
 - `validate_entity_reference()` - Validate ID format (`Q`, `P`, `L`, `E`)
+
+### [Still Charger](still_charger.md)
+
+Fill curation packet scaffolds with concrete values from source payloads.
+
+**Key classes/functions:**
+
+- `charge_curation_packet()` - Apply source values to packet entities
+- `ChargeReport` and `ChargeIssue` - Structured charging diagnostics
 
 ### [Spirit Safe](spirit_safe.md)
 
@@ -168,13 +181,25 @@ Submit data to Wikibase via the API.
 
 ### [Wikibase](wikibase.md)
 
-Audit and initialize foundation ontology definitions for Data Distillery.
+Audit and initialize foundation ontology definitions for Data Distillery, and orchestrate packet-to-write planning.
 
 **Key functions:**
 
 - `load_foundation_profiles()`
 - `audit_wikibase_foundation()`
 - `init_wikibase_foundation()`
+- `build_wikibase_write_plan()`
+
+### [Ontology](ontology.md)
+
+Extract ontology index and full profile graph data from Data Distillery Wikibase.
+
+**Key functions:**
+
+- `fetch_ontology_index()`
+- `fetch_profile_ids()`
+- `fetch_profile_graph()`
+- `resolve_statement_guidance()`
 
 ---
 

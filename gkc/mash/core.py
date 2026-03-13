@@ -20,7 +20,12 @@ from __future__ import annotations
 
 import copy
 import json
+import re
+import subprocess
 from dataclasses import dataclass, field
+from datetime import datetime, timedelta, timezone
+from importlib import metadata as importlib_metadata
+from pathlib import Path
 from typing import Any, Optional, Protocol, Union
 from urllib.parse import urlparse
 
@@ -128,6 +133,332 @@ class WikibaseApiClient:
             raise RuntimeError(f"Wikibase API returned error: {payload['error']}")
 
         return payload
+
+
+@dataclass(frozen=True)
+class WikibaseRecentChangesResult:
+    """Recentchanges polling result for Wikibase entity updates."""
+
+    since: str
+    next_since: str
+    changed_ids: list[str] = field(default_factory=list)
+    ignored_ids: list[str] = field(default_factory=list)
+    recentchanges: list[dict[str, Any]] = field(default_factory=list)
+
+
+@dataclass(frozen=True)
+class WikibaseCacheRefreshResult:
+    """Result of refreshing per-entity cache files from recentchanges."""
+
+    cache_dir: str
+    since: str
+    next_since: str
+    changed_ids: list[str] = field(default_factory=list)
+    ignored_ids: list[str] = field(default_factory=list)
+    refreshed_ids: list[str] = field(default_factory=list)
+    deleted_ids: list[str] = field(default_factory=list)
+    missing_ids: list[str] = field(default_factory=list)
+
+
+_ENTITY_ID_PATTERN = re.compile(r"\b([QP]\d+)\b")
+
+
+def get_latest_cache_timestamp(cache_dir: str | Path) -> Optional[str]:
+    """Return the latest timestamp represented in current cache artifacts.
+
+    Prefers entity.modified when present, falling back to cache-export metadata.
+    """
+    cache_path = Path(cache_dir)
+    latest: Optional[datetime] = None
+
+    if not cache_path.exists():
+        return None
+
+    for json_file in cache_path.glob("*.json"):
+        try:
+            payload = json.loads(json_file.read_text(encoding="utf-8"))
+        except Exception:
+            continue
+
+        entity = payload.get("entity", payload)
+        metadata = payload.get("metadata", {})
+        candidates = [
+            entity.get("modified") if isinstance(entity, dict) else None,
+            metadata.get("cache_exported_at") if isinstance(metadata, dict) else None,
+            metadata.get("graph_fetched_at") if isinstance(metadata, dict) else None,
+        ]
+        for candidate in candidates:
+            parsed = _parse_iso8601(candidate)
+            if parsed and (latest is None or parsed > latest):
+                latest = parsed
+
+    if latest is None:
+        return None
+    return latest.astimezone(timezone.utc).isoformat().replace("+00:00", "Z")
+
+
+def fetch_recent_entity_changes(
+    api_client: WikibaseApiClient,
+    *,
+    since: str,
+    overlap_seconds: int = 60,
+    ignore_ids: Optional[set[str]] = None,
+    limit: int = 500,
+) -> WikibaseRecentChangesResult:
+    """Poll MediaWiki recentchanges and return changed Wikibase entity IDs."""
+    ignore_set = set(ignore_ids or set())
+    effective_since = _apply_overlap_window(since, overlap_seconds)
+    params: dict[str, Any] = {
+        "action": "query",
+        "format": "json",
+        "list": "recentchanges",
+        "rcdir": "newer",
+        "rcstart": effective_since,
+        "rclimit": min(limit, 500),
+        "rcprop": "title|timestamp|ids|loginfo",
+    }
+
+    recentchanges: list[dict[str, Any]] = []
+    changed_ids: set[str] = set()
+    ignored_hits: set[str] = set()
+
+    while True:
+        payload = api_client.request(params)
+        batch = payload.get("query", {}).get("recentchanges", [])
+        if not isinstance(batch, list):
+            batch = []
+
+        for change in batch:
+            if not isinstance(change, dict):
+                continue
+            recentchanges.append(change)
+            entity_id = _extract_entity_id_from_recentchange(change)
+            if not entity_id:
+                continue
+            if entity_id in ignore_set:
+                ignored_hits.add(entity_id)
+                continue
+            changed_ids.add(entity_id)
+
+        continuation = payload.get("continue", {})
+        rccontinue = (
+            continuation.get("rccontinue") if isinstance(continuation, dict) else None
+        )
+        if not rccontinue:
+            break
+        params["rccontinue"] = rccontinue
+
+    next_since = since
+    for change in recentchanges:
+        if not isinstance(change, dict):
+            continue
+        timestamp = change.get("timestamp")
+        parsed = _parse_iso8601(timestamp)
+        current = _parse_iso8601(next_since)
+        if parsed and current and parsed > current:
+            next_since = (
+                parsed.astimezone(timezone.utc).isoformat().replace("+00:00", "Z")
+            )
+
+    return WikibaseRecentChangesResult(
+        since=effective_since,
+        next_since=next_since,
+        changed_ids=sorted(changed_ids),
+        ignored_ids=sorted(ignored_hits),
+        recentchanges=recentchanges,
+    )
+
+
+def refresh_entity_cache_from_recentchanges(
+    api_client: WikibaseApiClient,
+    cache_dir: str | Path,
+    *,
+    since: Optional[str] = None,
+    overlap_seconds: int = 60,
+    ignore_ids: Optional[set[str]] = None,
+    source_endpoint: Optional[str] = None,
+    workflow_mode: str = "recentchanges",
+    batch_size: int = 50,
+) -> WikibaseCacheRefreshResult:
+    """Refresh per-entity cache files from MediaWiki recentchanges."""
+    cache_path = Path(cache_dir)
+    cache_path.mkdir(parents=True, exist_ok=True)
+
+    resolved_since = since or get_latest_cache_timestamp(cache_path)
+    if not resolved_since:
+        raise RuntimeError(
+            "No cache watermark available; provide --since or seed the cache first"
+        )
+
+    recent_result = fetch_recent_entity_changes(
+        api_client,
+        since=resolved_since,
+        overlap_seconds=overlap_seconds,
+        ignore_ids=ignore_ids,
+    )
+
+    source_repo_path = Path(__file__).resolve().parents[2]
+    source_branch, source_commit = _get_git_context(source_repo_path)
+    extractor_version = _get_installed_gkc_version()
+    refreshed_ids: list[str] = []
+    deleted_ids: list[str] = []
+    missing_ids: list[str] = []
+    refreshed_at = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
+
+    for entity_chunk in _chunked(recent_result.changed_ids, batch_size):
+        payload = api_client.request(
+            {
+                "action": "wbgetentities",
+                "format": "json",
+                "ids": "|".join(entity_chunk),
+            }
+        )
+        entities = payload.get("entities", {})
+        if not isinstance(entities, dict):
+            entities = {}
+
+        for entity_id in entity_chunk:
+            entity_data = entities.get(entity_id)
+            out_file = cache_path / f"{entity_id}.json"
+
+            if not isinstance(entity_data, dict) or "missing" in entity_data:
+                missing_ids.append(entity_id)
+                if out_file.exists():
+                    out_file.unlink()
+                    deleted_ids.append(entity_id)
+                continue
+
+            payload_doc = _build_entity_cache_payload(
+                entity_id=entity_id,
+                entity_data=entity_data,
+                source_endpoint=source_endpoint or api_client.api_url,
+                workflow_mode=workflow_mode,
+                profile_entry_ids=[],
+                graph_fetched_at=entity_data.get("modified") or refreshed_at,
+                cache_exported_at=refreshed_at,
+                extractor="gkc.mash.refresh_entity_cache_from_recentchanges",
+                extractor_version=extractor_version,
+                source_branch=source_branch,
+                source_commit=source_commit,
+            )
+            out_file.write_text(json.dumps(payload_doc, indent=2), encoding="utf-8")
+            refreshed_ids.append(entity_id)
+
+    return WikibaseCacheRefreshResult(
+        cache_dir=str(cache_path.resolve()),
+        since=recent_result.since,
+        next_since=recent_result.next_since,
+        changed_ids=recent_result.changed_ids,
+        ignored_ids=recent_result.ignored_ids,
+        refreshed_ids=refreshed_ids,
+        deleted_ids=deleted_ids,
+        missing_ids=missing_ids,
+    )
+
+
+def _build_entity_cache_payload(
+    *,
+    entity_id: str,
+    entity_data: dict[str, Any],
+    source_endpoint: str,
+    workflow_mode: str,
+    profile_entry_ids: list[str],
+    graph_fetched_at: str,
+    cache_exported_at: str,
+    extractor: str,
+    extractor_version: str,
+    source_branch: Optional[str],
+    source_commit: Optional[str],
+) -> dict[str, Any]:
+    """Build a normalized entity cache payload document."""
+    return {
+        "entity_id": entity_id,
+        "entity": entity_data,
+        "metadata": {
+            "source_endpoint": source_endpoint,
+            "workflow_mode": workflow_mode,
+            "profile_entry_ids": list(profile_entry_ids),
+            "graph_fetched_at": graph_fetched_at,
+            "cache_exported_at": cache_exported_at,
+            "extractor": extractor,
+            "extractor_version": extractor_version,
+            "source_branch": source_branch,
+            "source_commit": source_commit,
+        },
+    }
+
+
+def _extract_entity_id_from_recentchange(change: dict[str, Any]) -> Optional[str]:
+    """Extract a Q/P entity ID from recentchanges row data when present."""
+    title = change.get("title")
+    if isinstance(title, str):
+        match = _ENTITY_ID_PATTERN.search(title)
+        if match:
+            return match.group(1)
+
+    logparams = change.get("logparams")
+    if isinstance(logparams, dict):
+        for value in logparams.values():
+            if isinstance(value, str):
+                match = _ENTITY_ID_PATTERN.search(value)
+                if match:
+                    return match.group(1)
+
+    return None
+
+
+def _apply_overlap_window(timestamp: str, overlap_seconds: int) -> str:
+    """Shift a timestamp backward by overlap window for safe polling."""
+    parsed = _parse_iso8601(timestamp)
+    if parsed is None:
+        raise RuntimeError(f"Invalid timestamp: {timestamp}")
+    adjusted = parsed - timedelta(seconds=max(overlap_seconds, 0))
+    return adjusted.astimezone(timezone.utc).isoformat().replace("+00:00", "Z")
+
+
+def _parse_iso8601(timestamp: object) -> Optional[datetime]:
+    """Parse ISO 8601 timestamps used by Wikibase and cache metadata."""
+    if not isinstance(timestamp, str) or not timestamp:
+        return None
+    try:
+        return datetime.fromisoformat(timestamp.replace("Z", "+00:00"))
+    except ValueError:
+        return None
+
+
+def _chunked(values: list[str], size: int) -> list[list[str]]:
+    """Split a list into fixed-size chunks."""
+    if size <= 0:
+        raise RuntimeError("batch size must be positive")
+    return [values[index : index + size] for index in range(0, len(values), size)]
+
+
+def _get_git_context(repo_path: Path) -> tuple[Optional[str], Optional[str]]:
+    """Return git branch and commit for a repository path when available."""
+    try:
+        branch_result = subprocess.run(
+            ["git", "-C", str(repo_path), "rev-parse", "--abbrev-ref", "HEAD"],
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+        commit_result = subprocess.run(
+            ["git", "-C", str(repo_path), "rev-parse", "HEAD"],
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+        return branch_result.stdout.strip(), commit_result.stdout.strip()
+    except Exception:
+        return None, None
+
+
+def _get_installed_gkc_version() -> str:
+    """Return installed package version when available."""
+    try:
+        return importlib_metadata.version("gkc")
+    except Exception:
+        return "unknown"
 
 
 class DataTemplate(Protocol):

@@ -53,13 +53,15 @@ standard_reference: &standard_reference
   validation_policy: allow_existing_nonconforming
   allowed:
     - id: stated_in
-      wikidata_property: P248
+      io_map:
+        - to: https://www.wikidata.org/entity/P248
       type: item
       label: Stated in
       input_prompt: Enter the QID of the source publication or source dataset.
       description: Reference to source document or database
     - id: reference_url
-      wikidata_property: P854
+      io_map:
+        - to: https://www.wikidata.org/entity/P854
       type: url
       label: Reference URL
       input_prompt: Enter the direct URL to the source used for this statement.
@@ -70,7 +72,8 @@ statements:
   - id: instance_of
     label: Instance of
     input_prompt: the primary classification for this office
-    wikidata_property: P31
+    io_map:
+      - to: https://www.wikidata.org/entity/P31
     type: statement
     max_count: null
     validation_policy: allow_existing_nonconforming
@@ -85,7 +88,8 @@ statements:
   - id: country
     label: Country
     input_prompt: the country where this office exists
-    wikidata_property: P17
+    io_map:
+      - to: https://www.wikidata.org/entity/P17
     type: statement
     max_count: 1
     validation_policy: allow_existing_nonconforming
@@ -100,7 +104,8 @@ statements:
   - id: applies_to_jurisdiction
     label: Applies to jurisdiction
     input_prompt: the governmental jurisdiction this office administers
-    wikidata_property: P1001
+    io_map:
+      - to: https://www.wikidata.org/entity/P1001
     type: statement
     max_count: 1
     validation_policy: allow_existing_nonconforming
@@ -116,7 +121,8 @@ statements:
   - id: inception
     label: Inception
     input_prompt: date when this office was established or created
-    wikidata_property: P571
+    io_map:
+      - to: https://www.wikidata.org/entity/P571
     type: statement
     max_count: 1
     validation_policy: allow_existing_nonconforming

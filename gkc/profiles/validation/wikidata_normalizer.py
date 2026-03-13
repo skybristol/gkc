@@ -91,14 +91,26 @@ class WikidataNormalizer:
         result = NormalizationResult()
 
         for field in profile.statements:
-            statements_raw = claims.get(field.wikidata_property, [])
+            property_id = field.wikidata_property_id()
+            if not property_id:
+                result.issues.append(
+                    NormalizationIssue(
+                        severity="warning",
+                        message="Statement has no Wikidata outbound mapping in io_map",
+                        statement_id=field.id,
+                    )
+                )
+                result.data[field.id] = []
+                continue
+
+            statements_raw = claims.get(property_id, [])
             if not isinstance(statements_raw, list):
                 result.issues.append(
                     NormalizationIssue(
                         severity="warning",
                         message="Claims entry is not a list",
                         statement_id=field.id,
-                        property_id=field.wikidata_property,
+                        property_id=property_id,
                     )
                 )
                 continue
@@ -116,7 +128,7 @@ class WikidataNormalizer:
                             severity="warning",
                             message="Statement missing value",
                             statement_id=field.id,
-                            property_id=field.wikidata_property,
+                            property_id=property_id,
                         )
                     )
                     continue

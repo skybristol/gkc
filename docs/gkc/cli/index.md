@@ -54,11 +54,12 @@ gkc profile form --profile /path/to/SpiritSafe/profiles/TribalGovernmentUS/profi
 
 ### [Wikibase](wikibase.md)
 
-Audit and initialize Data Distillery foundation ontology terms from profile definitions.
+Audit and initialize Data Distillery foundation ontology terms from profile definitions, and build profile-driven write plans.
 
 ```bash
 gkc wikibase audit --require-auth
 gkc wikibase init --execute
+gkc wikibase plan-write --profile TribalGovernmentUS --source-values-file /tmp/gkc_plan_source_values.json
 ```
 
 ## Quick Start Examples

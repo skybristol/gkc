@@ -106,29 +106,33 @@ def test_hydrate_profile_lookups_supports_legacy_flat_profile_path(tmp_path: Pat
     )
 
     (profile_dir / "profile.yaml").write_text(
-        """
-name: Example
-description: Example profile
-fields:
-  - id: f1
-    label: Field 1
-    wikidata_property: P31
-    type: statement
-    required: false
-    value:
-      type: item
-    references:
-      allowed:
-        - id: stated_in
-          wikidata_property: P248
-          type: item
-          label: Stated in
-          allowed_items:
-            source: sparql
-            query_ref: queries/simple.sparql
-            query_params:
-              qid: Q42
-""".strip(),
+        "\n".join(
+            [
+                "name: Example",
+                "description: Example profile",
+                "fields:",
+                "  - id: f1",
+                "    label: Field 1",
+                "    io_map:",
+                "      - to: https://www.wikidata.org/entity/P31",
+                "    type: statement",
+                "    required: false",
+                "    value:",
+                "      type: item",
+                "    references:",
+                "      allowed:",
+                "        - id: stated_in",
+                "          io_map:",
+                "            - to: https://www.wikidata.org/entity/P248",
+                "          type: item",
+                "          label: Stated in",
+                "          allowed_items:",
+                "            source: sparql",
+                "            query_ref: queries/simple.sparql",
+                "            query_params:",
+                "              qid: Q42",
+            ]
+        ),
         encoding="utf-8",
     )
 

@@ -1,6 +1,5 @@
 """Tests for YAML profile loading and schema generation."""
 
-import textwrap
 from pathlib import Path
 
 import pytest
@@ -40,7 +39,7 @@ def test_profile_loader_reads_yaml(profile_fixture_path: Path):
 
     instance_field = profile.statement_by_id("instance_of")
     assert instance_field is not None
-    assert instance_field.wikidata_property == "P31"
+    assert instance_field.property_id() == "P31"
     assert instance_field.references is not None
     assert len(instance_field.references.allowed) == 1
     allowed_items = instance_field.references.allowed[0].allowed_items
@@ -103,18 +102,19 @@ def test_exemplar_profile_covers_datatypes_and_prompts(exemplar_fixture_path: Pa
 
 def test_profile_loader_allows_missing_statement_required_flag():
     """Statement-level required should be optional and default to false."""
-    yaml_text = textwrap.dedent(
-        """
-        name: Minimal Profile
-        description: Minimal test profile
-        statements:
-          - id: instance_of
-            label: Instance of
-            wikidata_property: P31
-            type: statement
-            value:
-              type: item
-        """
+    yaml_text = "\n".join(
+        [
+            "name: Minimal Profile",
+            "description: Minimal test profile",
+            "statements:",
+            "  - id: instance_of",
+            "    label: Instance of",
+            "    io_map:",
+            "      - to: https://www.wikidata.org/entity/P31",
+            "    type: statement",
+            "    value:",
+            "      type: item",
+        ]
     )
 
     profile = ProfileLoader().load_from_text(yaml_text)

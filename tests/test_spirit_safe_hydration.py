@@ -38,7 +38,8 @@ description: Example
 fields:
   - id: f1
     label: Field 1
-    wikidata_property: P31
+    io_map:
+      - to: https://www.wikidata.org/entity/P31
     type: statement
     required: false
     value:
@@ -46,7 +47,8 @@ fields:
     references:
       allowed:
         - id: stated_in
-          wikidata_property: P248
+          io_map:
+            - to: https://www.wikidata.org/entity/P248
           type: item
           label: Stated in
           allowed_items:
@@ -56,7 +58,8 @@ fields:
               qid: Q42
   - id: f2
     label: Field 2
-    wikidata_property: P279
+    io_map:
+      - to: https://www.wikidata.org/entity/P279
     type: statement
     required: false
     value:
@@ -64,7 +67,8 @@ fields:
     qualifiers:
       - id: language
         label: Language
-        wikidata_property: P407
+        io_map:
+          - to: https://www.wikidata.org/entity/P407
         required: false
         value:
           type: item
@@ -113,7 +117,8 @@ description: Example
 fields:
   - id: f1
     label: Field 1
-    wikidata_property: P31
+    io_map:
+      - to: https://www.wikidata.org/entity/P31
     type: statement
     required: false
     value:
@@ -121,7 +126,8 @@ fields:
     references:
       allowed:
         id: stated_in
-        wikidata_property: P248
+        io_map:
+          - to: https://www.wikidata.org/entity/P248
         type: item
         label: Stated in
         allowed_items:

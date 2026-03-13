@@ -1,5 +1,7 @@
 """Tests for the Mash module."""
 
+import json
+
 import gkc
 from gkc.mash import (
     ClaimSummary,
@@ -7,10 +9,14 @@ from gkc.mash import (
     WikibaseItemTemplate,
     WikibaseLoader,
     WikibasePropertyTemplate,
+    WikibaseRecentChangesResult,
     WikipediaLoader,
     WikipediaTemplate,
     apply_item_property_filters,
     apply_template_language_filter,
+    fetch_recent_entity_changes,
+    get_latest_cache_timestamp,
+    refresh_entity_cache_from_recentchanges,
     strip_entity_identifiers,
 )
 
@@ -273,6 +279,145 @@ def test_strip_entity_identifiers_removes_ids():
     assert "id" in entity_data
     assert entity_data["claims"]["P31"][0]["id"] == "Q42$ABC"
     assert entity_data["claims"]["P31"][0]["qualifiers"]["P580"][0]["hash"] == "abc123"
+
+
+class _FakeApiClient:
+    def __init__(self, payloads):
+        self.payloads = list(payloads)
+        self.api_url = "https://datadistillery.wikibase.cloud/w/api.php"
+
+    def request(self, params):
+        _ = params
+        if not self.payloads:
+            raise AssertionError("No more fake payloads available")
+        return self.payloads.pop(0)
+
+
+def test_get_latest_cache_timestamp_prefers_entity_modified(tmp_path):
+    cache_dir = tmp_path / "cache"
+    cache_dir.mkdir()
+    (cache_dir / "Q4.json").write_text(
+        json.dumps(
+            {
+                "entity_id": "Q4",
+                "entity": {"modified": "2026-03-12T20:44:37Z"},
+                "metadata": {"cache_exported_at": "2026-03-12T20:44:40Z"},
+            }
+        ),
+        encoding="utf-8",
+    )
+    (cache_dir / "Q39.json").write_text(
+        json.dumps(
+            {
+                "entity_id": "Q39",
+                "entity": {"modified": "2026-03-12T22:00:00Z"},
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    assert get_latest_cache_timestamp(cache_dir) == "2026-03-12T22:00:00Z"
+
+
+def test_fetch_recent_entity_changes_collects_ids_and_ignores_filtered():
+    client = _FakeApiClient(
+        [
+            {
+                "query": {
+                    "recentchanges": [
+                        {"title": "Item:Q4", "timestamp": "2026-03-13T17:00:00Z"},
+                        {"title": "Property:P192", "timestamp": "2026-03-13T17:01:00Z"},
+                    ]
+                },
+                "continue": {"rccontinue": "next-token"},
+            },
+            {
+                "query": {
+                    "recentchanges": [
+                        {"title": "Item:Q39", "timestamp": "2026-03-13T17:02:00Z"},
+                        {"title": "User:Sky", "timestamp": "2026-03-13T17:03:00Z"},
+                    ]
+                }
+            },
+        ]
+    )
+
+    result = fetch_recent_entity_changes(
+        client,
+        since="2026-03-13T16:59:30Z",
+        overlap_seconds=30,
+        ignore_ids={"P192"},
+    )
+
+    assert isinstance(result, WikibaseRecentChangesResult)
+    assert result.since == "2026-03-13T16:59:00Z"
+    assert result.next_since == "2026-03-13T17:03:00Z"
+    assert result.changed_ids == ["Q39", "Q4"]
+    assert result.ignored_ids == ["P192"]
+
+
+def test_refresh_entity_cache_from_recentchanges_updates_and_deletes(tmp_path):
+    cache_dir = tmp_path / "entities"
+    cache_dir.mkdir()
+    (cache_dir / "Q4.json").write_text(
+        json.dumps(
+            {
+                "entity_id": "Q4",
+                "entity": {"id": "Q4", "modified": "2026-03-13T16:00:00Z"},
+                "metadata": {"cache_exported_at": "2026-03-13T16:00:10Z"},
+            }
+        ),
+        encoding="utf-8",
+    )
+    (cache_dir / "Q39.json").write_text(
+        json.dumps(
+            {
+                "entity_id": "Q39",
+                "entity": {"id": "Q39", "modified": "2026-03-13T16:00:00Z"},
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    client = _FakeApiClient(
+        [
+            {
+                "query": {
+                    "recentchanges": [
+                        {"title": "Item:Q4", "timestamp": "2026-03-13T17:00:00Z"},
+                        {"title": "Item:Q39", "timestamp": "2026-03-13T17:01:00Z"},
+                    ]
+                }
+            },
+            {
+                "entities": {
+                    "Q4": {
+                        "id": "Q4",
+                        "modified": "2026-03-13T17:00:00Z",
+                        "labels": {},
+                    },
+                    "Q39": {"id": "Q39", "missing": ""},
+                }
+            },
+        ]
+    )
+
+    result = refresh_entity_cache_from_recentchanges(
+        api_client=client,
+        cache_dir=cache_dir,
+        since="2026-03-13T16:30:00Z",
+        overlap_seconds=0,
+    )
+
+    assert result.changed_ids == ["Q39", "Q4"]
+    assert result.refreshed_ids == ["Q4"]
+    assert result.deleted_ids == ["Q39"]
+    assert result.missing_ids == ["Q39"]
+
+    refreshed_payload = json.loads((cache_dir / "Q4.json").read_text(encoding="utf-8"))
+    assert refreshed_payload["entity_id"] == "Q4"
+    assert refreshed_payload["metadata"]["workflow_mode"] == "recentchanges"
+    assert not (cache_dir / "Q39.json").exists()
 
 
 def test_wikidata_loader_snak_to_value_entity():
