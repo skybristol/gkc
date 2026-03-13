@@ -64,13 +64,15 @@ standard_reference: &standard_reference
   validation_policy: allow_existing_nonconforming
   allowed:
     - id: stated_in
-      wikidata_property: P248
+      io_map:
+        - to: https://www.wikidata.org/entity/P248
       type: item
       label: Stated in
       input_prompt: Enter the QID of the source publication or source dataset.
       description: Reference to source document or database
     - id: reference_url
-      wikidata_property: P854
+      io_map:
+        - to: https://www.wikidata.org/entity/P854
       type: url
       label: Reference URL
       input_prompt: Enter the direct URL to the source used for this statement.
@@ -81,7 +83,8 @@ statements:
   - id: instance_of
     label: Instance of
     input_prompt: the primary classification for the tribe (fixed to "federally recognized Native American tribe in the United States" for this profile)
-    wikidata_property: P31
+    io_map:
+      - to: https://www.wikidata.org/entity/P31
     type: statement
     max_count: null   # allow multiple P31 values on existing items
     validation_policy: allow_existing_nonconforming
@@ -102,7 +105,8 @@ statements:
 
       allowed:
         id: stated_in
-        wikidata_property: P248
+        io_map:
+          - to: https://www.wikidata.org/entity/P248
         type: item
         label: Stated in
 
@@ -121,7 +125,8 @@ statements:
   - id: official_website
     label: Official website
     input_prompt: official website for the tribal government
-    wikidata_property: P856
+    io_map:
+      - to: https://www.wikidata.org/entity/P856
     type: statement
     max_count: 1
     validation_policy: allow_existing_nonconforming
@@ -137,7 +142,8 @@ statements:
       - id: language_of_work
         label: Language of work or name
         input_prompt: specify the language used on the website
-        wikidata_property: P407
+        io_map:
+          - to: https://www.wikidata.org/entity/P407
 
         value:
           type: item
@@ -151,7 +157,8 @@ statements:
 
       target:
         id: reference_url
-        wikidata_property: P854
+        io_map:
+          - to: https://www.wikidata.org/entity/P854
         type: url
         label: Reference URL
         value_source: statement_value  # use P856 URL as reference
@@ -159,7 +166,8 @@ statements:
   - id: member_count
     label: Member count
     input_prompt: member count statement when a reliable source is available
-    wikidata_property: P2124
+    io_map:
+      - to: https://www.wikidata.org/entity/P2124
     type: statement
 
     value:
@@ -172,7 +180,8 @@ statements:
       - id: point_in_time
         label: Point in time
         input_prompt: date the reported member count applies to
-        wikidata_property: P585
+        io_map:
+          - to: https://www.wikidata.org/entity/P585
         guidance: >
           The date for the member count should be included as a qualifier to provide temporal context.
           Enter the date in YYYY, YYYY-MM, or YYYY-MM-DD format.
@@ -185,7 +194,8 @@ statements:
   - id: native_name
     label: Native name
     input_prompt: native label in the language used by the tribe
-    wikidata_property: P1705
+    io_map:
+      - to: https://www.wikidata.org/entity/P1705
     type: statement
     max_count: null   # allow multiple native names in different languages
     validation_policy: allow_existing_nonconforming
@@ -202,7 +212,8 @@ statements:
       - id: language_of_work
         label: Language of work or name
         input_prompt: language corresponding to this native name
-        wikidata_property: P407
+        io_map:
+          - to: https://www.wikidata.org/entity/P407
         max_count: 1
 
         value:
@@ -234,7 +245,8 @@ statements:
   - id: headquarters_location
     label: Headquarters location
     input_prompt: headquarters location for the tribal government
-    wikidata_property: P159
+    io_map:
+      - to: https://www.wikidata.org/entity/P159
     type: statement
     max_count: 1
     validation_policy: allow_existing_nonconforming
@@ -246,7 +258,8 @@ statements:
       - id: street_address
         label: Street address
         input_prompt: street address for the headquarters location
-        wikidata_property: P6375
+        io_map:
+          - to: https://www.wikidata.org/entity/P6375
         max_count: 1
 
         value:
@@ -258,7 +271,8 @@ statements:
       - id: postal_code
         label: Postal code
         input_prompt: postal code for the headquarters address
-        wikidata_property: P281
+        io_map:
+          - to: https://www.wikidata.org/entity/P281
         max_count: 1
 
         value:
@@ -267,7 +281,8 @@ statements:
       - id: coordinate_location
         label: Coordinate location
         input_prompt: latitude and longitude for the headquarters location
-        wikidata_property: P625
+        io_map:
+          - to: https://www.wikidata.org/entity/P625
         max_count: 1
 
         value:
@@ -285,7 +300,8 @@ statements:
   - id: inception
     label: Inception
     input_prompt: inception date for formal recognition or establishment
-    wikidata_property: P571
+    io_map:
+      - to: https://www.wikidata.org/entity/P571
     type: statement
     max_count: 1
     validation_policy: allow_existing_nonconforming
@@ -318,7 +334,8 @@ statements:
   - id: osm_relation_id
     label: OpenStreetMap relation ID
     input_prompt: OpenStreetMap relation identifier statement when available
-    wikidata_property: P402
+    io_map:
+      - to: https://www.wikidata.org/entity/P402
     type: statement
     max_count: 1
     validation_policy: allow_existing_nonconforming
@@ -342,7 +359,8 @@ statements:
   - id: flag_image
     label: Flag image
     input_prompt: flag image for valid Wikimedia Commons file
-    wikidata_property: P41
+    io_map:
+      - to: https://www.wikidata.org/entity/P41
     type: statement
     max_count: 1
     validation_policy: allow_existing_nonconforming
@@ -368,7 +386,8 @@ statements:
   - id: office_held_by_head_of_state
     label: Office held by head of state
     input_prompt: the title of the office held by the head of state/government of this tribe
-    wikidata_property: P1906
+    io_map:
+      - to: https://www.wikidata.org/entity/P1906
     type: statement
     entity_profile: OfficeHeldByHeadOfState
     max_count: 1

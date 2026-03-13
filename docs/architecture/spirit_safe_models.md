@@ -110,7 +110,8 @@ class StatementLinkage(BaseModel):
 ```yaml
 statements:
   - id: office_held_by_head_of_state
-    wikidata_property: P1906
+        io_map:
+            - to: https://www.wikidata.org/entity/P1906
     entity_profile: OfficeHeldByHeadOfState  # Link to profile name
     linkage:  # Complete linkage specification
       target_profile: OfficeHeldByHeadOfState

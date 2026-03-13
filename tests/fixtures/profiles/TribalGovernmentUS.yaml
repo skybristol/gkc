@@ -6,7 +6,8 @@ description: >
 statements:
   - id: instance_of
     label: Instance of
-    wikidata_property: P31
+    io_map:
+      - to: https://www.wikidata.org/entity/P31
     type: statement
     required: true
     max_count: null
@@ -23,7 +24,8 @@ statements:
       form_policy: target_only
       allowed:
         id: stated_in
-        wikidata_property: P248
+        io_map:
+          - to: https://www.wikidata.org/entity/P248
         type: item
         label: Stated in
         allowed_items:
@@ -40,7 +42,8 @@ statements:
 
   - id: official_website
     label: Official website
-    wikidata_property: P856
+    io_map:
+      - to: https://www.wikidata.org/entity/P856
     type: statement
     required: false
     max_count: 1
@@ -51,7 +54,8 @@ statements:
     qualifiers:
       - id: language_of_work
         label: Language of work or name
-        wikidata_property: P407
+        io_map:
+          - to: https://www.wikidata.org/entity/P407
         required: true
         value:
           type: item
@@ -64,14 +68,16 @@ statements:
       form_policy: target_only
       target:
         id: reference_url
-        wikidata_property: P854
+        io_map:
+          - to: https://www.wikidata.org/entity/P854
         type: url
         label: Reference URL
         value_source: statement_value
 
   - id: member_count
     label: Member count
-    wikidata_property: P2124
+    io_map:
+      - to: https://www.wikidata.org/entity/P2124
     type: statement
     required: false
     value:
@@ -82,7 +88,8 @@ statements:
     qualifiers:
       - id: point_in_time
         label: Point in time
-        wikidata_property: P585
+        io_map:
+          - to: https://www.wikidata.org/entity/P585
         required: true
         value:
           type: time
@@ -93,19 +100,22 @@ statements:
       form_policy: target_only
       allowed:
         - id: stated_in
-          wikidata_property: P248
+          io_map:
+            - to: https://www.wikidata.org/entity/P248
           type: item
           label: Stated in
           description: Reference to source item (e.g., census, report)
         - id: reference_url
-          wikidata_property: P854
+          io_map:
+            - to: https://www.wikidata.org/entity/P854
           type: url
           label: Reference URL
           description: Direct URL to source
 
   - id: native_label
     label: Native label
-    wikidata_property: P1705
+    io_map:
+      - to: https://www.wikidata.org/entity/P1705
     type: statement
     required: false
     max_count: null
@@ -116,7 +126,8 @@ statements:
     qualifiers:
       - id: language_of_work
         label: Language of work or name
-        wikidata_property: P407
+        io_map:
+          - to: https://www.wikidata.org/entity/P407
         required: false
         value:
           type: item
@@ -133,17 +144,20 @@ statements:
       form_policy: target_only
       allowed:
         - id: stated_in
-          wikidata_property: P248
+          io_map:
+            - to: https://www.wikidata.org/entity/P248
           type: item
           label: Stated in
         - id: reference_url
-          wikidata_property: P854
+          io_map:
+            - to: https://www.wikidata.org/entity/P854
           type: url
           label: Reference URL
 
   - id: headquarters_location
     label: Headquarters location
-    wikidata_property: P159
+    io_map:
+      - to: https://www.wikidata.org/entity/P159
     type: statement
     required: false
     max_count: 1
@@ -160,7 +174,8 @@ statements:
     qualifiers:
       - id: coordinate_location
         label: Coordinate location
-        wikidata_property: P625
+        io_map:
+          - to: https://www.wikidata.org/entity/P625
         required: false
         value:
           type: globecoordinate
@@ -176,17 +191,20 @@ statements:
       form_policy: target_only
       allowed:
         - id: stated_in
-          wikidata_property: P248
+          io_map:
+            - to: https://www.wikidata.org/entity/P248
           type: item
           label: Stated in
         - id: reference_url
-          wikidata_property: P854
+          io_map:
+            - to: https://www.wikidata.org/entity/P854
           type: url
           label: Reference URL
 
   - id: flag_image
     label: Flag image
-    wikidata_property: P41
+    io_map:
+      - to: https://www.wikidata.org/entity/P41
     type: statement
     required: false
     max_count: 1
@@ -201,17 +219,20 @@ statements:
       form_policy: target_only
       allowed:
         - id: source_of_file
-          wikidata_property: P7482
+          io_map:
+            - to: https://www.wikidata.org/entity/P7482
           type: item
           label: Source of file
         - id: copyright_status
-          wikidata_property: P6216
+          io_map:
+            - to: https://www.wikidata.org/entity/P6216
           type: item
           label: Copyright status
 
   - id: seal_image
     label: Seal image
-    wikidata_property: P94
+    io_map:
+      - to: https://www.wikidata.org/entity/P94
     type: statement
     required: false
     max_count: 1
@@ -226,10 +247,12 @@ statements:
       form_policy: target_only
       allowed:
         - id: source_of_file
-          wikidata_property: P7482
+          io_map:
+            - to: https://www.wikidata.org/entity/P7482
           type: item
           label: Source of file
         - id: copyright_status
-          wikidata_property: P6216
+          io_map:
+            - to: https://www.wikidata.org/entity/P6216
           type: item
           label: Copyright status

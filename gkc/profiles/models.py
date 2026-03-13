@@ -9,6 +9,7 @@ Plain meaning: The typed Python shape of a YAML profile.
 
 from __future__ import annotations
 
+import re
 from typing import List, Literal, Optional, Union
 
 from pydantic import AliasChoices, BaseModel, Field, field_validator, model_validator
@@ -27,6 +28,60 @@ ValueType = Literal[
     "commonsMedia",
 ]
 ChoiceRefreshPolicy = Literal["manual", "daily", "weekly", "on_release"]
+WIKIDATA_ENTITY_PREFIX = "https://www.wikidata.org/entity/"
+_PID_PATTERN = re.compile(r"^P\d+$", re.IGNORECASE)
+
+
+def _extract_property_id_from_identifier(identifier: str) -> Optional[str]:
+    value = identifier.strip()
+    if _PID_PATTERN.match(value):
+        return value.upper()
+    segment = value.rstrip("/").split("/")[-1]
+    if _PID_PATTERN.match(segment):
+        return segment.upper()
+    return None
+
+
+def _resolve_property_id_from_io_map(
+    io_map: List["IOMapEntry"],
+    *,
+    system_prefix: Optional[str] = None,
+) -> Optional[str]:
+    for route in io_map:
+        if not route.to:
+            continue
+        if system_prefix and not route.to.startswith(system_prefix):
+            continue
+        property_id = _extract_property_id_from_identifier(route.to)
+        if property_id:
+            return property_id
+    return None
+
+
+class IOMapEntry(BaseModel):
+    """Define one directional IO routing entry.
+
+    Plain meaning: One inbound (`from`) or outbound (`to`) mapping route.
+    """
+
+    to: Optional[str] = Field(default=None, description="Outbound route identifier")
+    from_: Optional[str] = Field(
+        default=None,
+        alias="from",
+        description="Inbound route identifier",
+    )
+    value_transform: Optional[str] = Field(
+        default=None,
+        description="Resolver key/identifier for route value transformation",
+    )
+
+    @model_validator(mode="after")
+    def _validate_direction(self):
+        has_to = bool(self.to)
+        has_from = bool(self.from_)
+        if has_to == has_from:
+            raise ValueError("IOMapEntry must define exactly one of 'to' or 'from'")
+        return self
 
 
 class ConstraintDefinition(BaseModel):
@@ -139,7 +194,7 @@ class ReferenceTargetDefinition(BaseModel):
 
     Args:
         id: Identifier for the reference entry.
-        wikidata_property: Wikidata property ID.
+        io_map: Directional I/O mapping routes.
         type: Datatype for the reference value.
         label: Human-readable label.
         input_prompt: Optional short prompt shown in data-entry UIs.
@@ -150,7 +205,7 @@ class ReferenceTargetDefinition(BaseModel):
     Example:
         >>> ReferenceTargetDefinition(
         ...     id="stated_in",
-        ...     wikidata_property="P248",
+        ...     io_map=[{"to": "https://www.wikidata.org/entity/P248"}],
         ...     type="item",
         ...     label="Stated in"
         ... )
@@ -159,7 +214,7 @@ class ReferenceTargetDefinition(BaseModel):
     """
 
     id: str = Field(..., description="Reference entry identifier")
-    wikidata_property: str = Field(..., description="Wikidata property ID")
+    io_map: List[IOMapEntry] = Field(..., description="Directional IO map entries")
     type: ValueType = Field(..., description="Reference value datatype")
     label: str = Field(..., description="Reference entry label")
     input_prompt: str = Field(
@@ -170,6 +225,17 @@ class ReferenceTargetDefinition(BaseModel):
     allowed_items: Optional[ChoiceListSpec] = Field(
         default=None, description="Optional choice list"
     )
+
+    def property_id_for_system(self, system_prefix: str) -> Optional[str]:
+        return _resolve_property_id_from_io_map(
+            self.io_map, system_prefix=system_prefix
+        )
+
+    def property_id(self) -> Optional[str]:
+        return _resolve_property_id_from_io_map(self.io_map)
+
+    def wikidata_property_id(self) -> Optional[str]:
+        return self.property_id_for_system(WIKIDATA_ENTITY_PREFIX)
 
 
 class MetadataDefinition(BaseModel):
@@ -317,7 +383,7 @@ class QualifierDefinition(BaseModel):
         id: Qualifier identifier.
         label: Human-readable label.
         input_prompt: Optional short prompt shown in data-entry UIs.
-        wikidata_property: Wikidata property ID.
+        io_map: Directional I/O mapping routes.
         required: Whether the qualifier is required.
         min_count: Minimum number of qualifier values.
         max_count: Maximum number of qualifier values.
@@ -327,7 +393,7 @@ class QualifierDefinition(BaseModel):
         >>> QualifierDefinition(
         ...     id="point_in_time",
         ...     label="Point in time",
-        ...     wikidata_property="P585",
+        ...     io_map=[{"to": "https://www.wikidata.org/entity/P585"}],
         ...     required=True,
         ...     value=ValueDefinition(type="time")
         ... )
@@ -340,7 +406,7 @@ class QualifierDefinition(BaseModel):
     input_prompt: str = Field(
         default="", description="Short prompt shown in input widgets"
     )
-    wikidata_property: str = Field(..., description="Wikidata property ID")
+    io_map: List[IOMapEntry] = Field(..., description="Directional IO map entries")
     required: bool = Field(default=False, description="Qualifier required flag")
     min_count: Optional[int] = Field(
         default=None, description="Minimum qualifier values"
@@ -356,6 +422,17 @@ class QualifierDefinition(BaseModel):
         if value is None and info.data.get("required") is True:
             return 1
         return value
+
+    def property_id_for_system(self, system_prefix: str) -> Optional[str]:
+        return _resolve_property_id_from_io_map(
+            self.io_map, system_prefix=system_prefix
+        )
+
+    def property_id(self) -> Optional[str]:
+        return _resolve_property_id_from_io_map(self.io_map)
+
+    def wikidata_property_id(self) -> Optional[str]:
+        return self.property_id_for_system(WIKIDATA_ENTITY_PREFIX)
 
 
 class LinkageRelationship(BaseModel):
@@ -502,7 +579,7 @@ class ProfileFieldDefinition(BaseModel):
         id: Field identifier.
         label: Human-readable label.
         input_prompt: Optional short prompt shown in data-entry UIs.
-        wikidata_property: Wikidata property ID.
+        io_map: Directional I/O mapping routes.
         type: Field type (currently only "statement").
         required: Whether the statement is required.
         max_count: Maximum number of statements (None = unlimited).
@@ -519,7 +596,7 @@ class ProfileFieldDefinition(BaseModel):
         >>> ProfileFieldDefinition(
         ...     id="instance_of",
         ...     label="Instance of",
-        ...     wikidata_property="P31",
+        ...     io_map=[{"to": "https://www.wikidata.org/entity/P31"}],
         ...     type="statement",
         ...     required=True,
         ...     value=ValueDefinition(type="item", fixed="Q5")
@@ -533,7 +610,7 @@ class ProfileFieldDefinition(BaseModel):
     input_prompt: str = Field(
         default="", description="Short prompt shown in input widgets"
     )
-    wikidata_property: str = Field(..., description="Wikidata property ID")
+    io_map: List[IOMapEntry] = Field(..., description="Directional IO map entries")
     type: Literal["statement"] = Field(default="statement", description="Field type")
     required: bool = Field(default=False, description="Field required flag")
     max_count: Optional[int] = Field(default=None, description="Max statement count")
@@ -558,6 +635,17 @@ class ProfileFieldDefinition(BaseModel):
     references: Optional[ReferenceDefinition] = Field(
         default=None, description="Reference definition"
     )
+
+    def property_id_for_system(self, system_prefix: str) -> Optional[str]:
+        return _resolve_property_id_from_io_map(
+            self.io_map, system_prefix=system_prefix
+        )
+
+    def property_id(self) -> Optional[str]:
+        return _resolve_property_id_from_io_map(self.io_map)
+
+    def wikidata_property_id(self) -> Optional[str]:
+        return self.property_id_for_system(WIKIDATA_ENTITY_PREFIX)
 
 
 class ProfileDefinition(BaseModel):
@@ -629,10 +717,10 @@ class ProfileDefinition(BaseModel):
     def statement_by_property(
         self, property_id: str
     ) -> Optional[ProfileFieldDefinition]:
-        """Get a statement definition by its Wikidata property ID.
+        """Get a statement definition by property ID from configured routes.
 
         Args:
-            property_id: Wikidata property ID.
+            property_id: Property ID (e.g., ``P31``).
 
         Returns:
             Matching ProfileFieldDefinition or None if not found.
@@ -643,10 +731,10 @@ class ProfileDefinition(BaseModel):
         Example:
             >>> profile.statement_by_property("P31")
 
-        Plain meaning: Find the statement that maps to a Wikidata property.
+        Plain meaning: Find the statement that maps to a property ID.
         """
         for statement in self.statements:
-            if statement.wikidata_property == property_id:
+            if statement.property_id() == property_id.upper():
                 return statement
         return None
 

@@ -1,606 +1,1027 @@
-# Fermenter V1 Plan
+# FermenterV1: Validation & Coercion Engine
 
-## Decision Log
+**Target Agent:** Validation Agent  
+**Phase:** New module implementation  
+**Status:** Planning (v1 fresh start)  
 
-**[confirmed]** 2026-03-05: Adopt phased migration strategy for fermenter (build new contracts/coercers first, then refactor legacy pathways through adapters and progressive delegation).
-  Source: Q1.2 on issue #120
+---
 
-**[confirmed]** 2026-03-05: Fermenter uses submodule architecture; datatype constraints profile-driven, fermenter owns executable logic.
-  Source: Q1.1, Q1.3 on issue #120
+## Executive Summary
 
-**[confirmed]** 2026-03-05: Interleaved atomic `coerce_and_validate` flow at statement scope; support both eager and batch validation modes.
-  Source: Q2.1, Q2.2 on issue #120
+The **fermenter** module is a new component in the gkc package responsible for **primitive datatype validation and coercion** based on GKC Property Specifications defined in the Data Distillery Wikibase. This module bridges the gap between user-provided input (from wizard forms, CSV uploads, or API calls) and the strict Wikibase JSON format required for entity serialization.
 
-**[confirmed]** 2026-03-05: Fallback allowed-items: check cache/index first, tertiary mash network fetch, profile-defined fallback lists, per-profile/statement pass-through config (defaults true).
-  Source: Q2.3, Q5.1, Q5.2, Q5.3 on issue #120
+**Core Responsibilities:**
+1. Validate values against 8 primitive Wikibase datatypes
+2. Coerce loosely-typed input to strict Wikibase JSON structure
+3. Enforce GKC Property Specification directives (Q6 instances)
+4. Resolve and validate against GKC Value Lists (Q7 instances)
+5. Validate qualifier requirements and reference constraints
+6. Return a shared result envelope consumable by wizard, CLI, and bulk pipelines
 
-**[confirmed]** 2026-03-05: Unified issue model for validation/coercion outcomes; include actionable feedback per profile; plan for localization (possibly via Data Distillery Wikibase).
-  Source: Q4.1, Q4.2, Q4.3, Q4.4 on issue #120
+**Design Principles:**
+- **Atomic validators:** One validator function per datatype, independently testable
+- **Fail-fast policy:** Validation errors stop processing, coercion attempts are logged
+- **Specification-driven:** All validation rules sourced from DD Wikibase ontology (no hardcoded constraints)
+- **Offline-capable:** Value lists cached in SpiritSafe for fallback when SPARQL unavailable
+- **API-first multi-modal:** One fermenter API powers wizard, batch, CLI, and automation; callers vary only in presentation and workflow handling
 
-**[confirmed]** 2026-03-05: Coercion philosophy: aggressive framework capacity, start moderate, fail fast with structured choices for ambiguous cases.
-  Source: Q3.1, Q3.2 on issue #120
+---
 
-**[confirmed]** 2026-03-05: Mystery data inference grounded in active profile/packet context; stub likely statements when profile-aligned mapping detectable.
-  Source: Q3.3, Q8.3 on issue #120
+## API-First Execution Contract
 
-**[confirmed]** 2026-03-05: Fermenter directly depends on `gkc.spirit_safe` for all cache/hydration access; also integrates with `gkc.profiles`, `gkc.sparql`, identify co-dev gaps with Profile Architect.
-  Source: Q5.1, Q9.1 on issue #120
+Fermenter must expose a public interface that is interface-agnostic and reusable across all curation modes.
 
-**[confirmed]** 2026-03-05: Cross-entity constraints (#110, #111, #112) all live in fermenter, called from wizard; supports multi-modal interactions and external tool-builders.
-  Source: Q6.1 on issue #120
+**Public Contract Requirements:**
+- Accept normalized profile statement context (including policy references and value/reference specs)
+- Accept caller execution mode metadata (e.g., interactive preview vs batch strict)
+- Return a shared result envelope with machine-readable codes, severity, normalized values, user-facing messages, and provenance trace
+- Avoid any wizard-only branching inside fermenter core
 
-**[confirmed]** 2026-03-05: Cardinality validation starts simple; reciprocal awareness treated as warnings/rejection based on available Wikidata property constraint data.
-  Source: Q6.2, Q6.3 on issue #120
+**Caller Responsibilities (outside fermenter):**
+- Wizard renders inline hints/errors and interaction affordances
+- CLI formats terminal output and exit behavior
+- Bulk pipelines aggregate/report failures and drive retry or quarantine flows
 
-**[confirmed]** 2026-03-05: Leverage existing `ProfilePydanticGenerator` as validation backbone; support all scopes (presence/type/datatype/constraint); permit non-conforming data mode for `allow_existing_nonconforming`.
-  Source: Q7.1, Q7.2, Q7.3 on issue #120
+---
 
-**[confirmed]** 2026-03-05: Test fixtures: set up synthetic profiles as primary fixtures early next cycle; coercion framework as modular public functions; defer deep mystery data edge cases.
-  Source: Q8.1, Q8.2, Q8.3 on issue #120
+## Primitive Datatype Validators
 
-**[confirmed]** 2026-03-05: Fermenter provides raw validation results; Wizard translates to UI; shipper owns Wikidata JSON conversion (may introduce some here); Profile Architect to handle versioning.
-  Source: Q9.2, Q9.3 on issue #120
+### Contract
 
-**[confirmed]** 2026-03-05: Cross-statement validation means rule framework applied across multiple statements in profile, not interstatement dependencies (those live at qualifier/reference level).
-  Source: Q10.1 on issue #120
+Each datatype requires **internal helpers** and is exposed through a **shared public fermenter API**:
+1. **Validator helper:** Returns `ValidationResult` (pass/fail + error messages)
+2. **Coercer helper:** Attempts to transform input to Wikibase JSON structure, raises exception if impossible
+3. **Public orchestrator:** Applies policy directives, runs validator/coercer pipeline, and emits the shared result envelope
 
-**[deferred]** 2026-03-05: Wikidata property constraint digestion for cross-statement and reciprocal awareness rules; specialized reference resolvers organized as first-order SpiritSafe entities.
-  Source: Q10.2, Q10.3 on issue #120
+### Datatype Inventory (from P194 in DD Wikibase)
 
-**[confirmed]** 2026-03-05: Data Distillery Wikibase is active at `datadistillery.wikibase.cloud` and will complement SpiritSafe as canonical, queryable registry infrastructure for property semantics, executable-constraint references, and multilingual validation messaging.
-  Source: Infrastructure update, 2026-03-05
+| Datatype | YAML `value.type` | Wikibase JSON `datatype` | Example Input | Example Output |
+|----------|-------------------|-------------------------|---------------|----------------|
+| item | `item` | `wikibase-item` | `"Q12345"` or `"https://www.wikidata.org/entity/Q12345"` | `{"entity-type": "item", "id": "Q12345"}` |
+| monolingual text | `monolingualtext` | `monolingualtext` | `{"text": "Hello", "language": "en"}` | `{"text": "Hello", "language": "en"}` |
+| url | `url` | `url` | `"https://example.com"` | `"https://example.com"` |
+| string | `string` | `string` | `"Free text"` | `"Free text"` |
+| datetime | `time` | `time` | `"2024-03-15"` or `"2024-03-15T10:30:00Z"` | `{"+2024-03-15T00:00:00Z", "timezone": 0, "precision": 11, ...}` |
+| quantity | `quantity` | `quantity` | `"42"` or `{"amount": "+42", "unit": "1"}` | `{"amount": "+42", "unit": "1", "upperBound": "+42", "lowerBound": "+42"}` |
+| geographic coordinates | `globecoordinate` | `globe-coordinate` | `{"latitude": 38.8977, "longitude": -77.0365}` | `{"latitude": 38.8977, "longitude": -77.0365, "precision": 0.0001, "globe": "http://www.wikidata.org/entity/Q2"}` |
+| commons media file | `commonsMedia` | `commonsMedia` | `"Example.jpg"` or `"File:Example.jpg"` | `"Example.jpg"` |
 
-## Purpose
-
-The `fermenter` module is the validation and data coercion engine for GKC.
-
-Fermenter will centralize logic currently distributed across profile validation, normalization, and related utility modules, while preserving current behavior during a phased migration.
-
-This document defines the first implementation iteration and migration sequence.
-
-## Guiding Decisions (Confirmed)
-
-### Architecture and Ownership
-
-- Fermenter will use a submodule layout, not a flat single-file/module shape.
-- We will use a phased migration approach rather than a single refactor sweep.
-- Datatype constraints remain profile-driven (Entity Profile as source of truth), while fermenter owns executable validation/coercion code paths.
-- Profile schema extensions required for fermenter hooks/config will be coordinated with the Profile Architect.
-
-### Validation and Coercion Flow
-
-- Canonical flow favors an interleaved model: `coerce_and_validate` at atomic statement scope.
-- Processing should stay composable and reasonably atomic, but not split into excessive micro-steps that are hard to maintain or document.
-- Fermenter must support both:
-	- eager validation/coercion (interactive wizard input)
-	- batch/comprehensive validation (review and shipping gates)
-
-### Allowed-Items Validation Strategy
-
-- Primary: Check against hydrated cache/index from SPARQL-driven SpiritSafe.
-- Secondary: Check profile-defined fallback lists.
-- Tertiary: Invoke mash functionality for live network item fetch.
-- Per-profile and per-statement configuration option to permit pass-through of unvalidated entries (defaults to true).
-- Fermenter accesses all SpiritSafe resources through `gkc.spirit_safe` module (direct dependency).
-- Resolvability checks enforced before shipping, even when cache unavailable.
-
-### Coercion Philosophy
-
-- Framework supports aggressive automatic coercion capability over time.
-- V1 implementation begins at moderate coercion, expand iteratively.
-- Coercion failures: fail fast, return structured choices for ambiguous cases to support UI rendering.
-- Mystery data inference grounded in active profile/packet context; stub likely statements when profile-determined mappings are detectable (e.g., DOI column → DOI identifier statement).
-- Coercion framework built as modular, composable building blocks that can be called individually or composed in different orchestration patterns.
-
-### Issue and Feedback Model
-
-- Unified issue model for validation and coercion outcomes.
-- Include actionable feedback per profile (e.g., missing_consequences narratives, profile-encoded instruction context).
-- Support actionable suggestions structure (e.g., try_alternative, auto_fix_available).
-- Localization in scope as forward-compatible requirement; potential Data Distillery Wikibase infrastructure for multilingual error message registry.
-
-### Pydantic Model Generation Integration
-
-- Leverage existing `ProfilePydanticGenerator` as backbone of validation/coercion processing.
-- Generated models support all validation scopes: field presence, type checking, datatype-specific validation (regex, ranges), constraint validation (min_count, max_count, allowed-items).
-- Support `allow_existing_nonconforming` mode: generate models that permit non-conforming data, but flag and track in validation output; allow pass-through if data structures conform and are serializable.
-
-### Cross-Entity and Packet Validation
-
-- All cross-entity constraints (#110, #111, #112) live in fermenter; called from wizard/packet layer.
-- Supports multi-modal interactions (wizard UI, bulk operations, external tool-builder APIs).
-- Cardinality validation starts simple; build out as needed.
-- Reciprocal awareness treated as warnings vs. rejection based on available Wikidata property constraint data (may not have full coverage early on).
-- Cross-statement validation means rule framework applied across multiple statements in profile; dependencies primarily at qualifier/reference level within statements.
-
-### Dependencies and Integration
-
-- Fermenter depends on: `gkc.profiles`, `gkc.spirit_safe`, `gkc.sparql`.
-- Fermenter will add Data Distillery registry clients for read-paths to `datadistillery.wikibase.cloud` (property metadata, constraint descriptors, and multilingual message lookup).
-- Identify integration gaps through co-development session with Profile Architect.
-- Fermenter provides raw validation results; Wizard Engineer translates to UI.
-- Shipper owns Wikidata JSON format conversion (may introduce complementary functionality here if gaps identified).
-- Profile Architect handles schema versioning (post-V1 concern).
-
-## Outstanding Design Inputs (Deferred)
-
-The following are explicitly deferred for post-V1 planning:
-
-- Schema versioning and migration strategy (Profile Architect owns, vision still forming)
-- Wikidata property constraint digestion for expanded cross-statement and reciprocal validation rules
-- Specialized reference resolver organization as first-order SpiritSafe entities and cache hydration strategy
-
-Data Distillery Wikibase hosting decision is now complete. Post-V1 planning remains needed for the deeper resolver graph and high-volume sync pipelines.
-
-## Phase Plan
-
-### Phase 1 - Foundation Contracts
-
-Deliverables:
-
-- Fermenter package scaffold with submodules
-- Unified issue contract and return envelopes
-- Coercion dispatcher/registry contract
-- Baseline adapter shims from legacy validation entry points to new contracts (non-breaking behavior)
-- Data Distillery integration contracts (read-only interfaces for property/constraint/message retrieval, with explicit fallback behavior to SpiritSafe/profile-local metadata)
-
-Scope anchors:
-
-- Issue #102 (ValidationIssue model and coercion return contract)
-- Issue #103 (Coercion dispatcher and datatype registry)
-- New issue: Fermenter ↔ Data Distillery registry client contract
-
-Exit criteria:
-
-- New contracts are importable and test-covered.
-- Existing top-level validation paths remain operational.
-- Registry interface can resolve at least one property metadata payload and one localized validation message payload from `datadistillery.wikibase.cloud` with deterministic fallback behavior.
-
-Target API Patterns:
+### Implementation Template
 
 ```python
-# Core contracts
-from gkc.fermenter.contracts import ValidationIssue, CoercionResult, CoercionPolicy
+from dataclasses import dataclass
+from typing import Any, Optional
 
-# ValidationIssue model usage
-issue = ValidationIssue(
-    severity="error",
-    message="Invalid QID format",
-    statement_id="instance_of",
-    property_id="P31"
-)
+@dataclass
+class ValidationResult:
+    """Result of a validation operation."""
+    valid: bool
+    value: Any
+    errors: list[str]
+    warnings: list[str] = None
 
-# Result envelope
-result: CoercionResult = CoercionResult(
-    success=False,
-    value=None,
-    issues=[issue],
-    suggestions=[]
-)
+    def __post_init__(self):
+        if self.warnings is None:
+            self.warnings = []
 
-# Dispatcher registry
-from gkc.fermenter.dispatcher import get_coercer
-coercer = get_coercer('item')  # Returns callable or raises
+
+# ============================================================================
+# ITEM DATATYPE
+# ============================================================================
+
+def validate_item(value: Any, context: dict = None) -> ValidationResult:
+    """
+    Validate that value is a valid Wikibase item reference.
+    
+    Accepts:
+    - QID string: "Q12345"
+    - Full URI: "https://www.wikidata.org/entity/Q12345"
+    - Wikibase JSON: {"entity-type": "item", "id": "Q12345"}
+    
+    Args:
+        value: Input value to validate
+        context: Optional context (e.g., allowed item list for constraint checking)
+    
+    Returns:
+        ValidationResult with normalized Wikibase JSON structure if valid
+    """
+    errors = []
+    
+    # Type check
+    if value is None:
+        errors.append("Item value cannot be None")
+        return ValidationResult(valid=False, value=None, errors=errors)
+    
+    # Normalize to QID
+    try:
+        qid = coerce_to_item_qid(value)
+    except ValueError as e:
+        errors.append(str(e))
+        return ValidationResult(valid=False, value=value, errors=errors)
+    
+    # Optional constraint: check against allowed items list
+    if context and "allowed_items" in context:
+        if qid not in context["allowed_items"]:
+            errors.append(f"Item {qid} not in allowed items list")
+            return ValidationResult(valid=False, value=qid, errors=errors)
+    
+    # Success
+    return ValidationResult(valid=True, value={"entity-type": "item", "id": qid}, errors=[])
+
+
+def coerce_to_item_qid(value: Any) -> str:
+    """
+    Coerce value to QID string format.
+    
+    Raises:
+        ValueError: If value cannot be coerced to valid QID
+    """
+    if isinstance(value, dict):
+        # Already Wikibase JSON
+        if value.get("entity-type") == "item" and "id" in value:
+            return value["id"]
+        else:
+            raise ValueError(f"Invalid Wikibase item JSON: {value}")
+    
+    if isinstance(value, str):
+        # Strip URI prefix if present
+        if value.startswith("http"):
+            value = value.split("/")[-1]
+        
+        # Validate QID format
+        if not value.startswith("Q") or not value[1:].isdigit():
+            raise ValueError(f"Invalid QID format: {value}")
+        
+        return value
+    
+    raise ValueError(f"Cannot coerce {type(value)} to item QID")
+
+
+# ============================================================================
+# MONOLINGUAL TEXT DATATYPE
+# ============================================================================
+
+def validate_monolingualtext(value: Any, context: dict = None) -> ValidationResult:
+    """
+    Validate monolingual text value.
+    
+    Accepts:
+    - Dict with text/language: {"text": "Hello", "language": "en"}
+    - Tuple: ("Hello", "en")
+    
+    Language codes validated against BCP 47 (basic check: 2-3 letter codes).
+    """
+    errors = []
+    warnings = []
+    
+    try:
+        text, language = coerce_to_monolingualtext(value)
+    except ValueError as e:
+        errors.append(str(e))
+        return ValidationResult(valid=False, value=value, errors=errors)
+    
+    # Validate language code format (basic check)
+    if len(language) < 2 or len(language) > 3:
+        warnings.append(f"Unusual language code: {language} (expected 2-3 characters)")
+    
+    # Optional constraint: required language
+    if context and "required_language" in context:
+        if language != context["required_language"]:
+            errors.append(f"Language must be {context['required_language']}, got {language}")
+            return ValidationResult(valid=False, value=value, errors=errors, warnings=warnings)
+    
+    return ValidationResult(
+        valid=True,
+        value={"text": text, "language": language},
+        errors=[],
+        warnings=warnings
+    )
+
+
+def coerce_to_monolingualtext(value: Any) -> tuple[str, str]:
+    """
+    Coerce value to (text, language) tuple.
+    
+    Raises:
+        ValueError: If value cannot be coerced
+    """
+    if isinstance(value, dict):
+        if "text" in value and "language" in value:
+            return value["text"], value["language"]
+        else:
+            raise ValueError(f"Monolingual text dict must have 'text' and 'language' keys: {value}")
+    
+    if isinstance(value, tuple) and len(value) == 2:
+        return str(value[0]), str(value[1])
+    
+    raise ValueError(f"Cannot coerce {type(value)} to monolingual text")
+
+
+# ============================================================================
+# URL DATATYPE
+# ============================================================================
+
+def validate_url(value: Any, context: dict = None) -> ValidationResult:
+    """
+    Validate URL string.
+    
+    Accepts:
+    - Valid HTTP/HTTPS URL strings
+    
+    Basic validation: must start with http:// or https://
+    Advanced validation (optional): URL accessibility check
+    """
+    import re
+    
+    errors = []
+    warnings = []
+    
+    if not isinstance(value, str):
+        errors.append(f"URL must be string, got {type(value)}")
+        return ValidationResult(valid=False, value=value, errors=errors)
+    
+    # Basic URL pattern check
+    url_pattern = re.compile(r'^https?://[^\s]+$')
+    if not url_pattern.match(value):
+        errors.append(f"Invalid URL format: {value}")
+        return ValidationResult(valid=False, value=value, errors=errors)
+    
+    # Optional: URL accessibility check (expensive, skip by default)
+    if context and context.get("check_accessibility"):
+        try:
+            import requests
+            response = requests.head(value, timeout=5, allow_redirects=True)
+            if response.status_code >= 400:
+                warnings.append(f"URL returned status {response.status_code}: {value}")
+        except Exception as e:
+            warnings.append(f"Could not verify URL accessibility: {e}")
+    
+    return ValidationResult(valid=True, value=value, errors=[], warnings=warnings)
+
+
+def coerce_to_url(value: Any) -> str:
+    """
+    Coerce value to URL string.
+    
+    Raises:
+        ValueError: If value cannot be coerced
+    """
+    if isinstance(value, str):
+        return value
+    
+    raise ValueError(f"Cannot coerce {type(value)} to URL")
+
+
+# ============================================================================
+# Additional validators for remaining 5 datatypes follow same pattern:
+# - validate_{datatype}(value, context) -> ValidationResult
+# - coerce_to_{datatype}(value) -> normalized_output
+# ============================================================================
 ```
 
-Target CLI Patterns:
+### Remaining Datatype Implementations (Validation Agent TODO)
 
-```bash
-# Test contract availability
-gkc fermenter contracts --validate
+**String:** Simplest validator (accept any string, optional length constraints from context)
 
-# List available datatype coercers (empty in Phase 1)
-gkc fermenter coercers list
-```
+**DateTime:** Most complex validator
+- Accept ISO 8601 formats: `YYYY-MM-DD`, `YYYY-MM-DDTHH:MM:SSZ`, partial dates `YYYY-MM`, `YYYY`
+- Convert to Wikibase time format: `{"+2024-03-15T00:00:00Z", "timezone": 0, "precision": 11, "calendarmodel": "http://www.wikidata.org/entity/Q1985727"}`
+- Precision mapping: year (9), month (10), day (11), hour (12), minute (13), second (14)
 
-### Phase 2 - Datatype Coercion Core
+**Quantity:** 
+- Accept numeric strings, floats, ints, or dict with `amount`/`unit`
+- Default unit: `"1"` (unitless)
+- Convert to Wikibase quantity: `{"amount": "+42", "unit": "1", "upperBound": "+42", "lowerBound": "+42"}`
+- Optional bounds validation from context
 
-Deliverables:
+**Geographic Coordinates:**
+- Accept dict with `latitude`/`longitude` (required) + optional `precision`/`globe`
+- Validate latitude range: -90 to +90
+- Validate longitude range: -180 to +180
+- Default globe: `"http://www.wikidata.org/entity/Q2"` (Earth)
+- Default precision: `0.0001` (street-level)
 
-- Datatype coercers implemented under fermenter for initial priority set:
-	- time
-	- item/QID
-	- monolingual text
-	- URL
-- Coercion + validation outcomes aligned to unified issue contract
-- Datatype coercers can consume Data Distillery-backed property semantics where available (without requiring network availability for all paths)
+**Commons Media:**
+- Accept filename with or without `File:` prefix
+- Strip prefix, validate filename characters (no `/`, `\`, special chars)
+- Optional: verify file exists on Wikimedia Commons via API (expensive, skip by default)
 
-Scope anchors:
+---
 
-- Issue #104
-- Issue #105
-- Issue #106
-- Issue #107
+## GKC Property Specification Enforcement
 
-Exit criteria:
+### Specification Taxonomy (from DD Wikibase)
 
-- Datatype coercers runnable in isolation and through dispatcher.
-- Behavior parity established for supported scenarios via targeted tests.
-- Coercer behavior with and without Data Distillery lookup is test-covered for deterministic outcomes.
+**Q6 (GKC Property Specification):** Parent class for all validation/policy specifications
 
-Target API Patterns:
+**Known Specification Items:**
+
+| QID | Label | Directive (P191) | Type | Fermenter Implementation |
+|-----|-------|------------------|------|--------------------------|
+| **Q23** | require fixed value | "apply a supplied fixed value without any need for deliberate input action" | Policy | `apply_fixed_value()` |
+| **Q24** | allow nonconforming statements | "allow other statements for an entity beyond what is strictly specified" | Policy | `relax_validation()` (profile-level, not fermenter) |
+| **Q26** | value applied as reference | "apply the statement value as reference URL type of reference" | Transform | `route_value_to_reference()` |
+| **Q31** | reference must be at least one of URL or stated in | "require a reference that is at least one of qualifier values" | Constraint | `validate_reference_constraint()` |
+| **Q28** | Federal Register Notices Listing Tribes | "use the value list as values for stated in references" | Value List (Q7) | `validate_value_from_list()` |
+| **Q43** | List of World Countries | "use the value list as values for country statements" | Value List (Q7) | `validate_value_from_list()` |
+
+### Specification Processor Contract
 
 ```python
-# Direct coercer imports
-from gkc.fermenter.coercers import (
-    coerce_time, coerce_qid, coerce_monolingualtext, coerce_url
-)
+from typing import Any, Optional
+from dataclasses import dataclass
 
-# Unified signature per coercer
-result: CoercionResult = coerce_qid(
-    value="q123",
-    policy=CoercionPolicy(eager=True),
-    allowed_items_cache=None  # Optional
-)
+@dataclass
+class SpecificationContext:
+    """Context for applying a property specification."""
+    spec_item_qid: str
+    spec_directive: str
+    target_statement: str  # Which statement this spec applies to
+    value_lists: dict[str, list[str]] = None  # Cached value lists (QID -> [items])
+    
+    def __post_init__(self):
+        if self.value_lists is None:
+            self.value_lists = {}
 
-# Result structure
-assert result.success
-assert result.value == "Q123"
-assert len(result.issues) == 0
 
-# Dispatcher usage
-from gkc.fermenter.dispatcher import dispatch_coerce
-result = dispatch_coerce(
-    datatype="item",
-    value=raw_input,
-    policy=CoercionPolicy()
-)
+# ============================================================================
+# SPECIFICATION PROCESSORS
+# ============================================================================
+
+def apply_fixed_value(spec: SpecificationContext, value: Any, fixed_value: str) -> ValidationResult:
+    """
+    Q23 handler: Enforce fixed value.
+    
+    Args:
+        spec: Specification context
+        value: User-provided value (should be None or match fixed_value)
+        fixed_value: The fixed value URI/QID from P183 qualifier
+    
+    Returns:
+        ValidationResult with fixed_value enforced
+    
+    Behavior:
+    - If user provides value that matches fixed_value: accept
+    - If user provides None: inject fixed_value
+    - If user provides different value: reject with error
+    """
+    if value is None:
+        # Inject fixed value
+        return ValidationResult(
+            valid=True,
+            value=fixed_value,
+            errors=[],
+            warnings=["Fixed value applied automatically"]
+        )
+    
+    # Normalize both values for comparison
+    normalized_input = coerce_to_item_qid(value)
+    normalized_fixed = coerce_to_item_qid(fixed_value)
+    
+    if normalized_input != normalized_fixed:
+        return ValidationResult(
+            valid=False,
+            value=value,
+            errors=[f"Value must be {normalized_fixed}, got {normalized_input}"]
+        )
+    
+    return ValidationResult(valid=True, value=normalized_fixed, errors=[])
+
+
+def route_value_to_reference(spec: SpecificationContext, value: str) -> dict:
+    """
+    Q26 handler: Convert statement value to reference URL.
+    
+    Args:
+        spec: Specification context
+        value: Statement value (URL string)
+    
+    Returns:
+        Wikibase reference structure
+    
+    Example:
+        Input: "https://example.com/source"
+        Output: {
+            "snaks": {
+                "P854": [{"snaktype": "value", "property": "P854", "datavalue": {"type": "string", "value": "https://example.com/source"}}]
+            }
+        }
+    """
+    # Validate URL first
+    url_validation = validate_url(value)
+    if not url_validation.valid:
+        raise ValueError(f"Cannot route invalid URL to reference: {url_validation.errors}")
+    
+    # Construct reference structure (P854 = reference URL in Wikidata)
+    # TODO: Make property configurable from ontology
+    return {
+        "snaks": {
+            "P854": [{
+                "snaktype": "value",
+                "property": "P854",
+                "datavalue": {
+                    "type": "string",
+                    "value": value
+                }
+            }]
+        }
+    }
+
+
+def validate_reference_constraint(
+    spec: SpecificationContext,
+    references: list[dict]
+) -> ValidationResult:
+    """
+    Q31 handler: Require at least one of URL or stated-in references.
+    
+    Args:
+        spec: Specification context
+        references: List of Wikibase reference structures
+    
+    Returns:
+        ValidationResult indicating whether constraint is satisfied
+    """
+    if not references:
+        return ValidationResult(
+            valid=False,
+            value=None,
+            errors=["At least one reference (URL or stated in) is required"]
+        )
+    
+    # Check for P854 (reference URL) or P248 (stated in) in any reference
+    # TODO: Make property IDs configurable from ontology
+    has_url_or_stated_in = False
+    for ref in references:
+        snaks = ref.get("snaks", {})
+        if "P854" in snaks or "P248" in snaks:
+            has_url_or_stated_in = True
+            break
+    
+    if not has_url_or_stated_in:
+        return ValidationResult(
+            valid=False,
+            value=references,
+            errors=["Reference must include at least one of: URL (P854) or stated in (P248)"]
+        )
+    
+    return ValidationResult(valid=True, value=references, errors=[])
+
+
+# ============================================================================
+# VALUE LIST VALIDATION
+# ============================================================================
+
+def validate_value_from_list(
+    spec: SpecificationContext,
+    value: Any,
+    match_policy: str = "strict"
+) -> ValidationResult:
+    """
+    Q28/Q43 handler: Validate value against GKC Value List.
+    
+    Args:
+        spec: Specification context with value_lists cached
+        value: User-provided value (QID, label, or URI)
+        match_policy: "strict" (exact match), "fuzzy" (label matching), "best_effort" (coerce)
+    
+    Returns:
+        ValidationResult with normalized value if found in list
+    """
+    # Get value list for this specification
+    value_list = spec.value_lists.get(spec.spec_item_qid)
+    if not value_list:
+        return ValidationResult(
+            valid=False,
+            value=value,
+            errors=[f"Value list {spec.spec_item_qid} not loaded"],
+            warnings=["Cannot validate without value list"]
+        )
+    
+    # Normalize input to QID
+    try:
+        input_qid = coerce_to_item_qid(value)
+    except ValueError:
+        # Value is not a QID, try label matching if fuzzy policy
+        if match_policy in ["fuzzy", "best_effort"]:
+            matched_qid = _fuzzy_match_label(value, value_list)
+            if matched_qid:
+                return ValidationResult(
+                    valid=True,
+                    value=matched_qid,
+                    errors=[],
+                    warnings=[f"Matched label '{value}' to {matched_qid}"]
+                )
+        
+        return ValidationResult(
+            valid=False,
+            value=value,
+            errors=[f"Value '{value}' is not a valid QID and no fuzzy match found"]
+        )
+    
+    # Check if QID exists in value list
+    if input_qid in value_list:
+        return ValidationResult(valid=True, value=input_qid, errors=[])
+    
+    return ValidationResult(
+        valid=False,
+        value=input_qid,
+        errors=[f"Item {input_qid} not in allowed value list for {spec.spec_item_qid}"]
+    )
+
+
+def _fuzzy_match_label(label: str, value_list: list[dict]) -> Optional[str]:
+    """
+    Fuzzy match label against value list items.
+    
+    Args:
+        label: Input label string
+        value_list: List of dicts with 'qid' and 'label' keys
+    
+    Returns:
+        Matched QID or None
+    
+    Strategy:
+    1. Exact case-insensitive match
+    2. Prefix match (label starts with input)
+    3. Levenshtein distance < 3 (future enhancement)
+    """
+    label_lower = label.lower()
+    
+    # Exact match
+    for item in value_list:
+        if item.get("label", "").lower() == label_lower:
+            return item["qid"]
+    
+    # Prefix match
+    for item in value_list:
+        if item.get("label", "").lower().startswith(label_lower):
+            return item["qid"]
+    
+    # No match found
+    return None
 ```
 
-Target CLI Patterns:
+---
 
-```bash
-# Test individual coercers
-gkc fermenter coerce time --value "2026-03-05" --policy eager
-gkc fermenter coerce qid --value "q123" --allowed-items-cache ./cache.json
-gkc fermenter coerce url --value "http://example.com"
+## Value List Resolution & Caching
 
-# List registered coercers
-gkc fermenter coercers list
+### Architecture
 
-# Test dispatcher routing
-gkc fermenter dispatcher test --datatype item --value "Q123"
+**Source:** DD Wikibase items of type Q7 (GKC Value List)
+
+**Storage:** SpiritSafe cache (`cache/value_lists/{ListQID}.json`)
+
+**SPARQL Location:** MediaWiki Discussion (Talk) page for each value list item (Q28, Q43, etc.)
+
+**Extraction Workflow:**
+1. Query DD Wikibase for all Q7 instances
+2. Fetch Discussion page content for each item (MediaWiki API)
+3. Extract SPARQL query text from Discussion page (parse wiki markup)
+4. Execute SPARQL against configured endpoint (Wikidata Query Service, etc.)
+5. Materialize results as JSON: `[{"qid": "Q123", "label": "Example"}, ...]`
+6. Write to `SpiritSafe/cache/value_lists/{ListQID}.json`
+
+**Runtime Loading:**
+1. `fermenter` module reads value list JSON from SpiritSafe cache
+2. If cache missing or stale, optionally regenerate via SPARQL (configuration flag)
+3. Pass value list to `validate_value_from_list()` via `SpecificationContext.value_lists`
+
+### Value List JSON Schema
+
+```json
+{
+  "list_qid": "Q28",
+  "list_label": "Federal Register Notices Listing Tribes",
+  "applies_to_property": "Q30",
+  "generated_at": "2026-03-09T12:00:00Z",
+  "sparql_query": "SELECT ?item ?itemLabel WHERE { ... }",
+  "truncated": false,
+  "item_count": 574,
+  "items": [
+    {"qid": "Q12345", "label": "Example Tribal Nation"},
+    {"qid": "Q67890", "label": "Another Tribe"}
+  ]
+}
 ```
 
-### Phase 3 - Runtime Integration
+**Truncation Policy:**
+- Default: Materialize up to 10,000 items per list in SpiritSafe cache
+- If SPARQL returns more, set `"truncated": true` and store first 10,000
+- Runtime can regenerate full list on-demand if needed
 
-Deliverables:
+---
 
-- Wizard inline hooks for value/qualifier/reference coercion paths
-- Review-stage comprehensive validation pass routed through fermenter contracts
-- Compatibility layer to keep existing flow stable during migration
-- Runtime message resolution pipeline for multilingual actionable feedback (Data Distillery first, then profile/SpiritSafe fallback)
+## Qualifier Validation
 
-Scope anchors:
+### P164 Expected Qualifiers
 
-- Issue #108
-- Issue #109
+**Requirement:** Statement may require specific qualifiers to be present.
 
-Exit criteria:
+**Example (from Q4 TribalGovernmentUS):**
+- P157 statement targeting Q33 (headquarters location)
+- P164 qualifier: Q34 (street address), Q35 (postal code), Q36 (coordinate location)
+- Semantics: "headquarters location statement must include qualifiers for street address, postal code, and coordinates"
 
-- Wizard-facing and review-facing pathways can consume fermenter outputs consistently.
-- Legacy pathways either delegate to fermenter or are explicitly marked for deprecation.
-- Validation issue payloads include stable message keys plus resolved localized text when available.
-
-Target API Patterns:
+**Validation Contract:**
 
 ```python
-# Statement-level validation and coercion
-from gkc.fermenter.validators import validate_statement_value
+def validate_expected_qualifiers(
+    statement: dict,
+    expected_qualifier_qids: list[str],
+    qualifier_policy: str = "require_all"
+) -> ValidationResult:
+    """
+    Validate that statement includes expected qualifiers.
+    
+    Args:
+        statement: Wikibase statement structure with 'qualifiers' key
+        expected_qualifier_qids: List of required qualifier statement QIDs
+        qualifier_policy: "require_all" (all must be present), "require_any" (at least one)
+    
+    Returns:
+        ValidationResult indicating whether qualifiers are satisfied
+    """
+    qualifiers = statement.get("qualifiers", {})
+    qualifier_properties = set(qualifiers.keys())
+    
+    # Map expected QIDs to property IDs (requires statement-definition lookup)
+    # TODO: Inject this mapping from profile or manifest
+    expected_properties = set()
+    for qid in expected_qualifier_qids:
+        prop_id = _resolve_statement_qid_to_property(qid)
+        if prop_id:
+            expected_properties.add(prop_id)
+    
+    if qualifier_policy == "require_all":
+        missing = expected_properties - qualifier_properties
+        if missing:
+            return ValidationResult(
+                valid=False,
+                value=statement,
+                errors=[f"Missing required qualifiers: {', '.join(missing)}"]
+            )
+    
+    elif qualifier_policy == "require_any":
+        if not qualifier_properties.intersection(expected_properties):
+            return ValidationResult(
+                valid=False,
+                value=statement,
+                errors=[f"At least one of these qualifiers required: {', '.join(expected_properties)}"]
+            )
+    
+    return ValidationResult(valid=True, value=statement, errors=[])
 
-statement_def = profile.get_statement('instance_of')
-result = validate_statement_value(
-    value=raw_input,
-    statement_def=statement_def,
-    allowed_items_cache=cache,
-    policy=ValidationPolicy(eager=True, mode='coerce')
-)
 
-# Entity-level comprehensive validation
-from gkc.fermenter.validators import validate_entity
-
-entity_result = validate_entity(
-    entity_data=wikidata_json,
-    profile=profile,
-    policy=ValidationPolicy(mode='lenient')
-)
-
-assert entity_result.ok  # Boolean shorthand
-assert len(entity_result.errors) == 0
-assert len(entity_result.warnings) <= expected_count
-
-# Structured feedback for wizard
-for issue in entity_result.issues:
-    if issue.suggestions:
-        # Render choice UI
-        pass
+def _resolve_statement_qid_to_property(qid: str) -> Optional[str]:
+    """
+    Resolve statement-definition QID to Wikidata property ID.
+    
+    Args:
+        qid: Statement-definition item QID (e.g., Q34)
+    
+    Returns:
+        Property ID (e.g., "P6375") or None if not found
+    
+    Implementation: Look up in cached manifest or profile data.
+    """
+    # Placeholder: real implementation would query manifest or profile cache
+    # For now, return None (requires integration with profiles module)
+    return None
 ```
 
-Target CLI Patterns:
+---
 
-```bash
-# Validate statement within profile
-gkc fermenter validate statement \
-  --profile ./profile.yaml \
-  --statement instance_of \
-  --value "Q123" \
-  --policy eager
+## Error Handling & Logging
 
-# Validate full entity
-gkc fermenter validate entity \
-  --profile ./profile.yaml \
-  --entity ./item.json \
-  --policy lenient \
-  --output json
+### Validation Result Aggregation
 
-# Coerce and validate combo
-gkc fermenter coerce-validate statement \
-  --profile ./profile.yaml \
-  --statement office_held \
-  --value "q789" \
-  --render-suggestions
-```
+**Challenge:** Single statement may have multiple validation failures (value invalid, qualifier missing, reference constraint violated)
 
-### Phase 4 - Packet and Cross-Entity Rules
-
-Deliverables:
-
-- Packet-level cardinality validation
-- Cross-reference and reciprocal consistency checks
-- Cross-entity constraint framework extension points
-- Optional cross-entity rule resolvers backed by Data Distillery property and relationship metadata
-
-Scope anchors:
-
-- Issue #110
-- Issue #111
-- Issue #112
-
-Exit criteria:
-
-- Multi-entity packet validation can run as a dedicated pass with structured issue output.
-- Cross-entity checks can execute in offline mode (cache/profile fallback) and online mode (Data Distillery-enriched) with explicit provenance in issue metadata.
-
-Target API Patterns:
+**Strategy:** Accumulate errors/warnings across all validators, return single `ValidationResult`
 
 ```python
-# Packet-level comprehensive validation
-from gkc.fermenter.validators import validate_packet
-
-packet_result = validate_packet(
-    packet=curation_packet,
-    profile_bundle=profiles,
-    policy=ValidationPolicy(mode='strict')
-)
-
-assert packet_result.ok
-assert len(packet_result.entity_issues) == 0  # Per-entity issues
-assert len(packet_result.cross_entity_issues) == 0  # Cross-entity issues
-
-# Cross-entity constraint checks
-from gkc.fermenter.validators import check_packet_cardinality
-
-card_issues = check_packet_cardinality(
-    packet=packet,
-    profile_bundle=profiles
-)
-
-# Reciprocal consistency checks
-from gkc.fermenter.validators import check_reciprocal_links
-
-recip_issues = check_reciprocal_links(
-    packet=packet,
-    profile_bundle=profiles
-)
+def validate_statement_comprehensive(
+    statement_spec: dict,
+    statement_data: dict,
+    context: dict
+) -> ValidationResult:
+    """
+    Comprehensive statement validation with error aggregation.
+    
+    Args:
+        statement_spec: Profile statement specification (from JSON cache)
+        statement_data: User-provided statement data
+        context: Validation context (value lists, specifications, etc.)
+    
+    Returns:
+        Aggregated ValidationResult
+    """
+    all_errors = []
+    all_warnings = []
+    
+    # Validate value datatype
+    value_result = validate_value_by_type(
+        statement_data.get("value"),
+        statement_spec["value"]["type"],
+        context
+    )
+    all_errors.extend(value_result.errors)
+    all_warnings.extend(value_result.warnings)
+    
+    # Validate expected qualifiers (P164)
+    if statement_spec.get("expected_qualifiers"):
+        qualifier_result = validate_expected_qualifiers(
+            statement_data,
+            statement_spec["expected_qualifiers"]
+        )
+        all_errors.extend(qualifier_result.errors)
+        all_warnings.extend(qualifier_result.warnings)
+    
+    # Validate reference constraints (P159)
+    if statement_spec.get("reference_specs"):
+        for spec_qid in statement_spec["reference_specs"]:
+            ref_result = validate_reference_specification(
+                spec_qid,
+                statement_data.get("references", []),
+                context
+            )
+            all_errors.extend(ref_result.errors)
+            all_warnings.extend(ref_result.warnings)
+    
+    # Apply value specifications (P161)
+    if statement_spec.get("value_specs"):
+        for spec_qid in statement_spec["value_specs"]:
+            spec_result = apply_value_specification(
+                spec_qid,
+                statement_data.get("value"),
+                statement_spec,
+                context
+            )
+            all_errors.extend(spec_result.errors)
+            all_warnings.extend(spec_result.warnings)
+    
+    return ValidationResult(
+        valid=len(all_errors) == 0,
+        value=statement_data,
+        errors=all_errors,
+        warnings=all_warnings
+    )
 ```
 
-Target CLI Patterns:
+### Logging Strategy
 
-```bash
-# Validate entire packet
-gkc fermenter validate packet \
-  --packet ./curation_packet.json \
-  --profiles ./profiles/ \
-  --policy strict \
-  --output json
+**Requirement:** All validation failures must be traceable to source data for debugging
 
-# Check specific cross-entity constraints
-gkc fermenter check packet-cardinality \
-  --packet ./curation_packet.json \
-  --profiles ./profiles/
+**Implementation:**
+- Use Python `logging` module (not print statements)
+- Log level mapping:
+  - `ERROR`: Hard validation failures (data rejected)
+  - `WARNING`: Soft validation issues (data accepted with warning)
+  - `INFO`: Successful coercions (data transformed)
+  - `DEBUG`: Detailed validator execution (for development)
 
-gkc fermenter check reciprocal-links \
-  --packet ./curation_packet.json \
-  --profiles ./profiles/
-
-# Validation summary
-gkc fermenter validate packet \
-  --packet ./curation_packet.json \
-  --profiles ./profiles/ \
-  --summary
+**Log Format:**
+```
+[ERROR] fermenter.validate_item: Item Q99999 not in allowed items list (statement: instance_of, entity: TribalGovernmentUS_001)
+[WARNING] fermenter.validate_url: URL returned status 404 (statement: official_website, entity: TribalGovernmentUS_001)
+[INFO] fermenter.coerce_to_item_qid: Converted URI to QID: https://www.wikidata.org/entity/Q12345 -> Q12345
 ```
 
-### Phase 5 - Test Matrix and Hardening
+---
 
-Deliverables:
+## Integration with gkc.profiles Module
 
-- Synthetic profile fixture suite established as primary test vehicles (to be set up early in next dev cycle per Q8.1)
-- Validation/coercion matrix spanning atomic datatypes and multi-entity packet scenarios
-- Fixture set expansion for regressions and failure-mode clarity
-- Contract-focused tests for wizard/review integration paths
-- Modular coercion building blocks tested as public functions and composed orchestrations
-- Integration test fixtures for Data Distillery-dependent and fallback-only paths
+### Coordination with ProfileValidator
 
-Scope anchors:
+**Current State:** `gkc.profiles.validation.ProfileValidator` validates entity structure against profile schema
 
-- Issue #113
+**New Requirement:** `fermenter` handles **value-level validation** (datatype, constraints), `ProfileValidator` handles **structure-level validation** (required statements, cardinality, profile conformance)
 
-Exit criteria:
+**Division of Responsibility:**
 
-- Test matrix demonstrates expected behavior across strict/lenient and eager/batch contexts.
-- Synthetic profiles cover key coercion scenarios without relying on production profiles.
-- Regression coverage demonstrates equivalent validation outcomes when Data Distillery is unavailable and fallback policies are engaged.
+| Validation Type | Module | Example |
+|----------------|--------|---------|
+| Required statement present | `ProfileValidator` | "Entity must have 'instance of' statement" |
+| Statement cardinality | `ProfileValidator` | "Entity can have max 1 'headquarters location' statement" |
+| Value datatype | `fermenter` | "Value must be valid item QID" |
+| Value constraint | `fermenter` | "Item must be from allowed list" |
+| Qualifier presence | `fermenter` | "Statement must have 'street address' qualifier" |
+| Reference constraint | `fermenter` | "Reference must include URL or stated-in" |
 
-Target API Patterns:
+**Call Sequence:**
+1. `ProfileValidator.validate_entity(entity, profile)`:
+   - Check required statements present
+   - Check statement cardinality (max_count)
+   - For each statement, call `fermenter.validate_statement_comprehensive()`
+   - Aggregate results
+   - Return overall validation result
 
+2. `fermenter.validate_statement_comprehensive(statement_data, statement_spec, context)`:
+   - Validate value datatype
+   - Validate value constraints (value lists, fixed values)
+   - Validate qualifiers
+   - Validate references
+   - Return statement-level validation result
+
+**Handoff:** Validation Agent to implement this integration after fermenter module core is complete.
+
+---
+
+## Testing Strategy
+
+### Unit Tests (Atomic Validators)
+
+**Coverage Requirements:**
+- Each `validate_{datatype}()` function: 3-5 test cases
+  - Valid input (pass)
+  - Invalid type (fail)
+  - Edge case (e.g., empty string, None, boundary values)
+- Each `coerce_to_{datatype}()` function: 3-5 test cases
+  - Successful coercion (various input types)
+  - Coercion failure (raises ValueError)
+  - Edge case handling
+
+**Example Test:**
 ```python
-# Full end-to-end workflow
-from gkc.fermenter import (
-    coerce_value, validate_value, validate_statement,
-    validate_entity, validate_packet
-)
+def test_validate_item_with_qid_string():
+    result = validate_item("Q12345")
+    assert result.valid is True
+    assert result.value == {"entity-type": "item", "id": "Q12345"}
+    assert len(result.errors) == 0
 
-# Modular public functions for composable workflows
-coerced, issues = coerce_value(
-    datatype='time',
-    value=raw_input,
-    policy=policy
-)
+def test_validate_item_with_invalid_format():
+    result = validate_item("invalid_qid")
+    assert result.valid is False
+    assert "Invalid QID format" in result.errors[0]
 
-validation_result = validate_entity(
-    entity_data=item_json,
-    profile=profile,
-    eager_coerce=True  # Run coercion during validation
-)
+def test_coerce_to_item_qid_from_uri():
+    qid = coerce_to_item_qid("https://www.wikidata.org/entity/Q12345")
+    assert qid == "Q12345"
 
-packet_result = validate_packet(
-    packet=packet,
-    profiles=bundle,
-    batch_mode=True  # Comprehensive pass
-)
+def test_coerce_to_item_qid_from_dict():
+    qid = coerce_to_item_qid({"entity-type": "item", "id": "Q67890"})
+    assert qid == "Q67890"
 ```
 
-Target CLI Patterns:
+### Integration Tests (Specification Processors)
 
-```bash
-# End-to-end test workflows
-gkc fermenter test workflow \
-  --name eager-validation \
-  --profile ./profiles/test_profile.yaml
+**Coverage Requirements:**
+- Each specification processor (Q23, Q26, Q28, Q31, Q43): 2-3 test cases
+  - Successful application (pass)
+  - Constraint violation (fail)
+  - Edge case (e.g., missing value list, malformed reference)
 
-# Matrix test runner
-gkc fermenter test matrix \
-  --policies strict,lenient \
-  --modes eager,batch \
-  --fixtures ./tests/fixtures/ \
-  --report ./test_report.json
+**Example Test:**
+```python
+def test_apply_fixed_value_with_none_input():
+    spec = SpecificationContext(
+        spec_item_qid="Q23",
+        spec_directive="apply fixed value",
+        target_statement="instance_of"
+    )
+    result = apply_fixed_value(spec, value=None, fixed_value="Q55555")
+    assert result.valid is True
+    assert result.value == "Q55555"
+    assert "Fixed value applied automatically" in result.warnings[0]
 
-# Fixture validation
-gkc fermenter test fixtures \
-  --fixtures ./tests/fermenter/fixtures/ \
-  --profile-pattern "*/profile.yaml"
-
-# Performance baseline
-gkc fermenter bench coerce \
-  --datatype qid \
-  --iterations 1000 \
-  --output ./benchmark.json
+def test_validate_value_from_list_with_valid_qid():
+    spec = SpecificationContext(
+        spec_item_qid="Q43",
+        spec_directive="use value list",
+        target_statement="country",
+        value_lists={"Q43": ["Q30", "Q145", "Q183"]}  # USA, UK, Germany
+    )
+    result = validate_value_from_list(spec, "Q30")
+    assert result.valid is True
+    assert result.value == "Q30"
 ```
 
-## Initial Fermenter Module Layout (V1)
+### End-to-End Tests (Full Statement Validation)
 
-Proposed package structure:
+**Coverage Requirements:**
+- Comprehensive statement validation: 5-10 test cases covering:
+  - Valid statement (all constraints satisfied)
+  - Invalid value datatype
+  - Missing required qualifier
+  - Reference constraint violation
+  - Multiple simultaneous errors (aggregation)
 
-- `gkc/fermenter/__init__.py`
-- `gkc/fermenter/contracts.py` (issue/result models, enums, policy surfaces)
-- `gkc/fermenter/dispatcher.py` (datatype registry and routing)
-- `gkc/fermenter/coercers/` (datatype coercion implementations)
-- `gkc/fermenter/validators/` (statement/entity/packet validators)
-- `gkc/fermenter/adapters/` (temporary bridges from legacy call sites)
-- `gkc/fermenter/testing/` (synthetic fixtures for development and testing)
+**Test Fixture Strategy:**
+- Use real profile JSON from SpiritSafe test fixtures (`tests/fixtures/profiles/`)
+- Mock value lists for Q28/Q43 (avoid SPARQL dependency in tests)
+- Mock specification context with cached directives
 
-V1 boundary notes:
+---
 
-- Fermenter accesses SpiritSafe resources exclusively through `gkc.spirit_safe` module imports.
-- Fermenter consumes profile-defined constraints and external providers (spirit_safe, sparql, profiles) via explicit interfaces.
-- Fermenter consumes Data Distillery resources through a dedicated integration layer (no direct UI coupling), with strict timeout, provenance tagging, and fallback contracts.
-- UI rendering decisions remain outside fermenter; fermenter emits structured actionable feedback.
-- Coercion and validation logic built as modular, independently-callable functions composable in multiple orchestration patterns.
+## Performance Considerations
 
-## Migration Strategy
+### Optimization Targets
 
-Refactor strategy is incremental and test-gated.
+**Value List Lookups:**
+- **Current:** Linear search through list (O(n))
+- **Optimization:** Index value lists by QID (O(1) lookup)
+  - Build index on first load: `{qid: item_data for item in value_list}`
+  - Cache index in memory for session lifetime
 
-Approach:
+**Recursive Qualifier Validation:**
+- **Current:** Depth-first recursion (may be slow for deeply nested qualifiers)
+- **Optimization:** Depth limit (default 2 levels, configurable)
+  - Track recursion depth in validation context
+  - Skip validation beyond limit with warning
 
-1. Build fermenter contracts and dispatcher first.
-2. Implement initial coercers in fermenter without deleting legacy implementations.
-3. Introduce adapter/delegation points from current modules.
-4. Switch call paths progressively (wizard/review/packet).
-5. Introduce Data Distillery-backed read paths behind feature flags and fallback policies.
-6. Retire duplicated legacy logic only after parity is verified.
+**SPARQL Query Execution:**
+- **Current:** Synchronous HTTP requests (blocking)
+- **Optimization:** Async execution with timeout (future enhancement)
+  - Use `asyncio` or `httpx` for async SPARQL queries
+  - Timeout after 10 seconds, fall back to cache
 
-This keeps current behavior stable while moving toward a single validation/coercion engine callable from multiple routes.
+### Caching Strategy
 
-## Risks and Mitigations
+**In-Memory Cache:**
+- Value lists loaded once per session, stored in `SpecificationContext.value_lists`
+- Specification directives (P191 text) cached in manifest, not re-fetched
 
-- Risk: Duplicate logic during migration introduces drift.
-	- Mitigation: Prefer delegation wrappers early; avoid parallel long-term implementations.
+**Disk Cache:**
+- SpiritSafe JSON cache used as fallback when SPARQL unavailable
+- TTL: 30 days (configurable via environment variable)
 
-- Risk: Profile schema lag blocks richer constraints.
-	- Mitigation: Track explicit schema dependencies and coordinate changes with Profile Architect.
+**Cache Invalidation:**
+- Manual: CLI command `poetry run gkc spirit-safe refresh-value-lists`
+- Automatic: Future enhancement (webhook trigger from DD Wikibase on profile update)
 
-- Risk: Cache/index absence causes inconsistent allowed-items behavior.
-	- Mitigation: Formalize fallback policies and ensure final shipping gate performs resolvability checks.
+---
 
-- Risk: Wizard integration complexity introduces UX inconsistency.
-	- Mitigation: Keep fermenter output structured and UI-agnostic; align contracts early with Wizard Engineer.
+## GitHub Issue Triage Mapping (2026-03-09)
 
-- Risk: Data Distillery network or schema drift causes nondeterministic validation behavior.
-  - Mitigation: Use explicit fallback precedence, provenance tagging, timeouts, and contract tests against stable fixture snapshots.
+### Closed as OBE (Superseded by V2 Reset)
 
-- Risk: Multilingual message keys diverge between profile guidance and Wikibase registry entries.
-  - Mitigation: Define canonical message-key namespace and validate key presence during CI for both SpiritSafe and Data Distillery exports.
+- #120 Design and plan fermenter module (replaced by this FermenterV1 execution plan)
 
-## Handoffs
+### Kept Open and Mapped to FermenterV1 Execution
 
-### Profile Architect
+- **Core validation/coercion contracts:** #102, #103, #104, #105, #106, #107
+- **Entity and packet validation layers:** #109, #110, #111, #112, #113
+- **Data Distillery semantic integration track:** #121, #122, #123, #124, #125, #126, #127
+- **Compatibility and lifecycle policy:** #99
+- **Follow-on specialized resolver work:** #97
 
-Inputs needed:
+### Execution Sequencing Notes
 
-- Proposed profile schema extensions for fermenter constraint hooks
-- Strategy for profile-level instructional metadata evolution that can feed actionable feedback
+- Prioritize #102-#107 first (atomic contracts and datatype handlers), then #109-#113 (entity/packet validation), then #121-#126 (semantic online/offline integration and parity hardening).
+- Keep #127 as the controlling umbrella and link implementation PRs to child issues for traceability.
 
-### Wizard Engineer
+---
 
-Inputs needed:
+## Open Questions & Decisions Needed
 
-- Consumption contract for structured choices and actionable issue payloads
-- Integration expectations for eager vs review-stage validation surfaces
+1. **Value List Truncation:**
+   - Current proposal: 10,000 items max in SpiritSafe cache
+   - Question: Is this sufficient for largest value lists (e.g., all countries, all languages)?
+   - Decision needed: Increase limit, or implement pagination/streaming for large lists?
 
-### Semantic Engineer
+2. **SPARQL Endpoint Configuration:**
+   - Question: Where is SPARQL endpoint URL configured? (gkc config file, environment variable, profile metadata?)
+   - Decision needed: Document configuration strategy in runtime_config.py
 
-Inputs needed:
+3. **Qualifier Recursion Limit:**
+   - Current proposal: 2 levels depth
+   - Question: Are there real-world use cases requiring deeper nesting?
+   - Decision needed: Make configurable, or hardcode to 2?
 
-- Data model and item/property instantiation plan in `datadistillery.wikibase.cloud` for:
-  - validation message registry (multilingual labels/descriptions/aliases)
-  - property registry records and constraint descriptors used by fermenter
-  - profile manifest projection from SpiritSafe to Wikibase entities (full or selective scope)
-- Query contract definitions (SPARQL/API patterns) and stability guarantees required for fermenter read-path integration
-- Export/snapshot strategy so fermenter can validate in offline/fallback mode with deterministic behavior
+4. **Fuzzy Label Matching:**
+   - Current implementation: Exact + prefix matching
+   - Question: Add Levenshtein distance matching for typo tolerance?
+   - Decision needed: Complexity vs. accuracy trade-off
 
-## Data Distillery Wikibase Integration (Active)
+5. **Commons Media File Verification:**
+   - Current proposal: Optional API check (expensive, skip by default)
+   - Question: Should wizard UI always verify file existence before submission, or only backend validation?
+   - Decision needed: Coordinate with Wizard Engineer on UX requirements
 
-`datadistillery.wikibase.cloud` is now an active part of the architecture and complements SpiritSafe.
+---
 
-Integration intent for fermenter V1:
+## Next Actions (Immediate)
 
-- Keep SpiritSafe profile YAML as primary source of truth for profile constraints and form/validation shape.
-- Use Data Distillery as canonical queryable registry for reusable property metadata, executable-constraint references, and multilingual validation messaging.
-- Require deterministic fallback behavior to SpiritSafe/profile-local guidance whenever Data Distillery lookup is unavailable or incomplete.
-- Record provenance in issue payloads (`source=profile|spiritsafe|datadistillery`) so downstream wizard and shipping layers can reason about trust and rendering.
+**Validation Agent:**
+1. Implement 8 primitive datatype validators (`validate_item`, `validate_monolingualtext`, `validate_url`, `validate_string`, `validate_time`, `validate_quantity`, `validate_globecoordinate`, `validate_commonsMedia`)
+2. Implement 8 primitive datatype coercers (`coerce_to_*` functions)
+3. Implement 5 specification processors (`apply_fixed_value`, `route_value_to_reference`, `validate_reference_constraint`, `validate_value_from_list`, `validate_expected_qualifiers`)
+4. Write unit tests for all validators/coercers (target: 80% coverage)
+5. Integrate with `ProfileValidator` via `validate_statement_comprehensive()` orchestrator
 
-Planned implementation sequencing:
+**Profile Architect (support):**
+1. Finalize value list JSON schema (review truncation policy)
+2. Document SPARQL extraction workflow for `gkc.spirit_safe` module
+3. Provide example value list JSON fixtures for testing
 
-1. Define read contracts and message-key conventions.
-2. Implement thin client/resolver layer with timeout and fallback semantics.
-3. Add fixture-driven tests for online and offline parity.
-4. Expand to richer cross-entity resolver usage in post-V1 phases.
-## Implementation Notes
+**Wizard Engineer (after fermenter core complete):**
+1. Integrate fermenter validators into wizard form validation (client-side + server-side)
+2. Display validation errors/warnings in form UI
+3. Implement type-ahead search with value list constraints
 
-### Helper Functions in Utilities Module
+---
 
-During cooperage module consolidation (2026-03-07), the `validate_entity_reference()` function was temporarily placed in `gkc.utilities` as a lightweight helper. The Validation Agent should move this into fermenter's validation logic once the fermenter module is initialized, as entity reference validation is a foundational validation concern that belongs within the fermenter validation scope.
-
-Current location: `gkc/utilities.py:validate_entity_reference()`
-Future location: `gkc/fermenter/validation/` (to be determined by Validation Agent)
+**Document Version:** 1.1  
+**Last Updated:** 2026-03-09  
+**Next Review:** After fermenter core implementation (8 datatypes + 5 specifications functional)

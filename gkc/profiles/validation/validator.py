@@ -205,7 +205,7 @@ class ProfileValidator:
                         severity="warning",
                         message=f"{field.id}: {violation}",
                         statement_id=field.id,
-                        property_id=field.wikidata_property,
+                        property_id=field.property_id(),
                     )
                 )
 
@@ -250,20 +250,21 @@ def _evaluate_field(field, statements: List[StatementData]) -> List[tuple[str, s
                     )
 
         for qualifier in field.qualifiers:
-            qvalues = statement.qualifiers.get(qualifier.wikidata_property, [])
+            qualifier_pid = qualifier.property_id()
+            if not qualifier_pid:
+                continue
+            qvalues = statement.qualifiers.get(qualifier_pid, [])
             if qualifier.min_count is not None and len(qvalues) < qualifier.min_count:
                 violations.append(
                     (
-                        "statement "
-                        f"{index} missing qualifier {qualifier.wikidata_property}",
+                        "statement " f"{index} missing qualifier {qualifier_pid}",
                         "field",
                     )
                 )
             if qualifier.max_count is not None and len(qvalues) > qualifier.max_count:
                 violations.append(
                     (
-                        "statement "
-                        f"{index} exceeds qualifier {qualifier.wikidata_property}",
+                        "statement " f"{index} exceeds qualifier {qualifier_pid}",
                         "field",
                     )
                 )
@@ -272,7 +273,7 @@ def _evaluate_field(field, statements: List[StatementData]) -> List[tuple[str, s
                     message = (
                         "statement "
                         f"{index} qualifier "
-                        f"{qualifier.wikidata_property} fixed mismatch"
+                        f"{qualifier_pid} fixed mismatch"
                     )
                     violations.append((message, "field"))
 
@@ -291,7 +292,9 @@ def _evaluate_field(field, statements: List[StatementData]) -> List[tuple[str, s
                 )
 
             if references.target:
-                target_pid = references.target.wikidata_property
+                target_pid = references.target.property_id()
+                if not target_pid:
+                    continue
                 for ref_index, reference in enumerate(statement.references):
                     if target_pid not in reference.snaks:
                         violations.append(
@@ -314,7 +317,11 @@ def _evaluate_field(field, statements: List[StatementData]) -> List[tuple[str, s
                             violations.append((message, "reference"))
 
             if references.allowed:
-                allowed_pids = {a.wikidata_property for a in references.allowed}
+                allowed_pids = {
+                    pid for pid in (a.property_id() for a in references.allowed) if pid
+                }
+                if not allowed_pids:
+                    continue
                 for ref_index, reference in enumerate(statement.references):
                     if not allowed_pids.intersection(reference.snaks.keys()):
                         message = (

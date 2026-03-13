@@ -66,7 +66,7 @@ class ProfilePydanticGenerator:
                     default_factory=list,
                     description=(
                         "Statements for "
-                        f"{statement.label} ({statement.wikidata_property})"
+                        f"{statement.label} ({statement.property_id() or 'unmapped'})"
                     ),
                     alias=statement.id,
                 ),
@@ -149,9 +149,10 @@ class ProfilePydanticGenerator:
                                 )
 
                 for qualifier in statement_def.qualifiers:
-                    qvalues = statement_data.qualifiers.get(
-                        qualifier.wikidata_property, []
-                    )
+                    qualifier_pid = qualifier.property_id()
+                    if not qualifier_pid:
+                        continue
+                    qvalues = statement_data.qualifiers.get(qualifier_pid, [])
                     if (
                         qualifier.min_count is not None
                         and len(qvalues) < qualifier.min_count
@@ -159,7 +160,7 @@ class ProfilePydanticGenerator:
                         message = (
                             "statement "
                             f"{index} missing qualifier "
-                            f"{qualifier.wikidata_property}"
+                            f"{qualifier_pid}"
                         )
                         violations.append(message)
                     if (
@@ -169,7 +170,7 @@ class ProfilePydanticGenerator:
                         message = (
                             "statement "
                             f"{index} exceeds qualifier "
-                            f"{qualifier.wikidata_property}"
+                            f"{qualifier_pid}"
                         )
                         violations.append(message)
                     if qualifier.value.fixed is not None and qvalues:
@@ -177,7 +178,7 @@ class ProfilePydanticGenerator:
                             message = (
                                 "statement "
                                 f"{index} qualifier "
-                                f"{qualifier.wikidata_property} fixed mismatch"
+                                f"{qualifier_pid} fixed mismatch"
                             )
                             violations.append(message)
 
@@ -196,7 +197,9 @@ class ProfilePydanticGenerator:
                         )
 
                     if references.target:
-                        target_pid = references.target.wikidata_property
+                        target_pid = references.target.property_id()
+                        if not target_pid:
+                            continue
                         for ref_index, reference in enumerate(
                             statement_data.references
                         ):
@@ -221,7 +224,13 @@ class ProfilePydanticGenerator:
                                     reference_violations.append(message)
 
                     if references.allowed:
-                        allowed_pids = {a.wikidata_property for a in references.allowed}
+                        allowed_pids = {
+                            pid
+                            for pid in (a.property_id() for a in references.allowed)
+                            if pid
+                        }
+                        if not allowed_pids:
+                            continue
                         for ref_index, reference in enumerate(
                             statement_data.references
                         ):

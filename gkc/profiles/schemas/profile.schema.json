@@ -101,12 +101,29 @@
         {"required": ["query_ref"]}
       ]
     },
+    "io_map_entry": {
+      "type": "object",
+      "properties": {
+        "to": {"type": "string"},
+        "from": {"type": "string"},
+        "value_transform": {"type": ["string", "null"]}
+      },
+      "oneOf": [
+        {"required": ["to"], "not": {"required": ["from"]}},
+        {"required": ["from"], "not": {"required": ["to"]}}
+      ],
+      "additionalProperties": false
+    },
     "reference_target": {
       "type": "object",
-      "required": ["id", "wikidata_property", "type", "label"],
+      "required": ["id", "io_map", "type", "label"],
       "properties": {
         "id": {"type": "string"},
-        "wikidata_property": {"type": "string", "pattern": "^P\\d+$"},
+        "io_map": {
+          "type": "array",
+          "minItems": 1,
+          "items": {"$ref": "#/$defs/io_map_entry"}
+        },
         "type": {
           "enum": [
             "item",
@@ -146,12 +163,16 @@
     },
     "qualifier": {
       "type": "object",
-      "required": ["id", "label", "wikidata_property", "value"],
+      "required": ["id", "label", "io_map", "value"],
       "properties": {
         "id": {"type": "string"},
         "label": {"type": "string"},
         "input_prompt": {"type": "string"},
-        "wikidata_property": {"type": "string", "pattern": "^P\\d+$"},
+        "io_map": {
+          "type": "array",
+          "minItems": 1,
+          "items": {"$ref": "#/$defs/io_map_entry"}
+        },
         "required": {"type": "boolean"},
         "min_count": {"type": ["integer", "null"]},
         "max_count": {"type": ["integer", "null"]},
@@ -196,7 +217,7 @@
       "required": [
         "id",
         "label",
-        "wikidata_property",
+        "io_map",
         "type",
         "value"
       ],
@@ -204,7 +225,11 @@
         "id": {"type": "string"},
         "label": {"type": "string"},
         "input_prompt": {"type": "string"},
-        "wikidata_property": {"type": "string", "pattern": "^P\\d+$"},
+        "io_map": {
+          "type": "array",
+          "minItems": 1,
+          "items": {"$ref": "#/$defs/io_map_entry"}
+        },
         "type": {"enum": ["statement"]},
         "required": {"type": "boolean"},
         "max_count": {"type": ["integer", "null"]},

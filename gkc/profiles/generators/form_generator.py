@@ -65,7 +65,9 @@ class FormSchemaGenerator:
                     "id": qualifier.id,
                     "label": qualifier.label,
                     "input_prompt": qualifier.input_prompt,
-                    "wikidata_property": qualifier.wikidata_property,
+                    "io_map": [
+                        entry.model_dump(by_alias=True) for entry in qualifier.io_map
+                    ],
                     "required": qualifier.required,
                     "min_count": qualifier.min_count,
                     "max_count": qualifier.max_count,
@@ -103,7 +105,7 @@ class FormSchemaGenerator:
             "id": field.id,
             "label": field.label,
             "input_prompt": field.input_prompt,
-            "wikidata_property": field.wikidata_property,
+            "io_map": [entry.model_dump(by_alias=True) for entry in field.io_map],
             "required": field.required,
             "max_count": field.max_count,
             "validation_policy": field.validation_policy,
@@ -121,7 +123,7 @@ class FormSchemaGenerator:
             "id": target.id,
             "label": target.label,
             "input_prompt": target.input_prompt,
-            "wikidata_property": target.wikidata_property,
+            "io_map": [entry.model_dump(by_alias=True) for entry in target.io_map],
             "type": target.type,
             "description": target.description,
             "value_source": target.value_source,

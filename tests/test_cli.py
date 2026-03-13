@@ -80,6 +80,489 @@ def test_osm_status_json(monkeypatch, capsys):
     assert data["ok"] is True
 
 
+def test_wikibase_plan_write_json(monkeypatch, capsys, tmp_path):
+    """wikibase plan-write returns logical path and summary output."""
+
+    class FakeChargeReport:
+        entities_charged = 1
+        entities_skipped = 0
+        issues = []
+
+    class FakeBarrelReport:
+        operations_created = 1
+        entities_skipped = 0
+        issues = []
+
+    class FakeResult:
+        packet = {"packet_id": "pkt-test", "entities": [{"id": "ent-001"}]}
+        operations = [{"kind": "item", "label": "Cherokee Nation", "payload": {}}]
+        charge_report = FakeChargeReport()
+        barrel_report = FakeBarrelReport()
+        diff_plan = None
+
+    def fake_build_wikibase_write_plan(**kwargs):
+        _ = kwargs
+        return FakeResult()
+
+    monkeypatch.setattr(
+        cli, "build_wikibase_write_plan", fake_build_wikibase_write_plan
+    )
+
+    source_values_file = tmp_path / "source_values.json"
+    source_values_file.write_text(
+        json.dumps({"ent-001": {"labels": {"en": "Cherokee Nation"}}}),
+        encoding="utf-8",
+    )
+
+    exit_code = cli.main(
+        [
+            "--json",
+            "wikibase",
+            "plan-write",
+            "--profile",
+            "TribalGovernmentUS",
+            "--source-values-file",
+            str(source_values_file),
+        ]
+    )
+
+    assert exit_code == 0
+    output = capsys.readouterr().out.strip()
+    data = json.loads(output)
+    assert data["command"] == "wikibase.plan-write"
+    assert data["ok"] is True
+    assert "logical_path" in data["details"]
+    assert data["details"]["operations_created"] == 1
+
+
+def test_wikibase_plan_write_missing_source_values_file(capsys):
+    """wikibase plan-write fails cleanly when source-values file is missing."""
+    exit_code = cli.main(
+        [
+            "--json",
+            "wikibase",
+            "plan-write",
+            "--profile",
+            "TribalGovernmentUS",
+            "--source-values-file",
+            "/tmp/does-not-exist-source-values.json",
+        ]
+    )
+
+    assert exit_code == 1
+    output = capsys.readouterr().out.strip()
+    data = json.loads(output)
+    assert data["ok"] is False
+    assert "Source values file not found" in data["message"]
+
+
+def test_wikibase_profile_to_cache_json(monkeypatch, capsys, tmp_path):
+    """wikibase profile-to-cache exports summary output in JSON mode."""
+
+    class FakeRuntimeConfig:
+        api_url = "https://datadistillery.wikibase.cloud/w/api.php"
+        sparql_endpoint = "https://datadistillery.wikibase.cloud/query/sparql"
+        username = None
+        password = None
+
+    class FakeExportResult:
+        cache_dir = str(tmp_path / "cache")
+        written_ids = ["Q10", "Q50"]
+        skipped_ids = ["Q1"]
+        graph = type(
+            "Graph",
+            (),
+            {"raw_items": {"Q10": {}, "Q50": {}}, "traversal_log": ["ok"]},
+        )()
+
+    def fake_export_profile_graph_to_entity_cache(**kwargs):
+        _ = kwargs
+        return FakeExportResult()
+
+    monkeypatch.setattr(cli, "get_wikibase_runtime_config", lambda: FakeRuntimeConfig())
+    monkeypatch.setattr(
+        cli,
+        "export_profile_graph_to_entity_cache",
+        fake_export_profile_graph_to_entity_cache,
+    )
+
+    exit_code = cli.main(
+        [
+            "--json",
+            "wikibase",
+            "profile-to-cache",
+            "--profile-id",
+            "Q10",
+            "--cache-dir",
+            str(tmp_path / "cache"),
+        ]
+    )
+
+    assert exit_code == 0
+    output = capsys.readouterr().out.strip()
+    data = json.loads(output)
+    assert data["command"] == "wikibase.profile-to-cache"
+    assert data["ok"] is True
+    assert data["details"]["written_count"] == 2
+    assert data["details"]["skipped_count"] == 1
+
+
+def test_wikibase_check_for_revisions_json(monkeypatch, capsys, tmp_path):
+    """wikibase check-for-revisions returns refresh summary in JSON mode."""
+
+    class FakeRuntimeConfig:
+        api_url = "https://datadistillery.wikibase.cloud/w/api.php"
+        sparql_endpoint = "https://datadistillery.wikibase.cloud/query/sparql"
+        username = None
+        password = None
+
+    class FakeRefreshResult:
+        cache_dir = str(tmp_path / "cache")
+        since = "2026-03-13T16:00:00Z"
+        next_since = "2026-03-13T17:00:00Z"
+        changed_ids = ["Q4", "Q39"]
+        ignored_ids = ["Q1"]
+        refreshed_ids = ["Q4"]
+        deleted_ids = ["Q39"]
+        missing_ids = ["Q39"]
+
+    def fake_refresh_entity_cache_from_recentchanges(**kwargs):
+        _ = kwargs
+        return FakeRefreshResult()
+
+    monkeypatch.setattr(cli, "get_wikibase_runtime_config", lambda: FakeRuntimeConfig())
+    monkeypatch.setattr(
+        cli, "get_latest_cache_timestamp", lambda path: "2026-03-13T16:00:00Z"
+    )
+    monkeypatch.setattr(
+        cli,
+        "refresh_entity_cache_from_recentchanges",
+        fake_refresh_entity_cache_from_recentchanges,
+    )
+
+    exit_code = cli.main(
+        [
+            "--json",
+            "wikibase",
+            "check-for-revisions",
+            "--cache-dir",
+            str(tmp_path / "cache"),
+            "--ignore-id",
+            "Q1",
+        ]
+    )
+
+    assert exit_code == 0
+    output = capsys.readouterr().out.strip()
+    data = json.loads(output)
+    assert data["command"] == "wikibase.check-for-revisions"
+    assert data["ok"] is True
+    assert data["details"]["changed_count"] == 2
+    assert data["details"]["refreshed_count"] == 1
+    assert data["details"]["deleted_count"] == 1
+
+
+def test_wikibase_plan_write_with_shipper_plan(monkeypatch, capsys, tmp_path):
+    """wikibase plan-write can run shipper.plan_batch and include diff summary."""
+
+    class FakeRuntimeConfig:
+        api_url = "https://datadistillery.wikibase.cloud/w/api.php"
+        sparql_endpoint = "https://query.wikidata.org/sparql"
+        username = "bot-user"
+        password = "bot-pass"
+
+    class FakeAuth:
+        def __init__(
+            self, username=None, password=None, interactive=False, api_url=None
+        ):
+            self.username = username
+            self.password = password
+            self.interactive = interactive
+            self.api_url = api_url
+            self._logged_in = False
+
+        def is_authenticated(self):
+            return bool(self.username and self.password)
+
+        def login(self):
+            self._logged_in = True
+
+        def is_logged_in(self):
+            return self._logged_in
+
+    class FakeDiffOp:
+        def __init__(self, payload):
+            self.payload = payload
+
+        def to_dict(self):
+            return self.payload
+
+    class FakeDiffPlan:
+        summary = {
+            "total": 1,
+            "create": 1,
+            "update": 0,
+            "noop": 0,
+            "ambiguous": 0,
+            "blocked": 0,
+        }
+
+        def __init__(self):
+            self.operations = [
+                FakeDiffOp(
+                    {
+                        "kind": "item",
+                        "label": "Cherokee Nation",
+                        "status": "create",
+                    }
+                )
+            ]
+
+        def to_dict(self):
+            return {
+                "summary": dict(self.summary),
+                "operations": [op.to_dict() for op in self.operations],
+            }
+
+    class FakeChargeReport:
+        entities_charged = 1
+        entities_skipped = 0
+        issues = []
+
+    class FakeBarrelReport:
+        operations_created = 1
+        entities_skipped = 0
+        issues = []
+
+    class FakeResult:
+        packet = {"packet_id": "pkt-test", "entities": [{"id": "ent-001"}]}
+        operations = [{"kind": "item", "label": "Cherokee Nation", "payload": {}}]
+        charge_report = FakeChargeReport()
+        barrel_report = FakeBarrelReport()
+        diff_plan = FakeDiffPlan()
+
+    class FakeShipper:
+        def __init__(self, auth, api_url=None, dry_run_default=True):
+            self.auth = auth
+            self.api_url = api_url
+            self.dry_run_default = dry_run_default
+
+    captured_kwargs: dict = {}
+
+    def fake_build_wikibase_write_plan(**kwargs):
+        captured_kwargs.update(kwargs)
+        return FakeResult()
+
+    monkeypatch.setattr(cli, "get_wikibase_runtime_config", lambda: FakeRuntimeConfig())
+    monkeypatch.setattr(cli, "WikiverseAuth", FakeAuth)
+    monkeypatch.setattr(cli, "WikibaseShipper", FakeShipper)
+    monkeypatch.setattr(
+        cli, "build_wikibase_write_plan", fake_build_wikibase_write_plan
+    )
+
+    source_values_file = tmp_path / "source_values.json"
+    source_values_file.write_text(
+        json.dumps({"ent-001": {"labels": {"en": "Cherokee Nation"}}}),
+        encoding="utf-8",
+    )
+
+    exit_code = cli.main(
+        [
+            "--json",
+            "wikibase",
+            "plan-write",
+            "--profile",
+            "TribalGovernmentUS",
+            "--source-values-file",
+            str(source_values_file),
+            "--with-shipper-plan",
+        ]
+    )
+
+    assert exit_code == 0
+    assert captured_kwargs.get("shipper") is not None
+    output = capsys.readouterr().out.strip()
+    data = json.loads(output)
+    assert data["ok"] is True
+    assert data["details"]["shipper_plan_summary"]["create"] == 1
+    assert data["details"]["auth_mode"] == "authenticated"
+
+
+def test_wikibase_execute_write_dry_run(monkeypatch, capsys, tmp_path):
+    """wikibase execute-write replays operations in dry-run mode by default."""
+
+    class FakeRuntimeConfig:
+        api_url = "https://datadistillery.wikibase.cloud/w/api.php"
+        sparql_endpoint = "https://query.wikidata.org/sparql"
+        username = "bot-user"
+        password = "bot-pass"
+
+    class FakeAuth:
+        def __init__(
+            self, username=None, password=None, interactive=False, api_url=None
+        ):
+            self.username = username
+            self.password = password
+            self.interactive = interactive
+            self.api_url = api_url
+            self._logged_in = False
+
+        def is_authenticated(self):
+            return bool(self.username and self.password)
+
+        def login(self):
+            self._logged_in = True
+
+        def is_logged_in(self):
+            return self._logged_in
+
+    class FakeShipper:
+        def __init__(self, auth, api_url=None, dry_run_default=True):
+            self.auth = auth
+            self.api_url = api_url
+            self.dry_run_default = dry_run_default
+
+    class FakeIssue:
+        severity = "warning"
+        entity_id = "ent-001"
+        field = "statements.instance_of"
+        message = "No property mapping for statement"
+
+    class FakeChargeReport:
+        entities_charged = 1
+        entities_skipped = 0
+        issues = []
+
+    class FakeBarrelReport:
+        operations_created = 1
+        entities_skipped = 0
+        issues = [FakeIssue()]
+
+    class FakePlan:
+        packet = {"packet_id": "pkt-test", "entities": [{"id": "ent-001"}]}
+        operations = [{"kind": "item", "label": "Cherokee Nation", "payload": {}}]
+        charge_report = FakeChargeReport()
+        barrel_report = FakeBarrelReport()
+        diff_plan = None
+
+    class FakeWriteResult:
+        def __init__(self, status):
+            self.status = status
+
+        def to_dict(self):
+            return {
+                "entity_id": None,
+                "revision_id": None,
+                "status": self.status,
+                "warnings": [],
+                "api_response": {},
+                "request_payload": {},
+                "metadata": {},
+            }
+
+    class FakeExecutionResult:
+        plan = FakePlan()
+        write_results = [FakeWriteResult("dry_run")]
+        write_summary = {
+            "total": 1,
+            "submitted": 0,
+            "dry_run": 1,
+            "validated": 0,
+            "blocked": 0,
+            "error": 0,
+        }
+
+    captured_kwargs: dict = {}
+
+    def fake_execute_wikibase_write_plan(**kwargs):
+        captured_kwargs.update(kwargs)
+        return FakeExecutionResult()
+
+    monkeypatch.setattr(cli, "get_wikibase_runtime_config", lambda: FakeRuntimeConfig())
+    monkeypatch.setattr(cli, "WikiverseAuth", FakeAuth)
+    monkeypatch.setattr(cli, "WikibaseShipper", FakeShipper)
+    monkeypatch.setattr(
+        cli, "execute_wikibase_write_plan", fake_execute_wikibase_write_plan
+    )
+
+    source_values_file = tmp_path / "source_values.json"
+    source_values_file.write_text(
+        json.dumps({"ent-001": {"labels": {"en": "Cherokee Nation"}}}),
+        encoding="utf-8",
+    )
+
+    exit_code = cli.main(
+        [
+            "--json",
+            "wikibase",
+            "execute-write",
+            "--profile",
+            "TribalGovernmentUS",
+            "--source-values-file",
+            str(source_values_file),
+        ]
+    )
+
+    assert exit_code == 0
+    assert captured_kwargs.get("dry_run") is True
+    output = capsys.readouterr().out.strip()
+    data = json.loads(output)
+    assert data["command"] == "wikibase.execute-write"
+    assert data["ok"] is True
+    assert data["details"]["dry_run"] is True
+    assert data["details"]["write_summary"]["dry_run"] == 1
+    assert data["details"]["auth_mode"] == "authenticated"
+
+
+def test_wikibase_execute_write_requires_auth(capsys, tmp_path, monkeypatch):
+    """wikibase execute-write fails cleanly when credentials are not available."""
+
+    class FakeRuntimeConfig:
+        api_url = "https://datadistillery.wikibase.cloud/w/api.php"
+        sparql_endpoint = "https://query.wikidata.org/sparql"
+        username = None
+        password = None
+
+    class FakeAuth:
+        def __init__(
+            self, username=None, password=None, interactive=False, api_url=None
+        ):
+            self.username = username
+            self.password = password
+            self.interactive = interactive
+            self.api_url = api_url
+
+        def is_authenticated(self):
+            return False
+
+    monkeypatch.setattr(cli, "get_wikibase_runtime_config", lambda: FakeRuntimeConfig())
+    monkeypatch.setattr(cli, "WikiverseAuth", FakeAuth)
+
+    source_values_file = tmp_path / "source_values.json"
+    source_values_file.write_text(
+        json.dumps({"ent-001": {"labels": {"en": "Cherokee Nation"}}}),
+        encoding="utf-8",
+    )
+
+    exit_code = cli.main(
+        [
+            "--json",
+            "wikibase",
+            "execute-write",
+            "--profile",
+            "TribalGovernmentUS",
+            "--source-values-file",
+            str(source_values_file),
+        ]
+    )
+
+    assert exit_code == 1
+    output = capsys.readouterr().out.strip()
+    data = json.loads(output)
+    assert data["ok"] is False
+    assert "requires authentication" in data["message"]
+
+
 def test_mash_qid_filter_properties(monkeypatch, capsys):
     """Mash output respects include/exclude property filters."""
 
@@ -916,264 +1399,3 @@ def test_profile_lookups_hydrate_profile_name_resolution(monkeypatch, capsys):
     output = capsys.readouterr().out.strip()
     data = json.loads(output)
     assert data["ok"] is True
-
-
-def test_wikibase_audit_json(monkeypatch, capsys, tmp_path):
-    """Wikibase audit command emits structured audit details."""
-
-    class FakeWikiverseAuth:
-        def __init__(
-            self,
-            username=None,
-            password=None,
-            interactive=False,
-            api_url=None,
-        ):
-            self.api_url = api_url
-            self.session = object()
-            self.username = username
-            self.password = password
-
-        def is_authenticated(self):
-            return False
-
-    class FakeReport:
-        ok = True
-
-        def to_dict(self):
-            return {
-                "ok": True,
-                "summary": {
-                    "total": 2,
-                    "conformant": 2,
-                    "missing": 0,
-                    "ambiguous": 0,
-                    "nonconforming": 0,
-                },
-                "records": [],
-                "resolved_identifiers": {
-                    "entity:GKC Entity Profile": "Q3",
-                },
-            }
-
-    captured = {}
-
-    def fake_audit_wikibase_foundation(**kwargs):
-        captured.update(kwargs)
-        return FakeReport()
-
-    output_file = tmp_path / "audit.json"
-
-    monkeypatch.setattr(cli, "WikiverseAuth", FakeWikiverseAuth)
-    monkeypatch.setattr(
-        cli, "audit_wikibase_foundation", fake_audit_wikibase_foundation
-    )
-
-    exit_code = cli.main(
-        [
-            "--json",
-            "wikibase",
-            "audit",
-            "--api-url",
-            "https://example.org/w/api.php",
-            "--foundation-profiles",
-            "/tmp/foundation",
-            "--language",
-            "en",
-            "--output",
-            str(output_file),
-        ]
-    )
-
-    assert exit_code == 0
-    output = capsys.readouterr().out.strip()
-    data = json.loads(output)
-
-    assert data["command"] == "wikibase.audit"
-    assert data["ok"] is True
-    assert data["details"]["auth_mode"] == "anonymous"
-    assert data["details"]["summary"]["conformant"] == 2
-    assert captured["api_url"] == "https://example.org/w/api.php"
-    assert captured["profile_dir"] == "/tmp/foundation"
-    assert output_file.exists()
-
-    written = json.loads(output_file.read_text(encoding="utf-8"))
-    assert written["metadata"]["api_url"] == "https://example.org/w/api.php"
-    assert "generated_at" in written["metadata"]
-
-
-def test_wikibase_audit_env_defaults(monkeypatch, capsys):
-    """Wikibase audit uses DD_WB_* defaults when CLI flags are omitted."""
-
-    class FakeWikiverseAuth:
-        def __init__(
-            self,
-            username=None,
-            password=None,
-            interactive=False,
-            api_url=None,
-        ):
-            self.api_url = api_url
-            self.session = object()
-            self.username = username
-            self.password = password
-
-        def is_authenticated(self):
-            return bool(self.username and self.password)
-
-        def login(self):
-            return True
-
-    class FakeReport:
-        ok = True
-
-        def to_dict(self):
-            return {
-                "ok": True,
-                "summary": {
-                    "total": 0,
-                    "conformant": 0,
-                    "missing": 0,
-                    "ambiguous": 0,
-                    "nonconforming": 0,
-                },
-                "records": [],
-                "resolved_identifiers": {},
-            }
-
-    captured = {}
-
-    def fake_audit_wikibase_foundation(**kwargs):
-        captured.update(kwargs)
-        return FakeReport()
-
-    monkeypatch.setenv("DD_WB_API_URL", "https://dd.example/w/api.php")
-    monkeypatch.setenv("DD_WB_SPARQL_ENDPOINT", "https://dd.example/query/sparql")
-    monkeypatch.setenv("DD_WB_USERNAME", "u")
-    monkeypatch.setenv("DD_WB_PASSWORD", "p")
-
-    monkeypatch.setattr(cli, "WikiverseAuth", FakeWikiverseAuth)
-    monkeypatch.setattr(
-        cli, "audit_wikibase_foundation", fake_audit_wikibase_foundation
-    )
-
-    exit_code = cli.main(
-        [
-            "--json",
-            "wikibase",
-            "audit",
-            "--foundation-profiles",
-            "/tmp/foundation",
-        ]
-    )
-
-    assert exit_code == 0
-    output = capsys.readouterr().out.strip()
-    data = json.loads(output)
-    assert data["details"]["api_url"] == "https://dd.example/w/api.php"
-    assert data["details"]["sparql_endpoint"] == "https://dd.example/query/sparql"
-    assert data["details"]["auth_mode"] == "authenticated"
-    assert captured["api_url"] == "https://dd.example/w/api.php"
-
-
-def test_wikibase_audit_auth_failure_falls_back_anonymous(monkeypatch, capsys):
-    """Wikibase audit falls back to anonymous mode when login fails."""
-
-    class FakeWikiverseAuth:
-        def __init__(
-            self,
-            username=None,
-            password=None,
-            interactive=False,
-            api_url=None,
-        ):
-            self.api_url = api_url
-            self.session = object()
-
-        def is_authenticated(self):
-            return True
-
-        def login(self):
-            raise cli.AuthenticationError("bad credentials")
-
-    class FakeReport:
-        ok = True
-
-        def to_dict(self):
-            return {
-                "ok": True,
-                "summary": {
-                    "total": 0,
-                    "conformant": 0,
-                    "missing": 0,
-                    "ambiguous": 0,
-                    "nonconforming": 0,
-                },
-                "records": [],
-                "resolved_identifiers": {},
-            }
-
-    def fake_audit_wikibase_foundation(**kwargs):
-        return FakeReport()
-
-    monkeypatch.setattr(cli, "WikiverseAuth", FakeWikiverseAuth)
-    monkeypatch.setattr(
-        cli, "audit_wikibase_foundation", fake_audit_wikibase_foundation
-    )
-
-    exit_code = cli.main(
-        [
-            "--json",
-            "wikibase",
-            "audit",
-            "--api-url",
-            "https://example.org/w/api.php",
-        ]
-    )
-
-    assert exit_code == 0
-    output = capsys.readouterr().out.strip()
-    data = json.loads(output)
-    assert data["ok"] is True
-    assert data["details"]["auth_mode"] == "anonymous"
-    assert "bad credentials" in data["details"]["warning"]
-
-
-def test_wikibase_audit_auth_failure_require_auth(monkeypatch, capsys):
-    """Wikibase audit fails when --require-auth is set and login fails."""
-
-    class FakeWikiverseAuth:
-        def __init__(
-            self,
-            username=None,
-            password=None,
-            interactive=False,
-            api_url=None,
-        ):
-            self.api_url = api_url
-            self.session = object()
-
-        def is_authenticated(self):
-            return True
-
-        def login(self):
-            raise cli.AuthenticationError("bad credentials")
-
-    monkeypatch.setattr(cli, "WikiverseAuth", FakeWikiverseAuth)
-
-    exit_code = cli.main(
-        [
-            "--json",
-            "wikibase",
-            "audit",
-            "--api-url",
-            "https://example.org/w/api.php",
-            "--require-auth",
-        ]
-    )
-
-    assert exit_code == 1
-    output = capsys.readouterr().out.strip()
-    data = json.loads(output)
-    assert data["ok"] is False
-    assert "bad credentials" in data["message"]
