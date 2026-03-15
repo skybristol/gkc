@@ -1221,11 +1221,29 @@ class WikibaseLoader:
         """
         return self.load_item(qid)
 
+    def load_entities_raw(self, entity_ids: list[str]) -> dict[str, dict[str, Any]]:
+        """Load raw entity JSON in wbgetentities-sized batches.
+
+        Uses ``self.entity_batch_size`` so authenticated sessions with
+        ``apihighlimits`` can fetch 500 entities per request.
+        """
+        if not entity_ids:
+            return {}
+
+        result: dict[str, dict[str, Any]] = {}
+
+        for i in range(0, len(entity_ids), self.entity_batch_size):
+            batch = entity_ids[i : i + self.entity_batch_size]
+            batch_results = self._fetch_entities_batch(batch)
+            result.update(batch_results)
+
+        return result
+
     def load_items(self, qids: list[str]) -> dict[str, WikibaseItemTemplate]:
         """Load multiple Wikidata items in batch and return them as templates.
 
-        Uses the wbgetentities API to efficiently fetch multiple items in batches
-        of 50. Handles partial failures gracefully.
+        Uses the wbgetentities API to efficiently fetch multiple items in
+        ``self.entity_batch_size`` chunks. Handles partial failures gracefully.
 
         Args:
             qids: List of Wikidata item IDs (e.g., ['Q42', 'Q5']).
@@ -1249,19 +1267,16 @@ class WikibaseLoader:
             return {}
 
         result: dict[str, WikibaseItemTemplate] = {}
+        batch_results = self.load_entities_raw(qids)
 
-        for i in range(0, len(qids), self.entity_batch_size):
-            batch = qids[i : i + self.entity_batch_size]
-            batch_results = self._fetch_entities_batch(batch)
-
-            # Build templates for each successfully fetched entity
-            for qid, entity_data in batch_results.items():
-                try:
-                    template = self._build_template(qid, entity_data)
-                    result[qid] = template
-                except Exception:
-                    # Skip items that fail to parse
-                    continue
+        # Build templates for each successfully fetched entity
+        for qid, entity_data in batch_results.items():
+            try:
+                template = self._build_template(qid, entity_data)
+                result[qid] = template
+            except Exception:
+                # Skip items that fail to parse
+                continue
 
         return result
 
