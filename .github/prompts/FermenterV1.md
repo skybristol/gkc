@@ -572,43 +572,54 @@ def _fuzzy_match_label(label: str, value_list: list[dict]) -> Optional[str]:
 
 **Storage:** SpiritSafe cache (`cache/value_lists/{ListQID}.json`)
 
-**SPARQL Location:** MediaWiki Discussion (Talk) page for each value list item (Q28, Q43, etc.)
+**Query Definition Policy:** Build-time query definitions should be managed as deterministic extraction assets keyed by value-list entity URI. Talk-page SPARQL can be tolerated as transitional authoring input, but must not remain the long-term machine contract.
 
 **Extraction Workflow:**
 1. Query DD Wikibase for all Q7 instances
-2. Fetch Discussion page content for each item (MediaWiki API)
-3. Extract SPARQL query text from Discussion page (parse wiki markup)
-4. Execute SPARQL against configured endpoint (Wikidata Query Service, etc.)
-5. Materialize results as JSON: `[{"qid": "Q123", "label": "Example"}, ...]`
+2. Resolve the query asset for each active value list
+3. Execute SPARQL against configured endpoint (Wikidata Query Service, QLever, etc.)
+4. Materialize results as JSON with deterministic ordering and build metadata
+5. If live execution fails, reuse the previously committed cache artifact only when it passes schema validation
 6. Write to `SpiritSafe/cache/value_lists/{ListQID}.json`
+7. Hard-fail the build if neither fresh results nor a valid fallback cache artifact are available
 
 **Runtime Loading:**
 1. `fermenter` module reads value list JSON from SpiritSafe cache
-2. If cache missing or stale, optionally regenerate via SPARQL (configuration flag)
+2. `fermenter` never regenerates lists via SPARQL at runtime
 3. Pass value list to `validate_value_from_list()` via `SpecificationContext.value_lists`
+4. If cache metadata indicates stale fallback usage, surface that as structured notice metadata rather than trying to refresh in-process
 
 ### Value List JSON Schema
 
 ```json
 {
-  "list_qid": "Q28",
-  "list_label": "Federal Register Notices Listing Tribes",
-  "applies_to_property": "Q30",
+    "wikibase_entity": "https://datadistillery.wikibase.cloud/entity/Q28",
+    "list_label": "Federal Register Notices Listing Tribes",
+    "applies_to": ["https://datadistillery.wikibase.cloud/entity/Q30"],
   "generated_at": "2026-03-09T12:00:00Z",
-  "sparql_query": "SELECT ?item ?itemLabel WHERE { ... }",
-  "truncated": false,
+    "build_source": "query",
+    "is_fallback": false,
+    "source_revision": "Q28@307",
   "item_count": 574,
   "items": [
-    {"qid": "Q12345", "label": "Example Tribal Nation"},
-    {"qid": "Q67890", "label": "Another Tribe"}
+        {
+            "wikibase_entity": "https://www.wikidata.org/entity/Q12345",
+            "qid": "Q12345",
+            "labels": {"en": "Example Tribal Nation"}
+        },
+        {
+            "wikibase_entity": "https://www.wikidata.org/entity/Q67890",
+            "qid": "Q67890",
+            "labels": {"en": "Another Tribe"}
+        }
   ]
 }
 ```
 
-**Truncation Policy:**
-- Default: Materialize up to 10,000 items per list in SpiritSafe cache
-- If SPARQL returns more, set `"truncated": true` and store first 10,000
-- Runtime can regenerate full list on-demand if needed
+**Build Validity Rule:**
+- A value list is valid for SpiritSafe export only when the artifact contains at least one deterministically schema-valid item payload sourced from either a fresh query run or a committed fallback snapshot.
+- Missing both fresh results and fallback cache is a materialization failure.
+- Large lists may still require paging or truncation policy, but truncation must be declared in artifact metadata and handled during build, not by runtime refresh.
 
 ---
 
@@ -976,9 +987,9 @@ def test_validate_value_from_list_with_valid_qid():
 ## Open Questions & Decisions Needed
 
 1. **Value List Truncation:**
-   - Current proposal: 10,000 items max in SpiritSafe cache
-   - Question: Is this sufficient for largest value lists (e.g., all countries, all languages)?
-   - Decision needed: Increase limit, or implement pagination/streaming for large lists?
+    - Replace the old truncation assumption with a practical interactive threshold for Wizard consumption.
+    - Question: At what payload size / item count should a list stop being treated as directly inlineable for client-side type-ahead?
+    - Decision needed: pick the threshold and alternate static delivery strategy for oversized lists.
 
 2. **SPARQL Endpoint Configuration:**
    - Question: Where is SPARQL endpoint URL configured? (gkc config file, environment variable, profile metadata?)

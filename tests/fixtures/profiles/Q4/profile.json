@@ -1,0 +1,276 @@
+{
+  "entity": "https://datadistillery.wikibase.cloud/entity/Q4",
+  "statements": [
+    {
+      "id": "instance_of",
+      "entity": "https://datadistillery.wikibase.cloud/entity/Q16",
+      "label": "instance of",
+      "io_map": [
+        {
+          "to": "http://www.wikidata.org/entity/P31"
+        }
+      ],
+      "value": {
+        "type": "wikibase-item",
+        "fixed": {
+          "entity": "https://datadistillery.wikibase.cloud/entity/Q54",
+          "label": "federally recognized Native American tribe in the United States"
+        },
+        "default": null,
+        "options": []
+      },
+      "prompt": "the primary classification for the tribe (fixed to \"federally recognized Native American tribe in the United States\" for this profile)",
+      "guidance": null,
+      "consequences_message": null,
+      "error_message": null,
+      "max_count": null,
+      "qualifiers": [],
+      "references": [
+        {
+          "entity": "https://datadistillery.wikibase.cloud/entity/Q30",
+          "label": "stated in"
+        }
+      ]
+    },
+    {
+      "id": "member_count",
+      "entity": "https://datadistillery.wikibase.cloud/entity/Q21",
+      "label": "member count",
+      "io_map": [
+        {
+          "to": "http://www.wikidata.org/entity/P2124"
+        }
+      ],
+      "value": {
+        "type": "quantity",
+        "fixed": null,
+        "default": null,
+        "options": []
+      },
+      "prompt": "number of tribal citizens/members when a reliable reference source can be cited",
+      "guidance": null,
+      "consequences_message": null,
+      "error_message": null,
+      "max_count": null,
+      "qualifiers": [],
+      "references": [
+        {
+          "entity": "https://datadistillery.wikibase.cloud/entity/Q29",
+          "label": "reference URL"
+        },
+        {
+          "entity": "https://datadistillery.wikibase.cloud/entity/Q30",
+          "label": "stated in"
+        }
+      ]
+    },
+    {
+      "id": "native_label",
+      "entity": "https://datadistillery.wikibase.cloud/entity/Q32",
+      "label": "native label",
+      "io_map": [
+        {
+          "to": "http://www.wikidata.org/entity/P1705"
+        }
+      ],
+      "value": {
+        "type": "monolingualtext",
+        "fixed": null,
+        "default": null,
+        "options": []
+      },
+      "prompt": "native label in the language used by the tribe",
+      "guidance": null,
+      "consequences_message": "providing a native label will help promote tribal sovereignty by helping to identify the tribe with the name tribal members use for themselves",
+      "error_message": null,
+      "max_count": null,
+      "qualifiers": [],
+      "references": [
+        {
+          "entity": "https://datadistillery.wikibase.cloud/entity/Q29",
+          "label": "reference URL"
+        },
+        {
+          "entity": "https://datadistillery.wikibase.cloud/entity/Q30",
+          "label": "stated in"
+        }
+      ]
+    },
+    {
+      "id": "headquarters_location",
+      "entity": "https://datadistillery.wikibase.cloud/entity/Q33",
+      "label": "headquarters location",
+      "io_map": [
+        {
+          "to": "http://www.wikidata.org/entity/P159"
+        }
+      ],
+      "value": {
+        "type": "wikibase-item",
+        "fixed": null,
+        "default": null,
+        "options": []
+      },
+      "prompt": "headquarters location for the tribal government",
+      "guidance": null,
+      "consequences_message": null,
+      "error_message": null,
+      "max_count": 1,
+      "qualifiers": [
+        {
+          "entity": "https://datadistillery.wikibase.cloud/entity/Q34",
+          "label": "street address"
+        },
+        {
+          "entity": "https://datadistillery.wikibase.cloud/entity/Q35",
+          "label": "postal code"
+        },
+        {
+          "entity": "https://datadistillery.wikibase.cloud/entity/Q36",
+          "label": "coordinate location"
+        }
+      ],
+      "references": [
+        {
+          "entity": "https://datadistillery.wikibase.cloud/entity/Q29",
+          "label": "reference URL"
+        },
+        {
+          "entity": "https://datadistillery.wikibase.cloud/entity/Q30",
+          "label": "stated in"
+        }
+      ]
+    },
+    {
+      "id": "inception",
+      "entity": "https://datadistillery.wikibase.cloud/entity/Q37",
+      "label": "inception",
+      "io_map": [
+        {
+          "to": "http://www.wikidata.org/entity/P571"
+        }
+      ],
+      "value": {
+        "type": "time",
+        "fixed": null,
+        "default": null,
+        "options": []
+      },
+      "prompt": "inception date for formal recognition or establishment",
+      "guidance": null,
+      "consequences_message": null,
+      "error_message": null,
+      "max_count": 1,
+      "qualifiers": [],
+      "references": [
+        {
+          "entity": "https://datadistillery.wikibase.cloud/entity/Q29",
+          "label": "reference URL"
+        },
+        {
+          "entity": "https://datadistillery.wikibase.cloud/entity/Q30",
+          "label": "stated in"
+        }
+      ]
+    },
+    {
+      "id": "flag_image",
+      "entity": "https://datadistillery.wikibase.cloud/entity/Q38",
+      "label": "flag image",
+      "io_map": [
+        {
+          "to": "http://www.wikidata.org/entity/P41"
+        }
+      ],
+      "value": {
+        "type": "commonsMedia",
+        "fixed": null,
+        "default": null,
+        "options": []
+      },
+      "prompt": "official flag for the tribe",
+      "guidance": null,
+      "consequences_message": null,
+      "error_message": null,
+      "max_count": null,
+      "qualifiers": [],
+      "references": [
+        {
+          "entity": "https://datadistillery.wikibase.cloud/entity/Q29",
+          "label": "reference URL"
+        },
+        {
+          "entity": "https://datadistillery.wikibase.cloud/entity/Q30",
+          "label": "stated in"
+        }
+      ]
+    },
+    {
+      "id": "office_held_by_head_of_government",
+      "entity": "https://datadistillery.wikibase.cloud/entity/Q40",
+      "label": "office held by head of government",
+      "io_map": [
+        {
+          "to": "http://www.wikidata.org/entity/P1313"
+        }
+      ],
+      "value": {
+        "type": "wikibase-item",
+        "fixed": null,
+        "default": null,
+        "options": [
+          {
+            "kind": "profile",
+            "entity": "https://datadistillery.wikibase.cloud/entity/Q39",
+            "label": "Office Held by Head of Government"
+          }
+        ]
+      },
+      "prompt": "the title of the office held by the head of government of this tribe",
+      "guidance": null,
+      "consequences_message": null,
+      "error_message": null,
+      "max_count": 1,
+      "qualifiers": [],
+      "references": [
+        {
+          "entity": "https://datadistillery.wikibase.cloud/entity/Q29",
+          "label": "reference URL"
+        },
+        {
+          "entity": "https://datadistillery.wikibase.cloud/entity/Q30",
+          "label": "stated in"
+        }
+      ]
+    }
+  ],
+  "metadata": {
+    "profile_item": {
+      "labels": {
+        "mul": "Tribal Government in the United States",
+        "en": "Tribal Government in the United States",
+        "es": "Gobierno tribal en los Estados Unidos"
+      },
+      "descriptions": {
+        "en": "GKC Entity Profile describing the content model for entities representing the governments of federally recognized Native American and Alaska Native Tribes in the United States",
+        "es": "Perfil de entidad GKC que describe el modelo de contenido para las entidades que representan los gobiernos de las Tribus Nativas Americanas y Nativas de Alaska reconocidas federalmente en los Estados Unidos"
+      },
+      "prompt_guidance": {
+        "label_guidance_mul": "Use the name that the tribe uses in referring to itself as the primary label where possible. Rely on official tribal government websites. Prefer the tribe's self-designation over external government names.",
+        "label_prompt_mul": "primary name that the tribe uses to refer to itself in English",
+        "description_guidance_mul": "Example: \"federally recognized Native American tribe of Cherokee people\"",
+        "description_prompt_mul": "short, distinctive description to disambiguate this tribe from others",
+        "alias_guidance_mul": "Include an alias for the official name of the tribe as referred to by the U.S. Government (e.g., from the Bureau of Indian Affairs list).",
+        "alias_prompt_mul": "alternative names by which this tribe is known or has been referred to"
+      }
+    },
+    "exported_from": "https://datadistillery.wikibase.cloud/entity/Q4",
+    "export_timestamp": "2026-03-14T23:55:19Z",
+    "source_revision": 634
+  },
+  "registry_metadata": {
+    "release": "cache-aligned-q4-fixture",
+    "release_date": "2026-03-15T00:00:00Z",
+    "git_tag": "cache-aligned-q4-fixture"
+  }
+}
