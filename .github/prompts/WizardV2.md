@@ -424,20 +424,21 @@ Country *
 ```
 
 **Offline Fallback:**
-- If value list cache missing or stale, display warning: "Value list unavailable. Enter QID manually or refresh cache."
-- Allow user to enter QID directly (validate format only, skip list constraint)
+- Wizard must not run SPARQL or regenerate value lists itself.
+- If the materialized value list artifact is unavailable, Wizard should surface a blocking dependency error tied to the build/cache state rather than silently downgrading validation.
+- If the artifact is marked stale fallback, Wizard may show a notice, but should still use the cached list as authoritative input for that session.
 
 ### Value List Refresh UI
 
-**Requirement:** Allow user to trigger value list regeneration (SPARQL query execution).
+**Requirement:** Trigger a cache refresh workflow, not ad hoc runtime SPARQL execution.
 
 **Implementation:**
 - Add settings menu option: "Refresh value lists"
 - When clicked:
-  1. Wizard calls `gkc.spirit_safe.refresh_value_lists()` (CLI function wrapped for UI)
-  2. Display progress: "Refreshing value lists... (Q28: 574 items, Q43: 195 countries)"
-  3. On completion: "Value lists updated. Restart wizard to use fresh data."
-- Future enhancement: Auto-refresh on app launch if cache older than TTL (30 days)
+   1. Wizard calls a build/workflow trigger or opens the relevant operator workflow path
+   2. Display progress or status from that workflow when available
+   3. On completion: reload the materialized value-list artifacts
+- Future enhancement: surface artifact freshness metadata in UI; do not auto-run SPARQL on app launch
 
 ---
 
@@ -682,15 +683,15 @@ def test_create_tribal_government_with_linked_office():
 
 **Tasks:**
 1. Implement value list loader (read from `cache/value_lists/*.json`)
-2. Implement type-ahead search with value list filtering (prefix match, fuzzy match)
-3. Implement offline fallback (warn if value list unavailable)
-4. Implement value list refresh UI (trigger SPARQL regeneration)
+2. Implement type-ahead search with value list filtering against the materialized artifact (client-local for practical-sized lists)
+3. Respect artifact metadata that marks oversized lists as non-inlineable and switch to alternate static delivery behavior where defined
+4. Implement operator-facing refresh trigger UI that starts a cache rebuild workflow, not runtime SPARQL execution
 5. Integration tests for value list workflows
 
 **Deliverables:**
 - Country field populates from Q43 value list
 - Stated-in reference field populates from Q28 value list
-- User can refresh value lists from settings menu
+- User can trigger value-list rebuild workflow from settings menu
 
 ### Phase 5: Form-Level Validation & Submission (Week 7)
 
@@ -768,7 +769,8 @@ def test_create_tribal_government_with_linked_office():
    - Should manifest include graph visualization metadata (node positions, edge weights)?
 
 3. **Value List Optimization:**
-   - Which value lists exceed 10k items? (need pagination/streaming)
+   - Which value lists exceed the agreed direct type-ahead threshold?
+   - Should oversized lists use prefix-sharded static JSON delivery from `datadistillery.org`, or should they be marked non-inlineable for Wizard MVP?
    - Should value lists include item descriptions (not just labels) for disambiguation?
 
 ---

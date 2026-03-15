@@ -254,6 +254,110 @@ class TestWikiverseAuth:
         assert not auth.is_logged_in()
         mock_session.cookies.clear.assert_called_once()
 
+    @patch("gkc.auth.requests.Session")
+    def test_get_user_rights_returns_list(self, mock_session_class):
+        """get_user_rights returns the rights list from userinfo."""
+        mock_session = Mock()
+        mock_session_class.return_value = mock_session
+
+        rights_response = Mock()
+        rights_response.json.return_value = {
+            "query": {
+                "userinfo": {
+                    "rights": ["read", "edit", "apihighlimits", "createaccount"]
+                }
+            }
+        }
+        mock_session.get.return_value = rights_response
+
+        auth = WikiverseAuth(username="testuser@testbot", password="testpass")
+        auth._logged_in = True
+
+        rights = auth.get_user_rights()
+        assert "apihighlimits" in rights
+        assert "read" in rights
+
+    @patch("gkc.auth.requests.Session")
+    def test_get_user_rights_empty_when_no_rights_key(self, mock_session_class):
+        """get_user_rights returns an empty list when userinfo has no rights key."""
+        mock_session = Mock()
+        mock_session_class.return_value = mock_session
+
+        rights_response = Mock()
+        rights_response.json.return_value = {"query": {"userinfo": {}}}
+        mock_session.get.return_value = rights_response
+
+        auth = WikiverseAuth(username="testuser@testbot", password="testpass")
+        auth._logged_in = True
+
+        rights = auth.get_user_rights()
+        assert rights == []
+
+    def test_get_user_rights_raises_when_not_logged_in(self):
+        """get_user_rights raises AuthenticationError when not logged in."""
+        from gkc.auth import AuthenticationError
+
+        auth = WikiverseAuth(username="testuser@testbot", password="testpass")
+
+        with pytest.raises(AuthenticationError, match="Not logged in"):
+            auth.get_user_rights()
+
+    @patch("gkc.auth.requests.Session")
+    def test_get_user_rights_raises_on_network_error(self, mock_session_class):
+        """get_user_rights raises AuthenticationError on network failure."""
+        import requests as req
+
+        from gkc.auth import AuthenticationError
+
+        mock_session = Mock()
+        mock_session_class.return_value = mock_session
+        mock_session.get.side_effect = req.RequestException("timeout")
+
+        auth = WikiverseAuth(username="testuser@testbot", password="testpass")
+        auth._logged_in = True
+
+        with pytest.raises(AuthenticationError, match="Network error"):
+            auth.get_user_rights()
+
+    @patch("gkc.auth.requests.Session")
+    def test_has_api_high_limits_true(self, mock_session_class):
+        """has_api_high_limits returns True when apihighlimits is in rights."""
+        mock_session = Mock()
+        mock_session_class.return_value = mock_session
+
+        rights_response = Mock()
+        rights_response.json.return_value = {
+            "query": {"userinfo": {"rights": ["read", "apihighlimits"]}}
+        }
+        mock_session.get.return_value = rights_response
+
+        auth = WikiverseAuth(username="testuser@testbot", password="testpass")
+        auth._logged_in = True
+
+        assert auth.has_api_high_limits() is True
+
+    @patch("gkc.auth.requests.Session")
+    def test_has_api_high_limits_false_when_right_absent(self, mock_session_class):
+        """has_api_high_limits returns False when apihighlimits is absent."""
+        mock_session = Mock()
+        mock_session_class.return_value = mock_session
+
+        rights_response = Mock()
+        rights_response.json.return_value = {
+            "query": {"userinfo": {"rights": ["read", "edit"]}}
+        }
+        mock_session.get.return_value = rights_response
+
+        auth = WikiverseAuth(username="testuser@testbot", password="testpass")
+        auth._logged_in = True
+
+        assert auth.has_api_high_limits() is False
+
+    def test_has_api_high_limits_false_when_not_logged_in(self):
+        """has_api_high_limits returns False without raising when not logged in."""
+        auth = WikiverseAuth(username="testuser@testbot", password="testpass")
+        assert auth.has_api_high_limits() is False
+
 
 class TestOpenStreetMapAuth:
     """Tests for OpenStreetMapAuth class."""

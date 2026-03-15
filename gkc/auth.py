@@ -434,6 +434,73 @@ class WikiverseAuth(AuthBase):
 
         return info
 
+    def get_user_rights(self) -> list[str]:
+        """Return the list of user rights from the API userinfo endpoint.
+
+        Calls action=query&meta=userinfo&uiprop=rights on the authenticated
+        session and returns the raw rights list. Useful for capability
+        detection before making API calls with limits that depend on user tier.
+
+        Returns:
+            List of right name strings (e.g. ``["apihighlimits", "read", ...]``).
+
+        Raises:
+            AuthenticationError: If not logged in or the API request fails.
+
+        Example:
+            >>> auth = WikiverseAuth(username="User@Bot", password="secret")
+            >>> auth.login()
+            >>> rights = auth.get_user_rights()
+            >>> "apihighlimits" in rights
+            True
+        """
+        if not self.is_logged_in():
+            raise AuthenticationError(
+                "Not logged in. Call login() first before checking user rights."
+            )
+
+        try:
+            response = self.session.get(
+                self.api_url,
+                params={
+                    "action": "query",
+                    "meta": "userinfo",
+                    "uiprop": "rights",
+                    "format": "json",
+                },
+            )
+            response.raise_for_status()
+            data = response.json()
+            rights = data.get("query", {}).get("userinfo", {}).get("rights", [])
+            return rights if isinstance(rights, list) else []
+        except requests.RequestException as exc:
+            raise AuthenticationError(
+                f"Network error fetching user rights: {exc}"
+            ) from exc
+
+    def has_api_high_limits(self) -> bool:
+        """Return True if the authenticated user has the apihighlimits right.
+
+        The ``apihighlimits`` right elevates per-request API caps from 50 to
+        500 items for actions such as ``wbgetentities``. Returns False if the
+        user is not logged in or if the rights check fails for any reason, so
+        callers can safely use this as a capability flag without extra error
+        handling.
+
+        Returns:
+            True when ``apihighlimits`` is present in the user's rights, False
+            otherwise.
+
+        Example:
+            >>> auth = WikiverseAuth(username="User@Bot", password="secret")
+            >>> auth.login()
+            >>> limit = 500 if auth.has_api_high_limits() else 50
+        """
+        try:
+            return "apihighlimits" in self.get_user_rights()
+        except AuthenticationError:
+            return False
+
 
 class OpenStreetMapAuth(AuthBase):
     """

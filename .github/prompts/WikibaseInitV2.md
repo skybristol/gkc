@@ -1137,7 +1137,9 @@ Value list items (instances of `https://datadistillery.wikibase.cloud/entity/Q7`
 
 ### SPARQL Storage Strategy
 
-**Current approach:** SPARQL query text is stored in the MediaWiki Discussion (Talk) page associated with each value list item (`https://datadistillery.wikibase.cloud/entity/Q28`, `https://datadistillery.wikibase.cloud/entity/Q43`).
+**Current transitional approach:** SPARQL query text may be stored in the MediaWiki Discussion (Talk) page associated with each value list item (`https://datadistillery.wikibase.cloud/entity/Q28`, `https://datadistillery.wikibase.cloud/entity/Q43`).
+
+**Architectural direction:** Do not make talk-page markup the long-term machine contract. The executable query definition should move to deterministic extraction assets keyed by value-list entity URI, while the Wikibase item remains authoritative for identity, classification, linkage, and directive semantics.
 
 **Potential alternatives:**
 1. Store SPARQL query text in a dedicated property (string datatype)
@@ -1149,11 +1151,21 @@ Value list items (instances of `https://datadistillery.wikibase.cloud/entity/Q7`
 - Best-match coercion for bulk data operators (fuzzy matching, label resolution)
 - Periodic regeneration via SPARQL (freshness policy)
 - Fallback list when SPARQL endpoint unavailable
+- No runtime dependency on live SPARQL for Wizard, fermenter, or CLI consumers
+- Hard fail when neither fresh query output nor schema-valid fallback cache can be materialized
+- Explicit refresh intent metadata on each value-list item so hydration can distinguish manual-refresh lists from scheduled-refresh lists
+- Artifact sizing policy that keeps Wizard-consumed lists practically small enough for direct type-ahead use
 
 **Open question:** Where to cache materialized lists?
 - **Option A:** SpiritSafe cache (version-controlled, alongside profiles)
 - **Option B:** Separate infrastructure (Redis, S3, or local cache in gkc runtime)
 - **Option C:** Hybrid — truncated lists in SpiritSafe, full lists in runtime cache
+
+**Current direction:** SpiritSafe cache is the authoritative runtime source. `datadistillery.org` may publish the same generated JSON artifacts for browser delivery, but should not become a separate source-of-truth cache.
+
+**Refresh cadence direction:** add a dedicated value-list refresh policy property in DD Wikibase with controlled values such as `manual`, `scheduled-daily`, `scheduled-weekly`, and `scheduled-monthly`. Extraction uses that property to decide which value lists participate in scheduled workflow runs.
+
+**Sizing direction:** keep the normal artifact contract optimized for Wizard type-ahead. If a list grows beyond the agreed practical threshold, emit metadata that marks it as too large for direct local type-ahead and publish an alternate static delivery form instead of expanding the normal SpiritSafe artifact indefinitely.
 
 **Action:** Document caching strategy decision in dev doc after evaluating:
 - List size distribution (how many items per list?)
@@ -1171,6 +1183,7 @@ Add to Property-to-Semantics Mapping Table:
 | `P159` (reference specification) | `statements[].reference_spec` (TBD) | References fermenter reference validation | Enforces reference requirements | Can have multiple specs |
 | `P164` (expected qualifier) | `statements[].expected_qualifiers[]` | List of required/allowed qualifier entity URIs | Renders qualifier sub-form fields | Maps to statement-definition items |
 | `P163` (applies to property) | (metadata on value list items) | Links value list to target property | — | Used to resolve which lists apply to which fields |
+| `PXXX` (value list refresh policy) | value-list item metadata | Declares manual vs scheduled refresh cadence | — | Controlled-value property for hydration orchestration |
 | `P191` (validation directive) | (metadata on spec items) | Human-readable fermenter instruction | — | Guides fermenter module implementation |
 
 ### Fermenter Module Requirements (Extended)
@@ -1186,8 +1199,8 @@ In addition to primitive datatype validators/coercers, `fermenter` must implemen
 
 **Value List Resolvers:**
 1. `get_value_list(list_item_entity_uri, cache_policy)` — retrieves materialized list
-2. `execute_value_list_sparql(list_item_entity_uri)` — regenerates list from SPARQL
-3. `match_value_to_list(input_value, list_items, match_policy)` — fuzzy matching/coercion
+2. `hydrate_value_list(list_item_entity_uri, refresh_policy)` — build-stage hydration from query asset with fallback cache reuse
+3. `match_value_to_list(input_value, list_items, match_policy)` — fermenter-authoritative exact/prefix/coercion matching over materialized items
 
 **Qualifier Validators:**
 1. `validate_expected_qualifiers(statement, expected_entities)` — P164 enforcement

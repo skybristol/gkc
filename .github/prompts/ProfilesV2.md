@@ -127,11 +127,11 @@ Cleanup sequencing and ownership is now explicitly:
 
 ### Architectural Decision: Identifier Policy
 
-- `wikibase_entity` is the **only canonical machine identifier** for profile items.
+- `entity` is the **only canonical machine identifier** for profile items.
 - `profile_id` is removed from the v2 JSON schema.
-- Human-readable labels (`labels.en.label` and other language labels) are **presentation-only**.
+- Human-readable labels are **presentation-only**.
 - Runtime logic MUST NOT use labels for identity, joins, cache keys, linkage resolution, or routing.
-- If a short token is needed for local filesystem naming, derive it from `wikibase_entity` at export time (non-authoritative), and always resolve back to `wikibase_entity` for logic.
+- If a short token is needed for local filesystem naming, derive it from `entity` at export time (non-authoritative), and always resolve back to `entity` for logic.
 
 ### Design Note: Elimination of metadata.yaml
 
@@ -139,7 +139,7 @@ Cleanup sequencing and ownership is now explicitly:
 
 **V2 approach:** Eliminate metadata.yaml to reduce file overhead and single-source information:
 - **Machine-readable metadata** → moved to `registry_metadata` section in `profile.json`
-- **Version tracking** → feature-based repository git tags (format: `{meaningful-slug}`)
+- **Version/provenance tracking** → revision-first workflow metadata, with optional feature-based repository git tags for manual milestones
 - **Authorship/attribution** → git commit history or optional `README.md`
 - **Source references** → optional `README.md`
 - **Profile graph edges** → `manifest.json` (registry-level)
@@ -150,67 +150,101 @@ Cleanup sequencing and ownership is now explicitly:
 
 ### Profile JSON Schema (v2)
 
+**Contract correction (2026-03-15):**
+
+- Use `entity` throughout as the URI identifier key.
+- Profile item labels/descriptions and P185-P190 prompt/guidance content live under `metadata.profile_item`, not in statement specification payload.
+- Description prompt (P189) and description guidance (P186) are materialized from `mul` content.
+- Alias prompt (P190) and alias guidance (P187) are both materialized when present.
+- Earlier examples that place labels/descriptions at the profile root are superseded by the structure below.
+
 **Core Structure:**
 
 ```json
 {
-  "wikibase_entity": "https://datadistillery.wikibase.cloud/entity/Q4",
-  "labels": {
-    "en": {"label": "Tribal Government (US)", "guidance": "...", "input_prompt": "..."},
-    "es": {"label": "...", "guidance": "...", "input_prompt": "..."}
-  },
-  "descriptions": {
-    "en": {"label": "...", "guidance": "...", "input_prompt": "..."}
-  },
-  "aliases": {
-    "en": {"label": ["...", "..."], "guidance": "..."}
-  },
+  "entity": "https://datadistillery.wikibase.cloud/entity/Q4",
   "statements": [
     {
-      "statement_entity": "https://datadistillery.wikibase.cloud/entity/Q16",
+      "id": "instance_of",
+      "entity": "https://datadistillery.wikibase.cloud/entity/Q16",
       "label": "instance of",
       "io_map": [
         {"to": "https://www.wikidata.org/entity/P31"}
       ],
       "value": {
-        "type": "item",
-        "fixed": "https://www.wikidata.org/entity/Q55555"
+        "type": "wikibase-item",
+        "fixed": {
+          "entity": "https://www.wikidata.org/entity/Q7840353",
+          "label": "Tribal Government"
+        },
+        "default": null,
+        "options": []
       },
+      "prompt": "...",
       "guidance": "Indicates that this entity is an instance of Tribal Government",
+      "consequences_message": null,
+      "error_message": null,
       "max_count": 1,
-      "processing_policies": [
-        "https://datadistillery.wikibase.cloud/entity/Q159",
-        "https://datadistillery.wikibase.cloud/entity/Q161"
-      ],
-      "linked_profile_entity": null,
-      "expected_qualifiers": [],
-      "value_specs": ["https://datadistillery.wikibase.cloud/entity/Q23"],
-      "reference_specs": []
+      "qualifiers": [],
+      "references": [
+        {"entity": "https://datadistillery.wikibase.cloud/entity/Q29", "label": "reference URL"},
+        {"entity": "https://datadistillery.wikibase.cloud/entity/Q30", "label": "stated in"}
+      ]
     },
     {
-      "statement_entity": "https://datadistillery.wikibase.cloud/entity/Q40",
+      "id": "office_held_by_head_of_government",
+      "entity": "https://datadistillery.wikibase.cloud/entity/Q40",
       "label": "office held by head of government",
       "io_map": [
         {"to": "https://www.wikidata.org/entity/P39"}
       ],
       "value": {
-        "type": "item",
-        "fixed": null
+        "type": "wikibase-item",
+        "fixed": null,
+        "default": null,
+        "options": [
+          {
+            "kind": "profile",
+            "entity": "https://datadistillery.wikibase.cloud/entity/Q39",
+            "label": "Office Held by Head of Government"
+          }
+        ]
       },
-      "guidance": "headquarters location for the tribal government",
+      "prompt": "...",
+      "guidance": "Leadership office position held by the head of this tribal government",
+      "consequences_message": null,
+      "error_message": null,
       "max_count": 1,
-      "processing_policies": [],
-      "linked_profile_entity": "https://datadistillery.wikibase.cloud/entity/Q39",
-      "expected_qualifiers": [
-        "https://datadistillery.wikibase.cloud/entity/Q34",
-        "https://datadistillery.wikibase.cloud/entity/Q35",
-        "https://datadistillery.wikibase.cloud/entity/Q36"
+      "qualifiers": [
+        {"entity": "https://datadistillery.wikibase.cloud/entity/Q34", "label": "start time"},
+        {"entity": "https://datadistillery.wikibase.cloud/entity/Q35", "label": "end time"},
+        {"entity": "https://datadistillery.wikibase.cloud/entity/Q36", "label": "replaces"}
       ],
-      "value_specs": [],
-      "reference_specs": ["https://datadistillery.wikibase.cloud/entity/Q31"]
+      "references": [
+        {"entity": "https://datadistillery.wikibase.cloud/entity/Q29", "label": "reference URL"},
+        {"entity": "https://datadistillery.wikibase.cloud/entity/Q30", "label": "stated in"}
+      ]
     }
   ],
   "metadata": {
+    "profile_item": {
+      "labels": {
+        "mul": "Tribal Government in the United States",
+        "en": "Tribal Government in the United States",
+        "es": "Gobierno tribal en los Estados Unidos"
+      },
+      "descriptions": {
+        "en": "GKC Entity Profile describing the content model for entities representing the governments of federally recognized Native American and Alaska Native Tribes in the United States"
+      },
+      "prompt_guidance": {
+        "label_guidance_mul": "... (P185)",
+        "label_prompt_mul": "... (P188)",
+        "description_guidance_mul": "... (P186)",
+        "description_prompt_mul": "... (P189)",
+        "alias_guidance_mul": "... (P187)",
+        "alias_prompt_mul": "... (P190)"
+      }
+    },
     "exported_from": "https://datadistillery.wikibase.cloud/entity/Q4",
     "export_timestamp": "2026-03-09T12:34:56Z"
   },
@@ -226,22 +260,39 @@ Cleanup sequencing and ownership is now explicitly:
 - Auto-generated `README.md` contains a practical curator/developer summary generated from exported profile data:
   - Profile labels and descriptions
   - Statement summary (ids, datatypes, fixed/default semantics where present)
-  - Linked profile summary (`linked_profile_entity` relationships)
+  - Value options summary (linked profiles and value lists in `value.options`)
   - Key references/provenance pointers
 - Auto-generated `CHANGELOG.md` contains profile history context with scoped depth:
-  - SpiritSafe cache checkpoints (export timestamp, git tag/release metadata)
+  - SpiritSafe materialization run metadata (export timestamp, revision window, workflow context, optional manual release tag)
   - Wikibase history entries for the profile item itself
   - Optional future expansion to include linked statement-definition/specification item history
-- Release tracking via repository-level git tags (format: `{meaningful-slug}`)
+- Optional manual release tagging for curated checkpoints (format: `{meaningful-slug}`)
 
 **CHANGELOG Scope Policy (initial):**
-- Start with profile-by-profile history only (the profile item itself plus SpiritSafe checkpoint metadata).
+- Start with profile-by-profile history only (the profile item itself plus SpiritSafe materialization metadata).
 - Do not include full transitive linked-item history in the initial release.
 - Add linked history layers incrementally once we define depth limits, grouping rules, and noise controls.
 
-**Git Tagging Convention:**
+**Workflow Stage: Cache Refresh + Profile Materialization**
 
-SpiritSafe cache checkpoints use **feature-based naming** instead of semantic versioning.
+SpiritSafe refresh should run as a single workflow stage:
+
+- Detect Wikibase changes
+- Refresh entity cache
+- Generate optimized, runtime-ready SpiritSafe profile artifacts (`profile.json`, `manifest.json`, `README.md`, `CHANGELOG.md`)
+- Write provenance metadata derived from Wikibase revision history and workflow run context
+
+This stage is authoritative for both cache refresh and optimized profile generation; they are not separate operational tracks.
+
+**Provenance Strategy (Revision-First):**
+
+- Canonical provenance source is Wikibase history + extraction workflow metadata.
+- Git tags are optional release markers, not required for every sync run.
+- Scheduled/automated runs should not require manual tags.
+
+**Optional Manual Release Tagging Convention:**
+
+When manually creating milestone checkpoints (for communication, release notes, or rollback anchors), use feature-based naming instead of semantic versioning.
 
 ```bash
 # Format: {slug-describing-change}
@@ -250,7 +301,7 @@ git tag added-office-linkage
 git tag enhanced-validation-rules
 ```
 
-**Tag naming guidelines:**
+**Tag naming guidelines (manual release mode):**
 - Use past-tense verb phrase (2-5 words)
 - Use kebab-case (lowercase with hyphens)
 - Describe the primary significance of the change
@@ -261,41 +312,48 @@ git tag enhanced-validation-rules
   - `removed-deprecated-statements`
   - `initial-release` (for first version)
 
-**Chronology:** Git provides natural ordering; no need for version number comparison logic.
+**Chronology:** Git provides natural ordering; no semantic version comparison logic is required.
 
 **Discovery:** List releases with `git tag --sort=-creatordate`
-```
 
 **Field Mapping from DD Wikibase Properties:**
 
 | JSON Field | Wikibase Source | Notes |
 |------------|----------------|-------|
-| `wikibase_entity` | Item entity URI | Resolvable source reference |
-| `labels.en.label` | `labels.en` | Human-readable notice only; not a machine identifier |
-| `labels.{lang}.label` | `labels.{lang}` | Required: `en` |
-| `labels.{lang}.guidance` | P185 statement (mainsnak monolingual text) | Curator instruction |
-| `labels.{lang}.input_prompt` | P188 statement (mainsnak monolingual text) | Field label in UI |
-| `descriptions.{lang}.label` | `descriptions.{lang}` | Required: `en` |
-| `descriptions.{lang}.guidance` | P186 statement | Example text |
-| `aliases.{lang}.label` | `aliases.{lang}[]` | Array of strings |
-| `statements[].id` | Normalized label from P157 target entity | e.g., entity/Q16 → `instance_of` |
-| `statements[].statement_entity` | P157 mainsnak target entity URI | Resolvable source reference |
-| `statements[].label` | Label from statement-definition item | Display name |
-| `statements[].io_map[].to` | P5 from statement-definition item | Currently Wikidata only |
-| `statements[].value.type` | P194 from statement-definition item / linked property datatype metadata | One of 8 primitive datatypes; must be derived from machine-readable property/type metadata, not labels |
-| `statements[].value.fixed` | P183 qualifier on P157 | Fixed value entity URI (optional) |
-| `statements[].guidance` | P171 qualifier on P157 | Curator instruction |
-| `statements[].max_count` | P182 qualifier on P157 | `novalue` → `null` (unlimited), `+N` → integer |
-| `statements[].processing_policies` | P159 + P161 qualifiers on P157 | Ordered array of fermenter policy entity URIs |
-| `statements[].linked_profile_entity` | P162 qualifier on P157 | Target profile entity URI |
-| `statements[].expected_qualifiers` | P164 qualifier on P157 | Array of statement-definition entity URIs |
-| `statements[].value_specs` | P163 qualifier on P157 (value list linkages) | **TBD:** may move to separate field |
-| `statements[].reference_specs` | P159 qualifier on P157 (reference constraints) | Array of specification entity URIs |
+| `entity` | Profile item entity URI | Canonical machine identifier |
+| `metadata.profile_item.labels.{lang}` | Item labels | Presentation metadata; never used for identity |
+| `metadata.profile_item.descriptions.{lang}` | Item descriptions | Presentation metadata |
+| `metadata.profile_item.prompt_guidance.label_guidance_mul` | P185 statement | Label guidance text in `mul` |
+| `metadata.profile_item.prompt_guidance.label_prompt_mul` | P188 statement | Label prompt text in `mul` |
+| `metadata.profile_item.prompt_guidance.description_guidance_mul` | P186 statement | Description guidance text in `mul` |
+| `metadata.profile_item.prompt_guidance.description_prompt_mul` | P189 statement | Description prompt text in `mul` |
+| `metadata.profile_item.prompt_guidance.alias_guidance_mul` | P187 statement | Alias guidance text in `mul` |
+| `metadata.profile_item.prompt_guidance.alias_prompt_mul` | P190 statement | Alias prompt text in `mul` |
+| `statements[].id` | Normalized label of P157 target (GKC Entity Statement item) | e.g., Q16 → `instance_of`; always accompanied by `entity` (full URI) and `label` (display text) |
+| `statements[].entity` | P157 mainsnak target entity URI | URI of the GKC Entity Statement item |
+| `statements[].label` | Label from GKC Entity Statement item | Display name; `mul` preferred |
+| `statements[].io_map[].to` | P5 on GKC Entity Statement item | Wikidata property URL |
+| `statements[].value.type` | P194 on GKC Entity Statement → Wikibase Property Template (Q44) labels | One of 8 Wikibase primitive datatypes (e.g., `wikibase-item`, `string`, `time`, `quantity`, `url`, `monolingualtext`, `external-id`, `geo-shape`) |
+| `statements[].value.fixed.entity` | P161 qualifier on P157 → Q52 (Wikidata Entity) target → P212 (same as) URL | Present when a specific Wikidata entity is required; exclusive of `options` |
+| `statements[].value.fixed.label` | Label from the Q52 target item | Human-readable label for the fixed value |
+| `statements[].value.default.entity` | P202 (default value) URL claim on GKC Entity Statement item | Optional Wikidata entity URI to pre-populate as statement default |
+| `statements[].value.default.label` | P203 (default label) qualifier on P202 claim | Human-readable label for the default value entity |
+| `statements[].value.options[]` | P161 qualifiers on P157 (or P161 on Q5 item with P205 qualifier) → Q3 or Q7 targets | Array of `{kind, entity, label}`; `kind` is `"profile"` (Q3 target) or `"value_list"` (Q7 target) |
+| `statements[].prompt` | P171 qualifier on P157 (profile override) or P171 claim on GKC Entity Statement item | Required in `mul` for materialization; qualifier level takes precedence |
+| `statements[].guidance` | P169 qualifier on P157 (profile override) or P169 claim on GKC Entity Statement item | Optional; qualifier level takes precedence |
+| `statements[].consequences_message` | P170 qualifier on P157 (profile override) or P170 claim on GKC Entity Statement item | Optional; qualifier level takes precedence |
+| `statements[].error_message` | P168 qualifier on P157 (most specific), P168 on GKC Entity Statement item, or P168 on Q44 type item (broadest fallback) | Displayed when validation fails |
+| `statements[].max_count` | P182 qualifier on P157 | `novalue` → `null` (one or more); explicit quantity → integer |
+| `statements[].qualifiers[]` | P158 (has qualifier) qualifiers on P157 claim | Array of `{entity, label}`; each `entity` is a GKC Entity Statement (Q5) |
+| `statements[].references[]` | P211 (has reference) qualifiers on P157 claim | Array of `{entity, label}`; each `entity` is a GKC Entity Statement (Q5); OR semantics — at least one required |
 | `metadata.exported_from` | Constructed from source Wikibase item URI | Export provenance |
 | `metadata.export_timestamp` | Generated at export time | ISO 8601 timestamp |
-| `registry_metadata.release` | Feature-based release name from git tag | Slug describing checkpoint change (e.g., `added-office-linkage`) |
-| `registry_metadata.release_date` | Timestamp of profile release | ISO 8601; from git tag creation or commit date |
-| `registry_metadata.git_tag` | Full git tag reference | Format: `{meaningful-slug}` |
+| `metadata.source_revision_window` | Derived from Wikibase recentchanges / entity revision fetch | Revision range or change window used for this materialization run |
+| `metadata.workflow_run_id` | GitHub Actions run metadata | Run identifier for traceability to automation logs |
+| `metadata.workflow_mode` | Extraction pipeline mode | `manual` or `scheduled` |
+| `registry_metadata.release` | Optional feature-based release slug | Present for manual milestone releases only |
+| `registry_metadata.release_date` | Optional release timestamp | ISO 8601; set when `release` is present |
+| `registry_metadata.git_tag` | Optional full git tag reference | Format: `{meaningful-slug}` when manual tag exists |
 
 **Metadata Inclusion Rule:**
 - Do not include placeholder metadata fields.
@@ -303,27 +361,50 @@ git tag enhanced-validation-rules
 - Future candidate: `metadata.extractor_version` (gkc package version) once package release/version semantics are active and consumed by runtime tooling.
 
 **Note on Release Tracking:**
-- Cache checkpoints are tracked via feature-based git tags in the SpiritSafe repository
-- Tag format: `{slug}` (no entity identifier in tag name)
-- `registry_metadata` section is updated by the extraction pipeline based on the active checkpoint tag associated with the cache export
-- Release history: `git log --tags --oneline --date-order`
+- Default tracking is revision-first via Wikibase history and workflow run metadata.
+- Feature-based git tags are optional and intended for manual milestone checkpoints.
+- Tag format remains `{slug}` (no entity identifier in tag name).
+- `registry_metadata` release/tag fields are populated only when a manual milestone tag is set for a run.
+- Release history for manual checkpoints: `git log --tags --oneline --date-order`
 - Authorship/attribution tracked via git commit history or documented in optional `README.md`
 - No semantic versioning (x.y.z) required; git chronology provides ordering
 
 **Traceability Note:**
-- Entity/profile-level traceability is provided by auto-generated per-profile `CHANGELOG.md` content (Wikibase profile-item history + SpiritSafe cache checkpoint metadata), not by encoding entity identifiers in git tag names.
+- Entity/profile-level traceability is provided by auto-generated per-profile `CHANGELOG.md` content (Wikibase profile-item history + workflow/materialization metadata). Optional manual checkpoint tags augment this, but are not required for provenance completeness.
 
 **Label Usage Guardrail:**
 - Labels are for human-readable notice only.
-- Identity and linkage must use `wikibase_entity` (or other explicit entity URI fields).
+- Identity and linkage must use `entity` (or other explicit entity URI fields).
 - Any label changes must be treated as non-breaking presentation changes.
 
 **Language Availability Guardrail:**
 - Profiles are the authoritative source of available language content.
 - Downstream consumers/processors must only operate on languages present in profile-derived packet metadata.
-- gkc should expose a package-level default language setting so operators can run the system with a different primary language lens.
+- Package-level default language should be `mul` for v2 profile processing and display initialization.
 - Curation Packets should include language-availability metadata so interfaces (for example, Wizard) can offer language toggles only when supported.
+- Profile label convention for pertinent Wikibase items is preferably `mul` label + `en` label, with `en` description.
+- Monolingual prompt/guidance claims (including statement prompt/statement guidance and label/description/alias prompt/guidance) use `mul` as primary language; additional languages are optional and only materialized when they are comprehensive (no partial overlays).
 - **BCP 47 primary subtag normalization:** DD Wikibase (and Wikidata) store monolingual text with language codes that may include region subtags (e.g., `en-us`, `en-gb`, `en-ca`). During SpiritSafe extraction, all language codes must be normalized to their BCP 47 primary language subtag (`en`, `es`, `de`, etc.) before writing to cache. Region-specific variants are collapsed into the primary subtag. This normalization is a fermenter primitive and must be applied consistently to all monolingual text fields (labels, descriptions, guidance, prompts) and to all language keys in charged entity content. Regional differentiation (e.g., `en-au` vs. `en-gb`) is deferred until there is an explicit content requirement for it.
+
+**Materialization Validity Rules (mul-first enforcement):**
+
+- A profile is minimally valid for SpiritSafe materialization when required prompt content exists in `mul`; at minimum, this includes prompt text mapped from P188.
+- Hard-fail language enforcement applies at statement-level prompt/guidance surfaces (label prompt, label guidance, description prompt/guidance, alias prompt/guidance, statement prompt/guidance).
+- Item label/description language coverage does not hard-fail materialization by itself.
+- Prompt fields are required; guidance fields are optional.
+- If required `mul` prompt content is missing, fail materialization for that profile.
+- Additional languages are included only when they are comprehensive relative to `mul` for the relevant prompt/guidance surface. Partial language overlays are excluded from materialized output.
+- When multiple statements exist for the same language/property slot, materialization deterministically takes the first value and records a finding in metadata.
+
+**Materialization Findings Metadata:**
+
+- Materialization should emit structured non-fatal findings in a run-level manifest report for operator review.
+- Generated profile `README.md` files should include a concise listing/summary of relevant non-fatal findings for that profile.
+- Findings should include at least:
+  - missing required `mul` prompt fields (fatal)
+  - duplicate language/property statements where first-value selection was applied
+  - excluded partial language overlays
+  - locations where optional guidance/consequence/error messages were absent
 
 **Fermenter Policy Guardrail:**
 - Policy entities are runtime instructions for fermenter processing, not UI-only behavior.
@@ -343,21 +424,64 @@ git tag enhanced-validation-rules
 - Future reintroduction should happen through a fermenter URL-processing/coercion primitive that accepts simple URL input and normalizes it into sitelink-ready data for downstream handling.
 - Existing sitelink-related code paths may remain in legacy modules during migration, but they are non-authoritative for Profile v2 and should not drive new contract design.
 
-**Open Questions:**
-1. Should `io_map` remain an array to support multi-system export, or simplify to single `wikidata_property` field for now?
-2. Where to store value list specifications (e.g., `https://datadistillery.wikibase.cloud/entity/Q28`, `https://datadistillery.wikibase.cloud/entity/Q43`)? Current field `value_specs` may be ambiguous with validation specs.
-3. **Multi-language monolingual text encoding (resolved direction):** Flatten by primary language subtag after BCP 47 normalization (region subtags stripped on ingest). Current flat-by-language-code structure is correct; no nested structure needed for v2. Regional subtag differentiation is deferred.
-4. **Cardinality null vs. -1:** Profile JSON uses `max_count: null` for unlimited; current packet `cardinality_constraints` uses `-1`. Choose one encoding and apply it throughout. Prefer `null` for alignment with JSON schema; update all packet assembly, validation, and barrel-stage cardinality checks accordingly.
-5. **Default values policy (future):** We support fixed values today (`value.fixed`) and may introduce editable defaults (`value.default`) later. Decide whether defaults are represented directly in profile schema, and define clear precedence rules (user-provided value vs default materialization vs fixed enforcement).
-6. **Package-level default language configuration:** Define where the gkc default language is configured (runtime config/CLI/env), and define fallback behavior when requested/default language guidance is missing.
-7. **Primitive datatype derivation robustness:** Confirm the canonical source for `statements[].value.type` is machine-readable property/type metadata (for example, via linked property entities and datatype classification), not label conventions such as `statement type - item`.
-8. **Extraction strategy for cache build:** Evaluate a hybrid method as likely default: (a) SPARQL to pull profile/statement/spec/property identifiers and graph edges, then (b) `wbgetentities` batch pulls for full JSON needed for deterministic transformation. Compare against SPARQL-only and API-only approaches for correctness, completeness, and performance.
+**Resolved Decisions (from current review):**
+
+1. `io_map` remains an array.
+2. Language encoding remains flattened by primary BCP 47 subtag.
+3. Unlimited cardinality encoding should converge on `null` end-to-end.
+4. Package default language is separate from Wikibase profile authoring requirements; profile-side `mul` requirements are not overridden by package default.
+5. `statements[].value.type` may be derived from either machine-readable type metadata or canonical datatype labels when labels are guaranteed to match datatype identifiers.
+6. Value lists are build-time, cache-first artifacts. Runtime consumers must not depend on live SPARQL execution.
+
+**Resolved Direction: Value List Architecture**
+
+- A value list is activated for materialization when the target item is classed as `GKC Value List` (Q7) and linked to the relevant statement via `has value` (P161). The P161 → Q7 linkage may appear as a qualifier on a profile's P157 claim, or as a claim on a GKC Entity Statement item with an `applies to profile` (P205) qualifier.
+- The semantic source of truth stays in Wikibase item metadata (`wikibase_entity`, classification, applies-to linkage, directive text). The operational query definition should not rely on parsing arbitrary talk-page markup as the long-term machine contract.
+- Preferred extraction contract: maintain the executable query as a repo-managed artifact keyed by value-list entity URI (for example, SpiritSafe query assets), and treat any talk-page `<sparql>` content as transitional authoring input or human-readable documentation rather than the canonical runtime/build interface.
+- Each active value list must materialize to a deterministic cache artifact such as `cache/value_lists/{QID}.json` containing normalized items, build metadata, and freshness state.
+- Value-list items should carry explicit refresh intent in Wikibase. Preferred design: add a dedicated property whose value is a controlled refresh-mode item (for example: `manual`, `scheduled-daily`, `scheduled-weekly`, `scheduled-monthly`) so extraction can decide whether a list participates only in manual hydration or in scheduled refresh stages.
+- SpiritSafe remains the runtime-enabling cache, but it is not an unlimited blob store. Value-list artifacts should stay compact and optimized for the Wizard's actual type-ahead need, not for archival completeness.
+- Practical delivery rule: cache the full materialized list in SpiritSafe only when the artifact remains comfortably usable by clients; when a list grows beyond the agreed interactive threshold, emit metadata marking it as non-inlineable for Wizard-local type-ahead and switch delivery to a static distribution strategy such as sharded JSON published via `datadistillery.org`.
+- Initial UX-oriented threshold recommendation: lists in the low hundreds to low thousands should remain fully cacheable and directly usable for client-side type-ahead; anything materially larger should be treated as an optimization problem, not silently pushed into the same artifact contract.
+- Materialization succeeds only when extraction can incorporate either: (a) a fresh query result, or (b) a previously committed fallback cache artifact. If neither is available, value-list materialization hard-fails.
+- Runtime consumers (`fermenter`, Wizard, CLI, bulk tooling) read only the materialized SpiritSafe artifact. They do not execute SPARQL, scrape wiki pages, or invent fallback behavior independently.
+- If a rebuild has to reuse fallback cache because live regeneration failed, that is a build finding with stale-state metadata, not a runtime concern. Consumers may surface staleness, but they still consume the same artifact shape.
+- `datadistillery.org` may mirror generated JSON artifacts for browser-native consumers that need static HTTP delivery, but that mirror is a distribution layer, not an authoritative source or a separate cache contract.
+
+**Resolved: Value List Architecture (additional)**
+
+7. **Value list item contract (v1):** Each materialized value list artifact contains an array of `{"qid": "Q123", "label": "English label"}` objects — bare QID (not URI) plus English label. This is the smallest useful package. The SPARQL queries stored in discussion pages use `rdfs:label` filtered to `en`, which directly produces this shape. Matching/coercion behavior against those QIDs is fermenter-authoritative; display and type-ahead ranking are UI concerns.
+
+8. **Interactive size threshold (initial benchmark):** No hard item-count threshold is imposed at this stage. The Office Held by Head of Government value list (~40,761 records from a full transitive `subclass of` `public office` query) is the current upper-bound benchmark and intentional stress test for Wizard and GitHub workflow capability. The `inlineable` metadata flag on cache artifacts is the mechanism for communicating delivery shape to consumers; extraction sets it based on observed artifact size. Threshold policy will be refined from real performance data against this benchmark.
+
+9. **Default values (active, not future):** Default values are a current capability, not a future one. `language of work or name` (Q27) carries a `default value` (P202) claim of `http://www.wikidata.org/entity/Q1860` (English) with a `default label` (P203) qualifier at the qualifier statement level. The `value.default` field in the JSON schema is therefore active. Precedence rule: if a user has already supplied a value for the statement, the default is not applied; if the field is empty, the default is pre-populated. Default does not override user input, and is not enforced like a fixed value.
+
+10. **Extraction strategy:** The previous approach (SPARQL identifier discovery → batched `wbgetentities`) had scope creep issues — it pulled in Q1 and other root class items not directly used in profiles. The preferred replacement strategy:
+
+    - Start with a profile-scoped SPARQL query that traverses from `wdt:P1 wd:Q3` roots and collects only directly linked triples:
+
+    ```sparql
+    PREFIX wd: <https://datadistillery.wikibase.cloud/entity/>
+    PREFIX wdt: <https://datadistillery.wikibase.cloud/prop/direct/>
+
+    SELECT ?s ?p ?o WHERE {
+      ?root wdt:P1 wd:Q3 .
+      ?root (wdt:P1|wdt:P2)* ?s .
+      ?s ?p ?o .
+      FILTER(isIRI(?s) && isIRI(?p) && isIRI(?o))
+      FILTER( !STRSTARTS(STR(?o), "https://datadistillery.wikibase.cloud/entity/statement/") )
+    }
+    ```
+
+    - Follow with `wbgetentities` batch pulls for full authoritative JSON on discovered entity IDs.
+    - Fallback route (for resilience): fetch GKC Entity Profile items via the initial SPARQL discovery, then follow the JSON graph outward from each profile item's statement structure. SPARQL remains required for the initial `wdt:P1 = wd:Q3` profile discovery step regardless of route.
 
 ## Theoretical Design Notes
 
 - **Cross-interface fermenter contract:** the same fermenter invocation and result envelope should be used by wizard, CLI, and bulk tooling; only post-processing adapters differ by interface.
 - **Module-contract follow-up:** `docs/architecture/module-contracts.md` should include an anti-duplication rule that forbids validation/coercion/policy execution logic outside fermenter.
-- **Open design question for Validation + Wizard agents:** whether `processing_policies` order should be strictly preserved from Wikibase extraction or normalized by fermenter at runtime.
+- **Deferred: Statement-level processing policies** — properties for encoding statement-level processing or coercion policies exist in the Wikibase but are not currently modeled in the profile JSON contract. If fermenter-layer policy linkage is needed, those properties should be revisited before introducing new ones. Deferred until the Validation Agent fermenter contract is stable enough to define required inputs.
+- **Value-list distribution note:** if browser-based consumers cannot conveniently read bundled SpiritSafe assets from local package state, publish the generated `cache/value_lists/*.json` artifacts to `datadistillery.org` as static files. This is only a transport convenience for clients and must not introduce a second source of truth.
 - **Curation Packet as explicit module output contract:** `gkc.profiles` is not just a profile loader — its primary output contract is a Curation Packet. `module-contracts.md` should explicitly define the Curation Packet as the interface boundary between the profiles module and its consumers (Wizard, CLI, bulk tooling, cooperage). Any refactor that changes the packet structure is a breaking change to downstream consumers and requires coordinated updates.
 - **`create_curation_packet` is a critical path function:** Changes to `profile_id` → `wikibase_entity` identity and cross-reference derivation in `create_curation_packet` will break `still_charger`, `cooperage`, `validate_packet_structure`, and Wizard consumers simultaneously. These changes should be implemented and tested atomically; do not partially migrate.
 
@@ -371,13 +495,13 @@ git tag enhanced-validation-rules
   "manifest_timestamp": "2026-03-09T12:34:56Z",
   "profiles": [
     {
-      "wikibase_entity": "https://datadistillery.wikibase.cloud/entity/Q4",
+      "entity": "https://datadistillery.wikibase.cloud/entity/Q4",
       "release": "added-office-linkage",
       "exported_at": "2026-03-09T10:00:00Z",
       "file_path": "profiles/Q4/profile.json"
     },
     {
-      "wikibase_entity": "https://datadistillery.wikibase.cloud/entity/Q39",
+      "entity": "https://datadistillery.wikibase.cloud/entity/Q39",
       "release": "initial-release",
       "exported_at": "2026-03-08T14:30:00Z",
       "file_path": "profiles/Q39/profile.json"
@@ -389,14 +513,14 @@ git tag enhanced-validation-rules
         "source_profile_entity": "https://datadistillery.wikibase.cloud/entity/Q4",
         "source_statement_entity": "https://datadistillery.wikibase.cloud/entity/Q40",
         "target_profile_entity": "https://datadistillery.wikibase.cloud/entity/Q39",
-        "linkage_type": "P162",
+        "linkage_type": "P161",
         "bidirectional": true
       },
       {
         "source_profile_entity": "https://datadistillery.wikibase.cloud/entity/Q39",
         "source_statement_entity": "https://datadistillery.wikibase.cloud/entity/Q42",
         "target_profile_entity": "https://datadistillery.wikibase.cloud/entity/Q4",
-        "linkage_type": "P162",
+        "linkage_type": "P161",
         "bidirectional": true
       }
     ]
@@ -447,12 +571,43 @@ git tag enhanced-validation-rules
 A Curation Packet is the **central output contract of the `gkc.profiles` module**. It is the actionable bundle delivered to the Wizard, CLI, and bulk tooling that enables curation of one or more entities. It contains:
 
 - **Entity scaffolds** — one per profile in scope, each with an empty `data: {}` waiting to be charged
-- **Cross-references** — the inter-entity linkages derived from statement-level P162 linkages, materialized by SpiritSafe into downstream-friendly graph metadata
+- **Cross-references** — the inter-entity linkages derived from statement-level P161 (has value → Q3) options, materialized by SpiritSafe into downstream-friendly graph metadata
 - **Cardinality constraints** — packet-level structural rules (min/max per linked entity type)
 - **Profile package** — the full profile content embedded for downstream use (validation, form generation)
+- **Value list routes** — resolved routing metadata for every value list referenced across loaded profiles, keyed by entity URI, providing the SpiritSafe cache path, item count, and inlineability flag so consumers can load lists without re-deriving paths
 - **Packet identity** — `packet_id`, `operation_mode`, `created_at`, `manifest_commit_sha`
 
 After assembly, the packet flows through: `still_charger` (charging entity data) → `cooperage` (barreling to Wikibase operation plan) → `shipper` (delivery).
+
+### Value List Routing In The Packet
+
+When a packet is assembled, the `value_list_routes` section is populated by scanning all statements across all loaded profiles for `value.options` entries of `kind: "value_list"`. Each unique value list entity URI found is resolved against the SpiritSafe manifest and its materialized cache metadata is embedded in the packet. This gives every downstream consumer a direct, pre-resolved pointer to the right artifact without needing to inspect the manifest independently.
+
+```json
+{
+  "value_list_routes": {
+    "https://datadistillery.wikibase.cloud/entity/Q28": {
+      "label": "Tribal Government",
+      "cache_path": "cache/value_lists/Q28.json",
+      "item_count": 847,
+      "inlineable": true
+    },
+    "https://datadistillery.wikibase.cloud/entity/Q43": {
+      "label": "Public Office",
+      "cache_path": "cache/value_lists/Q43.json",
+      "item_count": 40761,
+      "inlineable": false
+    }
+  }
+}
+```
+
+Rules:
+
+- `cache_path` is relative to the SpiritSafe root. Consumers resolve it against the configured SpiritSafe source path.
+- `inlineable` reflects whether the full artifact is suitable for Wizard-local type-ahead. When `false`, the Wizard should use server-side search or static delivery (e.g., `datadistillery.org`) rather than loading the file in-process.
+- `item_count` is sourced from the artifact's build metadata, not computed by the consumer.
+- A value list whose cache artifact is absent at packet assembly time is a hard failure — the packet cannot be assembled for that profile.
 
 ### How v2 JSON Profiles Relate to the Packet
 
@@ -477,20 +632,20 @@ The current packet uses string profile IDs (`"TribalGovernmentUS"`) as keys ever
 - `cross_references[].from_profile` / `cross_references[].to_profile`
 - Internal `entity_id_map` (maps profile_id → ent-NNN)
 
-In v2, all of these must use the `wikibase_entity` URI (e.g., `"https://datadistillery.wikibase.cloud/entity/Q4"`). The human-readable label from `labels.en.label` may be carried alongside for display, but must not be used as an identifier. This cascades through every stage (`still_charger`, `cooperage`, `spiritsafe`) that currently keys on profile name strings.
+In v2, all of these must use the `wikibase_entity` URI (e.g., `"https://datadistillery.wikibase.cloud/entity/Q4"`). The human-readable label from `labels.mul.label` (and localized labels such as `labels.en.label`) may be carried alongside for display, but must not be used as an identifier. This cascades through every stage (`still_charger`, `cooperage`, `spiritsafe`) that currently keys on profile name strings.
 
 **Cross-references: manifest linkages vs. statement-embedded linkages**
 
 In the current YAML-first flow, cross-references are assembled from precomputed manifest linkage data. In v2:
 
-- Each statement's `linked_profile_entity` field (P162) is embedded directly in `profile.json`
-- The manifest's `profile_graph.edges` is a derived export artifact built from those statement-level P162 linkages for efficient traversal and indexing
+- Each statement's linked-profile options in `value.options` (P161 → Q3 targets) are embedded directly in `profile.json`
+- The manifest's `profile_graph.edges` is a derived export artifact built from those statement-level P161 (has value → Q3) options for efficient traversal and indexing
 
-**Decision:** The Wikibase source of truth for linked profiles remains the per-statement P162 linkage only. No separate profile-level linkage statement should be added to the DD Wikibase content model.
+**Decision:** The Wikibase source of truth for linked profiles remains the per-statement P161 (has value → Q3) linkage only. No separate profile-level linkage statement should be added to the DD Wikibase content model.
 
 The DD Wikibase → SpiritSafe extraction process is responsible for converting those per-statement linkages into the most straightforward downstream structures:
 
-- `profile.json` retains the per-statement `linked_profile_entity` values as the canonical semantic linkage record
+- `profile.json` retains the per-statement linked-profile entries in `value.options` as the canonical semantic linkage record
 - `manifest.json.profile_graph.edges` is generated from those same statement linkages for efficient BFS traversal and dependency preloading
 - Curation Packet assembly should treat SpiritSafe as the prepared handoff: use manifest graph edges to decide which profiles to load, then use loaded statement data to populate the packet's specific cross-reference entries (`via_statement`, cardinality context, and related metadata)
 
@@ -561,13 +716,13 @@ Recommended language metadata extension:
 ```json
 {
   "language_context": {
-    "default_language": "en",
-    "available_languages": ["en", "es"],
+    "default_language": "mul",
+    "available_languages": ["mul", "en", "es"],
     "coverage": {
-      "labels": ["en", "es"],
+      "labels": ["mul", "en", "es"],
       "descriptions": ["en"],
-      "guidance": ["en", "es"],
-      "input_prompts": ["en", "es"]
+      "guidance": ["mul", "en", "es"],
+      "input_prompts": ["mul", "en", "es"]
     }
   }
 }
@@ -603,7 +758,7 @@ The following questions must be resolved before implementing v2 packet assembly.
 
 **1. Source of truth for cross-reference assembly**
 
-Resolved direction: statement-level P162 linkages in Wikibase are the only authoritative semantic source for linked profiles. SpiritSafe extraction derives `manifest.json.profile_graph.edges` from those statement linkages so downstream packet assembly can remain efficient.
+Resolved direction: statement-level P161 (has value → Q3) linkages in Wikibase are the only authoritative semantic source for linked profiles. SpiritSafe extraction derives `manifest.json.profile_graph.edges` from those statement linkages so downstream packet assembly can remain efficient.
 
 `create_curation_packet` should therefore use:
 
@@ -659,7 +814,7 @@ This contract should be stable and interface-agnostic.
 
 Language availability in a Curation Packet has three distinct sources that must be explicitly layered:
 
-1. **Package-level default language** — a configurable gkc setting (e.g., `gkc.config.default_language`, defaulting to `"en"`) that governs initial display and processing behavior for consumers such as Wizard instances and CLI output. This is a runtime concern, not stored in the packet; it provides the baseline when no other signal is present.
+1. **Package-level default language** — a configurable gkc setting (e.g., `gkc.config.default_language`, defaulting to `"mul"`) that governs initial display and processing behavior for consumers such as Wizard instances and CLI output. This is a runtime concern, not stored in the packet; it provides the baseline when no other signal is present.
 
 2. **Profile-declared languages** — the languages in which a profile provides input labels, guidance text, consequence metadata, and other monolingual content (P185–P190 fields). These are determined at SpiritSafe extraction time from the actual multilingual content present in DD Wikibase items. The `language_context.profile_languages` field captures this as the set of languages across all loaded profiles in the packet. A profile's available languages are the authoritative upper bound on what the Wizard can offer for guidance display; no UI should claim a language is available unless at least one loaded profile declares content in it.
 
@@ -670,10 +825,11 @@ The `language_context` envelope in the packet should reflect the union outcome o
 ```json
 {
   "language_context": {
-    "package_default": "en",
-    "profile_languages": ["en", "es"],
-    "content_languages": ["en", "es", "de"],
+    "package_default": "mul",
+    "profile_languages": ["mul", "en", "es"],
+    "content_languages": ["mul", "en", "es", "de"],
     "guidance_coverage": {
+      "mul": "full",
       "en": "full",
       "es": "partial",
       "de": "none"
@@ -684,7 +840,7 @@ The `language_context` envelope in the packet should reflect the union outcome o
 
 Where `guidance_coverage` indicates, per language, whether the profile provides full guidance (all monolingual fields present), partial guidance (some present), or none (language present only in charged content, no profile guidance available).
 
-**Key rule:** `package_default` should always be satisfied by `profile_languages`. If the configured package default language is not present in any loaded profile's declared languages, the system should warn and fall back to the first available profile language rather than silently proceeding with unsupported guidance display.
+**Key rule:** `package_default` should always be satisfied by `profile_languages`. If configured/default `mul` is not present in loaded profile languages, emit a high-visibility conformance warning and fall back to `en` (if present), otherwise first available profile language.
 
 ### Impact on Downstream Modules
 
@@ -709,7 +865,7 @@ Where `guidance_coverage` indicates, per language, whether the profile provides 
 
 **For Wizard Engineer:**
 
-- `workflow_policy` is deprecated in v2. Wizard linked-profile affordances should default to showing both "Create new" and "Select existing" for `linked_profile_entity` statements. Any limits should come from profile semantics (fixed/default behavior, cardinality, validation results), not a separate linkage policy gate.
+- `workflow_policy` is deprecated in v2. Wizard linked-profile affordances should default to showing both "Create new" and "Select existing" for statements with `value.options` entries of `kind: "profile"`. Any limits should come from profile semantics (fixed/default behavior, cardinality, validation results), not a separate linkage policy gate.
 - Wizard review/planning screens should read packet-level `conformance_report.notices` and present them as actionable guidance (for example, optional removal of out-of-profile statements/values), without silently mutating source data.
 - Wizard should consume packet `language_context` to initialize content display in package default language and expose a language toggle only for languages declared as available.
 - The `creation_path` breadcrumb pattern documented in `docs/architecture/index.md` (e.g., `primary.office_held_by_head_of_state`) will need to be re-expressed using entity URIs or statement IDs rather than human-readable strings in v2, since profile labels are no longer authoritative identifiers.
@@ -767,9 +923,9 @@ The current document defines pipeline stages and query patterns, but v2 also nee
    - Cache raw JSON
 
 3. **Fetch Specification Items**
-  - Extract all P159, P161, P163, P191 referenced entity identifiers
-  - Query DD Wikibase for specification items (`https://datadistillery.wikibase.cloud/entity/Q6` instances)
-   - Cache raw JSON
+  - Extract all P161, P158, P211, P194 referenced entity identifiers from fetched statement-definition items
+  - Fetch full Wikibase JSON for value targets (Q52, Q3, Q7 items), additional qualifier/reference spec items (Q5), and statement type items (Q44)
+  - Cache raw JSON
 
 4. **Transform to JSON Cache**
    - For each profile item:
@@ -777,7 +933,7 @@ The current document defines pipeline stages and query patterns, but v2 also nee
     - Resolve entity URIs to display labels for UI/help text only
      - Flatten monolingual text fields by language code, normalizing all BCP 47 region subtags to primary subtags (`en-us` → `en`, `en-gb` → `en`, etc.) before writing to cache
   - Compute language availability metadata from labels/descriptions/guidance/prompt fields
-    - Extract statement-level P162 linkages as the authoritative linkage source and build the derived edge list for manifest
+    - Extract statement-level P161 (has value → Q3) options as the authoritative linkage source and build the derived edge list for manifest
      - Populate `registry_metadata` section from git tag metadata (if available)
    - Write `profiles/{EntityID}/profile.json` (where `EntityID` is derived from `wikibase_entity`, e.g., `Q4`)
   - Generate `README.md` from exported summary data (labels/descriptions/statements/linkages)
@@ -790,14 +946,14 @@ The current document defines pipeline stages and query patterns, but v2 also nee
   - Persist changelog artifacts alongside `profile.json`
 
 6. **Generate Manifest**
-  - Build profile graph from statement-level P162 edges extracted from profile content
+  - Build profile graph from statement-level P161 (has value → Q3) link options extracted from profile content
   - Treat manifest graph data as a denormalized traversal/index artifact, not an independent semantic source
-   - Enumerate all ontology items used
-   - Write `cache/manifest.json`
+  - Enumerate all ontology items used
+  - Write `cache/manifest.json`
 
 7. **Validate Cache Integrity**
    - JSON schema validation on all profile.json files
-  - Verify all P162 linkages resolve to existing profile entities
+  - Verify all P161 (has value → Q3) linked profile options resolve to existing profile entities
    - Check datatype consistency (P194 values match allowed set)
    - Verify io_map targets are valid URIs
   - Verify generated `README.md` and `CHANGELOG.md` are present and structurally valid
@@ -815,7 +971,7 @@ The current document defines pipeline stages and query patterns, but v2 also nee
 
 **Error Handling:**
 - Missing statement-definition items → warn and skip statement entry
-- Circular P162 linkages → detect and flag in manifest (not an error)
+- Circular P161 (has value → Q3) linkages → detect and flag in manifest (not an error)
 - Invalid monolingual text format → warn and use fallback empty string
 - Missing required labels (e.g., `en`) → hard error, abort export
 
@@ -909,7 +1065,7 @@ SELECT ?spec ?specLabel ?directive WHERE {
      - Add validators for:
        - `max_count` field (`null` or positive integer)
        - `value.type` field (enum of 8 primitive datatypes)
-       - `linked_profile_entity` field (reference integrity against manifest)
+       - `value.options` linked-profile entries (reference integrity against manifest)
    - **Dependencies:** None (pure data model)
    - **Handoff:** Validation Agent to update models
 
@@ -917,9 +1073,9 @@ SELECT ?spec ?specLabel ?directive WHERE {
    - **Current State:** Validators consume YAML-based profile structure
    - **Required Changes:**
      - Update `ProfileValidator` to use new `StatementDefinition` structure
-     - Add P162 linked profile recursive validation (with depth limit)
-     - Add P164 expected qualifiers validation
-     - Add P159/P161 policy reference handling as fermenter API dispatch metadata (no UI-specific branching)
+     - Add P161 (has value → Q3) linked profile recursive validation (with depth limit)
+     - Add P158 (has qualifier) sub-statement validation
+    - Add P211/P161 reference and value handling as fermenter API dispatch metadata (no UI-specific branching)
    - **Dependencies:** `gkc.profiles.models` updates, fermenter module (future)
    - **Handoff:** Validation Agent to update validators
 
@@ -928,8 +1084,8 @@ SELECT ?spec ?specLabel ?directive WHERE {
    - **Required Changes:**
      - Update form generator to read from JSON cache
      - Extract P185-P190 guidance properties for field-level help text
-     - Generate P162 linked profile affordances ("Create new" / "Select existing" buttons)
-     - Extract P164 expected qualifiers for sub-form rendering
+     - Generate P161 (has value → Q3) linked profile affordances ("Create new" / "Select existing" buttons)
+     - Extract P158 expected qualifiers for sub-form rendering
    - **Dependencies:** `gkc.profiles.models` updates
    - **Handoff:** Wizard Engineer to update form generation logic
 
@@ -980,7 +1136,7 @@ SELECT ?spec ?specLabel ?directive WHERE {
       - Rewrite "How Profiles Work" section for Wikibase-first model
       - Add "Extracting Profiles from DD Wikibase" section with CLI examples
       - Update JSON schema examples (replace YAML examples)
-      - Add "Profile Graph and Cross-Profile Linkages" section (P162 architecture)
+      - Add "Profile Graph and Cross-Profile Linkages" section (P161 has-value→Q3 linked profile architecture)
       - Add "Offline Operation" section (cache freshness policy, update workflows)
     - **Dependencies:** Priority 1-2 changes complete
     - **Handoff:** Profile Architect to draft, User Doc Writer to polish
@@ -1013,7 +1169,7 @@ SELECT ?spec ?specLabel ?directive WHERE {
 - [ ] `gkc/profiles/loaders/*.py` (JSON instead of YAML)
 - [ ] `gkc/profiles/models.py` (Pydantic v2 schema; unify raw-dict and typed-model loading paths)
 - [ ] `gkc/profiles/validation/validator.py` (new statement fields)
-- [ ] `gkc/profiles/forms/*.py` or `gkc/profiles/generators/*.py` (P162 linkages, P185-P190 guidance)
+- [ ] `gkc/profiles/forms/*.py` or `gkc/profiles/generators/*.py` (P161 linked profiles, P185-P190 guidance)
 - [ ] `gkc/wikibase/foundation.py` (deprecate legacy init/audit path and remove foundation_profiles references)
 - [ ] `gkc/wikibase/orchestration.py` (update profile sourcing)
 
@@ -1099,7 +1255,7 @@ For the current agent workflow, treat most work in this document up to and inclu
    - JSON schema validators for cache integrity
 2. Updated `gkc.profiles.loaders` to consume JSON cache
 3. Updated `gkc.profiles.models` Pydantic schemas matching v2 JSON structure
-4. Updated `gkc.profiles.validation` to enforce P162/P164/P159/P161 constraints
+4. Updated `gkc.profiles.validation` to enforce P161/P158/P211 constraints
 5. Relocated `wikidata_normalizer` → `gkc.shipper` as `wikibase_normalizer`
 6. Test coverage for:
    - Wikibase → JSON transformation (unit tests with mocked Wikibase responses)
@@ -1114,15 +1270,15 @@ For the current agent workflow, treat most work in this document up to and inclu
 **Open Questions for Validation Agent:**
 1. Should `io_map` support multiple targets now, or remain single Wikidata property for v2?
 2. How to handle language fallback for P185-P190 guidance fields (if `en` missing, use what default)?
-3. Validation depth limit for P162 recursive checks: 2 levels sufficient, or configurable?
-4. Value list caching strategy: materialize in SpiritSafe JSON, or lazy-load from SPARQL at runtime?
+3. Validation depth limit for P161 (has value → Q3) recursive linked-profile checks: 2 levels sufficient, or configurable?
+4. What is the minimal authoritative value-list payload fermenter requires for validation/coercion without overfitting to Wizard search convenience?
 5. (OQ9) What is the minimum conformance surface for Wikibase → SpiritSafe ingestion? Resolution needed before extraction pipeline implementation begins; see Development Sequencing Note above.
 
 **Note on Fermenter / Validation sequencing:** Per the Development Sequencing Note above, a minimal fermenter primitive layer is part of the extraction pipeline deliverable — not deferred. The `spirit_safe` module deliverables should include at minimum a composable conformance check function that evaluates raw `wbgetentities` output against the minimum ingestion surface. Design these primitives for reuse in `still_charger` and other Wikibase/Wikidata inbound pipelines from the start.
 
 ### To Wizard Engineer
 
-**Scope:** Update form generation to consume new JSON schema and render P162 linkages
+**Scope:** Update form generation to consume new JSON schema and render P161 (has value → Q3) linked profile affordances
 
 **Start Condition:** Begin only after Profile Architect + Validation Agent finalize packet shape and conformance notice codes.
 
@@ -1130,15 +1286,15 @@ For the current agent workflow, treat most work in this document up to and inclu
 1. Updated `FormSchemaGenerator` (or equivalent) to:
    - Read from JSON cache via updated `ProfileLoader`
    - Extract P185-P190 monolingual text fields for field-level guidance display
-   - Generate "Create new [Linked Profile]" button for P162-linked statements
+   - Generate "Create new [Linked Profile]" button for statements with P161 (has value → Q3) options
    - Generate "Select existing [Linked Profile]" type-ahead search widget
-   - Render P164 expected qualifiers as sub-form fields
+   - Render P158 (has qualifier) expected qualifier statements as sub-form fields
 2. Profile graph navigation affordances:
-   - Display profile dependency graph (visualize P162 edges from manifest.json)
+   - Display profile dependency graph (visualize P161 linked-profile edges from manifest.json)
    - Breadcrumb trail for nested profile curation sessions
    - Modal/panel UI for "Create new" workflow (open linked profile wizard, return item reference)
 3. Test coverage for:
-   - Form rendering with P162 linkages (visual regression tests or snapshot tests)
+   - Form rendering with P161 (has value → Q3) linked profile affordances (visual regression tests or snapshot tests)
    - Graph traversal navigation (integration tests simulating multi-profile workflows)
 
 **Expected Inputs:**
@@ -1149,8 +1305,8 @@ For the current agent workflow, treat most work in this document up to and inclu
 **Open Questions for Wizard Engineer:**
 1. Should "Create new" open a modal, new tab, or inline expansion? (UX decision)
 2. How to handle **bidirectional linkages** in UI (`https://datadistillery.wikibase.cloud/entity/Q4` ↔ `https://datadistillery.wikibase.cloud/entity/Q39`)? Show both directions, or hide reciprocal?
-3. Type-ahead search constraints: filter by P162 linked profile only, or allow broader search with validation warning?
-4. How to display P164 expected qualifiers: always visible, or collapsible "Advanced" section?
+3. Type-ahead search constraints: filter by P161 (has value → Q3) linked profile only, or allow broader search with validation warning?
+4. How to display P158 (has qualifier) expected qualifier statements: always visible, or collapsible "Advanced" section?
 
 ### Profile Architect Absorbed Wikibase Scope
 
@@ -1225,16 +1381,16 @@ For the current agent workflow, treat most work in this document up to and inclu
 **Must Have (Blocking):**
 - [ ] JSON cache extraction pipeline functional (CLI command runs successfully)
 - [ ] All 5 current SpiritSafe profiles exported to JSON format with valid schema
-- [ ] Manifest.json generated with profile graph edges (P162 linkages)
+- [ ] Manifest.json generated with profile graph edges (P161 has-value→Q3 linkages)
 - [ ] `ProfileLoader` reads JSON cache without errors
-- [ ] `ProfileValidator` enforces new schema constraints (P162, P164, P159, P161)
+- [ ] `ProfileValidator` enforces new schema constraints (P161/P158/P211)
 - [ ] Existing test suite passes against JSON cache (regression-free)
 - [ ] `foundation_profiles/` directory deleted, no remaining references in codebase
 
 **Should Have (High Priority):**
-- [ ] `FormSchemaGenerator` renders P162 linked profile affordances
+- [ ] `FormSchemaGenerator` renders P161 (has value → Q3) linked profile affordances
 - [ ] P185-P190 guidance properties displayed in wizard forms
-- [ ] P164 expected qualifiers rendered as sub-form fields
+- [ ] P158 (has qualifier) expected qualifier statements rendered as sub-form fields
 - [ ] Documentation updated (profiles.md, module-contracts.md)
 - [ ] Test coverage for extraction pipeline (unit + integration tests)
 - [ ] `wikidata_normalizer` relocated to shipper module
@@ -1243,75 +1399,144 @@ For the current agent workflow, treat most work in this document up to and inclu
 - [ ] Automated sync workflow (GitHub Actions or webhook trigger)
 - [ ] Profile cache staleness detection and refresh recommendations
 - [ ] Recursive profile validation with configurable depth limit
-- [ ] Value list caching with SPARQL regeneration on-demand
+- [ ] Value-list static distribution optimization for large artifacts
 - [ ] Multi-system io_map support (Wikidata + OpenStreetMap + Commons)
 
 ---
 
-## GitHub Issue Triage Mapping (2026-03-09)
+## GitHub Issue Triage Mapping (2026-03-13)
 
-### Closed as OBE (Superseded by V2 Reset)
+### Already Closed as OBE — Superseded by V2 Reset
 
-- #87 Develop an approach on profile-level override/reconciliation on languages setting
-- #90 Auto-Creation Pattern for Fixed-Value Statements
-- #92 Language Declaration & Configuration Clarity
-- #93 Quantity Datatype Unit Behavior Signaling
-- #94 Form Policy Clarity and Extensibility
-- #95 Missing Consequence Warnings and Implications
-- #101 Issue template: Profile Concept / Design Issue
-- #120 Design and plan fermenter module
+These were closed in the V2 reset. Listed here for audit trail only.
 
-### Kept Open and Mapped to Active Work
+| # | Title | Absorbed Into |
+|---|-------|---------------|
+| #87 | Develop an approach on profile-level override/reconciliation on languages setting | Language and Text Policy in `wikibase_ontology_orientation.md` |
+| #90 | Auto-Creation Pattern for Fixed-Value Statements | P161 (has value → Q52) fixed value semantics |
+| #92 | Language Declaration & Configuration Clarity | Language and Text Policy |
+| #93 | Quantity Datatype Unit Behavior Signaling | Deferred; no V2 quantity support planned |
+| #94 | Form Policy Clarity and Extensibility | Curation Packets v2 / Wizard contract |
+| #95 | Missing Consequence Warnings and Implications | P170 `consequences_message` in unified statement model |
+| #101 | Issue template: Profile Concept / Design Issue | Template issue; superseded by architecture docs |
+| #120 | Design and plan fermenter module | §Wikibase → SpiritSafe Extraction Pipeline |
 
-- **Profiles architecture and cache/sync:** #121, #122, #124, #125, #126, #127
-- **Versioning and compatibility policy:** #99
-- **Cooperage cleanup aligned to new boundaries:** #133
+### Open Issues to Close as ProfilesV2 Work Lands
 
-### Guidance for Ongoing Issue Hygiene
+#### Foundation — DD Wikibase Ontology & SpiritSafe (Milestone: V2 Core, priority:p0)
 
-- Keep #127 as the umbrella progress rollup for Fermenter/Data Distillery integration.
-- Continue closing design-only issues when the requirement is fully absorbed into execution docs and no standalone code path remains.
-- Open new issues only for executable units with concrete acceptance criteria and module-level ownership.
+Close these when the SpiritSafe extraction pipeline passes CI and the ontology docs are merged.
+
+| # | Title | ProfilesV2 Section That Addresses It | Closure Trigger |
+|---|-------|---------------------------------------|-----------------|
+| #121 | Define DD semantic model for Fermenter registries | `wikibase_ontology_orientation.md` entity class hierarchy + property reference tables | Ontology doc merged and reviewed by Semantic Engineer |
+| #122 | Build SpiritSafe manifest projection + sync pipeline | §Wikibase → SpiritSafe Extraction Pipeline | Extraction pipeline produces valid SpiritSafe JSON cache artifacts in CI |
+| #124 | Specify DD query contracts for Fermenter resolvers | Resolved Decision #10 (extraction strategy: profile-scoped SPARQL + wbgetentities) | SPARQL queries committed to SpiritSafe `queries/` and validated against DD Wikibase SPARQL endpoint |
+| #125 | Design DD snapshot/export path for deterministic offline fallback | §SpiritSafe Cache Structure | SpiritSafe JSON cache is consumable offline with no live Wikibase dependency |
+| #126 | Add Fermenter contract tests for DD online/offline parity | §Fermenter First Instantiation | Online/offline parity contract tests pass in CI |
+| #123 | Define multilingual validation message registry and key namespace | Language and Text Policy + P168/P169/P170/P171 guidance architecture in `wikibase_ontology_orientation.md` | Guidance message model implemented; `en` fallback requirement validated |
+
+#### Coercion & Validation Primitives (Milestone: V2 Core, priority:p0–p1)
+
+Close each issue individually as the corresponding coercion module or validation component passes unit tests.
+
+| # | Title | ProfilesV2 Section That Addresses It | Closure Trigger |
+|---|-------|---------------------------------------|-----------------|
+| #102 | ValidationIssue model and coercion return contract | §Curation Packets v2 (`conformance_report` notice contract) | `ValidationIssue` Pydantic model merged; all coercion returns use it |
+| #103 | Coercion dispatcher and datatype registry | §Code Refactor Plan; P194 (statement type → Q44) architecture | Dispatcher routes correctly to all declared Q44-typed statement primitives |
+| #104 | Time datatype coercion and precision normalization | §Fermenter primitives; P194/Q44 typing | Time coercion unit tests pass |
+| #105 | Item QID coercion and allowed-items validation | Value list + fixed value semantics; Resolved Decision #7 | Item coercion validates against value list cache and fixed-value constraint; unit tests pass |
+| #106 | Monolingual text coercion and language code normalization | Language and Text Policy; fermenter primitive | Monolingual coercion normalizes BCP-47 codes; unit tests pass |
+| #107 | URL coercion and normalization | §Fermenter primitives (sitelink URL routing deferred to #91) | URL coercion unit tests pass |
+| #108 | Wizard inline coercion hooks for values, qualifiers, and references | §Curation Packets v2; Fermenter/Wizard boundary in §Handoff Boundaries | Wizard coercion hooks call fermenter dispatcher and surface `ValidationIssue` notices inline |
+| #109 | Review-stage comprehensive entity validation pass | §Curation Packets v2 (`conformance_report` structure) | Review-stage validation populates `conformance_report` and all notice types surface in wizard UI |
+| #110 | Packet-level cardinality enforcement | §Curation Packets v2 (`max_count` null = unlimited encoding) | Cardinality enforcement respects `max_count` across all statement types; unlimited case handled |
+| #111 | Packet cross-reference and reciprocal consistency checks | §Curation Packets v2 (cross-entity assembly section) | Reciprocal consistency checks run at packet review stage and issues surface in `conformance_report` |
+| #112 | Cross-entity constraint validator framework | §Curation Packets v2 (cross-reference / conformance report) | Framework invoked automatically for all multi-entity packets |
+| #113 | Packet validation test matrix and fixtures | §Temporary Test Forcefits To Unwind | All forcefit tests replaced with v2 fixture-based test matrix |
+
+#### Wizard & UX (Milestone: V2 Core, priority:p1)
+
+| # | Title | ProfilesV2 Section That Addresses It | Closure Trigger |
+|---|-------|---------------------------------------|-----------------|
+| #117 | Wizard multi-entity packet integration | §Curation Packets v2 (`value_list_routes`, cross-entity assembly) | Multi-entity wizard flow is integrated with packet contract; `value_list_routes` consumed by UI |
+| #118 | Wizard packet persistence and recovery | §Curation Packets v2 (packet structure and state) | Packet persistence and recovery implemented in wizard; partial packet survives session interruption |
+
+#### Documentation (Milestone: V2 Core, priority:p1)
+
+| # | Title | ProfilesV2 Section That Addresses It | Closure Trigger |
+|---|-------|---------------------------------------|-----------------|
+| #114 | Curator guide to SpiritSafe profiles | §SpiritSafe Cache Structure + `wikibase_ontology_orientation.md` | Curator-facing guide published in `docs/` |
+| #115 | Curator CLI quickstart guide | §Code Refactor Plan (CLI command surface) | CLI commands implemented and documented in `docs/` |
+| #116 | Profile catalog reference for curators | §SpiritSafe Cache Structure (per-profile README generation) | Profile catalog published in `docs/` or SpiritSafe README; auto-generated from manifest |
+
+#### Cooperage Cleanup (Milestone: V2 Core, priority:p1)
+
+| # | Title | ProfilesV2 Section That Addresses It | Closure Trigger |
+|---|-------|---------------------------------------|-----------------|
+| #133 | Clean-up old stuff from cooperage | §Code Refactor Plan (cooperage boundary redefinition) | Cooperage stripped of deprecated methods; all existing tests pass against refactored module |
+
+### Open Issues Not Directly Addressed by ProfilesV2
+
+These follow-on enhancements are out of scope for V2 Core. Leave open and revisit after V2 Core is complete. ProfilesV2 establishes the architectural foundation they depend on.
+
+| # | Title | Milestone | Relationship to ProfilesV2 |
+|---|-------|-----------|---------------------------|
+| #96 | Cross-Entity Statement Forwarding and Dependency Chains | V2 Follow-ons | P161 → Q3 linked profile semantics establishes the required foundation |
+| #97 | Specialized References Government Document Hydration | V2 Follow-ons | P211 (`has reference`) OR-semantics architecture supports this; domain-specific paths not yet designed |
+| #98 | Whitelist-Based Statement Filtering Multi-Entity Workflows | V2 Follow-ons | Requires packet + validator framework from V2 Core first |
+| #99 | Profile Versioning and Backward Compatibility | V2 Follow-ons | ProfilesV2 JSON schema is now frozen; versioning strategy is Open Question #4 in this doc |
+| #100 | Bulk Reference Operations and Batch Hydration | V2 Follow-ons | Bulk reference tooling mentioned; full specification deferred to post-V2 Core |
+| #91 | Sitelinks URL-Based Entry & Bidirectional URL Resolution | V2 Follow-ons | Sitelinks deferred per Resolved Decision #7; revisit after URL coercion (#107) lands |
+
+### Issue Hygiene Guidance
+
+- Close issues in the "Open Issues to Close" tables above as each closure trigger is satisfied. Add a comment on the issue referencing the relevant ProfilesV2 section.
+- Open new issues only for executable units with concrete acceptance criteria and module-level ownership. Do not open issues for items that already have a clear home in the architecture docs.
+- Do not reopen OBE issues. If a requirement resurfaces, open a new issue with a forward reference.
 
 ---
 
-## Open Questions & Decisions Needed
+## Schema Freeze Checkpoint (2026-03-14)
 
-1. **IO Mapping Strategy:**
-   - Keep `io_map` as array for future multi-system support, or simplify to single `wikidata_property` string for v2?
-   - **Recommendation:** Keep array structure with single Wikidata entry for now; easier to extend later than to refactor from string to array.
+The profile JSON schema is now frozen for implementation handoff.
 
-2. **Value List Caching:**
-   - Materialize SPARQL results in SpiritSafe JSON cache, or execute SPARQL at runtime with local cache?
-   - **Trade-offs:** SpiritSafe cache = version-controlled, offline-capable but stale; runtime cache = fresh but requires endpoint availability.
-   - **Recommendation:** Hybrid — materialize truncated lists (first 1000 items) in SpiritSafe, full lists in runtime cache with TTL-based refresh.
+Freeze evidence from refreshed local SpiritSafe cache:
 
-3. **Language Fallback Policy:**
-   - If P185-P190 guidance fields missing for `en` language, use what default? Empty string, or fall back to another language?
-   - **Recommendation:** Hard requirement for `en` language in guidance fields; extraction pipeline should error if missing.
+- No remaining P159 entries in `cache/entities/*`.
+- No remaining P183 entries in `cache/entities/*`.
+- P211 is present in statement qualifier structures for active profiles (for example, Q4 and Q39).
+- Refresh summary timestamp confirms latest local sync window (`since: 2026-03-14T23:50:50.412369Z`, `next_since: 2026-03-14T23:55:19Z`).
 
-4. **Profile Versioning:**
-   - How to handle version mismatches between SpiritSafe cache and DD Wikibase source?
-   - **Options:** (a) Warn on mismatch, allow usage; (b) Error on mismatch, force re-sync; (c) Auto-sync on load if outdated.
-   - **Recommendation:** Warn on first load, log sync suggestion, allow usage (user controls sync timing).
+Frozen contract decisions:
 
-5. **Circular Linkage Depth:**
-  - P162 bidirectional linkages (`https://datadistillery.wikibase.cloud/entity/Q4` ↔ `https://datadistillery.wikibase.cloud/entity/Q39`) require depth limit for recursive validation. Default to 2 levels, or make configurable?
-   - **Recommendation:** Default 2 levels, configurable via CLI flag or environment variable for advanced users.
+1. `io_map` remains an array in v2.
+2. Value-list handling remains cache-first; runtime consumers do not execute SPARQL.
+3. Reference expectations are modeled only through P211 (`has reference`) with hard OR semantics: at least one listed reference type is required.
+4. P159 is in hiatus and is non-authoritative for v2 extraction and validation.
+5. Reference and qualifier links stay as entity URIs in cache; labels are resolved in UI via manifest ontology lookup.
+6. Default values (`value.default`) are active and non-overriding when user input already exists.
+7. Profile item labels/descriptions and P185-P190 profile-level guidance/prompt surfaces are materialized under `metadata.profile_item`, not in root statement specification fields.
 
-6. **Specification Items Handling:**
-  - P159/P161 reference multiple specification items (e.g., `https://datadistillery.wikibase.cloud/entity/Q23`, `https://datadistillery.wikibase.cloud/entity/Q24`, `https://datadistillery.wikibase.cloud/entity/Q26`, `https://datadistillery.wikibase.cloud/entity/Q31`). Should these be resolved to human-readable labels in JSON cache, or kept as entity URIs?
-  - **Recommendation:** Keep as entity URIs in cache (resolvable stable identifiers), resolve to labels in wizard UI via manifest ontology_items lookup.
+Follow-on policy items that remain implementation-level (not schema blockers):
+
+- Version mismatch behavior between cache and source (`warn vs block`).
+- Recursive linkage traversal depth defaults and configurability.
 
 ---
 
 ## Next Actions (Immediate)
 
 **Profile Architect:**
-1. Finalize JSON schema based on open questions above (document decisions in this file)
-2. Draft SPARQL extraction queries and test against DD Wikibase query service
-3. Create example JSON profile fixture for `https://datadistillery.wikibase.cloud/entity/Q4` in `tests/fixtures/profiles/`
-4. Review and approve schema before Validation Agent begins implementation
+1. Confirm schema freeze in this document and hand off implementation contract to Validation Agent and Wizard Engineer.
+2. Draft SPARQL extraction queries and test against DD Wikibase query service.
+3. Create example JSON profile fixture for `https://datadistillery.wikibase.cloud/entity/Q4` in `tests/fixtures/profiles/`.
+4. Track cache refresh drift: if P159 or P183 reappear, block materialization and open a semantic-model issue immediately.
+
+**Profile Architect + Validation Agent (kickoff now):**
+1. Implement first iteration of `ProfileExtractor` directly in `gkc.spirit_safe` against refreshed cache entities.
+2. Scope Iteration 1 to deterministic transformation only: `entity`, statement extraction, P211 OR-reference sets, P158 qualifiers, P161 fixed/default/options, and `metadata.profile_item` (labels/descriptions + P185-P190 prompts/guidance).
+3. Add fixture-backed extractor tests using Q4 cache input and assert no legacy P159/P183 dependency in output.
 
 **Validation Agent (after Profile Architect approval):**
 1. Implement `gkc.spirit_safe` extraction pipeline (ProfileExtractor + ManifestGenerator)
@@ -1321,7 +1546,7 @@ For the current agent workflow, treat most work in this document up to and inclu
 
 **Wizard Engineer (after Validation Agent completes Priority 1):**
 1. Update `FormSchemaGenerator` to consume new JSON schema
-2. Implement P162 linked profile affordances ("Create new" / "Select existing")
+2. Implement P161 (has value → Q3) linked profile affordances ("Create new" / "Select existing")
 3. Extract and render P185-P190 guidance properties in forms
 4. Test form rendering with SpiritSafe JSON fixtures
 
@@ -1333,6 +1558,6 @@ For the current agent workflow, treat most work in this document up to and inclu
 
 ---
 
-**Document Version:** 1.2  
-**Last Updated:** 2026-03-13  
+**Document Version:** 1.5  
+**Last Updated:** 2026-03-15  
 **Next Review:** After Phase 1 completion (JSON cache extraction functional)
