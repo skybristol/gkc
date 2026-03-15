@@ -641,6 +641,65 @@ def test_wikidata_loader_load_items_empty():
     assert result == {}
 
 
+def test_wikibase_loader_default_batch_size_without_auth():
+    """WikibaseLoader defaults to a batch size of 50 when no auth is provided."""
+    loader = WikibaseLoader()
+    assert loader.entity_batch_size == 50
+
+
+def test_wikibase_loader_default_batch_size_with_no_high_limits():
+    """WikibaseLoader stays at 50 when auth is present but apihighlimits is absent."""
+    fake_auth = type("FakeAuth", (), {"has_api_high_limits": lambda self: False})()
+    loader = WikibaseLoader(auth=fake_auth)
+    assert loader.entity_batch_size == 50
+
+
+def test_wikibase_loader_high_batch_size_with_apihighlimits():
+    """WikibaseLoader uses 500 when auth reports apihighlimits is present."""
+    fake_auth = type("FakeAuth", (), {"has_api_high_limits": lambda self: True})()
+    loader = WikibaseLoader(auth=fake_auth)
+    assert loader.entity_batch_size == 500
+
+
+def test_wikibase_loader_batch_size_safe_with_auth_none_method():
+    """WikibaseLoader falls back to 50 when auth object lacks has_api_high_limits."""
+
+    class NoMethodAuth:
+        pass
+
+    loader = WikibaseLoader(auth=NoMethodAuth())
+    assert loader.entity_batch_size == 50
+
+
+def test_wikibase_loader_load_items_respects_batch_size(monkeypatch):
+    """load_items batches calls according to entity_batch_size."""
+    from unittest.mock import MagicMock
+
+    fake_auth = type("FakeAuth", (), {"has_api_high_limits": lambda self: True})()
+    loader = WikibaseLoader(auth=fake_auth)
+    assert loader.entity_batch_size == 500
+
+    calls = []
+
+    def fake_fetch(entity_ids):
+        calls.append(len(entity_ids))
+        return {
+            eid: {"id": eid, "labels": {}, "claims": {}, "type": "item"}
+            for eid in entity_ids
+        }
+
+    monkeypatch.setattr(loader, "_fetch_entities_batch", fake_fetch)
+    monkeypatch.setattr(loader, "_build_template", lambda qid, data: MagicMock())
+
+    qids = [f"Q{i}" for i in range(600)]
+    loader.load_items(qids)
+
+    # With batch_size=500, 600 items should produce two batches: 500 and 100
+    assert len(calls) == 2
+    assert calls[0] == 500
+    assert calls[1] == 100
+
+
 def test_wikipedia_template_initialization():
     """Test creating a Wikipedia template."""
     template = WikipediaTemplate(
