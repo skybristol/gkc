@@ -1148,12 +1148,17 @@ class WikibaseLoader:
         user_agent: Optional[str] = None,
         api_url: str = "https://www.wikidata.org/w/api.php",
         api_client: Optional[WikibaseApiClient] = None,
+        auth: Optional[Any] = None,
     ):
         """Initialize the loader.
 
         Args:
             user_agent: Custom user agent for Wikidata requests.
                        If not provided, a default GKC user agent is used.
+            api_client: Optional pre-configured WikibaseApiClient.
+            auth: Optional WikiverseAuth instance. When provided and the
+                authenticated user has the ``apihighlimits`` right, batch
+                requests are made in chunks of 500 instead of 50.
         """
 
         if user_agent is None:
@@ -1165,6 +1170,12 @@ class WikibaseLoader:
             api_url=api_url,
             user_agent=user_agent,
         )
+        has_high_limits = (
+            auth is not None
+            and callable(getattr(auth, "has_api_high_limits", None))
+            and auth.has_api_high_limits()
+        )
+        self.entity_batch_size: int = 500 if has_high_limits else 50
 
     def load_item(self, qid: str) -> WikibaseItemTemplate:
         """Load a Wikidata item and return it as a template.
@@ -1239,10 +1250,8 @@ class WikibaseLoader:
 
         result: dict[str, WikibaseItemTemplate] = {}
 
-        # Process in batches of 50 (wbgetentities limit)
-        batch_size = 50
-        for i in range(0, len(qids), batch_size):
-            batch = qids[i : i + batch_size]
+        for i in range(0, len(qids), self.entity_batch_size):
+            batch = qids[i : i + self.entity_batch_size]
             batch_results = self._fetch_entities_batch(batch)
 
             # Build templates for each successfully fetched entity
