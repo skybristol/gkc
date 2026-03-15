@@ -700,6 +700,28 @@ def test_wikibase_loader_load_items_respects_batch_size(monkeypatch):
     assert calls[1] == 100
 
 
+def test_wikibase_loader_load_entities_raw_respects_batch_size(monkeypatch):
+    """load_entities_raw batches requests and returns merged raw entity JSON."""
+    fake_auth = type("FakeAuth", (), {"has_api_high_limits": lambda self: True})()
+    loader = WikibaseLoader(auth=fake_auth)
+
+    calls = []
+
+    def fake_fetch(entity_ids):
+        calls.append(len(entity_ids))
+        return {eid: {"id": eid, "type": "item"} for eid in entity_ids}
+
+    monkeypatch.setattr(loader, "_fetch_entities_batch", fake_fetch)
+
+    entity_ids = [f"Q{i}" for i in range(600)]
+    result = loader.load_entities_raw(entity_ids)
+
+    assert len(calls) == 2
+    assert calls[0] == 500
+    assert calls[1] == 100
+    assert len(result) == 600
+
+
 def test_wikipedia_template_initialization():
     """Test creating a Wikipedia template."""
     template = WikipediaTemplate(

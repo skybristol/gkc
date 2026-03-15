@@ -37,6 +37,7 @@ from gkc.spirit_safe import (
     validate_packet_structure,
 )
 from gkc.wikibase import (
+    build_wikibase_cache,
     build_wikibase_write_plan,
     execute_wikibase_write_plan,
     export_profile_graph_to_entity_cache,
@@ -921,6 +922,58 @@ def _build_parser() -> argparse.ArgumentParser:
     wikibase_profile_to_cache.set_defaults(
         handler=_handle_wikibase_profile_to_cache,
         command_path="wikibase.profile-to-cache",
+    )
+
+    wikibase_cache_builder = wikibase_subparsers.add_parser(
+        "cache-builder",
+        help=(
+            "Build and reconcile per-entity cache files from SPARQL-derived "
+            "profile-linked identifiers"
+        ),
+    )
+    wikibase_cache_builder.add_argument(
+        "--cache-dir",
+        required=True,
+        help="Directory containing per-entity cache files",
+    )
+    wikibase_cache_builder.add_argument(
+        "--api-url",
+        help="Override the Data Distillery API URL (default: DD_WB_API_URL env var)",
+    )
+    wikibase_cache_builder.add_argument(
+        "--sparql-endpoint",
+        default=runtime_config.sparql_endpoint,
+        help=(
+            "SPARQL endpoint URL "
+            "(default: DD_WB_SPARQL_ENDPOINT env var or Wikidata Query Service)"
+        ),
+    )
+    wikibase_cache_builder.add_argument(
+        "--wikibase-base-uri",
+        default="https://datadistillery.wikibase.cloud",
+        help="Wikibase base URI used to identify local Q/P IDs",
+    )
+    wikibase_cache_builder.add_argument(
+        "--profile-class-id",
+        default="Q3",
+        help="Profile class item ID used as SPARQL root classifier (default: Q3)",
+    )
+    wikibase_cache_builder.add_argument(
+        "--source-endpoint",
+        help="Optional source endpoint label recorded in cache metadata",
+    )
+    wikibase_cache_builder.add_argument(
+        "--workflow-mode",
+        default="cache-builder",
+        help="Workflow mode label stored in cache metadata",
+    )
+    wikibase_cache_builder.add_argument(
+        "--output",
+        help="Optional output path for cache build summary JSON",
+    )
+    wikibase_cache_builder.set_defaults(
+        handler=_handle_wikibase_cache_builder,
+        command_path="wikibase.cache-builder",
     )
 
     wikibase_check_for_revisions = wikibase_subparsers.add_parser(
@@ -2842,6 +2895,91 @@ def _handle_wikibase_profile_to_cache(args: argparse.Namespace) -> dict[str, Any
                 "✓ Profile-to-cache export complete: "
                 f"{len(export_result.written_ids)} cached, "
                 f"{len(export_result.skipped_ids)} skipped"
+            ),
+            "details": details,
+        }
+    except Exception as exc:
+        raise CLIError(str(exc)) from exc
+
+
+def _handle_wikibase_cache_builder(args: argparse.Namespace) -> dict[str, Any]:
+    """Run SPARQL-driven full cache build and reconciliation."""
+    runtime_config = get_wikibase_runtime_config()
+    api_url = args.api_url or runtime_config.api_url
+
+    summary_output = args.output
+    if not summary_output:
+        summary_output = str(
+            Path(args.cache_dir).parent / "refresh" / "last_run_summary.json"
+        )
+
+    auth: Optional[WikiverseAuth] = None
+    auth_mode = "anonymous"
+    auth_warning: Optional[str] = None
+
+    runtime_has_creds = bool(runtime_config.username and runtime_config.password)
+    if runtime_has_creds:
+        candidate = WikiverseAuth(
+            username=runtime_config.username,
+            password=runtime_config.password,
+            interactive=False,
+            api_url=api_url,
+        )
+        if candidate.is_authenticated():
+            try:
+                candidate.login()
+                auth = candidate
+                auth_mode = "authenticated"
+            except AuthenticationError as exc:
+                auth_warning = (
+                    "Authentication failed; continuing anonymously for cache build: "
+                    f"{exc}"
+                )
+
+    try:
+        build_result = build_wikibase_cache(
+            sparql_endpoint=args.sparql_endpoint,
+            api_url=api_url,
+            cache_dir=args.cache_dir,
+            wikibase_base_uri=args.wikibase_base_uri,
+            profile_class_id=args.profile_class_id,
+            source_endpoint=args.source_endpoint,
+            workflow_mode=args.workflow_mode,
+            summary_output=summary_output,
+            auth=auth,
+        )
+
+        details: dict[str, Any] = {
+            "api_url": api_url,
+            "sparql_endpoint": args.sparql_endpoint,
+            "wikibase_base_uri": args.wikibase_base_uri,
+            "profile_class_id": args.profile_class_id,
+            "cache_dir": build_result.cache_dir,
+            "summary_path": build_result.summary_path,
+            "auth_mode": auth_mode,
+            "queried_count": len(build_result.queried_ids),
+            "fetched_count": len(build_result.fetched_ids),
+            "written_count": len(build_result.written_ids),
+            "new_count": len(build_result.new_ids),
+            "changed_count": len(build_result.changed_ids),
+            "unchanged_count": len(build_result.unchanged_ids),
+            "deleted_count": len(build_result.deleted_ids),
+            "missing_count": len(build_result.missing_ids),
+            "new_ids_preview": build_result.new_ids[:20],
+            "changed_ids_preview": build_result.changed_ids[:20],
+            "deleted_ids_preview": build_result.deleted_ids[:20],
+            "missing_ids_preview": build_result.missing_ids[:20],
+        }
+        if auth_warning:
+            details["auth_warning"] = auth_warning
+
+        return {
+            "command": args.command_path,
+            "ok": True,
+            "message": (
+                "✓ Wikibase cache build complete: "
+                f"{len(build_result.written_ids)} written, "
+                f"{len(build_result.deleted_ids)} deleted"
             ),
             "details": details,
         }

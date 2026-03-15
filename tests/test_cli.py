@@ -262,6 +262,53 @@ def test_wikibase_check_for_revisions_json(monkeypatch, capsys, tmp_path):
     assert data["details"]["deleted_count"] == 1
 
 
+def test_wikibase_cache_builder_json(monkeypatch, capsys, tmp_path):
+    """wikibase cache-builder returns reconciliation summary in JSON mode."""
+
+    class FakeRuntimeConfig:
+        api_url = "https://datadistillery.wikibase.cloud/w/api.php"
+        sparql_endpoint = "https://datadistillery.wikibase.cloud/query/sparql"
+        username = None
+        password = None
+
+    class FakeBuildResult:
+        cache_dir = str(tmp_path / "cache" / "entities")
+        summary_path = str(tmp_path / "cache" / "refresh" / "last_run_summary.json")
+        queried_ids = ["P1", "Q10", "Q3"]
+        fetched_ids = ["P1", "Q10", "Q3"]
+        written_ids = ["P1", "Q10", "Q3"]
+        new_ids = ["Q10"]
+        changed_ids = ["Q3"]
+        unchanged_ids = ["P1"]
+        deleted_ids = ["Q99"]
+        missing_ids = []
+
+    def fake_build_wikibase_cache(**kwargs):
+        _ = kwargs
+        return FakeBuildResult()
+
+    monkeypatch.setattr(cli, "get_wikibase_runtime_config", lambda: FakeRuntimeConfig())
+    monkeypatch.setattr(cli, "build_wikibase_cache", fake_build_wikibase_cache)
+
+    exit_code = cli.main(
+        [
+            "--json",
+            "wikibase",
+            "cache-builder",
+            "--cache-dir",
+            str(tmp_path / "cache" / "entities"),
+        ]
+    )
+
+    assert exit_code == 0
+    output = capsys.readouterr().out.strip()
+    data = json.loads(output)
+    assert data["command"] == "wikibase.cache-builder"
+    assert data["ok"] is True
+    assert data["details"]["written_count"] == 3
+    assert data["details"]["deleted_count"] == 1
+
+
 def test_wikibase_plan_write_with_shipper_plan(monkeypatch, capsys, tmp_path):
     """wikibase plan-write can run shipper.plan_batch and include diff summary."""
 
