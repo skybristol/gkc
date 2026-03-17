@@ -38,6 +38,18 @@ This brief is the active implementation guide for ProfilesV2. It captures what i
 
   - `export_entity_profile_json_documents(...)`
 
+### Value-list query extraction and hydration in gkc
+
+- Mash primitives are implemented for reading talk-page wikitext and extracting `<sparql>` blocks.
+
+- Value-list discovery from cache entities (`P1 -> Q7`) is implemented.
+
+- Query export is implemented to `queries/<QID>.sparql` using the first `<sparql>` block from `Item_talk:<QID>`.
+
+- Value-list hydration is implemented to `cache/queries/<QID>.json` with pagination and dedupe.
+
+- CLI route is implemented: `gkc profile value-lists hydrate`.
+
 ### Current generated profile shape
 
 Current export generates:
@@ -208,6 +220,14 @@ Build and export JSON profiles from cache entities:
 poetry run gkc --json profile export-json \
   --cache-entities-dir /Users/sky/code/SpiritSafe/cache/entities \
   --output /Users/sky/code/SpiritSafe/profiles
+
+Hydrate value-list queries and cache artifacts:
+
+```bash
+poetry run gkc --json profile value-lists hydrate \
+  --source local \
+  --local-root /Users/sky/code/SpiritSafe
+```
 ```
 
 Filter export to selected profiles:

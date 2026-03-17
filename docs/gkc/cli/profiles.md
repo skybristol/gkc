@@ -174,6 +174,55 @@ Supported flags:
 - `--repo`
 - `--ref`
 
+### `gkc profile value-lists hydrate`
+
+Extract `<sparql>` blocks from value-list talk pages, write query files to `queries/`, then hydrate value-list cache JSON to `cache/queries/`.
+
+```bash
+gkc profile value-lists hydrate \
+  --source local \
+  --local-root /path/to/SpiritSafe
+```
+
+```bash
+gkc profile value-lists hydrate \
+  --cache-entities-dir /path/to/SpiritSafe/cache/entities \
+  --queries-dir /path/to/SpiritSafe/queries \
+  --cache-queries-dir /path/to/SpiritSafe/cache/queries \
+  --api-url https://datadistillery.wikibase.cloud/w/api.php \
+  --endpoint https://datadistillery.wikibase.cloud/query/sparql
+```
+
+```bash
+gkc profile value-lists hydrate \
+  --source local \
+  --local-root /path/to/SpiritSafe \
+  --value-list-id Q4 \
+  --value-list-id Q39
+```
+
+Supported flags:
+
+- `--cache-entities-dir` - SpiritSafe cache entity directory
+- `--queries-dir` - Destination for extracted `.sparql` files
+- `--cache-queries-dir` - Destination for hydrated value-list JSON files
+- `--value-list-id` (repeatable) - Optional value-list QID filter
+- `--api-url` - Wikibase API URL for talk-page reads
+- `--endpoint` - SPARQL endpoint URL for query execution
+- `--page-size`
+- `--max-results`
+- `--continue-on-error`
+- `--source {github,local}`
+- `--local-root`
+- `--repo`
+- `--ref`
+
+Notes:
+
+- Value lists are discovered from cache entities where `P1 -> Q7`.
+- For each value list, the first `<sparql>...</sparql>` block from `Item_talk:QID` is used.
+- If hydration fails for one list, existing cache file content is preserved for that list.
+
 ### `gkc profile package`
 
 Work with profile packages (primary profile plus related profiles).

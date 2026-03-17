@@ -4,6 +4,7 @@ import argparse
 import json
 from pathlib import Path
 
+import gkc
 from gkc import cli
 from gkc.mash import ClaimSummary, WikibaseItemTemplate
 
@@ -1507,3 +1508,100 @@ def test_profile_export_json_writes_output_directory(capsys, tmp_path):
     assert exported_file.exists()
     exported_payload = json.loads(exported_file.read_text(encoding="utf-8"))
     assert exported_payload["entity"].endswith("/Q4")
+
+
+def test_profile_value_lists_hydrate_local_source_defaults(
+    monkeypatch, capsys, tmp_path
+):
+    """profile value-lists hydrate resolves local default directories."""
+
+    local_root = tmp_path / "SpiritSafe"
+    (local_root / "cache" / "entities").mkdir(parents=True, exist_ok=True)
+
+    def fake_discover_value_list_ids(cache_entities_dir):
+        assert str(cache_entities_dir).endswith("SpiritSafe/cache/entities")
+        return ["Q4"]
+
+    def fake_hydrate_value_lists_from_cache(**kwargs):
+        assert str(kwargs["cache_entities_dir"]).endswith("SpiritSafe/cache/entities")
+        assert str(kwargs["queries_dir"]).endswith("SpiritSafe/queries")
+        assert str(kwargs["cache_queries_dir"]).endswith("SpiritSafe/cache/queries")
+        assert kwargs["value_list_ids"] == ["Q4"]
+        return gkc.ValueListHydrationResult(
+            queries_dir=str(local_root / "queries"),
+            cache_queries_dir=str(local_root / "cache" / "queries"),
+            discovered_ids=["Q4"],
+            hydrated_ids=["Q4"],
+            query_files_written=[str(local_root / "queries" / "Q4.sparql")],
+            cache_files_written=[str(local_root / "cache" / "queries" / "Q4.json")],
+            failures=[],
+        )
+
+    monkeypatch.setattr("gkc.discover_value_list_ids", fake_discover_value_list_ids)
+    monkeypatch.setattr(
+        "gkc.hydrate_value_lists_from_cache", fake_hydrate_value_lists_from_cache
+    )
+
+    exit_code = cli.main(
+        [
+            "--json",
+            "profile",
+            "value-lists",
+            "hydrate",
+            "--source",
+            "local",
+            "--local-root",
+            str(local_root),
+        ]
+    )
+
+    assert exit_code == 0
+    payload = json.loads(capsys.readouterr().out.strip())
+    assert payload["command"] == "profile.value_lists.hydrate"
+    assert payload["ok"] is True
+    assert payload["details"]["hydrated_count"] == 1
+
+
+def test_profile_value_lists_hydrate_reports_failures(monkeypatch, capsys, tmp_path):
+    """profile value-lists hydrate marks command as failed when failures occur."""
+    cache_entities_dir = tmp_path / "cache" / "entities"
+    cache_entities_dir.mkdir(parents=True, exist_ok=True)
+
+    monkeypatch.setattr("gkc.discover_value_list_ids", lambda _: ["Q4"])
+
+    def fake_hydrate_value_lists_from_cache(**kwargs):
+        _ = kwargs
+        return gkc.ValueListHydrationResult(
+            queries_dir=str(tmp_path / "queries"),
+            cache_queries_dir=str(tmp_path / "cache" / "queries"),
+            discovered_ids=["Q4"],
+            hydrated_ids=[],
+            query_files_written=[],
+            cache_files_written=[],
+            failures=[{"value_list_id": "Q4", "error": "No <sparql> block found"}],
+        )
+
+    monkeypatch.setattr(
+        "gkc.hydrate_value_lists_from_cache", fake_hydrate_value_lists_from_cache
+    )
+
+    exit_code = cli.main(
+        [
+            "--json",
+            "profile",
+            "value-lists",
+            "hydrate",
+            "--cache-entities-dir",
+            str(cache_entities_dir),
+            "--queries-dir",
+            str(tmp_path / "queries"),
+            "--cache-queries-dir",
+            str(tmp_path / "cache" / "queries"),
+            "--continue-on-error",
+        ]
+    )
+
+    assert exit_code == 1
+    payload = json.loads(capsys.readouterr().out.strip())
+    assert payload["ok"] is False
+    assert len(payload["details"]["failures"]) == 1

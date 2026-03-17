@@ -161,6 +161,88 @@ class WikibaseCacheRefreshResult:
 
 
 _ENTITY_ID_PATTERN = re.compile(r"\b([QP]\d+)\b")
+_SPARQL_BLOCK_PATTERN = re.compile(
+    r"<\s*sparql(?:\s+[^>]*)?>(.*?)</\s*sparql\s*>",
+    flags=re.IGNORECASE | re.DOTALL,
+)
+
+
+def fetch_mediawiki_page_wikitext(api_client: WikibaseApiClient, title: str) -> str:
+    """Fetch page wikitext from a MediaWiki API endpoint.
+
+    Args:
+        api_client: Configured Wikibase/MediaWiki API client.
+        title: Full page title (for example, ``Item_talk:Q4``).
+
+    Returns:
+        Page wikitext as a string.
+
+    Raises:
+        RuntimeError: If page content is missing or cannot be parsed.
+    """
+    payload = api_client.request(
+        {
+            "action": "query",
+            "format": "json",
+            "formatversion": 2,
+            "prop": "revisions",
+            "rvprop": "content",
+            "rvslots": "main",
+            "titles": title,
+        }
+    )
+
+    pages = payload.get("query", {}).get("pages", [])
+    if not isinstance(pages, list) or not pages:
+        raise RuntimeError(f"MediaWiki page '{title}' not found")
+
+    page = pages[0]
+    if not isinstance(page, dict) or page.get("missing"):
+        raise RuntimeError(f"MediaWiki page '{title}' not found")
+
+    revisions = page.get("revisions", [])
+    if not isinstance(revisions, list) or not revisions:
+        raise RuntimeError(f"No revision content found for page '{title}'")
+
+    revision = revisions[0]
+    if not isinstance(revision, dict):
+        raise RuntimeError(f"Invalid revision payload for page '{title}'")
+
+    slots = revision.get("slots", {})
+    main_slot = slots.get("main") if isinstance(slots, dict) else None
+    if isinstance(main_slot, dict):
+        content = main_slot.get("content")
+        if isinstance(content, str):
+            return content
+
+    # Backward compatibility for installations using legacy '*' content key.
+    content = revision.get("*")
+    if isinstance(content, str):
+        return content
+
+    raise RuntimeError(f"No wikitext content found for page '{title}'")
+
+
+def extract_sparql_blocks(wikitext: str) -> list[str]:
+    """Extract SPARQL blocks from wikitext in source order."""
+    blocks: list[str] = []
+    for match in _SPARQL_BLOCK_PATTERN.findall(wikitext):
+        snippet = match.strip()
+        if snippet:
+            blocks.append(snippet)
+    return blocks
+
+
+def extract_first_sparql_block(wikitext: str) -> str:
+    """Return the first SPARQL block from wikitext.
+
+    Raises:
+        RuntimeError: If no ``<sparql>...</sparql>`` block exists.
+    """
+    blocks = extract_sparql_blocks(wikitext)
+    if not blocks:
+        raise RuntimeError("No <sparql> block found in page content")
+    return blocks[0]
 
 
 def get_latest_cache_timestamp(cache_dir: str | Path) -> Optional[str]:

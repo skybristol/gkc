@@ -52,7 +52,10 @@ from gkc.entity_profile import GKCEntityProfile
 
 # Mash (inbound data retrieval)
 from gkc.mash import (
+    extract_first_sparql_block,
+    extract_sparql_blocks,
     fetch_entity_rdf,
+    fetch_mediawiki_page_wikitext,
 )
 from gkc.mash import (
     fetch_entity_schema_specification as fetch_schema_specification,
@@ -87,7 +90,10 @@ from gkc.sparql import (
     SPARQLError,
     SPARQLQuery,
     execute_sparql,
+    execute_sparql_file,
     execute_sparql_to_dataframe,
+    paginate_query_file,
+    read_sparql_query_file,
 )
 
 # SpiritSafe source configuration + lookup utilities
@@ -99,11 +105,16 @@ from gkc.spirit_safe import (
     LookupFetcher,
     ProfileMetadata,
     SpiritSafeSourceConfig,
+    ValueListHydrationResult,
     build_entity_profile_json_documents,
+    discover_value_list_ids,
     export_entity_profile_json_documents,
+    export_value_list_sparql_queries,
     get_profile_metadata,
     get_spirit_safe_source,
     hydrate_profile_lookups,
+    hydrate_value_list_query_caches,
+    hydrate_value_lists_from_cache,
     list_profiles,
     profile_exists,
     resolve_profile_path,
@@ -190,7 +201,10 @@ __all__ = [
     "ChargeReport",
     "charge_curation_packet",
     # Mash schema functions
+    "extract_first_sparql_block",
+    "extract_sparql_blocks",
     "fetch_entity_rdf",
+    "fetch_mediawiki_page_wikitext",
     "fetch_schema_specification",
     # Entity Profiles
     "GKCEntityProfile",
@@ -210,7 +224,10 @@ __all__ = [
     "SPARQLError",
     "SPARQLQuery",
     "execute_sparql",
+    "execute_sparql_file",
     "execute_sparql_to_dataframe",
+    "paginate_query_file",
+    "read_sparql_query_file",
     # ShEx validation
     "ShexValidationError",
     "ShexValidator",
@@ -218,14 +235,19 @@ __all__ = [
     "DEFAULT_SPIRIT_SAFE_GITHUB_REPO",
     "EntityProfileJsonBuilder",
     "EntityProfileJsonExportResult",
+    "ValueListHydrationResult",
     "SpiritSafeSourceConfig",
     "get_spirit_safe_source",
     "set_spirit_safe_source",
     "LookupCache",
     "LookupFetcher",
     "build_entity_profile_json_documents",
+    "discover_value_list_ids",
     "export_entity_profile_json_documents",
+    "export_value_list_sparql_queries",
     "hydrate_profile_lookups",
+    "hydrate_value_list_query_caches",
+    "hydrate_value_lists_from_cache",
     "ProfileMetadata",
     "get_profile_metadata",
     "list_profiles",

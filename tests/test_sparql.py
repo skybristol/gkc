@@ -9,7 +9,10 @@ from gkc.sparql import (
     SPARQLError,
     SPARQLQuery,
     execute_sparql,
+    execute_sparql_file,
     execute_sparql_to_dataframe,
+    paginate_query_file,
+    read_sparql_query_file,
 )
 
 
@@ -317,11 +320,55 @@ class TestSPARQLConvenienceFunctions:
             result = execute_sparql_to_dataframe(
                 "SELECT ?item ?itemLabel WHERE { ... }"
             )
-
             assert isinstance(result, pd.DataFrame)
             mock_to_df.assert_called_once()
         except ImportError:
             pytest.skip("pandas not installed")
+
+
+def test_read_sparql_query_file(tmp_path):
+    query_file = tmp_path / "example.sparql"
+    query_file.write_text("SELECT * WHERE { ?s ?p ?o }", encoding="utf-8")
+
+    assert read_sparql_query_file(query_file) == "SELECT * WHERE { ?s ?p ?o }"
+
+
+@patch("gkc.sparql.execute_sparql")
+def test_execute_sparql_file(mock_execute_sparql, tmp_path):
+    query_file = tmp_path / "example.sparql"
+    query_file.write_text("SELECT * WHERE { ?s ?p ?o }", encoding="utf-8")
+    mock_execute_sparql.return_value = {"results": {"bindings": []}}
+
+    result = execute_sparql_file(query_file, endpoint="https://example/sparql")
+
+    assert result == {"results": {"bindings": []}}
+    mock_execute_sparql.assert_called_once_with(
+        query="SELECT * WHERE { ?s ?p ?o }",
+        endpoint="https://example/sparql",
+        format="json",
+    )
+
+
+@patch("gkc.sparql.paginate_query")
+def test_paginate_query_file(mock_paginate_query, tmp_path):
+    query_file = tmp_path / "example.sparql"
+    query_file.write_text("SELECT * WHERE { ?s ?p ?o }", encoding="utf-8")
+    mock_paginate_query.return_value = [{"item": "Q1", "itemLabel": "One"}]
+
+    result = paginate_query_file(
+        query_file,
+        page_size=250,
+        endpoint="https://example/sparql",
+        max_results=500,
+    )
+
+    assert result == [{"item": "Q1", "itemLabel": "One"}]
+    mock_paginate_query.assert_called_once_with(
+        query="SELECT * WHERE { ?s ?p ?o }",
+        page_size=250,
+        endpoint="https://example/sparql",
+        max_results=500,
+    )
 
 
 class TestSPARQLEndpointCustomization:
