@@ -1,12 +1,17 @@
 """Wikibase orchestration pipelines for profile-driven write planning."""
 
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Any, Optional
 
 from gkc.cooperage import BarrelPlanReport, barrel_curation_packet_to_wikibase_plan
 from gkc.shipper import WriteResult
 from gkc.spirit_safe import Manifest, create_curation_packet
-from gkc.still_charger import ChargeReport, charge_curation_packet
+from gkc.still_charger import (
+    ChargeReport,
+    build_curation_packet_from_json_profile,
+    charge_curation_packet,
+)
 
 
 @dataclass
@@ -31,9 +36,12 @@ class WikibaseWriteExecutionResult:
 
 
 def build_wikibase_write_plan(
-    profile_id: str,
-    source_values: dict[str, dict[str, Any]],
+    profile_id: Optional[str] = None,
+    source_values: Optional[dict[str, dict[str, Any]]] = None,
     *,
+    profile_entity: Optional[str] = None,
+    json_profile_doc: Optional[dict] = None,
+    source_root: Optional[Path] = None,
     operation_mode: str = "single",
     load_wikidata_qids: bool = False,
     depth: int = 1,
@@ -46,19 +54,45 @@ def build_wikibase_write_plan(
     """Build a Wikibase write plan from profile and source values.
 
     Pipeline:
-    1) Create curation packet from profile scaffolds
+    1) Create curation packet from profile scaffolds (old or new method)
     2) Charge packet with concrete values
     3) Barrel charged packet into shipper-compatible operations
     4) Optionally compute diff plan using WikibaseShipper.plan_batch
+
+    Args:
+        profile_id: (deprecated) Profile name string for old create_curation_packet path
+        source_values: Source values mapping for charging
+        profile_entity: Full profile entity URI for new path
+        json_profile_doc: Pre-loaded JSON profile document for new path
+        source_root: Optional path root for value list cache hydration
+        operation_mode: Mode for packet assembly
+        manifest: Old manifest (for transitional create_curation_packet)
+        Other args: same as before
     """
 
-    packet = create_curation_packet(
-        profile_id=profile_id,
-        operation_mode=operation_mode,
-        load_wikidata_qids=load_wikidata_qids,
-        depth=depth,
-        manifest=manifest,
-    )
+    if source_values is None:
+        source_values = {}
+
+    # New path: build packet from JSON profile
+    if json_profile_doc is not None and profile_entity is not None:
+        packet = build_curation_packet_from_json_profile(
+            profile_entity=profile_entity,
+            json_profile_doc=json_profile_doc,
+            source_root=source_root,
+        )
+    # Old path: build packet from profile_id + manifest (transitional)
+    elif profile_id is not None:
+        packet = create_curation_packet(
+            profile_id=profile_id,
+            operation_mode=operation_mode,
+            load_wikidata_qids=load_wikidata_qids,
+            depth=depth,
+            manifest=manifest,
+        )
+    else:
+        raise ValueError(
+            "Either (profile_entity + json_profile_doc) or profile_id must be provided"
+        )
 
     charged_packet, charge_report = charge_curation_packet(
         packet,
