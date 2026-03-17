@@ -2,7 +2,7 @@
 
 ## Purpose
 
-This document defines the current architectural contract between `mash`, `still_charger`, `cooperage`, `bottler`, `shipper`, and `wikibase` for Data Distillery and broader GKC workflows.
+This document defines the current architectural contract between `mash`, `spirit_safe`, `still_charger`, `cooperage`, `bottler`, `shipper`, and `wikibase` for Data Distillery and broader GKC workflows.
 
 It is written as a practical anti-reinvention guide for contributors and custom agents.
 
@@ -26,6 +26,28 @@ Current anchor surface:
 - `WikibaseApiClient`
 - `WikibaseLoader`
 - `WikipediaLoader`
+
+### Spirit Safe (`gkc.spirit_safe`)
+
+Responsibility:
+
+- Load SpiritSafe profile/manifest sources (GitHub or local).
+- Build JSON Entity Profiles from SpiritSafe cache entities.
+- Export profile JSON artifacts for downstream packet assembly and hydration.
+- Provide profile graph and packet scaffold utilities.
+
+Out of scope:
+
+- Direct write execution to Wikibase APIs.
+- UI-specific packet interpretation behavior.
+
+Current anchor surface:
+
+- `build_entity_profile_json_documents`
+- `export_entity_profile_json_documents`
+- `create_curation_packet`
+- `load_manifest`
+- `load_profile_package`
 
 ### Still Charger (`gkc.still_charger`)
 
@@ -154,6 +176,13 @@ Current anchor surface:
 4. `wikibase` orchestration coordinates this flow for Data Distillery-specific workflows.
 5. `shipper` computes create/update/no-op diff plans and executes writes when enabled.
 
+### Flow 2.6: SpiritSafe JSON Profile Materialization (Active)
+
+1. `wikibase` cache routes refresh and reconcile per-entity cache files.
+2. `spirit_safe` builds JSON Entity Profiles from `cache/entities` artifacts.
+3. `spirit_safe` exports per-profile JSON files (for example `profiles/Q4.json`).
+4. Downstream packet/hydration stages consume exported profile artifacts.
+
 ### Flow 3: Semantic Projection for Runtime Artifacts
 
 1. `mash` retrieves semantic entities and related metadata.
@@ -176,12 +205,14 @@ Current anchor surface:
 - Do not bypass `shipper` for Wikibase write execution paths.
 - Keep profile YAML/SpiritSafe runtime contracts stable and testable.
 - Preserve offline-first behavior: network-backed enhancement must not break cache-only operation.
+- Preserve JSON profile export determinism (stable ordering and artifact path shape).
 
 ## Decision Matrix for New Work
 
 When adding new functionality, assign ownership using this matrix:
 
 - Need to fetch/query source entity data? -> `mash`
+- Need to build/export profile JSON artifacts from SpiritSafe cache entities? -> `spirit_safe`
 - Need to populate curation packet scaffolds with concrete values? -> `still_charger`
 - Need to build/shape values into claim/snak/payload structures? -> `bottler`
 - Need schema/specification retrieval or reusable projection logic? -> `cooperage`
@@ -195,6 +226,7 @@ When adding new functionality, assign ownership using this matrix:
 - Boundaries between cooperage and bottler for transformation stages still need explicit acceptance criteria per phase.
 - Wikibase orchestration should continue preferring composition over new transport abstractions.
 - Cross-module tests should identify failure source by layer (read, transform, payload-shape, write, orchestration).
+- Curation packet v2 contract migration from profile-name keys to entity-URI keys remains unfinished and is the next high-risk integration step.
 
 ## Theoretical Design Notes
 

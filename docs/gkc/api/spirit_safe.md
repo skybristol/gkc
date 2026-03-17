@@ -2,7 +2,7 @@
 
 ## Overview
 
-The `gkc.spirit_safe` module provides profile registry integration, SPARQL lookup hydration, and cache management for SpiritSafe-backed workflows.
+The `gkc.spirit_safe` module provides profile registry integration, SPARQL lookup hydration, JSON Entity Profile generation from cache entities, and cache management for SpiritSafe-backed workflows.
 
 This module supports two source modes:
 
@@ -276,6 +276,51 @@ is_valid, errors = validate_packet_structure(loaded_packet)
 print(f"Loaded packet is valid: {is_valid}")
 ```
 
+### Building JSON Entity Profiles from Cache Entities
+
+Build in-memory JSON Entity Profile documents directly from SpiritSafe `cache/entities` data:
+
+```python
+from gkc.spirit_safe import build_entity_profile_json_documents
+
+docs = build_entity_profile_json_documents(
+    "/path/to/SpiritSafe/cache/entities"
+)
+
+print(len(docs))
+print(docs[0]["entity"])
+```
+
+### Exporting JSON Entity Profiles to Files
+
+Write one JSON file per profile QID (`<output>/<QID>.json`):
+
+```python
+from gkc.spirit_safe import export_entity_profile_json_documents
+
+result = export_entity_profile_json_documents(
+    cache_entities_dir="/path/to/SpiritSafe/cache/entities",
+    output_dir="/path/to/SpiritSafe/profiles",
+)
+
+print(result.output_dir)
+print(result.written_ids)
+```
+
+Optional `profile_ids` filtering is supported:
+
+```python
+from gkc.spirit_safe import export_entity_profile_json_documents
+
+result = export_entity_profile_json_documents(
+    cache_entities_dir="/path/to/SpiritSafe/cache/entities",
+    output_dir="/path/to/SpiritSafe/profiles",
+    profile_ids=["Q4", "Q39"],
+)
+
+print(result.written_ids)
+```
+
 ## Public API Quick Starts by Route
 
 ### `set_spirit_safe_source` and `get_spirit_safe_source`
@@ -488,6 +533,34 @@ print(packet["packet_id"], packet["operation_mode"], is_valid, errors)
       heading_level: 4
 
 ## Manifest and Curation Workflows
+
+### `EntityProfileJsonBuilder`
+
+::: gkc.spirit_safe.EntityProfileJsonBuilder
+        options:
+            show_root_heading: false
+            heading_level: 4
+
+### `EntityProfileJsonExportResult`
+
+::: gkc.spirit_safe.EntityProfileJsonExportResult
+        options:
+            show_root_heading: false
+            heading_level: 4
+
+### `build_entity_profile_json_documents`
+
+::: gkc.spirit_safe.build_entity_profile_json_documents
+        options:
+            show_root_heading: false
+            heading_level: 4
+
+### `export_entity_profile_json_documents`
+
+::: gkc.spirit_safe.export_entity_profile_json_documents
+        options:
+            show_root_heading: false
+            heading_level: 4
 
 ### `Manifest`
 

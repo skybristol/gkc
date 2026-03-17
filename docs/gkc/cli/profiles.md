@@ -4,7 +4,7 @@ Plain meaning: Work with SpiritSafe-backed Entity Profiles from the command line
 
 ## Overview
 
-The `gkc` command provides comprehensive CLI access to profile validation, form generation, lookup hydration, registry operations, profile packages, and curation packets.
+The `gkc` command provides comprehensive CLI access to profile validation, JSON profile export from SpiritSafe cache entities, form generation, lookup hydration, registry operations, profile packages, and curation packets.
 
 Top-level command groups:
 
@@ -65,6 +65,45 @@ Supported flags:
 - `--local-root`
 - `--repo`
 - `--ref`
+
+### `gkc profile export-json`
+
+Build JSON Entity Profiles from SpiritSafe `cache/entities` and optionally write one file per profile QID.
+
+```bash
+gkc profile export-json \
+  --cache-entities-dir /path/to/SpiritSafe/cache/entities
+```
+
+```bash
+gkc profile export-json \
+  --source local \
+  --local-root /path/to/SpiritSafe \
+  --output /path/to/SpiritSafe/profiles
+```
+
+```bash
+gkc profile export-json \
+  --cache-entities-dir /path/to/SpiritSafe/cache/entities \
+  --profile-id Q4 \
+  --profile-id Q39 \
+  --output /path/to/SpiritSafe/profiles
+```
+
+Supported flags:
+
+- `--cache-entities-dir` - Directory containing SpiritSafe per-entity cache JSON files
+- `--profile-id` (repeatable) - Optional profile QID filter
+- `-o, --output` - Output directory for per-profile JSON files (`<output>/<QID>.json`)
+- `--source {github,local}`
+- `--local-root`
+- `--repo`
+- `--ref`
+
+Notes:
+
+- If `--output` is omitted, generated profiles are printed to stdout as a JSON array.
+- When `--source local` is set and `--cache-entities-dir` is omitted, the command defaults to `<local_root>/cache/entities`.
 
 ### `gkc profile form`
 

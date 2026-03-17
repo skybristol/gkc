@@ -30,7 +30,9 @@ from gkc.runtime_config import get_wikibase_runtime_config
 from gkc.shipper import WikibaseShipper
 from gkc.sparql import fetch_entity_labels
 from gkc.spirit_safe import (
+    build_entity_profile_json_documents,
     create_curation_packet,
+    export_entity_profile_json_documents,
     get_profile_graph,
     load_manifest,
     load_profile_package,
@@ -429,6 +431,37 @@ def _build_parser() -> argparse.ArgumentParser:
     profile_form.set_defaults(
         handler=_handle_profile_form_schema,
         command_path="profile.form_schema",
+    )
+
+    profile_export_json = profile_subparsers.add_parser(
+        "export-json",
+        help="Build JSON entity profiles from SpiritSafe cache entities",
+    )
+    profile_export_json.add_argument(
+        "--cache-entities-dir",
+        help=(
+            "Directory containing SpiritSafe cache entity JSON files "
+            "(defaults to <local_root>/cache/entities when using --source local)"
+        ),
+    )
+    profile_export_json.add_argument(
+        "--profile-id",
+        action="append",
+        dest="profile_ids",
+        help="Optional profile QID to export (repeatable)",
+    )
+    profile_export_json.add_argument(
+        "-o",
+        "--output",
+        help=(
+            "Output directory for per-profile JSON files "
+            "(writes <output>/<QID>.json). If omitted, prints JSON to stdout"
+        ),
+    )
+    _add_profile_source_args(profile_export_json)
+    profile_export_json.set_defaults(
+        handler=_handle_profile_export_json,
+        command_path="profile.export_json",
     )
 
     profile_run_form = profile_subparsers.add_parser(
@@ -1879,6 +1912,84 @@ def _handle_profile_form(args: argparse.Namespace) -> dict[str, Any]:
                 "qid": args.qid,
             },
         }
+    finally:
+        _restore_source_override(previous_source, source_overridden)
+
+
+def _handle_profile_export_json(args: argparse.Namespace) -> dict[str, Any]:
+    """Build/export JSON entity profiles from SpiritSafe cache entities."""
+    previous_source, source_overridden = _apply_source_override(args)
+
+    try:
+        cache_entities_dir: Optional[Path]
+        if args.cache_entities_dir:
+            cache_entities_dir = Path(args.cache_entities_dir)
+        else:
+            source = gkc.get_spirit_safe_source()
+            if source.mode == "local" and source.local_root is not None:
+                cache_entities_dir = source.local_root / "cache" / "entities"
+            else:
+                cache_entities_dir = None
+
+        if cache_entities_dir is None:
+            raise CLIError(
+                "Unable to resolve cache entities directory. Provide "
+                "--cache-entities-dir or use --source local with --local-root."
+            )
+
+        if not cache_entities_dir.exists():
+            raise CLIError(f"Cache entities directory not found: {cache_entities_dir}")
+
+        selected_profile_ids = list(args.profile_ids or [])
+
+        if args.output:
+            export_result = export_entity_profile_json_documents(
+                cache_entities_dir=cache_entities_dir,
+                output_dir=args.output,
+                profile_ids=selected_profile_ids or None,
+            )
+            message = (
+                "Exported JSON entity profiles to "
+                f"{export_result.output_dir} ({len(export_result.written_ids)} files)"
+            )
+            details = {
+                "cache_entities_dir": str(cache_entities_dir.resolve()),
+                "output_file": export_result.output_dir,
+                "profile_ids_requested": selected_profile_ids,
+                "written_count": len(export_result.written_ids),
+                "written_ids": export_result.written_ids,
+            }
+            return {
+                "command": args.command_path,
+                "ok": True,
+                "message": message,
+                "details": details,
+            }
+
+        documents = build_entity_profile_json_documents(cache_entities_dir)
+        if selected_profile_ids:
+            selected = set(selected_profile_ids)
+            documents = [
+                document
+                for document in documents
+                if str(document.get("entity", "")).rstrip("/").split("/")[-1]
+                in selected
+            ]
+
+        print(json.dumps(documents, indent=2))
+        return {
+            "command": args.command_path,
+            "ok": True,
+            "message": f"Generated {len(documents)} JSON entity profiles",
+            "details": {
+                "cache_entities_dir": str(cache_entities_dir.resolve()),
+                "output": "stdout",
+                "profile_ids_requested": selected_profile_ids,
+                "generated_count": len(documents),
+            },
+        }
+    except Exception as exc:
+        raise CLIError(str(exc)) from exc
     finally:
         _restore_source_override(previous_source, source_overridden)
 
