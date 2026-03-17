@@ -34,7 +34,9 @@ from gkc.spirit_safe import (
     create_curation_packet,
     export_entity_profile_json_documents,
     export_spiritsafe_manifest,
+    get_spirit_safe_source,
     load_manifest,
+    load_profile,
     load_profile_package,
     validate_packet_structure,
 )
@@ -837,6 +839,57 @@ def _build_parser() -> argparse.ArgumentParser:
     packet_validate.set_defaults(
         handler=_handle_packet_validate,
         command_path="packet.validate",
+    )
+
+    packet_build = packet_subparsers.add_parser(
+        "build", help="Build a curation packet from a JSON Entity Profile"
+    )
+    packet_build.add_argument(
+        "--profile",
+        required=True,
+        help="Profile QID (e.g., Q4) or full entity URI",
+    )
+    packet_build.add_argument(
+        "-o",
+        "--output",
+        help="Write packet to file (JSON) instead of stdout",
+    )
+    _add_profile_source_args(packet_build)
+    packet_build.set_defaults(
+        handler=_handle_packet_build,
+        command_path="packet.build",
+    )
+
+    packet_charge = packet_subparsers.add_parser(
+        "charge", help="Charge a curation packet with Wikidata item data"
+    )
+    packet_charge.add_argument(
+        "--packet-file",
+        required=True,
+        help="Path to curation packet JSON file",
+    )
+    packet_charge.add_argument(
+        "--source",
+        choices=["wikidata", "local"],
+        default="wikidata",
+        help="Data source: wikidata or local file (default: wikidata)",
+    )
+    packet_charge.add_argument(
+        "--qid",
+        help="Wikidata QID to charge packet with (for source=wikidata)",
+    )
+    packet_charge.add_argument(
+        "--mapping-file",
+        help="JSON file mapping entity IDs to QIDs (optional)",
+    )
+    packet_charge.add_argument(
+        "-o",
+        "--output",
+        help="Write charged packet to file (JSON) instead of stdout",
+    )
+    packet_charge.set_defaults(
+        handler=_handle_packet_charge,
+        command_path="packet.charge",
     )
 
     # Wikibase commands
@@ -2660,6 +2713,162 @@ def _handle_packet_validate(args: argparse.Namespace) -> dict[str, Any]:
     except json.JSONDecodeError as exc:
         raise CLIError(f"Invalid JSON in packet file: {exc}") from exc
     except Exception as exc:
+        raise CLIError(str(exc)) from exc
+
+
+def _handle_packet_build(args: argparse.Namespace) -> dict[str, Any]:
+    """Build a curation packet from a JSON Entity Profile."""
+    from gkc.still_charger import build_curation_packet_from_json_profile
+
+    previous_source, source_overridden = _apply_source_override(args)
+
+    try:
+        # Normalize profile identifier to full URI
+        profile_id = args.profile
+        if not (profile_id.startswith("http://") or profile_id.startswith("https://")):
+            # Assume it's a QID; construct default URI
+            if not profile_id.startswith("Q"):
+                raise CLIError(
+                    f"Invalid profile identifier: {profile_id}. Expected QID or full URI."
+                )
+            profile_entity = (
+                f"https://datadistillery.wikibase.cloud/entity/{profile_id}"
+            )
+        else:
+            profile_entity = profile_id
+
+        try:
+            json_profile_doc = load_profile(profile_entity)
+        except FileNotFoundError as exc:
+            raise CLIError(str(exc)) from exc
+        except Exception as exc:
+            raise CLIError(f"Failed to load profile {profile_entity}: {exc}") from exc
+
+        source_config = get_spirit_safe_source()
+        source_root = (
+            source_config.local_root if source_config.mode == "local" else None
+        )
+
+        # Build the packet
+        packet = build_curation_packet_from_json_profile(
+            profile_entity=profile_entity,
+            json_profile_doc=json_profile_doc,
+            source_root=source_root,
+        )
+
+        # Optionally write to file
+        if args.output:
+            with open(args.output, "w") as f:
+                json.dump(packet, f, indent=2, default=str)
+            message = f"Built packet {packet['packet_id']} and saved to {args.output}"
+        else:
+            message = f"Built packet {packet['packet_id']}"
+
+        details = {
+            "packet_id": packet["packet_id"],
+            "profile_entity": packet.get("profile_entity"),
+            "entity_count": len(packet.get("entities", [])),
+            "cross_reference_count": len(packet.get("cross_references", [])),
+            "value_list_routes_count": len(packet.get("value_list_routes", {})),
+            "output_file": args.output,
+        }
+
+        return {
+            "command": args.command_path,
+            "ok": True,
+            "message": message,
+            "details": details,
+        }
+    except Exception as exc:
+        if isinstance(exc, CLIError):
+            raise
+        raise CLIError(str(exc)) from exc
+    finally:
+        _restore_source_override(previous_source, source_overridden)
+
+
+def _handle_packet_charge(args: argparse.Namespace) -> dict[str, Any]:
+    """Charge a curation packet with Wikidata item data."""
+    from pathlib import Path
+
+    from gkc.still_charger import charge_packet_from_wikidata_items
+
+    try:
+        # Load the packet
+        packet_path = Path(args.packet_file)
+        if not packet_path.exists():
+            raise CLIError(f"Packet file not found: {packet_path}")
+
+        try:
+            packet = json.loads(packet_path.read_text(encoding="utf-8"))
+        except json.JSONDecodeError as exc:
+            raise CLIError(f"Invalid JSON in packet file: {exc}") from exc
+
+        # Build QID mapping
+        qid_map = {}
+
+        if args.source == "wikidata":
+            if args.qid:
+                # Map all entities to the single QID
+                for entity in packet.get("entities", []):
+                    entity_id = entity.get("id")
+                    profile_entity = entity.get("profile_entity")
+                    if entity_id:
+                        qid_map[entity_id] = args.qid
+                    if profile_entity:
+                        qid_map[profile_entity] = args.qid
+            elif args.mapping_file:
+                # Load mapping from file
+                mapping_path = Path(args.mapping_file)
+                if not mapping_path.exists():
+                    raise CLIError(f"Mapping file not found: {mapping_path}")
+                try:
+                    qid_map = json.loads(mapping_path.read_text(encoding="utf-8"))
+                except json.JSONDecodeError as exc:
+                    raise CLIError(f"Invalid JSON in mapping file: {exc}") from exc
+            else:
+                raise CLIError(
+                    "Either --qid or --mapping-file required for source=wikidata"
+                )
+
+        # Charge the packet
+        charged_packet, notices = charge_packet_from_wikidata_items(packet, qid_map)
+
+        # Count notice severities
+        error_count = sum(1 for n in notices if n.severity == "error")
+        warning_count = sum(1 for n in notices if n.severity == "warning")
+        info_count = sum(1 for n in notices if n.severity == "info")
+
+        # Optionally write to file
+        if args.output:
+            with open(args.output, "w") as f:
+                json.dump(charged_packet, f, indent=2, default=str)
+            message = f"Charged packet {charged_packet.get('packet_id', 'unknown')} and saved to {args.output}"
+        else:
+            message = f"Charged packet {charged_packet.get('packet_id', 'unknown')}"
+
+        details = {
+            "packet_id": charged_packet.get("packet_id"),
+            "entities_charged": sum(
+                1
+                for e in charged_packet.get("entities", [])
+                if e.get("data", {}).get("statements")
+            ),
+            "notices_error": error_count,
+            "notices_warning": warning_count,
+            "notices_info": info_count,
+            "output_file": args.output,
+        }
+
+        return {
+            "command": args.command_path,
+            "ok": error_count == 0,
+            "message": message,
+            "details": details,
+        }
+    except Exception as exc:
+        if isinstance(exc, CLIError):
+            raise
         raise CLIError(str(exc)) from exc
 
 

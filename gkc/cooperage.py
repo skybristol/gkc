@@ -104,20 +104,41 @@ def _property_id_from_io_map(io_map: Any) -> Optional[str]:
 
 
 def _statement_pid_map(entity: dict[str, Any]) -> dict[str, str]:
-    structure = entity.get("profile_structure", {})
-    statements = structure.get("statements", [])
+    """Extract a mapping from statement identifiers to Wikidata property IDs.
+
+    Supports both:
+    - New format: top-level statements with entity field (statement URI)
+    - Old format: profile_structure.statements with id field
+    """
     result: dict[str, str] = {}
 
+    # New format: top-level statements list
+    statements = entity.get("statements", [])
     if isinstance(statements, list):
         for stmt in statements:
+            if not isinstance(stmt, dict):
+                continue
+            statement_uri = stmt.get("entity")
+            property_id = _property_id_from_io_map(stmt.get("io_map"))
+            if isinstance(statement_uri, str) and isinstance(property_id, str):
+                result[statement_uri] = property_id
+        if result:
+            return result
+
+    # Old format: profile_structure.statements
+    structure = entity.get("profile_structure", {})
+    old_statements = structure.get("statements", [])
+
+    if isinstance(old_statements, list):
+        for stmt in old_statements:
             if not isinstance(stmt, dict):
                 continue
             statement_id = stmt.get("id")
             property_id = _property_id_from_io_map(stmt.get("io_map"))
             if isinstance(statement_id, str) and isinstance(property_id, str):
                 result[statement_id] = property_id
-    elif isinstance(statements, dict):
-        for statement_id, stmt in statements.items():
+    elif isinstance(old_statements, dict):
+        for statement_id, stmt in old_statements.items():
             if not isinstance(statement_id, str) or not isinstance(stmt, dict):
                 continue
             property_id = _property_id_from_io_map(stmt.get("io_map"))
@@ -291,7 +312,8 @@ def barrel_curation_packet_to_wikibase_plan(
                 "metadata": {
                     "packet_id": packet.get("packet_id"),
                     "packet_entity_id": entity_id,
-                    "profile": entity.get("profile"),
+                    "profile_entity": entity.get("profile_entity"),
+                    "profile": entity.get("profile"),  # backward compat
                 },
             }
         )

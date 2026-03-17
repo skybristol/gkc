@@ -1,15 +1,37 @@
-from gkc.still_charger import charge_curation_packet
+from pathlib import Path
+
+import pytest
+
+from gkc.spirit_safe import load_profile, set_spirit_safe_source
+from gkc.still_charger import (
+    build_curation_packet_from_json_profile,
+    charge_curation_packet,
+)
+
+
+@pytest.fixture(autouse=True)
+def setup_local_source() -> None:
+    fixture_root = Path(__file__).resolve().parent / "fixtures" / "spiritsafe"
+    set_spirit_safe_source(mode="local", local_root=str(fixture_root))
+    yield
+    set_spirit_safe_source(mode="github")
 
 
 def _minimal_packet():
     return {
         "packet_id": "pkt-test",
         "operation_mode": "single",
+        "profile_entity": "https://datadistillery.wikibase.cloud/entity/Q4",
         "entities": [
             {
                 "id": "ent-001",
                 "profile": "TribalGovernmentUS",
+                "profile_entity": "https://datadistillery.wikibase.cloud/entity/Q4",
                 "data": {},
+                "statements": [
+                    {"entity": "https://datadistillery.wikibase.cloud/entity/Q16"},
+                    {"entity": "https://datadistillery.wikibase.cloud/entity/Q40"},
+                ],
                 "profile_structure": {
                     "statements": [
                         {"id": "instance_of"},
@@ -19,6 +41,43 @@ def _minimal_packet():
             }
         ],
     }
+
+
+def test_build_packet_expands_linked_profiles_from_graph():
+    profile_doc = load_profile("Q4")
+    fixture_root = Path(__file__).resolve().parent / "fixtures" / "spiritsafe"
+
+    packet = build_curation_packet_from_json_profile(
+        profile_entity="Q4",
+        json_profile_doc=profile_doc,
+        source_root=fixture_root,
+    )
+
+    assert packet["profile_entity"] == "https://datadistillery.wikibase.cloud/entity/Q4"
+    assert len(packet["entities"]) == 2
+    assert {entity["profile_entity"] for entity in packet["entities"]} == {
+        "https://datadistillery.wikibase.cloud/entity/Q4",
+        "https://datadistillery.wikibase.cloud/entity/Q39",
+    }
+    assert len(packet["cross_references"]) == 2
+
+
+def test_build_packet_value_list_routes_use_statement_uris_and_item_counts():
+    profile_doc = load_profile("Q4")
+    fixture_root = Path(__file__).resolve().parent / "fixtures" / "spiritsafe"
+
+    packet = build_curation_packet_from_json_profile(
+        profile_entity="Q4",
+        json_profile_doc=profile_doc,
+        source_root=fixture_root,
+    )
+
+    routes = packet["value_list_routes"]
+    assert "https://datadistillery.wikibase.cloud/entity/Q16" in routes
+    assert routes["https://datadistillery.wikibase.cloud/entity/Q16"]["cache_path"] == (
+        "cache/queries/Q28.json"
+    )
+    assert routes["https://datadistillery.wikibase.cloud/entity/Q16"]["item_count"] == 2
 
 
 def test_charge_packet_by_profile_id():

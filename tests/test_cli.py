@@ -5,7 +5,7 @@ import json
 from pathlib import Path
 
 import gkc
-from gkc import cli
+from gkc import cli, still_charger
 from gkc.mash import ClaimSummary, WikibaseItemTemplate
 
 
@@ -155,6 +155,66 @@ def test_wikibase_plan_write_missing_source_values_file(capsys):
     data = json.loads(output)
     assert data["ok"] is False
     assert "Source values file not found" in data["message"]
+
+
+def test_packet_build_supports_github_source(monkeypatch, capsys):
+    """packet build should load profile via source config when source=github."""
+
+    captured: dict[str, object] = {}
+
+    def fake_load_profile(profile_ref, manifest=None):
+        _ = manifest
+        captured["profile_ref"] = profile_ref
+        captured["source_mode"] = gkc.get_spirit_safe_source().mode
+        return {
+            "entity": "https://datadistillery.wikibase.cloud/entity/Q4",
+            "statements": [],
+            "metadata": {},
+        }
+
+    def fake_build_packet(profile_entity, json_profile_doc, source_root=None):
+        captured["profile_entity"] = profile_entity
+        captured["source_root"] = source_root
+        _ = json_profile_doc
+        return {
+            "packet_id": "pkt-test",
+            "profile_entity": profile_entity,
+            "entities": [],
+            "cross_references": [],
+            "value_list_routes": {},
+        }
+
+    monkeypatch.setattr(cli, "load_profile", fake_load_profile)
+    monkeypatch.setattr(
+        still_charger,
+        "build_curation_packet_from_json_profile",
+        fake_build_packet,
+    )
+
+    exit_code = cli.main(
+        [
+            "--json",
+            "packet",
+            "build",
+            "--profile",
+            "Q4",
+            "--source",
+            "github",
+            "--repo",
+            "skybristol/SpiritSafe",
+            "--ref",
+            "main",
+        ]
+    )
+
+    assert exit_code == 0
+    output = capsys.readouterr().out.strip()
+    data = json.loads(output)
+    assert data["command"] == "packet.build"
+    assert data["ok"] is True
+    assert captured["profile_ref"] == "https://datadistillery.wikibase.cloud/entity/Q4"
+    assert captured["source_mode"] == "github"
+    assert captured["source_root"] is None
 
 
 def test_wikibase_profile_to_cache_json(monkeypatch, capsys, tmp_path):

@@ -50,6 +50,22 @@ from gkc.cooperage import (
 # Entity Profiles (GKC Entity Profile definitions)
 from gkc.entity_profile import GKCEntityProfile
 
+# Fermenter (validation and coercion layer)
+from gkc.fermenter import (
+    ConformanceNotice,
+    enforce_fixed_value,
+    validate_by_datatype,
+    validate_commons_media,
+    validate_globe_coordinate,
+    validate_monolingualtext,
+    validate_quantity,
+    validate_string,
+    validate_time,
+    validate_url,
+    validate_value_from_list,
+    validate_wikibase_item,
+)
+
 # Mash (inbound data retrieval)
 from gkc.mash import (
     extract_first_sparql_block,
@@ -131,7 +147,13 @@ from gkc.spirit_safe import (
     set_spirit_safe_source,
     validate_packet_structure,
 )
-from gkc.still_charger import ChargeIssue, ChargeReport, charge_curation_packet
+from gkc.still_charger import (
+    ChargeIssue,
+    ChargeReport,
+    build_curation_packet_from_json_profile,
+    charge_curation_packet,
+    charge_packet_from_wikidata_items,
+)
 
 # Utilities (common helpers)
 from gkc.utilities import (
@@ -210,6 +232,21 @@ __all__ = [
     "ChargeIssue",
     "ChargeReport",
     "charge_curation_packet",
+    "build_curation_packet_from_json_profile",
+    "charge_packet_from_wikidata_items",
+    # Fermenter validation
+    "ConformanceNotice",
+    "validate_by_datatype",
+    "validate_wikibase_item",
+    "validate_string",
+    "validate_monolingualtext",
+    "validate_url",
+    "validate_time",
+    "validate_quantity",
+    "validate_globe_coordinate",
+    "validate_commons_media",
+    "validate_value_from_list",
+    "enforce_fixed_value",
     # Mash schema functions
     "extract_first_sparql_block",
     "extract_sparql_blocks",
