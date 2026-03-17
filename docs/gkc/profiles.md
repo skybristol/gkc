@@ -17,11 +17,11 @@ Profiles are curator-facing documents and machine-readable contracts. Runtime co
 
 Implemented and architecturally committed:
 
-- YAML profile loading into typed runtime models.
-- Statement/value/reference/qualifier schema structures.
-- SPARQL-driven allowed-items hydration with cached fallbacks.
+- JSON Entity Profile loading from SpiritSafe (`profiles/<QID>.json`).
+- Statement/value/reference/qualifier schema structures in exported profile artifacts.
+- SPARQL-driven allowed-items hydration with cached fallbacks (`cache/queries/<QID>.json`).
 - Directional mapping architecture via `io_map`.
-- SpiritSafe package layout conventions for profile publication.
+- URI/QID-aware profile graph traversal from embedded profile metadata.
 
 ## Theoretical Design Notes
 
@@ -33,26 +33,24 @@ The following directions are architecturally planned but may be implemented incr
 
 These notes are design guidance for Wizard Engineer and Validation Agent implementation planning.
 
-## Profile Package Structure
+## Profile Artifact Structure
 
-Profiles are packaged in a SpiritSafe-style directory:
+Current SpiritSafe publication artifacts use QID-keyed JSON profile files:
 
 ```text
-profiles/<ProfileId>/
-  metadata.yaml
-  profile.yaml
-  README.md
-  CHANGELOG.md
-  queries/            # optional
+profiles/<QID>.json
 ```
 
-`profile.yaml` defines entity structure and routing behavior.
+Each profile artifact contains:
 
-`metadata.yaml` defines publication and registry metadata.
+- `entity`
+- `identification`
+- `statements`
+- `metadata`
 
-`README.md` documents profile purpose and curation notes.
+`metadata` includes `profile_graph` and `value_list_graph` summaries used by packet scaffolding and registry indexing.
 
-`CHANGELOG.md` tracks profile revision intent.
+The SpiritSafe manifest (`cache/manifest.json`) is generated as an artifact index over these files.
 
 ## Profile Anatomy
 

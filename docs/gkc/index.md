@@ -8,7 +8,7 @@ Welcome to the documentation for GKC (Global Knowledge Commons), a Python packag
 - [Authentication](authentication.md) - set up credentials for Wikimedia apps and OpenStreetMap
 - [Background](background.md) - read about where the project came from and its motivations
 - [Architecture Overview](../architecture/index.md) - comprehensive guide to GKC components, data flow, and design principles
-- [Profiles](profiles.md) - comprehensive guide to building and using YAML profiles
+- [Profiles](profiles.md) - comprehensive guide to profile structure, semantics, and SpiritSafe artifacts
 - [Entity JSON Schema](entity-json-schema.md) - GKC Entity JSON format and multi-entity curation packets
 - [Wizard Documentation](wizard.md) - profile-driven UI generation and multi-step curation workflows
 
@@ -22,7 +22,7 @@ The following sections lay out the extract, transform and load (ETL) workflow th
 
 ### Profile Development
 
-- [SpiritSafe YAML Profiles](profiles.md) - Complete reference for defining entity profiles with all datatypes, constraints, and patterns
+- [SpiritSafe Profile Artifacts](profiles.md) - Complete reference for defining and consuming profile artifacts with constraints and mappings
 
 ### Data Ingestion (mash tun)
 

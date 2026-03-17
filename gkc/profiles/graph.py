@@ -9,9 +9,23 @@ Plain meaning: Navigate connections between different entity types.
 
 from __future__ import annotations
 
-from typing import Dict, List, Optional, Set
+from typing import Any, Dict, List, Optional, Set
 
 from pydantic import BaseModel, Field
+
+
+def _entity_id_from_reference(reference: Any) -> Optional[str]:
+    """Normalize a QID or entity URI to its trailing entity identifier."""
+
+    if not isinstance(reference, str):
+        return None
+
+    candidate = reference.rstrip("/").split("/")[-1]
+    if not candidate:
+        return None
+    if candidate[0] in {"Q", "P"} and candidate[1:].isdigit():
+        return candidate
+    return None
 
 
 class GraphEdge(BaseModel):
@@ -37,10 +51,15 @@ class GraphEdge(BaseModel):
     """
 
     target_profile: str = Field(..., description="Target profile ID")
+    label: Optional[str] = Field(default=None, description="Target profile label")
     via_statement: str = Field(..., description="Statement creating relationship")
     relationship_type: str = Field(..., description="Relationship identifier")
-    cardinality: Dict[str, int] = Field(..., description="Min/max constraints")
-    traversal: Dict[str, int] = Field(..., description="Traversal config")
+    cardinality: Dict[str, int] = Field(
+        default_factory=dict, description="Min/max constraints"
+    )
+    traversal: Dict[str, int] = Field(
+        default_factory=dict, description="Traversal config"
+    )
 
 
 class ProfileNode(BaseModel):
@@ -77,8 +96,8 @@ class ProfileGraph(BaseModel):
 
     Example:
         >>> graph = ProfileGraph.from_manifest_data(manifest)
-        >>> neighbors = graph.get_neighbors("TribalGovernmentUS")
-        >>> edges = graph.get_edges("TribalGovernmentUS", "OfficeHeldByHeadOfState")
+        >>> neighbors = graph.get_neighbors("Q4")
+        >>> edges = graph.get_edges("Q4", "Q39")
 
     Plain meaning: The complete network of profile relationships.
     """
@@ -109,20 +128,56 @@ class ProfileGraph(BaseModel):
         """
         nodes = {}
         for profile_data in manifest_profiles:
-            profile_id = profile_data["id"]
-            graph_data = profile_data.get("profile_graph", {})
+            profile_id = _entity_id_from_reference(
+                profile_data.get("qid") or profile_data.get("entity")
+            )
+            if not profile_id:
+                continue
 
-            edges = [
-                GraphEdge(**edge_data) for edge_data in graph_data.get("edges", [])
-            ]
+            raw_edges = profile_data.get("profile_graph", [])
+            edges: List[GraphEdge] = []
+            neighbors: List[str] = []
+
+            for edge_data in raw_edges:
+                target_profile = _entity_id_from_reference(edge_data.get("entity"))
+                if not target_profile:
+                    continue
+                neighbors.append(target_profile)
+                edges.append(
+                    GraphEdge(
+                        target_profile=target_profile,
+                        label=edge_data.get("label"),
+                        via_statement=str(edge_data.get("via_statement") or ""),
+                        relationship_type=str(edge_data.get("linkage_type") or ""),
+                    )
+                )
 
             nodes[profile_id] = ProfileNode(
                 profile_id=profile_id,
-                neighbors=graph_data.get("neighbors", []),
+                neighbors=neighbors,
                 edges=edges,
             )
 
         return cls(nodes=nodes)
+
+    @classmethod
+    def from_profile_documents(
+        cls, profile_documents: Dict[str, Dict[str, Any]]
+    ) -> ProfileGraph:
+        """Build a ProfileGraph directly from loaded JSON profile documents."""
+
+        manifest_like_profiles: List[Dict[str, Any]] = []
+        for profile_id, document in profile_documents.items():
+            manifest_like_profiles.append(
+                {
+                    "qid": profile_id,
+                    "entity": document.get("entity"),
+                    "profile_graph": document.get("metadata", {}).get(
+                        "profile_graph", []
+                    ),
+                }
+            )
+        return cls.from_manifest_data(manifest_like_profiles)
 
     @classmethod
     def from_metadata_dict(cls, profile_id: str, metadata: Dict) -> ProfileGraph:
