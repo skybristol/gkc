@@ -50,3 +50,10 @@
 - Follow existing test patterns for structure and style; when in doubt, ask for guidance before writing new tests.
 - For new features, write tests that cover both expected success cases and edge cases/failure modes
 - Write testing and other temporary output to /tmp or other non‑repo locations to avoid cluttering the project directory. Do not write test output to the repo unless explicitly instructed to do so.
+
+# GitHub CLI reliability guidelines
+- Prefer file-based bodies for `gh` commands that include multi-line content. Example pattern: write content to `/tmp/<name>.md` and use `--body-file`.
+- Avoid large inline `--body` strings and complex shell quoting for `gh issue comment`, `gh pr create`, and related commands.
+- Keep shell command text ASCII-only when possible; put Unicode content in files passed via `--body-file`.
+- Prefer one command per terminal invocation for GitHub actions; avoid chaining long heredocs and `gh` calls in a single command.
+- If terminal parsing looks corrupted (e.g., lingering heredoc prompts), stop and retry with a fresh, minimal command using `--body-file`.
