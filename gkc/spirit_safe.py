@@ -15,9 +15,10 @@ from __future__ import annotations
 
 import hashlib
 import json
+import re
 import uuid
 from dataclasses import dataclass, field
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any, Literal, Optional, Union
 
@@ -1075,6 +1076,775 @@ def hydrate_profile_lookups(
         "hydrated": hydrated,
         "failures": failures,
     }
+
+
+class EntityProfileJsonBuilder:
+    """Build JSON entity profiles from SpiritSafe per-entity cache files.
+
+    Plain meaning: Convert profile-linked cache entities into JSON profile docs.
+    """
+
+    PROFILE_CLASS_ID = "Q3"
+
+    PROFILE_STATEMENT = "P157"
+    HAS_QUALIFIER = "P158"
+    HAS_VALUE = "P161"
+    VALUE_TYPE = "P194"
+    IO_MAP = "P5"
+    PROMPT = "P171"
+    GUIDANCE = "P169"
+    CONSEQUENCES = "P170"
+    ERROR_MESSAGE = "P168"
+    MAX_COUNT = "P182"
+    HAS_REFERENCE = "P211"
+
+    LABEL_PROMPT = "P188"
+    LABEL_GUIDANCE = "P185"
+    DESCRIPTION_PROMPT = "P189"
+    DESCRIPTION_GUIDANCE = "P186"
+    ALIAS_PROMPT = "P190"
+    ALIAS_GUIDANCE = "P187"
+
+    SAME_AS = "P212"
+    GKC_ENTITY_PROFILE_CLASS = "Q3"
+    GKC_VALUE_LIST_CLASS = "Q7"
+    WIKIDATA_ENTITY_CLASS = "Q52"
+
+    LANGUAGE_KEY_PATTERN = re.compile(
+        r"^(mul|[a-z]{2,3}(?:-[a-z0-9]+)*)$", re.IGNORECASE
+    )
+
+    MESSAGE_FIELD_BY_PROP = {
+        PROMPT: "prompt",
+        GUIDANCE: "guidance",
+        CONSEQUENCES: "consequences_message",
+        ERROR_MESSAGE: "error_message",
+    }
+
+    def __init__(
+        self,
+        cache_entities_dir: Union[str, Path],
+        entity_prefix: str = "https://datadistillery.wikibase.cloud/entity/",
+        label_language_order: tuple[str, ...] = ("mul", "en"),
+        description_language_order: tuple[str, ...] = ("en", "mul"),
+    ) -> None:
+        self.cache_entities_dir = Path(cache_entities_dir)
+        self.entity_prefix = entity_prefix.rstrip("/") + "/"
+        self.label_language_order = label_language_order
+        self.description_language_order = description_language_order
+        self._cache_index = self._load_cache_index()
+
+    def build_all(self) -> list[dict[str, Any]]:
+        """Build JSON documents for every cache entity typed as a profile."""
+        results: list[dict[str, Any]] = []
+        for doc in self._cache_index.values():
+            if self._is_profile_item(doc):
+                results.append(self.build_one(doc))
+        return results
+
+    def build_one(self, wikibase_item: dict[str, Any]) -> dict[str, Any]:
+        """Build one JSON profile document from a single cache entity."""
+        entity_uri = f"{self.entity_prefix}{wikibase_item.get('entity_id', '')}"
+
+        identification = {
+            "labels": self._build_language_section(
+                wikibase_item, self.LABEL_PROMPT, self.LABEL_GUIDANCE
+            ),
+            "descriptions": self._build_language_section(
+                wikibase_item, self.DESCRIPTION_PROMPT, self.DESCRIPTION_GUIDANCE
+            ),
+            "aliases": self._build_language_section(
+                wikibase_item, self.ALIAS_PROMPT, self.ALIAS_GUIDANCE
+            ),
+        }
+
+        statements = self._build_profile_statements(wikibase_item)
+        metadata = self._build_profile_metadata(
+            wikibase_item,
+            identification=identification,
+            statements=statements,
+            entity_uri=entity_uri,
+        )
+
+        return {
+            "entity": entity_uri,
+            "identification": identification,
+            "statements": statements,
+            "metadata": metadata,
+        }
+
+    def _build_profile_metadata(
+        self,
+        wikibase_item: dict[str, Any],
+        *,
+        identification: dict[str, Any],
+        statements: list[dict[str, Any]],
+        entity_uri: str,
+    ) -> dict[str, Any]:
+        metadata = {
+            "labels": self._localized_text_map(wikibase_item, "labels"),
+            "descriptions": self._localized_text_map(wikibase_item, "descriptions"),
+            "aliases": self._alias_text_map(wikibase_item),
+            "generated_at": datetime.now(timezone.utc)
+            .isoformat()
+            .replace("+00:00", "Z"),
+            "languages": [],
+            "statement_count": len(statements),
+            "profile_graph": self._build_profile_graph(wikibase_item),
+            "value_list_graph": self._build_value_list_graph(wikibase_item),
+            "exported_from": entity_uri,
+        }
+
+        metadata["languages"] = self._collect_languages(
+            {
+                "identification": identification,
+                "statements": statements,
+                "metadata": {
+                    "labels": metadata["labels"],
+                    "descriptions": metadata["descriptions"],
+                    "aliases": metadata["aliases"],
+                },
+            }
+        )
+        return metadata
+
+    def _build_profile_graph(
+        self, wikibase_item: dict[str, Any]
+    ) -> list[dict[str, Optional[str]]]:
+        graph: list[dict[str, Optional[str]]] = []
+        seen: set[tuple[str, str]] = set()
+        for statement_id, linked_value_ids in self._iter_statement_value_linkages(
+            wikibase_item
+        ):
+            for target_id in linked_value_ids:
+                type_ids = self._entity_type_ids(self._cache_index.get(target_id))
+                if self.GKC_ENTITY_PROFILE_CLASS not in type_ids:
+                    continue
+                key = (statement_id, target_id)
+                if key in seen:
+                    continue
+                seen.add(key)
+                graph.append(
+                    {
+                        "entity": f"{self.entity_prefix}{target_id}",
+                        "label": self._entity_label(target_id),
+                        "via_statement": f"{self.entity_prefix}{statement_id}",
+                        "linkage_type": self.HAS_VALUE,
+                    }
+                )
+        return graph
+
+    def _build_value_list_graph(
+        self, wikibase_item: dict[str, Any]
+    ) -> list[dict[str, Optional[str]]]:
+        graph: list[dict[str, Optional[str]]] = []
+        seen: set[tuple[str, str]] = set()
+        for statement_id, linked_value_ids in self._iter_statement_value_linkages(
+            wikibase_item
+        ):
+            for target_id in linked_value_ids:
+                type_ids = self._entity_type_ids(self._cache_index.get(target_id))
+                if self.GKC_VALUE_LIST_CLASS not in type_ids:
+                    continue
+                key = (statement_id, target_id)
+                if key in seen:
+                    continue
+                seen.add(key)
+                graph.append(
+                    {
+                        "entity": f"{self.entity_prefix}{target_id}",
+                        "label": self._entity_label(target_id),
+                        "via_statement": f"{self.entity_prefix}{statement_id}",
+                        "cache_path": f"cache/queries/{target_id}.json",
+                    }
+                )
+        return graph
+
+    def _iter_statement_value_linkages(
+        self, wikibase_item: dict[str, Any]
+    ) -> list[tuple[str, list[str]]]:
+        linkages: list[tuple[str, list[str]]] = []
+        claims = wikibase_item.get("entity", {}).get("claims", {})
+        for claim in claims.get(self.PROFILE_STATEMENT, []):
+            statement_id = self._claim_entity_id(claim)
+            if not statement_id:
+                continue
+            statement_doc = self._cache_index.get(statement_id)
+            statement_claims = (
+                statement_doc.get("entity", {}).get("claims", {})
+                if statement_doc
+                else {}
+            )
+            intrinsic = self._claim_entity_values(
+                statement_claims.get(self.HAS_VALUE, [])
+            )
+            overlay = self._qualifier_entity_ids(
+                claim.get("qualifiers", {}), self.HAS_VALUE
+            )
+            linkages.append(
+                (statement_id, self._dedupe_preserve_order(intrinsic + overlay))
+            )
+        return linkages
+
+    def _build_profile_statements(
+        self, wikibase_item: dict[str, Any]
+    ) -> list[dict[str, Any]]:
+        statements: list[dict[str, Any]] = []
+        claims = wikibase_item.get("entity", {}).get("claims", {})
+        root_id = wikibase_item.get("entity_id")
+        for claim in claims.get(self.PROFILE_STATEMENT, []):
+            statement_id = self._claim_entity_id(claim)
+            if not statement_id:
+                continue
+            built = self._build_statement_from_cache_id(
+                statement_id,
+                role="statement",
+                overlay_qualifiers=claim.get("qualifiers", {}),
+                visited={root_id} if root_id else set(),
+            )
+            if built:
+                statements.append(built)
+        return statements
+
+    def _build_statement_from_cache_id(
+        self,
+        entity_id: str,
+        *,
+        role: str,
+        overlay_qualifiers: Optional[dict[str, list[dict[str, Any]]]] = None,
+        visited: Optional[set[str]] = None,
+    ) -> Optional[dict[str, Any]]:
+        if visited is None:
+            visited = set()
+        if entity_id in visited:
+            return None
+
+        statement_item = self._cache_index.get(entity_id)
+        if not statement_item:
+            return None
+
+        next_visited = set(visited)
+        next_visited.add(entity_id)
+
+        statement_json = self._build_statement_from_item(statement_item)
+
+        qualifiers = overlay_qualifiers or {}
+        overlay_value_ids = self._qualifier_entity_ids(qualifiers, self.HAS_VALUE)
+        combined_value_ids = self._dedupe_preserve_order(
+            statement_json["value"]["linked_entity_ids"] + overlay_value_ids
+        )
+        statement_json["value"] = self._build_value_payload(
+            statement_json["value"]["type"], combined_value_ids
+        )
+
+        if qualifiers:
+            statement_json["messages"] = self._merge_messages(
+                statement_json.get("messages", {}),
+                self._build_messages_from_qualifiers(qualifiers),
+            )
+            statement_json["max_count"] = self._qualifier_first_quantity_int(
+                qualifiers, self.MAX_COUNT
+            )
+
+            if role == "statement":
+                qualifier_ids = self._qualifier_entity_ids(
+                    qualifiers, self.HAS_QUALIFIER
+                )
+                reference_ids = self._qualifier_entity_ids(
+                    qualifiers, self.HAS_REFERENCE
+                )
+                statement_json["qualifiers"] = self._resolve_linked_statements(
+                    qualifier_ids,
+                    role="qualifier",
+                    visited=next_visited,
+                )
+                statement_json["references"] = self._resolve_linked_statements(
+                    reference_ids,
+                    role="reference",
+                    visited=next_visited,
+                )
+
+        if role in {"qualifier", "reference"}:
+            statement_json.pop("qualifiers", None)
+            statement_json.pop("references", None)
+
+        return statement_json
+
+    def _resolve_linked_statements(
+        self,
+        entity_ids: list[str],
+        *,
+        role: str,
+        visited: set[str],
+    ) -> list[dict[str, Any]]:
+        resolved: list[dict[str, Any]] = []
+        for entity_id in entity_ids:
+            nested = self._build_statement_from_cache_id(
+                entity_id, role=role, visited=visited
+            )
+            if nested:
+                resolved.append(nested)
+        return resolved
+
+    def _build_statement_from_item(
+        self, statement_item: dict[str, Any]
+    ) -> dict[str, Any]:
+        entity_id = statement_item.get("entity_id")
+        label = self._get_localized_text(
+            statement_item,
+            section="labels",
+            language_order=self.label_language_order,
+            required=False,
+        )
+
+        claims = statement_item.get("entity", {}).get("claims", {})
+        io_targets = self._claim_string_values(claims.get(self.IO_MAP, []))
+
+        value_type: Optional[str] = None
+        type_refs = self._claim_entity_values(claims.get(self.VALUE_TYPE, []))
+        if type_refs:
+            value_type = self._entity_label(type_refs[0]) or type_refs[0]
+
+        intrinsic_value_ids = self._claim_entity_values(claims.get(self.HAS_VALUE, []))
+
+        return {
+            "entity": f"{self.entity_prefix}{entity_id}",
+            "label": label,
+            "io_map": [{"to": target} for target in io_targets],
+            "value": {
+                "type": value_type,
+                "linked_entity_ids": intrinsic_value_ids,
+            },
+            "messages": self._build_messages_from_claims(claims),
+            "max_count": None,
+            "qualifiers": [],
+            "references": [],
+        }
+
+    def _build_value_payload(
+        self, value_type: Optional[str], target_ids: list[str]
+    ) -> dict[str, Any]:
+        payload: dict[str, Any] = {"type": value_type}
+        value_list: list[dict[str, Optional[str]]] = []
+
+        for target_id in target_ids:
+            target_doc = self._cache_index.get(target_id)
+            type_ids = self._entity_type_ids(target_doc)
+            target_label = self._entity_label(target_id)
+            target_entity = f"{self.entity_prefix}{target_id}"
+
+            if self.GKC_ENTITY_PROFILE_CLASS in type_ids and "profile" not in payload:
+                payload["profile"] = {"entity": target_entity, "label": target_label}
+
+            if (
+                self.GKC_VALUE_LIST_CLASS in type_ids
+                and "value_list_reference" not in payload
+            ):
+                payload["value_list_reference"] = f"cache/queries/{target_id}.json"
+
+            if self.WIKIDATA_ENTITY_CLASS in type_ids:
+                for url in self._entity_string_claim_values(target_doc, self.SAME_AS):
+                    qid = self._extract_wikidata_qid_from_url(url)
+                    if qid:
+                        value_list.append({"item": qid, "itemLabel": target_label})
+
+        if value_list:
+            payload["value_list"] = value_list
+
+        return payload
+
+    def _build_messages_from_claims(
+        self, claims: dict[str, list[dict[str, Any]]]
+    ) -> dict[str, dict[str, str]]:
+        messages: dict[str, dict[str, str]] = {}
+        for prop_id, field_name in self.MESSAGE_FIELD_BY_PROP.items():
+            by_lang = self._monolingual_claims_by_language(claims.get(prop_id, []))
+            for language, text in by_lang.items():
+                messages.setdefault(language, {})[field_name] = text
+        return messages
+
+    def _build_messages_from_qualifiers(
+        self, qualifiers: dict[str, list[dict[str, Any]]]
+    ) -> dict[str, dict[str, str]]:
+        messages: dict[str, dict[str, str]] = {}
+        for prop_id, field_name in self.MESSAGE_FIELD_BY_PROP.items():
+            by_lang = self._monolingual_qualifiers_by_language(
+                qualifiers.get(prop_id, [])
+            )
+            for language, text in by_lang.items():
+                messages.setdefault(language, {})[field_name] = text
+        return messages
+
+    def _merge_messages(
+        self,
+        base_messages: dict[str, dict[str, str]],
+        overlay_messages: dict[str, dict[str, str]],
+    ) -> dict[str, dict[str, str]]:
+        merged = {language: fields.copy() for language, fields in base_messages.items()}
+        for language, fields in overlay_messages.items():
+            merged.setdefault(language, {}).update(fields)
+        return merged
+
+    def _build_language_section(
+        self,
+        wikibase_item: dict[str, Any],
+        prompt_claim_id: str,
+        guidance_claim_id: str,
+    ) -> dict[str, dict[str, str]]:
+        prompt_by_language = self._extract_monolingual_by_language(
+            wikibase_item, prompt_claim_id
+        )
+        guidance_by_language = self._extract_monolingual_by_language(
+            wikibase_item, guidance_claim_id
+        )
+
+        languages = sorted(set(prompt_by_language) | set(guidance_by_language))
+        section: dict[str, dict[str, str]] = {}
+
+        for language in languages:
+            entry: dict[str, str] = {}
+            prompts = prompt_by_language.get(language, [])
+            guidances = guidance_by_language.get(language, [])
+            if prompts:
+                entry["prompt"] = prompts[0]
+            if guidances:
+                entry["guidance"] = guidances[0]
+            if entry:
+                section[language] = entry
+
+        return section
+
+    def _extract_monolingual_by_language(
+        self,
+        wikibase_item: dict[str, Any],
+        claim_id: str,
+    ) -> dict[str, list[str]]:
+        claims = wikibase_item.get("entity", {}).get("claims", {}).get(claim_id, [])
+        by_language: dict[str, list[str]] = {}
+        for claim in claims:
+            value = claim.get("mainsnak", {}).get("datavalue", {}).get("value", {})
+            if not isinstance(value, dict):
+                continue
+            language = value.get("language")
+            text = value.get("text")
+            if language and text:
+                by_language.setdefault(language, []).append(text)
+        return by_language
+
+    def _localized_text_map(
+        self, wikibase_item: dict[str, Any], section: str
+    ) -> dict[str, str]:
+        mapped: dict[str, str] = {}
+        values = wikibase_item.get("entity", {}).get(section, {})
+        for language, payload in values.items():
+            if isinstance(payload, dict) and payload.get("value"):
+                mapped[language] = payload["value"]
+        return mapped
+
+    def _alias_text_map(self, wikibase_item: dict[str, Any]) -> dict[str, list[str]]:
+        alias_map: dict[str, list[str]] = {}
+        aliases = wikibase_item.get("entity", {}).get("aliases", {})
+        for language, values in aliases.items():
+            texts = [
+                value.get("value")
+                for value in values
+                if isinstance(value, dict) and value.get("value")
+            ]
+            if texts:
+                alias_map[language] = texts
+        return alias_map
+
+    def _collect_languages(self, value: Any) -> list[str]:
+        found: set[str] = set()
+
+        identification = (
+            value.get("identification", {}) if isinstance(value, dict) else {}
+        )
+        statements = value.get("statements", []) if isinstance(value, dict) else []
+        metadata = value.get("metadata", {}) if isinstance(value, dict) else {}
+
+        self._collect_language_keys_from_identification(identification, found)
+        self._collect_language_keys_from_statements(statements, found)
+        self._collect_language_keys_from_metadata(metadata, found)
+
+        return sorted(found)
+
+    def _collect_language_keys_from_identification(
+        self, identification: dict[str, Any], out: set[str]
+    ) -> None:
+        for field_name in ("labels", "descriptions", "aliases"):
+            language_map = identification.get(field_name, {})
+            if isinstance(language_map, dict):
+                out.update(self._valid_language_keys(language_map.keys()))
+
+    def _collect_language_keys_from_statements(
+        self, statements: list[dict[str, Any]], out: set[str]
+    ) -> None:
+        for statement in statements:
+            if not isinstance(statement, dict):
+                continue
+
+            messages = statement.get("messages", {})
+            if isinstance(messages, dict):
+                out.update(self._valid_language_keys(messages.keys()))
+
+            for nested_field in ("qualifiers", "references"):
+                nested = statement.get(nested_field, [])
+                if isinstance(nested, list):
+                    self._collect_language_keys_from_statements(nested, out)
+
+    def _collect_language_keys_from_metadata(
+        self, metadata: dict[str, Any], out: set[str]
+    ) -> None:
+        for field_name in ("labels", "descriptions", "aliases"):
+            language_map = metadata.get(field_name, {})
+            if isinstance(language_map, dict):
+                out.update(self._valid_language_keys(language_map.keys()))
+
+    def _valid_language_keys(self, keys: Any) -> set[str]:
+        valid: set[str] = set()
+        for key in keys:
+            if isinstance(key, str) and self.LANGUAGE_KEY_PATTERN.fullmatch(key):
+                valid.add(key)
+        return valid
+
+    def _is_profile_item(self, wikibase_item: dict[str, Any]) -> bool:
+        claims_p1 = wikibase_item.get("entity", {}).get("claims", {}).get("P1", [])
+        for claim in claims_p1:
+            if self._claim_entity_id(claim) == self.PROFILE_CLASS_ID:
+                return True
+        return False
+
+    def _load_cache_index(self) -> dict[str, dict[str, Any]]:
+        index: dict[str, dict[str, Any]] = {}
+        for json_file in sorted(self.cache_entities_dir.glob("*.json")):
+            with json_file.open("r", encoding="utf-8") as handle:
+                doc = json.load(handle)
+            entity_id = doc.get("entity_id")
+            if entity_id:
+                index[entity_id] = doc
+        return index
+
+    def _get_localized_text(
+        self,
+        wikibase_item: dict[str, Any],
+        *,
+        section: str,
+        language_order: tuple[str, ...],
+        required: bool,
+    ) -> Optional[str]:
+        values = wikibase_item.get("entity", {}).get(section, {})
+        for language in language_order:
+            text = values.get(language, {}).get("value")
+            if text:
+                return text
+        for payload in values.values():
+            if isinstance(payload, dict) and payload.get("value"):
+                return payload["value"]
+        if required:
+            raise ValueError(
+                f"{section} missing for {wikibase_item.get('entity_id', '<unknown>')}"
+            )
+        return None
+
+    def _monolingual_claims_by_language(
+        self, claims: list[dict[str, Any]]
+    ) -> dict[str, str]:
+        by_language: dict[str, str] = {}
+        for claim in claims:
+            value = claim.get("mainsnak", {}).get("datavalue", {}).get("value", {})
+            if not isinstance(value, dict):
+                continue
+            language = value.get("language")
+            text = value.get("text")
+            if language and text and language not in by_language:
+                by_language[language] = text
+        return by_language
+
+    def _monolingual_qualifiers_by_language(
+        self, qualifiers: list[dict[str, Any]]
+    ) -> dict[str, str]:
+        by_language: dict[str, str] = {}
+        for qualifier in qualifiers:
+            value = qualifier.get("datavalue", {}).get("value", {})
+            if not isinstance(value, dict):
+                continue
+            language = value.get("language")
+            text = value.get("text")
+            if language and text and language not in by_language:
+                by_language[language] = text
+        return by_language
+
+    def _claim_entity_id(self, claim: dict[str, Any]) -> Optional[str]:
+        value = claim.get("mainsnak", {}).get("datavalue", {}).get("value", {})
+        return value.get("id") if isinstance(value, dict) else None
+
+    def _claim_entity_values(self, claims: list[dict[str, Any]]) -> list[str]:
+        values: list[str] = []
+        for claim in claims:
+            entity_id = self._claim_entity_id(claim)
+            if entity_id:
+                values.append(entity_id)
+        return values
+
+    def _claim_string_values(self, claims: list[dict[str, Any]]) -> list[str]:
+        values: list[str] = []
+        for claim in claims:
+            value = claim.get("mainsnak", {}).get("datavalue", {}).get("value")
+            if isinstance(value, str):
+                values.append(value)
+        return values
+
+    def _qualifier_entity_ids(
+        self, qualifiers: dict[str, list[dict[str, Any]]], prop_id: str
+    ) -> list[str]:
+        values: list[str] = []
+        for qualifier in qualifiers.get(prop_id, []):
+            value = qualifier.get("datavalue", {}).get("value", {})
+            if isinstance(value, dict) and value.get("id"):
+                values.append(value["id"])
+        return values
+
+    def _qualifier_first_quantity_int(
+        self,
+        qualifiers: dict[str, list[dict[str, Any]]],
+        prop_id: str,
+    ) -> Optional[int]:
+        for qualifier in qualifiers.get(prop_id, []):
+            value = qualifier.get("datavalue", {}).get("value", {})
+            if not isinstance(value, dict):
+                continue
+            amount = value.get("amount")
+            if isinstance(amount, str):
+                try:
+                    return int(float(amount))
+                except ValueError:
+                    return None
+        return None
+
+    def _entity_type_ids(self, entity_doc: Optional[dict[str, Any]]) -> list[str]:
+        if not entity_doc:
+            return []
+        claims = entity_doc.get("entity", {}).get("claims", {})
+        return self._claim_entity_values(claims.get("P1", []))
+
+    def _entity_string_claim_values(
+        self, entity_doc: Optional[dict[str, Any]], prop_id: str
+    ) -> list[str]:
+        if not entity_doc:
+            return []
+        claims = entity_doc.get("entity", {}).get("claims", {})
+        return self._claim_string_values(claims.get(prop_id, []))
+
+    def _extract_wikidata_qid_from_url(self, url: str) -> Optional[str]:
+        if "/entity/Q" not in url:
+            return None
+        candidate = url.rstrip("/").split("/")[-1]
+        if candidate.startswith("Q") and candidate[1:].isdigit():
+            return candidate
+        return None
+
+    def _dedupe_preserve_order(self, values: list[str]) -> list[str]:
+        seen: set[str] = set()
+        deduped: list[str] = []
+        for value in values:
+            if value in seen:
+                continue
+            seen.add(value)
+            deduped.append(value)
+        return deduped
+
+    def _entity_label(self, entity_id: str) -> Optional[str]:
+        doc = self._cache_index.get(entity_id)
+        if not doc:
+            return None
+        return self._get_localized_text(
+            doc,
+            section="labels",
+            language_order=self.label_language_order,
+            required=False,
+        )
+
+
+@dataclass(frozen=True)
+class EntityProfileJsonExportResult:
+    """Summary of JSON entity profile export writes."""
+
+    output_dir: str
+    written_ids: list[str]
+
+
+def build_entity_profile_json_documents(
+    cache_entities_dir: Union[str, Path],
+    *,
+    entity_prefix: str = "https://datadistillery.wikibase.cloud/entity/",
+) -> list[dict[str, Any]]:
+    """Build JSON entity profile documents from cache entities.
+
+    Args:
+        cache_entities_dir: Directory containing SpiritSafe cache entity JSON files.
+        entity_prefix: URI prefix for entity references.
+
+    Returns:
+        List of JSON profile documents.
+    """
+    builder = EntityProfileJsonBuilder(
+        cache_entities_dir=cache_entities_dir,
+        entity_prefix=entity_prefix,
+    )
+    return builder.build_all()
+
+
+def export_entity_profile_json_documents(
+    cache_entities_dir: Union[str, Path],
+    output_dir: Union[str, Path],
+    *,
+    entity_prefix: str = "https://datadistillery.wikibase.cloud/entity/",
+    profile_ids: Optional[list[str]] = None,
+) -> EntityProfileJsonExportResult:
+    """Build and export JSON entity profile documents as one file per profile.
+
+    Files are written as `<output_dir>/<QID>.json`.
+
+    Args:
+        cache_entities_dir: Directory containing SpiritSafe cache entity JSON files.
+        output_dir: Output directory for generated JSON profile files.
+        entity_prefix: URI prefix for entity references.
+        profile_ids: Optional list of profile QIDs to export.
+
+    Returns:
+        Export result summary.
+    """
+    documents = build_entity_profile_json_documents(
+        cache_entities_dir=cache_entities_dir,
+        entity_prefix=entity_prefix,
+    )
+
+    requested_ids = set(profile_ids or [])
+    if requested_ids:
+        filtered_documents = []
+        for document in documents:
+            entity_id = str(document.get("entity", "")).rstrip("/").split("/")[-1]
+            if entity_id in requested_ids:
+                filtered_documents.append(document)
+        documents = filtered_documents
+
+    out_dir = Path(output_dir)
+    out_dir.mkdir(parents=True, exist_ok=True)
+
+    written_ids: list[str] = []
+    for document in documents:
+        entity_id = str(document.get("entity", "")).rstrip("/").split("/")[-1]
+        if not entity_id:
+            continue
+        destination = out_dir / f"{entity_id}.json"
+        destination.write_text(json.dumps(document, indent=2), encoding="utf-8")
+        written_ids.append(entity_id)
+
+    return EntityProfileJsonExportResult(
+        output_dir=str(out_dir.resolve()),
+        written_ids=sorted(written_ids),
+    )
 
 
 # ============================================================================

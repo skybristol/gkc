@@ -1446,3 +1446,64 @@ def test_profile_lookups_hydrate_profile_name_resolution(monkeypatch, capsys):
     output = capsys.readouterr().out.strip()
     data = json.loads(output)
     assert data["ok"] is True
+
+
+def test_profile_export_json_writes_output_directory(capsys, tmp_path):
+    """profile export-json writes one JSON file per profile to output directory."""
+
+    cache_entities_dir = tmp_path / "cache" / "entities"
+    cache_entities_dir.mkdir(parents=True, exist_ok=True)
+    output_dir = tmp_path / "profiles"
+
+    cache_entities_dir.joinpath("Q4.json").write_text(
+        json.dumps(
+            {
+                "entity_id": "Q4",
+                "entity": {
+                    "labels": {
+                        "en": {"value": "Tribal Government in the United States"}
+                    },
+                    "descriptions": {"en": {"value": "Example profile"}},
+                    "aliases": {},
+                    "claims": {
+                        "P1": [
+                            {
+                                "mainsnak": {
+                                    "datavalue": {
+                                        "value": {
+                                            "id": "Q3",
+                                        }
+                                    }
+                                }
+                            }
+                        ],
+                    },
+                },
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    exit_code = cli.main(
+        [
+            "--json",
+            "profile",
+            "export-json",
+            "--cache-entities-dir",
+            str(cache_entities_dir),
+            "--output",
+            str(output_dir),
+        ]
+    )
+
+    assert exit_code == 0
+    output = capsys.readouterr().out.strip()
+    payload = json.loads(output)
+    assert payload["command"] == "profile.export_json"
+    assert payload["ok"] is True
+    assert payload["details"]["written_count"] == 1
+
+    exported_file = output_dir / "Q4.json"
+    assert exported_file.exists()
+    exported_payload = json.loads(exported_file.read_text(encoding="utf-8"))
+    assert exported_payload["entity"].endswith("/Q4")
