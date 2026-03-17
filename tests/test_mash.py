@@ -2,6 +2,8 @@
 
 import json
 
+import pytest
+
 import gkc
 from gkc.mash import (
     ClaimSummary,
@@ -14,6 +16,9 @@ from gkc.mash import (
     WikipediaTemplate,
     apply_item_property_filters,
     apply_template_language_filter,
+    extract_first_sparql_block,
+    extract_sparql_blocks,
+    fetch_mediawiki_page_wikitext,
     fetch_recent_entity_changes,
     get_latest_cache_timestamp,
     refresh_entity_cache_from_recentchanges,
@@ -418,6 +423,59 @@ def test_refresh_entity_cache_from_recentchanges_updates_and_deletes(tmp_path):
     assert refreshed_payload["entity_id"] == "Q4"
     assert refreshed_payload["metadata"]["workflow_mode"] == "recentchanges"
     assert not (cache_dir / "Q39.json").exists()
+
+
+def test_extract_sparql_blocks_returns_blocks_in_order():
+    wikitext = """
+== Query ==
+<sparql>
+SELECT ?item ?itemLabel WHERE {
+  ?item ?p ?o .
+}
+</sparql>
+
+<sparql class=\"secondary\">
+SELECT ?item WHERE { ?item wdt:P31 wd:Q5 }
+</sparql>
+""".strip()
+
+    blocks = extract_sparql_blocks(wikitext)
+    assert len(blocks) == 2
+    assert blocks[0].startswith("SELECT ?item ?itemLabel")
+    assert blocks[1].startswith("SELECT ?item WHERE")
+
+
+def test_extract_first_sparql_block_raises_without_block():
+    with pytest.raises(RuntimeError, match="No <sparql> block"):
+        extract_first_sparql_block("No query markup here")
+
+
+def test_fetch_mediawiki_page_wikitext_from_revision_slots():
+    client = _FakeApiClient(
+        [
+            {
+                "query": {
+                    "pages": [
+                        {
+                            "title": "Item_talk:Q4",
+                            "revisions": [
+                                {
+                                    "slots": {
+                                        "main": {
+                                            "content": "<sparql>SELECT * WHERE { ?s ?p ?o }</sparql>"
+                                        }
+                                    }
+                                }
+                            ],
+                        }
+                    ]
+                }
+            }
+        ]
+    )
+
+    text = fetch_mediawiki_page_wikitext(client, "Item_talk:Q4")
+    assert "SELECT * WHERE" in text
 
 
 def test_wikidata_loader_snak_to_value_entity():

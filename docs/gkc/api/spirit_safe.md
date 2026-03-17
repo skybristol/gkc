@@ -2,7 +2,7 @@
 
 ## Overview
 
-The `gkc.spirit_safe` module provides profile registry integration, SPARQL lookup hydration, JSON Entity Profile generation from cache entities, and cache management for SpiritSafe-backed workflows.
+The `gkc.spirit_safe` module provides profile registry integration, SPARQL lookup hydration, JSON Entity Profile generation from cache entities, value-list query extraction/hydration, and cache management for SpiritSafe-backed workflows.
 
 This module supports two source modes:
 
@@ -307,6 +307,33 @@ print(result.output_dir)
 print(result.written_ids)
 ```
 
+### Hydrating Value Lists from Cache Entities
+
+Extract query text from value-list talk pages and hydrate `cache/queries/<QID>.json` artifacts:
+
+```python
+from gkc.spirit_safe import hydrate_value_lists_from_cache
+
+result = hydrate_value_lists_from_cache(
+    cache_entities_dir="/path/to/SpiritSafe/cache/entities",
+    queries_dir="/path/to/SpiritSafe/queries",
+    cache_queries_dir="/path/to/SpiritSafe/cache/queries",
+    api_url="https://datadistillery.wikibase.cloud/w/api.php",
+    endpoint="https://datadistillery.wikibase.cloud/query/sparql",
+)
+
+print(result.discovered_ids)
+print(result.hydrated_ids)
+print(result.failures)
+```
+
+Hydration behavior:
+
+- value lists are discovered from `P1 -> Q7` cache entities
+- source query is read from the first `<sparql>` block in `Item_talk:QID`
+- output items are deduplicated by `item` and sorted by `itemLabel`
+- existing cache file content is preserved if hydration fails for an item
+
 Optional `profile_ids` filtering is supported:
 
 ```python
@@ -558,6 +585,41 @@ print(packet["packet_id"], packet["operation_mode"], is_valid, errors)
 ### `export_entity_profile_json_documents`
 
 ::: gkc.spirit_safe.export_entity_profile_json_documents
+        options:
+            show_root_heading: false
+            heading_level: 4
+
+### `ValueListHydrationResult`
+
+::: gkc.spirit_safe.ValueListHydrationResult
+        options:
+            show_root_heading: false
+            heading_level: 4
+
+### `discover_value_list_ids`
+
+::: gkc.spirit_safe.discover_value_list_ids
+        options:
+            show_root_heading: false
+            heading_level: 4
+
+### `export_value_list_sparql_queries`
+
+::: gkc.spirit_safe.export_value_list_sparql_queries
+        options:
+            show_root_heading: false
+            heading_level: 4
+
+### `hydrate_value_list_query_caches`
+
+::: gkc.spirit_safe.hydrate_value_list_query_caches
+        options:
+            show_root_heading: false
+            heading_level: 4
+
+### `hydrate_value_lists_from_cache`
+
+::: gkc.spirit_safe.hydrate_value_lists_from_cache
         options:
             show_root_heading: false
             heading_level: 4

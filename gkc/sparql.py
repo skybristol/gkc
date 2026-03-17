@@ -6,7 +6,8 @@ or custom SPARQL endpoints, with support for both Wikidata Query Service URL for
 and raw query strings.
 """
 
-from typing import Any, Optional, overload
+from pathlib import Path
+from typing import Any, Optional, Union, overload
 from urllib.parse import unquote, urlparse
 
 import requests
@@ -352,6 +353,34 @@ def execute_sparql_to_dataframe(
     return executor.to_dataframe(query)
 
 
+def read_sparql_query_file(query_file: Union[str, Path]) -> str:
+    """Read a SPARQL query from a local file.
+
+    Args:
+        query_file: Path to a .sparql file.
+
+    Returns:
+        Query text.
+
+    Raises:
+        SPARQLError: If the file cannot be read.
+    """
+    try:
+        return Path(query_file).read_text(encoding="utf-8")
+    except OSError as exc:
+        raise SPARQLError(f"Failed to read SPARQL query file: {query_file}") from exc
+
+
+def execute_sparql_file(
+    query_file: Union[str, Path],
+    endpoint: str = DEFAULT_WIKIDATA_ENDPOINT,
+    format: str = "json",
+) -> Any:
+    """Execute a SPARQL query loaded from a local file."""
+    query = read_sparql_query_file(query_file)
+    return execute_sparql(query=query, endpoint=endpoint, format=format)
+
+
 def add_pagination(query: str, limit: int, offset: int = 0) -> str:
     """
     Add LIMIT and OFFSET clauses to a SPARQL query.
@@ -388,6 +417,22 @@ def add_pagination(query: str, limit: int, offset: int = 0) -> str:
         paginated += f" OFFSET {offset}"
 
     return paginated
+
+
+def paginate_query_file(
+    query_file: Union[str, Path],
+    page_size: int = 1000,
+    endpoint: str = DEFAULT_WIKIDATA_ENDPOINT,
+    max_results: Optional[int] = None,
+) -> list[dict[str, str]]:
+    """Execute a SPARQL query file with automatic pagination."""
+    query = read_sparql_query_file(query_file)
+    return paginate_query(
+        query=query,
+        page_size=page_size,
+        endpoint=endpoint,
+        max_results=max_results,
+    )
 
 
 def paginate_query(

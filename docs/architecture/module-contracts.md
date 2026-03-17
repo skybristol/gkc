@@ -33,6 +33,8 @@ Responsibility:
 
 - Load SpiritSafe profile/manifest sources (GitHub or local).
 - Build JSON Entity Profiles from SpiritSafe cache entities.
+- Extract value-list SPARQL query files from value-list talk pages.
+- Hydrate value-list cache artifacts from extracted SPARQL queries.
 - Export profile JSON artifacts for downstream packet assembly and hydration.
 - Provide profile graph and packet scaffold utilities.
 
@@ -45,6 +47,9 @@ Current anchor surface:
 
 - `build_entity_profile_json_documents`
 - `export_entity_profile_json_documents`
+- `discover_value_list_ids`
+- `export_value_list_sparql_queries`
+- `hydrate_value_lists_from_cache`
 - `create_curation_packet`
 - `load_manifest`
 - `load_profile_package`
@@ -182,6 +187,14 @@ Current anchor surface:
 2. `spirit_safe` builds JSON Entity Profiles from `cache/entities` artifacts.
 3. `spirit_safe` exports per-profile JSON files (for example `profiles/Q4.json`).
 4. Downstream packet/hydration stages consume exported profile artifacts.
+
+### Flow 2.7: Value-List Query Hydration (Active)
+
+1. `spirit_safe` discovers value-list entities from cache (`P1 -> Q7`).
+2. `mash` reads value-list talk pages and extracts the first `<sparql>` block.
+3. `spirit_safe` writes query files (`queries/QID.sparql`).
+4. `sparql` executes paginated query hydration to `cache/queries/QID.json`.
+5. Failed hydration does not overwrite an existing cache file for that value list.
 
 ### Flow 3: Semantic Projection for Runtime Artifacts
 

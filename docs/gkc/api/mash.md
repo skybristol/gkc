@@ -7,6 +7,7 @@ The mash module is the read/retrieval layer for source data in GKC workflows.
 It includes:
 
 - Generic Wikibase API retrieval via `WikibaseApiClient`
+- MediaWiki page wikitext retrieval and SPARQL-block extraction primitives
 - `MashSourceAdapter` plugin contract for source loader integrations
 - Wikidata loaders and template objects
 - Wikipedia template retrieval
@@ -53,6 +54,32 @@ print(len(results), sorted(batch.keys()), single.get("id"), bool(raw))
 ```
 
 `WikibaseApiClient` sends a default `User-Agent` header automatically when one is not provided. You can still pass a custom `user_agent` value in the constructor to override it for your workflow.
+
+### `fetch_mediawiki_page_wikitext()`
+
+```python
+from gkc.mash import WikibaseApiClient, fetch_mediawiki_page_wikitext
+
+api_client = WikibaseApiClient(api_url="https://datadistillery.wikibase.cloud/w/api.php")
+wikitext = fetch_mediawiki_page_wikitext(api_client, "Item_talk:Q4")
+print(wikitext[:200])
+```
+
+### `extract_sparql_blocks()` and `extract_first_sparql_block()`
+
+```python
+from gkc.mash import extract_first_sparql_block, extract_sparql_blocks
+
+wikitext = """
+<sparql>SELECT ?item ?itemLabel WHERE { ?item ?p ?o }</sparql>
+<sparql>SELECT ?other WHERE { ?other ?p ?o }</sparql>
+"""
+
+all_blocks = extract_sparql_blocks(wikitext)
+first_block = extract_first_sparql_block(wikitext)
+
+print(len(all_blocks), first_block[:40])
+```
 
 ### `DataTemplate` (Protocol)
 
@@ -245,6 +272,27 @@ print(template.to_dict().keys())
     options:
       show_root_heading: false
       heading_level: 4
+
+### `fetch_mediawiki_page_wikitext()`
+
+::: gkc.mash.fetch_mediawiki_page_wikitext
+        options:
+            show_root_heading: false
+            heading_level: 4
+
+### `extract_sparql_blocks()`
+
+::: gkc.mash.extract_sparql_blocks
+        options:
+            show_root_heading: false
+            heading_level: 4
+
+### `extract_first_sparql_block()`
+
+::: gkc.mash.extract_first_sparql_block
+        options:
+            show_root_heading: false
+            heading_level: 4
 
 ### `DataTemplate`
 

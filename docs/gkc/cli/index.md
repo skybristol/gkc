@@ -42,7 +42,7 @@ gkc mash qid Q42
 
 ### [Profiles](profiles.md)
 
-Validate items against YAML profiles, export JSON Entity Profiles from cache entities, generate form schemas, launch the Textual wizard, and hydrate SPARQL lookups.
+Validate items against YAML profiles, export JSON Entity Profiles from cache entities, generate form schemas, launch the Textual wizard, and hydrate SPARQL lookups and value lists.
 
 ```bash
 gkc profile validate --profile /path/to/SpiritSafe/profiles/TribalGovernmentUS/profile.yaml --qid Q123
@@ -54,6 +54,10 @@ gkc profile form --profile /path/to/SpiritSafe/profiles/TribalGovernmentUS/profi
 
 ```bash
 gkc profile export-json --cache-entities-dir /path/to/SpiritSafe/cache/entities --output /path/to/SpiritSafe/profiles
+```
+
+```bash
+gkc profile value-lists hydrate --source local --local-root /path/to/SpiritSafe
 ```
 
 ### [Wikibase](wikibase.md)

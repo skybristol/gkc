@@ -21,11 +21,17 @@ from dataclasses import dataclass, field
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any, Literal, Optional, Union
+from urllib.parse import urlparse
 
 import requests
 import yaml
 
-from gkc.sparql import SPARQLQuery, paginate_query
+from gkc.mash import (
+    WikibaseApiClient,
+    extract_first_sparql_block,
+    fetch_mediawiki_page_wikitext,
+)
+from gkc.sparql import SPARQLQuery, paginate_query, read_sparql_query_file
 
 RefreshPolicy = Literal["manual", "daily", "weekly", "on_release"]
 SpiritSafeSourceMode = Literal["github", "local"]
@@ -1076,6 +1082,263 @@ def hydrate_profile_lookups(
         "hydrated": hydrated,
         "failures": failures,
     }
+
+
+@dataclass(frozen=True)
+class ValueListHydrationResult:
+    """Summary of value-list query export and hydration operations."""
+
+    queries_dir: str
+    cache_queries_dir: str
+    discovered_ids: list[str] = field(default_factory=list)
+    hydrated_ids: list[str] = field(default_factory=list)
+    query_files_written: list[str] = field(default_factory=list)
+    cache_files_written: list[str] = field(default_factory=list)
+    failures: list[dict[str, Any]] = field(default_factory=list)
+
+
+def discover_value_list_ids(
+    cache_entities_dir: Union[str, Path],
+    *,
+    value_list_class_id: str = "Q7",
+) -> list[str]:
+    """Discover all value-list entity IDs from SpiritSafe cache entities.
+
+    Value lists are identified by `P1 -> Q7` classification in cached entity claims.
+    """
+    cache_dir = Path(cache_entities_dir)
+    discovered: list[str] = []
+
+    for path in sorted(cache_dir.glob("*.json")):
+        try:
+            payload = json.loads(path.read_text(encoding="utf-8"))
+        except Exception:
+            continue
+
+        entity_id = payload.get("entity_id")
+        if not isinstance(entity_id, str) or not entity_id:
+            continue
+
+        claims = payload.get("entity", {}).get("claims", {})
+        p1_claims = claims.get("P1", []) if isinstance(claims, dict) else []
+        if _claims_include_entity_id(p1_claims, value_list_class_id):
+            discovered.append(entity_id)
+
+    return sorted(discovered)
+
+
+def export_value_list_sparql_queries(
+    *,
+    cache_entities_dir: Union[str, Path],
+    queries_dir: Union[str, Path],
+    api_url: str,
+    value_list_ids: Optional[list[str]] = None,
+) -> dict[str, Any]:
+    """Export first `<sparql>` talk-page blocks into SpiritSafe query files.
+
+    Writes one file per value-list ID as `<queries_dir>/<QID>.sparql`.
+    """
+    selected_ids = sorted(
+        set(value_list_ids or discover_value_list_ids(cache_entities_dir))
+    )
+    out_dir = Path(queries_dir)
+    out_dir.mkdir(parents=True, exist_ok=True)
+
+    api_client = WikibaseApiClient(api_url=api_url)
+    written_files: list[str] = []
+    failures: list[dict[str, Any]] = []
+
+    for entity_id in selected_ids:
+        title = f"Item_talk:{entity_id}"
+        try:
+            wikitext = fetch_mediawiki_page_wikitext(api_client=api_client, title=title)
+            query_text = extract_first_sparql_block(wikitext)
+            output_path = out_dir / f"{entity_id}.sparql"
+            output_path.write_text(query_text.strip() + "\n", encoding="utf-8")
+            written_files.append(str(output_path.resolve()))
+        except Exception as exc:
+            failures.append(
+                {
+                    "value_list_id": entity_id,
+                    "source_title": title,
+                    "error": str(exc),
+                }
+            )
+
+    return {
+        "value_list_ids": selected_ids,
+        "queries_dir": str(out_dir.resolve()),
+        "query_files_written": sorted(written_files),
+        "failures": failures,
+    }
+
+
+def hydrate_value_list_query_caches(
+    *,
+    value_list_ids: list[str],
+    queries_dir: Union[str, Path],
+    cache_queries_dir: Union[str, Path],
+    endpoint: str,
+    page_size: int = 1000,
+    max_results: Optional[int] = None,
+    wikibase_api_url: str = "https://datadistillery.wikibase.cloud/w/api.php",
+) -> dict[str, Any]:
+    """Hydrate value-list JSON cache artifacts from local `.sparql` files.
+
+    Existing cache files are preserved if hydration fails for an item.
+    """
+    query_root = Path(queries_dir)
+    cache_root = Path(cache_queries_dir)
+    cache_root.mkdir(parents=True, exist_ok=True)
+
+    base_uri = _wikibase_base_uri_from_api_url(wikibase_api_url)
+
+    hydrated_ids: list[str] = []
+    written_files: list[str] = []
+    failures: list[dict[str, Any]] = []
+
+    for entity_id in value_list_ids:
+        query_file = query_root / f"{entity_id}.sparql"
+        output_file = cache_root / f"{entity_id}.json"
+        try:
+            query_text = read_sparql_query_file(query_file)
+            rows = paginate_query(
+                query=query_text,
+                page_size=page_size,
+                endpoint=endpoint,
+                max_results=max_results,
+            )
+            items = _normalize_value_list_items(rows)
+            payload = {
+                "metadata": {
+                    "entity": f"{base_uri}/entity/{entity_id}",
+                    "source": f"{base_uri}/wiki/Item_talk:{entity_id}",
+                    "query": f"queries/{entity_id}.sparql",
+                    "updated": datetime.now(timezone.utc)
+                    .isoformat()
+                    .replace("+00:00", "Z"),
+                    "count": len(items),
+                },
+                "items": items,
+            }
+            output_file.write_text(json.dumps(payload, indent=2), encoding="utf-8")
+            hydrated_ids.append(entity_id)
+            written_files.append(str(output_file.resolve()))
+        except Exception as exc:
+            failures.append(
+                {
+                    "value_list_id": entity_id,
+                    "query_file": str(query_file),
+                    "cache_file": str(output_file),
+                    "error": str(exc),
+                }
+            )
+
+    return {
+        "value_list_ids": value_list_ids,
+        "cache_queries_dir": str(cache_root.resolve()),
+        "hydrated_ids": sorted(hydrated_ids),
+        "cache_files_written": sorted(written_files),
+        "failures": failures,
+    }
+
+
+def hydrate_value_lists_from_cache(
+    *,
+    cache_entities_dir: Union[str, Path],
+    queries_dir: Union[str, Path],
+    cache_queries_dir: Union[str, Path],
+    api_url: str,
+    endpoint: str,
+    value_list_ids: Optional[list[str]] = None,
+    page_size: int = 1000,
+    max_results: Optional[int] = None,
+    fail_on_hydration_error: bool = True,
+) -> ValueListHydrationResult:
+    """Export value-list SPARQL files and hydrate value-list cache artifacts."""
+    export_summary = export_value_list_sparql_queries(
+        cache_entities_dir=cache_entities_dir,
+        queries_dir=queries_dir,
+        api_url=api_url,
+        value_list_ids=value_list_ids,
+    )
+
+    export_failures = list(export_summary.get("failures", []))
+    if export_failures and fail_on_hydration_error:
+        first = export_failures[0]
+        raise RuntimeError(
+            "Failed to export value-list SPARQL query "
+            f"for {first.get('value_list_id')}: {first.get('error')}"
+        )
+
+    eligible_ids = [
+        value_list_id
+        for value_list_id in export_summary["value_list_ids"]
+        if value_list_id not in {f.get("value_list_id") for f in export_failures}
+    ]
+
+    hydrate_summary = hydrate_value_list_query_caches(
+        value_list_ids=eligible_ids,
+        queries_dir=queries_dir,
+        cache_queries_dir=cache_queries_dir,
+        endpoint=endpoint,
+        page_size=page_size,
+        max_results=max_results,
+        wikibase_api_url=api_url,
+    )
+
+    failures = export_failures + list(hydrate_summary.get("failures", []))
+    if failures and fail_on_hydration_error:
+        first = failures[0]
+        raise RuntimeError(
+            "Value-list hydration failed "
+            f"for {first.get('value_list_id')}: {first.get('error')}"
+        )
+
+    return ValueListHydrationResult(
+        queries_dir=export_summary["queries_dir"],
+        cache_queries_dir=hydrate_summary["cache_queries_dir"],
+        discovered_ids=sorted(export_summary["value_list_ids"]),
+        hydrated_ids=sorted(hydrate_summary["hydrated_ids"]),
+        query_files_written=sorted(export_summary["query_files_written"]),
+        cache_files_written=sorted(hydrate_summary["cache_files_written"]),
+        failures=failures,
+    )
+
+
+def _claims_include_entity_id(claims: Any, expected_id: str) -> bool:
+    if not isinstance(claims, list):
+        return False
+
+    for claim in claims:
+        value = claim.get("mainsnak", {}).get("datavalue", {}).get("value", {})
+        if isinstance(value, dict) and value.get("id") == expected_id:
+            return True
+    return False
+
+
+def _wikibase_base_uri_from_api_url(api_url: str) -> str:
+    parsed = urlparse(api_url)
+    if parsed.scheme and parsed.netloc:
+        return f"{parsed.scheme}://{parsed.netloc}"
+    raise ValueError(f"Invalid Wikibase API URL: {api_url}")
+
+
+def _normalize_value_list_items(rows: list[dict[str, str]]) -> list[dict[str, str]]:
+    deduped_by_item: dict[str, dict[str, str]] = {}
+
+    for row in rows:
+        item = row.get("item")
+        item_label = row.get("itemLabel")
+        if not item or not item_label:
+            continue
+        if item not in deduped_by_item:
+            deduped_by_item[item] = {"item": item, "itemLabel": item_label}
+
+    return sorted(
+        deduped_by_item.values(),
+        key=lambda entry: (entry["itemLabel"].casefold(), entry["item"]),
+    )
 
 
 class EntityProfileJsonBuilder:
