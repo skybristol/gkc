@@ -2,7 +2,7 @@
 
 Target agents: Profile Architect, Validation Agent, Wizard Engineer
 
-Status: In progress. JSON Entity Profile export is now implemented in gkc.
+Status: Pre-packet work complete. Curation Packet rework is the active milestone.
 
 ## Purpose
 
@@ -20,7 +20,7 @@ This brief is the active implementation guide for ProfilesV2. It captures what i
 
 - SpiritSafe workflow support for full and incremental cache refresh is implemented.
 
-### JSON Entity Profile generation in gkc
+### JSON Entity Profile generation
 
 - `EntityProfileJsonBuilder` is implemented in `gkc.spirit_safe`.
 
@@ -32,13 +32,9 @@ This brief is the active implementation guide for ProfilesV2. It captures what i
 
 - Optional profile filtering is implemented via repeatable `--profile-id`.
 
-- API helper routes are implemented and exported:
+- API helper routes are implemented and exported: `build_entity_profile_json_documents(...)` and `export_entity_profile_json_documents(...)`.
 
-  - `build_entity_profile_json_documents(...)`
-
-  - `export_entity_profile_json_documents(...)`
-
-### Value-list query extraction and hydration in gkc
+### Value-list query extraction and hydration
 
 - Mash primitives are implemented for reading talk-page wikitext and extracting `<sparql>` blocks.
 
@@ -46,171 +42,236 @@ This brief is the active implementation guide for ProfilesV2. It captures what i
 
 - Query export is implemented to `queries/<QID>.sparql` using the first `<sparql>` block from `Item_talk:<QID>`.
 
-- Value-list hydration is implemented to `cache/queries/<QID>.json` with pagination and dedupe.
+- Value-list hydration is implemented to `cache/queries/<QID>.json` with pagination and deduplication.
 
 - CLI route is implemented: `gkc profile value-lists hydrate`.
 
+- SpiritSafe GitHub Actions workflow is implemented and operational: `hydrate-value-lists.yml`.
+
+### SpiritSafe repository
+
+- All GitHub Actions workflows are operational: cache refresh, profile export, value-list hydration, profile validation, and PR auto-merge.
+
+- Repository documentation is current: all README files are updated, `cache/queries/README.md` is added.
+
+- Empty Python package placeholder removed.
+
 ### Current generated profile shape
 
-Current export generates:
+The JSON profiles in `profiles/<QID>.json` currently export:
 
-- `entity`
+- `entity` — full Wikibase entity URI
 
-- `identification`
+- `identification` — prompts and guidance per language section (labels, descriptions, aliases)
 
-- `statements`
+- `statements` — list of statement definitions, each with `entity` URI, `io_map`, `value` (type, optional `profile`, optional `value_list_reference`, optional `value_list`), `messages`, `max_count`, `qualifiers`, and `references`
 
-- `metadata`
+- `metadata` — label/description/alias text maps, statement count, languages, generated_at, exported_from, and two pre-built graph structures for downstream packet assembly:
 
-And currently supports:
+  - `profile_graph` — edges to related profile entities: `entity` (URI), `label`, `via_statement` (URI), `linkage_type`
 
-- cache-linked statement expansion
+  - `value_list_graph` — edges to value-list entities: `entity` (URI), `label`, `via_statement` (URI), `cache_path`
 
-- qualifier and reference statement expansion with terminal behavior on nested qualifier/reference statements
+Both graphs are already populated from real SpiritSafe data and ready for packet assembly consumption.
 
-- value semantics with `value.profile`, `value.value_list_reference`, and optional `value.value_list`
-
-- strict language-key collection from language-bearing sections
-
-## Canonical Direction Right Now
+## Canonical Direction
 
 ### Identity
 
 - Canonical machine identifier is `entity` URI.
 
-- Labels are presentation only.
+- Labels are presentation only. Runtime identity, joins, and linkage resolution must not use labels.
 
-- Runtime identity, joins, and linkage resolution must not use labels.
+- Profile loading entry point: QID string or full entity URI, both normalized to full URI. Filesystem derivation from URI (QID extraction) is non-authoritative and isolated.
 
 ### Runtime dependency model
 
 - Build-time profile generation reads SpiritSafe cache entities.
 
-- Runtime consumers should not require live DD Wikibase access for profile execution paths.
+- Runtime consumers load JSON profiles from `profiles/<QID>.json`; no live Wikibase access required.
+
+- No manifest (`cache/manifest.json`) dependency for packet assembly.
 
 ### Value-list behavior
 
-- Value-list usage is cache-first.
+- Value-list usage is cache-first. Runtime consumers use materialized `cache/queries/<QID>.json` artifacts.
 
-- Runtime consumers use materialized artifacts, not live SPARQL execution.
+- Packet-level `value_list_routes` reference `cache_path` directly from `metadata.value_list_graph`.
 
-## Remaining Work: Curation Packet Generation (Next Priority)
+## Curation Packet Contract (Frozen)
 
-The next milestone is packet migration to JSON-first and entity-URI-first behavior.
+The following packet shape is the frozen contract that the Validation Agent implements and the Wizard Engineer consumes. No changes to this shape without explicit Profile Architect instruction.
 
-### 1) Packet identity migration
+```json
+{
+  "packet_id": "pkt-<uuid>",
+  "profile_entity": "https://datadistillery.wikibase.cloud/entity/Q4",
+  "operation_mode": "single",
+  "entities": [
+    {
+      "id": "ent-001",
+      "profile_entity": "https://datadistillery.wikibase.cloud/entity/Q4",
+      "data": {},
+      "statements": [
+        {
+          "entity": "https://datadistillery.wikibase.cloud/entity/Q16",
+          "label": "instance of",
+          "io_map": [{"to": "http://www.wikidata.org/entity/P31"}],
+          "value": {
+            "type": "wikibase-item",
+            "value_list": [{"item": "Q7840353", "itemLabel": "federally recognized Native American tribe in the United States"}]
+          },
+          "fixed": true,
+          "max_count": null,
+          "qualifiers": [],
+          "references": []
+        }
+      ]
+    }
+  ],
+  "cross_references": [
+    {
+      "from_entity": "https://datadistillery.wikibase.cloud/entity/Q4",
+      "to_entity": "https://datadistillery.wikibase.cloud/entity/Q39",
+      "via_statement": "https://datadistillery.wikibase.cloud/entity/Q40",
+      "linkage_type": "P161"
+    }
+  ],
+  "value_list_routes": {
+    "https://datadistillery.wikibase.cloud/entity/Q28": {
+      "label": "List of Federal Register Sources",
+      "cache_path": "cache/queries/Q28.json",
+      "item_count": 47
+    }
+  }
+}
+```
 
-Current packet code paths still rely on profile-name keys in multiple places.
+### Frozen design decisions
 
-Required:
+- `profile_entity` uses full URI throughout. No profile-name string keys anywhere in the packet.
 
-- move packet-level profile identity to entity-URI-first usage
+- `cross_references` are sourced from `metadata.profile_graph` of the loaded JSON profile. No manifest required.
 
-- keep temporary URI-to-filesystem derivation isolated and non-authoritative
+- `value_list_routes` are sourced from `metadata.value_list_graph`. `item_count` is loaded at assembly time from the referenced cache file if it exists; `null` if the file is absent.
 
-Deliverable:
+- `max_count: null` is the exclusive unlimited encoding. This applies profile → packet → validation path with no other representation.
 
-- packet schema and packet assembly routes using URI identity across cross-references and profile package content
+- `fixed: true` on a statement means the value is pre-populated from the profile (sourced from `value.value_list` entries). Fixed values should not be user-edited. `fixed: null` or absent means curator-supplied.
 
-### 2) Cross-reference assembly alignment
+- `data` is an empty dict at assembly time. `charge_curation_packet()` fills it.
 
-Required:
+- Entity scaffolds carry `profile_entity` (URI) on each entity slot; the `id` field (`ent-001`) is a stable intra-packet reference.
 
-- use manifest graph edges for traversal and profile loading order
+## Remaining Work: Curation Packet Generation
 
-- use statement-level linkage content as canonical semantic source
+### 1) `build_curation_packet_from_json_profile()`
 
-- include explicit `via_statement` context on packet cross-references
+Responsibility: Validation Agent
 
-Deliverable:
+Inputs:
 
-- deterministic packet cross-reference assembly contract and implementation
+- `profile_entity` — QID string or full entity URI (normalize to full URI internally)
 
-### 3) Cardinality consistency
+- `json_profile_doc` — loaded JSON profile document (dict from `profiles/<QID>.json`)
 
-Required:
+- Optional `source_root` — path to SpiritSafe root, used to hydrate `item_count` in `value_list_routes`
 
-- select a single unlimited encoding and apply it profile -> packet -> validation path
+Output: packet dict matching the frozen contract above.
 
-Deliverable:
+Steps:
 
-- one consistent unlimited representation with tests
+1. Normalize `profile_entity` to full URI; derive QID for filesystem access.
 
-### 4) Fixed and default value charging semantics
+2. Build `entities` list: one entity slot per profile entity, `data` empty, `statements` copied from `json_profile_doc["statements"]` with `fixed` flag derived from `value.value_list` presence.
 
-Required:
+3. Build `cross_references` from `json_profile_doc["metadata"]["profile_graph"]`.
 
-- fixed values are additive and non-destructive
+4. Build `value_list_routes` from `json_profile_doc["metadata"]["value_list_graph"]`, optionally hydrating `item_count` from the cache file.
 
-- defaults pre-populate only when field is empty
+5. Generate `packet_id` as `pkt-<uuid4>`.
 
-- extra values generate structured notices rather than silent mutation
+Deliverables: implementation in `gkc.spirit_safe`, tests covering single-profile packet, cross-references populated from profile_graph, value_list_routes with and without item_count, and fixed-value detection.
 
-Deliverable:
+### 2) URI-keyed lookup in `charge_curation_packet()`
 
-- shared conformance notice envelope consumed by Wizard, CLI, and bulk routes
+Responsibility: Validation Agent
 
-### 5) Value-list routing in packet
+Current `_entity_payload_for()` matches source_values by `entity.get("id")` (intra-packet UUID) or `entity.get("profile")` (profile name string). Neither matches URI keys.
 
-Required packet route metadata per value-list entity:
+Required: source_values must support keys that are full entity URIs or QID strings. Resolution order: exact URI match first, then QID-only fallback.
 
-- cache path
+Deliverables: updated `_entity_payload_for()` with URI-keyed resolution; tests covering URI-keyed and QID-keyed source_values.
 
-- item count
+### 3) Shared `ConformanceNotice` envelope
 
-- inlineability metadata
+Responsibility: Validation Agent
 
-Deliverable:
+Required: replace the current `ChargeIssue` / `ChargeReport` / `BarrelIssue` / `BarrelPlanReport` split with a single `ConformanceNotice` dataclass. All charging, barreling, and validation surfaces emit it. CLI and Wizard consume it without adapting locally.
 
-- packet-level `value_list_routes` populated at packet assembly time
+Fields: `severity`, `entity_ref` (URI or intra-packet ID), `statement_ref` (URI or None), `code`, `message`.
 
-### 6) Loader-path convergence
+Deliverables: shared type in `gkc.still_charger` or a new `gkc.notices` module; charging and barreling emit it; existing `ChargeIssue` and `BarrelIssue` become aliases or are deprecated.
 
-Current dict-vs-model split remains a fragility point.
+### 4) `gkc packet build` CLI route
 
-Required:
+Responsibility: Validation Agent
 
-- one canonical typed loading path for packet assembly and packet validation paths
+Required: `gkc packet build --profile Q4 [--source local --local-root ...]` outputs a JSON packet to stdout or a file.
 
-Deliverable:
+Deliverables: CLI route consuming `build_curation_packet_from_json_profile()`; tests covering defaults and `--source local`.
 
-- packet routes and validators use shared typed contract
+### 5) Wizard packet integration
+
+Responsibility: Wizard Engineer — begins after items (1)–(4) are complete.
+
+- No local packet assembly logic in the Wizard layer.
+
+- Value-list routes consumed directly from `packet["value_list_routes"]`.
+
+- Conformance notices rendered from the shared envelope with no local coercion policy.
 
 ## Immediate Agent Sequence
 
 ### Profile Architect
 
-- freeze packet-facing profile assumptions for URI identity, linkage metadata, and value-list routes
+The frozen packet contract above is the handoff. No further Profile Architect input is needed before implementation begins.
 
 ### Validation Agent
 
-- implement packet generation and conformance validation changes against frozen contract
-
-- produce stable notice envelope and validation surfaces
+Implement items (1)–(4) above against the frozen contract. Validate against test fixtures in `tests/fixtures/profiles/`. Produce a handoff summary for the Wizard Engineer when complete.
 
 ### Wizard Engineer
 
-- integrate directly against frozen packet contract with no local policy forks
+After the packet milestone is delivered, integrate directly against the frozen packet shape. No local packet assembly or value-list policy forks.
 
-## Acceptance Criteria For Next Milestone
+## Acceptance Criteria For Packet Milestone
 
-- packet generation is JSON-first and URI-identity-safe
+- `build_curation_packet_from_json_profile()` produces packets with URI identity throughout.
 
-- packet cross-references are deterministic and include `via_statement`
+- `cross_references` are deterministic and sourced from `metadata.profile_graph`.
 
-- packet contains value-list routes and consumers use them directly
+- `value_list_routes` are populated at assembly time; consumers use them directly.
 
-- conformance notices are emitted consistently across interfaces
+- `max_count: null` is the single unlimited encoding end-to-end.
 
-- tests cover packet generation, charging notices, and consumer integration
+- `ConformanceNotice` is emitted consistently across charging, barreling, and validation surfaces.
 
-## Out Of Scope For Immediate Packet Milestone
+- Packets are round-trippable through charge and barrel without loss of identity.
 
-- sitelink profile contract reintroduction
+- Tests cover packet assembly, URI-keyed charging, notice emission, and CLI output.
 
-- interface-specific policy engines separate from shared validation and charging behavior
+## Out Of Scope For Packet Milestone
 
-- live runtime SPARQL execution as a substitute for materialized value-list artifacts
+- Sitelink profile contract.
+
+- Interface-specific policy engines separate from shared validation and charging behavior.
+
+- Live runtime SPARQL execution as a substitute for materialized value-list artifacts.
+
+- Manifest (`cache/manifest.json`) generation — not required for packet assembly.
+
+- Deprecation or removal of the old `create_curation_packet()` — deferred until the Wizard migration is complete.
 
 ## Practical Commands (Current)
 
@@ -220,6 +281,7 @@ Build and export JSON profiles from cache entities:
 poetry run gkc --json profile export-json \
   --cache-entities-dir /Users/sky/code/SpiritSafe/cache/entities \
   --output /Users/sky/code/SpiritSafe/profiles
+```
 
 Hydrate value-list queries and cache artifacts:
 
@@ -227,7 +289,6 @@ Hydrate value-list queries and cache artifacts:
 poetry run gkc --json profile value-lists hydrate \
   --source local \
   --local-root /Users/sky/code/SpiritSafe
-```
 ```
 
 Filter export to selected profiles:
