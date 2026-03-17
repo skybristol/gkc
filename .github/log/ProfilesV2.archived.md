@@ -165,6 +165,8 @@ The following packet shape is the frozen contract that the Validation Agent impl
 
 ## Remaining Work: Curation Packet Generation
 
+> **Tracked:** gkc#143 — Curation packet rework: align packet assembly, charge, and barrel pipeline with frozen URI-keyed contract
+
 ### 1) `build_curation_packet_from_json_profile()`
 
 Responsibility: Validation Agent
@@ -262,6 +264,9 @@ After the packet milestone is delivered, integrate directly against the frozen p
 - Tests cover packet assembly, URI-keyed charging, notice emission, and CLI output.
 
 ## Out Of Scope For Packet Milestone
+
+> **Tracked:** gkc#142 — SpiritSafe manifest: replace old design with URI-keyed artifact index and cleanup legacy manifest infrastructure
+> **Tracked:** gkc#144 — Wizard V2: dynamic form generation from SpiritSafe JSON profiles (begins after gkc#143 delivers)
 
 - Sitelink profile contract.
 
