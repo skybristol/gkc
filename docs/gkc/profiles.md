@@ -50,6 +50,13 @@ Each profile artifact contains:
 
 `metadata` includes `profile_graph` and `value_list_graph` summaries used by packet scaffolding and registry indexing. `value_list_graph` includes value-list routes used by top-level statements and nested reference/qualifier statements.
 
+Statement `value` payloads may also include derived-value semantics used by downstream consumers:
+
+- `value_source: statement_value` when the statement value should be populated from its parent statement value in context.
+- `value_source_statement` as the URI of the parent statement definition that activates this behavior.
+
+These fields are emitted for qualifier/reference statement instances when the corresponding GKC Entity Statement item declares `derives default value from` semantics in Wikibase, with `applies to profile` scoping honored when present.
+
 The SpiritSafe manifest (`cache/manifest.json`) is generated as an artifact index over these files.
 
 ## Profile Anatomy

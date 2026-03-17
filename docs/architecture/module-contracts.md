@@ -87,6 +87,7 @@ Responsibility:
 - Validate and coerce inbound values using profile-defined directives.
 - Provide atomic datatype validators and coercion primitives.
 - Enforce fixed values, value-list constraints, and reference-level constraints.
+- Enforce derived-value constraints (for example, reference/qualifier values sourced from parent statement values).
 - Emit shared `ConformanceNotice` records with actionable feedback.
 
 Out of scope:

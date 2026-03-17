@@ -93,6 +93,13 @@ Entity scaffolds carry:
 - empty `data`
 - `profile_structure` copied from JSON profile content
 
+Within `profile_structure.statements[*].value`, SpiritSafe JSON can include derived-value hints for nested references/qualifiers:
+
+- `value_source: statement_value`
+- `value_source_statement: <statement URI>`
+
+These hints are derived from statement-level Wikibase semantics and are intended for downstream wizard/validation consumers.
+
 ## Testing Strategy
 
 `tests/fixtures/spiritsafe/` now mirrors the artifact-index model with minimal fixtures:

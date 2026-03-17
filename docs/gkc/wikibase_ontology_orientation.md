@@ -61,6 +61,7 @@ The following properties are in active use for profile modeling. Properties use 
 | P210 | refresh policy | wikibase-item | GKC Value List (Q7) | Required; links to a refresh policy item (e.g., Q50 manual refresh) |
 | P211 | has reference | wikibase-item | qualifier on P157 | Links to a GKC Entity Statement specifying an expected reference type; OR semantics when multiple are present |
 | P212 | same as | url | Wikidata Entity (Q52) | URL of the specific Wikidata entity (e.g., `http://www.wikidata.org/entity/Q7840353`) |
+| P213 | derives default value from | wikibase-item | GKC Entity Statement (Q5) | Declares that when this statement is used as a reference/qualifier on the target statement, its value is derived from the parent statement value |
 
 ### Cardinality And Value
 
@@ -145,6 +146,13 @@ Multiple P161 qualifiers may appear on a single P157 claim. Profile (Q3) and val
 
 A GKC Entity Statement item may carry a `default value` (P202) URL claim pointing to a Wikidata entity to pre-populate. This claim must include a `default label` (P203) string qualifier providing a human-readable label for that entity.
 
+Derived defaults are modeled separately from static defaults. A GKC Entity Statement item may carry `derives default value from` (P213) claims targeting one or more parent statement definitions. This means:
+
+- when the subject statement is used as a qualifier/reference on that parent statement,
+- the subject statement value should be populated from the parent statement value.
+
+This pattern is global by default for the targeted parent statement(s). If a derived-default rule must only apply in specific profiles, constrain the P213 claim with `applies to profile` (P205) qualifiers.
+
 ### Value Lists And Refresh Policy
 
 GKC Value List items (`P1 = Q7`) must have a `refresh policy` (P210) claim linking to a refresh policy item (e.g., Q50 for manual refresh). Value list SPARQL queries are stored in the item's Wikibase discussion page and run against the Wikidata Query Service or Qlever to hydrate the SpiritSafe value list cache.
@@ -160,6 +168,8 @@ Qualifier specifications do not currently appear at the GKC Entity Statement ite
 Expected references for a statement are specified using `has reference` (P211) qualifiers on the P157 claim in the profile item. Each P211 qualifier targets a GKC Entity Statement item. When multiple P211 qualifiers are present on a single P157 claim, the rule is OR — at least one reference conforming to any of the listed types is expected.
 
 Reference specifications do not currently appear at the GKC Entity Statement item level.
+
+Reference value-derivation rules can appear at the GKC Entity Statement item level via P213. Consumers should apply those rules when reference/qualifier statements are instantiated in profile context, honoring any P205 profile constraints attached to the P213 claim.
 
 ### Guidance Precedence
 
