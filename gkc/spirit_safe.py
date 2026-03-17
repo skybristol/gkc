@@ -1455,7 +1455,7 @@ class EntityProfileJsonBuilder:
             "languages": [],
             "statement_count": len(statements),
             "profile_graph": self._build_profile_graph(wikibase_item),
-            "value_list_graph": self._build_value_list_graph(wikibase_item),
+            "value_list_graph": self._build_value_list_graph(statements),
             "exported_from": entity_uri,
         }
 
@@ -1499,30 +1499,73 @@ class EntityProfileJsonBuilder:
         return graph
 
     def _build_value_list_graph(
-        self, wikibase_item: dict[str, Any]
+        self, statements: list[dict[str, Any]]
     ) -> list[dict[str, Optional[str]]]:
         graph: list[dict[str, Optional[str]]] = []
         seen: set[tuple[str, str]] = set()
-        for statement_id, linked_value_ids in self._iter_statement_value_linkages(
-            wikibase_item
-        ):
-            for target_id in linked_value_ids:
-                type_ids = self._entity_type_ids(self._cache_index.get(target_id))
-                if self.GKC_VALUE_LIST_CLASS not in type_ids:
-                    continue
-                key = (statement_id, target_id)
-                if key in seen:
-                    continue
-                seen.add(key)
-                graph.append(
-                    {
-                        "entity": f"{self.entity_prefix}{target_id}",
-                        "label": self._entity_label(target_id),
-                        "via_statement": f"{self.entity_prefix}{statement_id}",
-                        "cache_path": f"cache/queries/{target_id}.json",
-                    }
-                )
+
+        for statement in self._iter_statement_nodes(statements):
+            if not isinstance(statement, dict):
+                continue
+
+            statement_entity = statement.get("entity")
+            if not isinstance(statement_entity, str) or not statement_entity:
+                continue
+
+            value_payload = statement.get("value")
+            if not isinstance(value_payload, dict):
+                continue
+
+            cache_path = value_payload.get("value_list_reference")
+            if not isinstance(cache_path, str) or not cache_path:
+                continue
+
+            target_id = self._qid_from_cache_path(cache_path)
+            if not target_id:
+                continue
+
+            type_ids = self._entity_type_ids(self._cache_index.get(target_id))
+            if type_ids and self.GKC_VALUE_LIST_CLASS not in type_ids:
+                continue
+
+            key = (statement_entity, cache_path)
+            if key in seen:
+                continue
+            seen.add(key)
+
+            graph.append(
+                {
+                    "entity": f"{self.entity_prefix}{target_id}",
+                    "label": self._entity_label(target_id),
+                    "via_statement": statement_entity,
+                    "cache_path": cache_path,
+                }
+            )
         return graph
+
+    def _iter_statement_nodes(
+        self, statements: list[dict[str, Any]]
+    ) -> list[dict[str, Any]]:
+        nodes: list[dict[str, Any]] = []
+
+        def _walk(statement_list: list[dict[str, Any]]) -> None:
+            for statement in statement_list:
+                if not isinstance(statement, dict):
+                    continue
+                nodes.append(statement)
+                for key in ("qualifiers", "references"):
+                    nested = statement.get(key)
+                    if isinstance(nested, list):
+                        _walk(nested)
+
+        _walk(statements)
+        return nodes
+
+    def _qid_from_cache_path(self, cache_path: str) -> Optional[str]:
+        candidate = Path(cache_path).stem.upper()
+        if candidate.startswith("Q") and candidate[1:].isdigit():
+            return candidate
+        return None
 
     def _iter_statement_value_linkages(
         self, wikibase_item: dict[str, Any]

@@ -48,7 +48,7 @@ Each profile artifact contains:
 - `statements`
 - `metadata`
 
-`metadata` includes `profile_graph` and `value_list_graph` summaries used by packet scaffolding and registry indexing.
+`metadata` includes `profile_graph` and `value_list_graph` summaries used by packet scaffolding and registry indexing. `value_list_graph` includes value-list routes used by top-level statements and nested reference/qualifier statements.
 
 The SpiritSafe manifest (`cache/manifest.json`) is generated as an artifact index over these files.
 
