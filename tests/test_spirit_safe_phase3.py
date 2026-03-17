@@ -51,6 +51,18 @@ def test_build_spiritsafe_manifest_document(fixture_root: Path):
         }
     ]
 
+    q4_profile = next(
+        profile for profile in manifest["profiles"] if profile["qid"] == "Q4"
+    )
+    assert q4_profile["value_list_graph"] == [
+        {
+            "entity": "https://datadistillery.wikibase.cloud/entity/Q28",
+            "label": "List of Federal Register Sources",
+            "via_statement": "https://datadistillery.wikibase.cloud/entity/Q16",
+            "cache_path": "cache/queries/Q28.json",
+        }
+    ]
+
 
 def test_export_spiritsafe_manifest(fixture_root: Path, tmp_path: Path):
     """Manifest export should write JSON to the requested path."""

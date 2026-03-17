@@ -2,7 +2,7 @@
 
 ## Purpose
 
-This document defines the current architectural contract between `mash`, `spirit_safe`, `still_charger`, `cooperage`, `bottler`, `shipper`, and `wikibase` for Data Distillery and broader GKC workflows.
+This document defines the current architectural contract between `mash`, `spirit_safe`, `still_charger`, `fermenter`, `cooperage`, `bottler`, `shipper`, and `wikibase` for Data Distillery and broader GKC workflows.
 
 It is written as a practical anti-reinvention guide for contributors and custom agents.
 
@@ -36,7 +36,7 @@ Responsibility:
 - Extract value-list SPARQL query files from value-list talk pages.
 - Hydrate value-list cache artifacts from extracted SPARQL queries.
 - Export profile JSON artifacts for downstream packet assembly and hydration.
-- Provide profile graph and packet scaffold utilities.
+- Provide profile graph metadata and profile-loading utilities.
 
 Out of scope:
 
@@ -50,17 +50,22 @@ Current anchor surface:
 - `discover_value_list_ids`
 - `export_value_list_sparql_queries`
 - `hydrate_value_lists_from_cache`
-- `create_curation_packet`
 - `load_manifest`
-- `load_profile_package`
+- `load_profile`
+
+Transition-only legacy surface (deferred removal):
+
+- `create_curation_packet`
+- `validate_packet_structure`
 
 ### Still Charger (`gkc.still_charger`)
 
 Responsibility:
 
+- Assemble curation packet scaffolds from Entity Profile JSON documents.
 - Fill curation packet entity scaffolds with concrete source values.
-- Support bootstrap-friendly charging behavior when specifications are still emerging.
-- Emit a structured charge report (charged/skipped entities and warnings/errors).
+- Support charging from Wikidata entities and other source adapters.
+- Emit shared conformance notices and charge summaries.
 
 Out of scope:
 
@@ -69,9 +74,32 @@ Out of scope:
 
 Current anchor surface:
 
+- `build_curation_packet_from_json_profile`
 - `charge_curation_packet`
+- `charge_packet_from_wikidata_items`
 - `ChargeReport`
 - `ChargeIssue`
+
+### Fermenter (`gkc.fermenter`)
+
+Responsibility:
+
+- Validate and coerce inbound values using profile-defined directives.
+- Provide atomic datatype validators and coercion primitives.
+- Enforce fixed values, value-list constraints, and reference-level constraints.
+- Emit shared `ConformanceNotice` records with actionable feedback.
+
+Out of scope:
+
+- Packet assembly and packet orchestration.
+- Destination-specific payload shaping and transport execution.
+
+Current anchor surface:
+
+- `ConformanceNotice`
+- `ValidationResult`
+- `validate_*` datatype validators
+- `coerce_*` datatype coercers
 
 ### Cooperage (`gkc.cooperage`)
 
@@ -175,11 +203,12 @@ Current anchor surface:
 
 ### Flow 2.5: Shared Profile-to-Write Planning Pipeline (Active)
 
-1. `spirit_safe` creates curation packet scaffolds from profile definitions.
-2. `still_charger` fills packet entities with real input values.
-3. `cooperage` transforms charged packet data into `WikibaseShipper.plan_batch` operations.
-4. `wikibase` orchestration coordinates this flow for Data Distillery-specific workflows.
-5. `shipper` computes create/update/no-op diff plans and executes writes when enabled.
+1. `spirit_safe` loads and exports JSON Entity Profiles and value-list cache artifacts.
+2. `still_charger` assembles curation packets from profile JSON and charges packet entities with source values.
+3. `fermenter` validates and coerces charged values, emitting shared conformance notices.
+4. `cooperage` transforms charged packet data into `WikibaseShipper.plan_batch` operations.
+5. `wikibase` orchestration coordinates this flow for Data Distillery-specific workflows.
+6. `shipper` computes create/update/no-op diff plans and executes writes when enabled.
 
 ### Flow 2.6: SpiritSafe JSON Profile Materialization (Active)
 
@@ -216,7 +245,7 @@ Current anchor surface:
 
 - Do not add a new generic Wikibase client under `gkc.wikibase`.
 - Do not bypass `shipper` for Wikibase write execution paths.
-- Keep profile YAML/SpiritSafe runtime contracts stable and testable.
+- Keep SpiritSafe runtime contracts stable and testable.
 - Preserve offline-first behavior: network-backed enhancement must not break cache-only operation.
 - Preserve JSON profile export determinism (stable ordering and artifact path shape).
 
@@ -226,7 +255,8 @@ When adding new functionality, assign ownership using this matrix:
 
 - Need to fetch/query source entity data? -> `mash`
 - Need to build/export profile JSON artifacts from SpiritSafe cache entities? -> `spirit_safe`
-- Need to populate curation packet scaffolds with concrete values? -> `still_charger`
+- Need to assemble curation packets from profile JSON and populate them with source values? -> `still_charger`
+- Need atomic validation/coercion and conformance notices? -> `fermenter`
 - Need to build/shape values into claim/snak/payload structures? -> `bottler`
 - Need schema/specification retrieval or reusable projection logic? -> `cooperage`
 - Need to execute write operations to external APIs? -> `shipper`
@@ -234,7 +264,8 @@ When adding new functionality, assign ownership using this matrix:
 
 ## Current Gaps to Revisit During Critical Analysis
 
-- Still Charger currently supports specificationless charging for bootstrap workflows; strict charging contracts need additional profile-spec alignment.
+- Still Charger URI-keyed packet assembly and source resolution are still in active migration from profile-name keyed behavior.
+- Fermenter module implementation is pending; current validation/coercion logic remains distributed and not yet unified.
 - Cooperage currently provides packet-to-Wikibase operation planning; additional target transformers still need explicit acceptance criteria per phase.
 - Boundaries between cooperage and bottler for transformation stages still need explicit acceptance criteria per phase.
 - Wikibase orchestration should continue preferring composition over new transport abstractions.

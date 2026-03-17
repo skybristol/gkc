@@ -59,7 +59,7 @@ Top-level fields:
 - `labels`, `descriptions`
 - `statement_count`
 - `profile_graph`
-- `value_list_graph`
+- `value_list_graph` (includes value-list routes referenced by statements and nested qualifier/reference statements)
 
 ## Profile Graph Model
 
