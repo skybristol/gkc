@@ -17,6 +17,7 @@ import hashlib
 import json
 import re
 import uuid
+from copy import deepcopy
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
@@ -2111,55 +2112,248 @@ def export_entity_profile_json_documents(
 
 
 # ============================================================================
-# Phase 3: Manifest Loading, Profile Registration, and Curation Packets
+# Phase 3: Artifact Manifest, JSON Profile Loading, and Curation Packets
 # ============================================================================
+
+
+SPIRITSAFE_ENTITY_URI_PREFIX = "https://datadistillery.wikibase.cloud/entity/"
+
+
+def _manifest_source_url() -> str:
+    return f"https://github.com/{DEFAULT_SPIRIT_SAFE_GITHUB_REPO}"
+
+
+def _entity_id_from_reference(reference: Any) -> Optional[str]:
+    """Normalize a QID/property ID or entity URI to its trailing identifier."""
+
+    if not isinstance(reference, str):
+        return None
+
+    candidate = reference.rstrip("/").split("/")[-1]
+    if not candidate:
+        return None
+    if candidate[0] in {"Q", "P"} and candidate[1:].isdigit():
+        return candidate
+    return None
+
+
+def _entity_uri_from_reference(reference: Any) -> Optional[str]:
+    """Normalize a QID or entity URI to a full Data Distillery entity URI."""
+
+    if not isinstance(reference, str):
+        return None
+    if reference.startswith("http://") or reference.startswith("https://"):
+        return reference.rstrip("/")
+
+    entity_id = _entity_id_from_reference(reference)
+    if not entity_id:
+        return None
+    return f"{SPIRITSAFE_ENTITY_URI_PREFIX}{entity_id}"
+
+
+def _load_json_from_resolved_path(resolved: Union[Path, str]) -> dict[str, Any]:
+    """Load JSON content from a resolved local path or GitHub raw URL."""
+
+    try:
+        return json.loads(_read_text_from_resolved_path(resolved))
+    except json.JSONDecodeError as exc:
+        raise ValueError(f"Invalid JSON at {resolved}: {exc}") from exc
+
+
+def _profile_label_from_map(values: Any) -> str:
+    if not isinstance(values, dict):
+        return ""
+    for language in ("mul", "en"):
+        value = values.get(language)
+        if isinstance(value, str) and value:
+            return value
+    for value in values.values():
+        if isinstance(value, str) and value:
+            return value
+    return ""
+
+
+def _label_from_cache_entity(document: dict[str, Any]) -> str:
+    labels = document.get("entity", {}).get("labels", {})
+    for language in ("mul", "en"):
+        payload = labels.get(language, {})
+        if isinstance(payload, dict) and payload.get("value"):
+            return str(payload["value"])
+    for payload in labels.values():
+        if isinstance(payload, dict) and payload.get("value"):
+            return str(payload["value"])
+    return ""
+
+
+def _statement_id_from_definition(statement: dict[str, Any]) -> Optional[str]:
+    entity_id = _entity_id_from_reference(statement.get("entity"))
+    if entity_id:
+        return entity_id
+
+    io_map = statement.get("io_map", [])
+    if isinstance(io_map, list):
+        for route in io_map:
+            if not isinstance(route, dict):
+                continue
+            target = route.get("to") or route.get("from")
+            target_id = _entity_id_from_reference(target)
+            if target_id:
+                return target_id
+
+    label = statement.get("label")
+    if isinstance(label, str) and label:
+        return label
+    return None
+
+
+def _normalized_packet_statement(statement: dict[str, Any]) -> dict[str, Any]:
+    normalized = deepcopy(statement)
+    statement_id = _statement_id_from_definition(normalized)
+    if statement_id and "id" not in normalized:
+        normalized["id"] = statement_id
+    return normalized
+
+
+def build_spiritsafe_manifest_document(
+    spiritsafe_root: Union[str, Path],
+) -> dict[str, Any]:
+    """Build a manifest document from already-generated SpiritSafe artifacts.
+
+    The manifest indexes artifacts present under a local SpiritSafe checkout. It
+    does not re-query Wikibase or regenerate profile/value-list artifacts.
+    """
+
+    root = Path(spiritsafe_root).expanduser().resolve()
+    profiles_dir = root / "profiles"
+    cache_entities_dir = root / "cache" / "entities"
+    queries_dir = root / "queries"
+    cache_queries_dir = root / "cache" / "queries"
+
+    entity_label_index: dict[str, str] = {}
+    entity_qids: list[str] = []
+    for entity_path in sorted(cache_entities_dir.glob("*.json")):
+        entity_doc = json.loads(entity_path.read_text(encoding="utf-8"))
+        entity_id = str(entity_doc.get("entity_id") or entity_path.stem)
+        entity_qids.append(entity_id)
+        entity_label_index[entity_id] = _label_from_cache_entity(entity_doc)
+
+    profiles: list[dict[str, Any]] = []
+    for profile_path in sorted(profiles_dir.glob("*.json")):
+        profile_doc = json.loads(profile_path.read_text(encoding="utf-8"))
+        metadata = profile_doc.get("metadata", {})
+        entity_uri = _entity_uri_from_reference(profile_doc.get("entity"))
+        qid = _entity_id_from_reference(entity_uri) or profile_path.stem
+        profiles.append(
+            {
+                "entity": entity_uri,
+                "qid": qid,
+                "labels": metadata.get("labels", {}),
+                "descriptions": metadata.get("descriptions", {}),
+                "statement_count": metadata.get(
+                    "statement_count", len(profile_doc.get("statements", []))
+                ),
+                "profile_graph": metadata.get("profile_graph", []),
+                "value_list_graph": metadata.get("value_list_graph", []),
+            }
+        )
+
+    queries = [
+        {"qid": query_path.stem, "path": f"queries/{query_path.name}"}
+        for query_path in sorted(queries_dir.glob("*.sparql"))
+    ]
+
+    value_lists: list[dict[str, Any]] = []
+    for cache_path in sorted(cache_queries_dir.glob("*.json")):
+        cache_doc = json.loads(cache_path.read_text(encoding="utf-8"))
+        metadata = cache_doc.get("metadata", {})
+        qid = cache_path.stem
+        entity_uri = _entity_uri_from_reference(metadata.get("entity")) or (
+            f"{SPIRITSAFE_ENTITY_URI_PREFIX}{qid}"
+        )
+        value_lists.append(
+            {
+                "entity": entity_uri,
+                "qid": qid,
+                "label": (
+                    metadata.get("label")
+                    or entity_label_index.get(qid)
+                    or _profile_label_from_map(metadata.get("labels", {}))
+                ),
+                "path": f"cache/queries/{cache_path.name}",
+                "item_count": metadata.get("count", len(cache_doc.get("items", []))),
+            }
+        )
+
+    return {
+        "generated_at": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
+        "source": _manifest_source_url(),
+        "profiles": profiles,
+        "entities": {
+            "count": len(entity_qids),
+            "qids": sorted(entity_qids),
+        },
+        "queries": queries,
+        "value_lists": value_lists,
+    }
+
+
+def export_spiritsafe_manifest(
+    spiritsafe_root: Union[str, Path],
+    output_path: Optional[Union[str, Path]] = None,
+) -> dict[str, Any]:
+    """Build and write the SpiritSafe artifact manifest.
+
+    Returns the manifest document that was written to disk.
+    """
+
+    root = Path(spiritsafe_root).expanduser().resolve()
+    destination = (
+        Path(output_path).expanduser().resolve()
+        if output_path is not None
+        else (root / "cache" / "manifest.json")
+    )
+    manifest_document = build_spiritsafe_manifest_document(root)
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    destination.write_text(json.dumps(manifest_document, indent=2), encoding="utf-8")
+    return manifest_document
 
 
 @dataclass(frozen=True)
 class Manifest:
-    """Container for loaded SpiritSafe manifest with registry-wide metadata.
-
-    This represents the authoritative registry of available profiles, their
-    relationships, and caching/versioning information. The manifest is generated
-    by the SpiritSafe build process and used by gkc for discovering profiles,
-    validating cross-profile relationships, and managing curation workflows.
-
-    Attributes:
-        generated_at: ISO 8601 timestamp of manifest generation
-        commit_sha: Git commit SHA that generated this manifest
-        commit_timestamp: Git commit timestamp (ISO 8601)
-        profiles: List of profile metadata dictionaries from manifest
-        raw_manifest: Complete raw manifest dict for access to other fields
-
-    Plain meaning: The authoritative registry of available entity profiles.
-    """
+    """Container for a loaded URI-keyed SpiritSafe artifact manifest."""
 
     generated_at: str
-    commit_sha: str
-    commit_timestamp: str
+    source: str
     profiles: list[dict[str, Any]]
+    entities: dict[str, Any]
+    queries: list[dict[str, Any]]
+    value_lists: list[dict[str, Any]]
     raw_manifest: dict[str, Any]
 
     @property
-    def profile_ids(self) -> list[str]:
-        """List of all profile IDs in the manifest.
+    def profile_qids(self) -> list[str]:
+        """List the QIDs indexed in the manifest profile section."""
 
-        Returns:
-            List of profile identifiers.
-        """
-        return [p["id"] for p in self.profiles]
-
-    def get_profile_entry(self, profile_id: str) -> Optional[dict[str, Any]]:
-        """Retrieve manifest entry for a specific profile.
-
-        Args:
-            profile_id: Profile identifier
-
-        Returns:
-            Profile manifest entry dict or None if not found
-        """
+        qids: list[str] = []
         for profile in self.profiles:
-            if profile["id"] == profile_id:
+            qid = _entity_id_from_reference(profile.get("qid") or profile.get("entity"))
+            if qid:
+                qids.append(qid)
+        return qids
+
+    def get_profile_entry(self, qid_or_uri: str) -> Optional[dict[str, Any]]:
+        """Retrieve a manifest profile entry by QID or full entity URI."""
+
+        requested_qid = _entity_id_from_reference(qid_or_uri)
+        requested_uri = _entity_uri_from_reference(qid_or_uri)
+        for profile in self.profiles:
+            profile_qid = _entity_id_from_reference(
+                profile.get("qid") or profile.get("entity")
+            )
+            profile_uri = _entity_uri_from_reference(profile.get("entity"))
+            if requested_qid and profile_qid == requested_qid:
+                return profile
+            if requested_uri and profile_uri == requested_uri:
                 return profile
         return None
 
@@ -2174,37 +2368,10 @@ def load_manifest(
     local_root: Optional[Union[str, Path]] = None,
     use_cache: bool = True,
 ) -> Manifest:
-    """Load the SpiritSafe manifest with optional caching.
+    """Load the SpiritSafe artifact manifest with optional caching."""
 
-    The manifest is a machine-readable registry of all available profiles,
-    their metadata, relationships, and file locations. It's generated by the
-    SpiritSafe build process and committed to the repository.
-
-    Args:
-        source_mode: Source mode ("github" or "local"), overrides global config if provided
-        github_repo: GitHub repository slug, overrides global config if provided
-        github_ref: Git ref for resolution, overrides global config if provided
-        local_root: Local SpiritSafe root, overrides global config if provided
-        use_cache: Use in-memory cache if available
-
-    Returns:
-        Loaded Manifest instance
-
-    Raises:
-        FileNotFoundError: If manifest.json cannot be found
-        ValueError: If manifest.json is invalid JSON
-        RuntimeError: If manifest loading fails (network, permissions, etc.)
-
-    Example:
-        >>> manifest = load_manifest()
-        >>> print(manifest.profile_ids)
-        ['TribalGovernmentUS', 'OfficeHeldByHeadOfState']
-
-    Plain meaning: Load the registry of available profiles.
-    """
     global _MANIFEST_CACHE
 
-    # Build source config from params or use global
     if source_mode is not None or github_repo is not None or local_root is not None:
         source = SpiritSafeSourceConfig(
             mode=source_mode or get_spirit_safe_source().mode,
@@ -2219,7 +2386,6 @@ def load_manifest(
     else:
         source = get_spirit_safe_source()
 
-    # Check cache
     cache_key = (
         f"{source.mode}:{source.github_repo}:{source.github_ref}:{source.local_root}"
     )
@@ -2228,32 +2394,27 @@ def load_manifest(
         if cached_key == cache_key:
             return cached_manifest
 
-    # Resolve manifest path
     manifest_path = source.resolve_relative("cache/manifest.json")
 
-    # Load manifest JSON
     try:
-        manifest_text = _read_text_from_resolved_path(manifest_path)
-        manifest_data = json.loads(manifest_text)
+        manifest_data = _load_json_from_resolved_path(manifest_path)
     except FileNotFoundError as exc:
         raise FileNotFoundError(
-            f"Manifest not found at {manifest_path}. Ensure SpiritSafe cache is built."
+            f"Manifest not found at {manifest_path}. Ensure SpiritSafe artifacts are built."
         ) from exc
-    except json.JSONDecodeError as exc:
-        raise ValueError(f"Manifest JSON is invalid: {exc}") from exc
     except Exception as exc:
         raise RuntimeError(f"Failed to load manifest: {exc}") from exc
 
-    # Parse manifest
     manifest = Manifest(
-        generated_at=manifest_data.get("generated_at", ""),
-        commit_sha=manifest_data.get("commit_sha", ""),
-        commit_timestamp=manifest_data.get("commit_timestamp", ""),
+        generated_at=str(manifest_data.get("generated_at", "")),
+        source=str(manifest_data.get("source", "")),
         profiles=manifest_data.get("profiles", []),
+        entities=manifest_data.get("entities", {}),
+        queries=manifest_data.get("queries", []),
+        value_lists=manifest_data.get("value_lists", []),
         raw_manifest=manifest_data,
     )
 
-    # Cache manifest
     if use_cache:
         _MANIFEST_CACHE = (cache_key, manifest)
 
@@ -2263,193 +2424,103 @@ def load_manifest(
 def load_profile(
     profile_id: str, manifest: Optional[Manifest] = None
 ) -> dict[str, Any]:
-    """Load a single profile YAML definition.
+    """Load a single JSON entity profile by QID or entity URI."""
 
-    Args:
-        profile_id: Profile identifier
-        manifest: Optional pre-loaded manifest (loaded if not provided)
+    del manifest
 
-    Returns:
-        Parsed profile YAML as dictionary
-
-    Raises:
-        FileNotFoundError: If profile or manifest not found
-        ValueError: If profile YAML is invalid
-        RuntimeError: If loading fails
-
-    Example:
-        >>> profile = load_profile("TribalGovernmentUS")
-        >>> print(profile.get("name"))
-
-    Plain meaning: Load the YAML definition of a single entity profile.
-    """
-    if manifest is None:
-        manifest = load_manifest()
-
-    profile_entry = manifest.get_profile_entry(profile_id)
-    if profile_entry is None:
-        raise FileNotFoundError(
-            f"Profile '{profile_id}' not found in manifest. "
-            f"Available profiles: {manifest.profile_ids}"
-        )
-
-    # Resolve profile YAML path
-    profile_yaml_path = profile_entry.get("files", {}).get("profile_yaml")
-    if not profile_yaml_path:
-        raise ValueError(f"Profile entry missing profile_yaml path: {profile_id}")
+    entity_id = _entity_id_from_reference(profile_id)
+    if not entity_id:
+        raise FileNotFoundError(f"Invalid profile reference: {profile_id}")
 
     source = get_spirit_safe_source()
-    resolved_path = source.resolve_relative(profile_yaml_path)
+    resolved_path = source.resolve_relative(f"profiles/{entity_id}.json")
 
-    # Load and parse YAML
     try:
-        yaml_text = _read_text_from_resolved_path(resolved_path)
-        profile_data = yaml.safe_load(yaml_text) or {}
-        return profile_data
+        return _load_json_from_resolved_path(resolved_path)
     except FileNotFoundError as exc:
-        raise FileNotFoundError(f"Profile YAML not found: {profile_yaml_path}") from exc
-    except yaml.YAMLError as exc:
-        raise ValueError(f"Profile YAML is invalid: {exc}") from exc
+        raise FileNotFoundError(
+            f"Profile JSON not found: profiles/{entity_id}.json"
+        ) from exc
     except Exception as exc:
-        raise RuntimeError(f"Failed to load profile: {exc}") from exc
+        raise RuntimeError(f"Failed to load profile '{entity_id}': {exc}") from exc
+
+
+def _load_profile_documents_for_depth(
+    profile_id: str,
+    depth: int,
+    loaded_profiles: dict[str, dict[str, Any]],
+    visited: set[str],
+) -> None:
+    if profile_id in visited:
+        return
+
+    visited.add(profile_id)
+    profile_document = load_profile(profile_id)
+    loaded_profiles[profile_id] = profile_document
+
+    if depth <= 0:
+        return
+
+    profile_graph = profile_document.get("metadata", {}).get("profile_graph", [])
+    if not isinstance(profile_graph, list):
+        return
+
+    for edge in profile_graph:
+        target_id = _entity_id_from_reference(edge.get("entity"))
+        if not target_id or target_id in visited:
+            continue
+        try:
+            _load_profile_documents_for_depth(
+                target_id,
+                depth - 1,
+                loaded_profiles=loaded_profiles,
+                visited=visited,
+            )
+        except FileNotFoundError:
+            continue
 
 
 def load_profile_package(
     profile_id: str, depth: int = 1, manifest: Optional[Manifest] = None
 ) -> dict[str, Any]:
-    """Load a profile package with primary profile and related profiles.
+    """Load a JSON profile plus related JSON profiles from embedded graph metadata."""
 
-    This function loads the primary profile plus all related profiles at the
-    specified depth, returning a package suitable for multi-entity curation
-    workflows. The package includes graph information for cross-profile linkages.
+    del manifest
 
-    Args:
-        profile_id: Primary profile identifier
-        depth: How many levels of related profiles to include (default: 1)
-        manifest: Optional pre-loaded manifest (loaded if not provided)
+    normalized_profile_id = _entity_id_from_reference(profile_id)
+    if not normalized_profile_id:
+        raise FileNotFoundError(f"Invalid profile reference: {profile_id}")
 
-    Returns:
-        Package dictionary with structure:
-        {
-            "primary_profile": "TribalGovernmentUS",
-            "profiles": {...profiles loaded...},
-            "graph": {...profile graph...},
-            "depth": 1
-        }
+    profiles_to_load: dict[str, dict[str, Any]] = {}
+    _load_profile_documents_for_depth(
+        normalized_profile_id,
+        depth,
+        loaded_profiles=profiles_to_load,
+        visited=set(),
+    )
 
-    Raises:
-        FileNotFoundError: If profile not found
-        ValueError: If configuration invalid
-        RuntimeError: If loading fails
-
-    Example:
-        >>> package = load_profile_package("TribalGovernmentUS", depth=1)
-        >>> print(list(package["profiles"].keys()))
-        ['TribalGovernmentUS', 'OfficeHeldByHeadOfState']
-
-    Plain meaning: Load a profile plus related profiles for multi-entity curation.
-    """
-    if manifest is None:
-        manifest = load_manifest()
-
-    # Validate profile exists
-    if manifest.get_profile_entry(profile_id) is None:
-        raise FileNotFoundError(
-            f"Profile '{profile_id}' not found in manifest. "
-            f"Available profiles: {manifest.profile_ids}"
-        )
-
-    # Load primary profile
-    primary_profile = load_profile(profile_id, manifest)
-
-    profiles_to_load = {profile_id: primary_profile}
-
-    # Traverse to load related profiles at specified depth
-    if depth > 0:
-        related_ids = _get_related_profile_ids(
-            profile_id, manifest, visited=set(), depth=depth
-        )
-        for related_id in related_ids:
-            if related_id not in profiles_to_load:
-                try:
-                    profiles_to_load[related_id] = load_profile(related_id, manifest)
-                except Exception:
-                    # Skip profiles that fail to load
-                    pass
-
-    # Build graph from manifest
     from gkc.profiles.graph import ProfileGraph
 
-    graph = ProfileGraph.from_manifest_data(manifest.profiles)
+    graph = ProfileGraph.from_profile_documents(profiles_to_load)
+
+    primary_profile = profiles_to_load.get(normalized_profile_id)
+    if primary_profile is None:
+        raise FileNotFoundError(
+            f"Profile '{normalized_profile_id}' could not be loaded"
+        )
 
     return {
-        "primary_profile": profile_id,
+        "primary_profile": normalized_profile_id,
+        "primary_profile_entity": primary_profile.get("entity"),
         "profiles": profiles_to_load,
         "graph": graph,
         "depth": depth,
-        "manifest_commit_sha": manifest.commit_sha,
     }
 
 
-def _get_related_profile_ids(
-    profile_id: str,
-    manifest: Manifest,
-    visited: Optional[set[str]] = None,
-    depth: int = 1,
-) -> set[str]:
-    """Recursively find related profile IDs up to specified depth.
-
-    Args:
-        profile_id: Starting profile ID
-        manifest: Loaded manifest
-        visited: Set of already-visited profile IDs (for cycle prevention)
-        depth: Remaining depth to traverse
-
-    Returns:
-        Set of related profile IDs
-    """
-    if visited is None:
-        visited = set()
-
-    if depth <= 0 or profile_id in visited:
-        return set()
-
-    visited.add(profile_id)
-    related = set()
-
-    profile_entry = manifest.get_profile_entry(profile_id)
-    if profile_entry is None:
-        return related
-
-    # Get direct related profiles
-    related_profiles = profile_entry.get("related_profiles", [])
-    for rel_id in related_profiles:
-        if rel_id not in visited:
-            related.add(rel_id)
-            # Recurse if depth > 1
-            if depth > 1:
-                related.update(
-                    _get_related_profile_ids(rel_id, manifest, visited, depth - 1)
-                )
-
-    return related
-
-
 def get_profile_graph(manifest: Optional[Manifest] = None) -> Any:
-    """Get the complete ProfileGraph from manifest.
+    """Get the complete ProfileGraph from the loaded manifest."""
 
-    Args:
-        manifest: Optional pre-loaded manifest (loaded if not provided)
-
-    Returns:
-        ProfileGraph instance representing all profiles and relationships
-
-    Example:
-        >>> graph = get_profile_graph()
-        >>> neighbors = graph.get_neighbors("TribalGovernmentUS")
-
-    Plain meaning: Get the graph of all profile relationships.
-    """
     if manifest is None:
         manifest = load_manifest()
 
@@ -2463,49 +2534,33 @@ def resolve_profile_link(
     statement_id: str,
     manifest: Optional[Manifest] = None,
 ) -> Optional[dict[str, Any]]:
-    """Resolve cross-profile linkage for a statement.
+    """Resolve a profile-graph edge by source profile and linking statement URI/QID."""
 
-    Given a source profile and statement ID, find the target profile and
-    linkage metadata from manifest data.
+    del manifest
 
-    Args:
-        source_profile_id: Profile ID containing the linking statement
-        statement_id: Statement ID that creates the linkage
-        manifest: Optional pre-loaded manifest (loaded if not provided)
+    profile_document = load_profile(source_profile_id)
+    requested_statement_id = _entity_id_from_reference(statement_id)
+    requested_statement_uri = _entity_uri_from_reference(statement_id)
 
-    Returns:
-        Linkage metadata dict or None if not found. Includes:
-        {
-            "target_profile": "...",
-            "via_statement": "...",
-            "relationship_type": "...",
-            "cardinality": {...},
-            "workflow_policy": {...},
-            ...
-        }
-
-    Example:
-        >>> linkage = resolve_profile_link(
-        ...     "TribalGovernmentUS",
-        ...     "office_held_by_head_of_state"
-        ... )
-        >>> if linkage:
-        ...     print(linkage["target_profile"])
-
-    Plain meaning: Find target profile and linkage rules for a cross-profile statement.
-    """
-    if manifest is None:
-        manifest = load_manifest()
-
-    profile_entry = manifest.get_profile_entry(source_profile_id)
-    if profile_entry is None:
-        return None
-
-    # Look in statement_linkages array
-    linkages = profile_entry.get("statement_linkages", [])
-    for linkage in linkages:
-        if linkage.get("statement_id") == statement_id:
-            return linkage.get("linkage")
+    for edge in profile_document.get("metadata", {}).get("profile_graph", []):
+        edge_statement_id = _entity_id_from_reference(edge.get("via_statement"))
+        edge_statement_uri = _entity_uri_from_reference(edge.get("via_statement"))
+        if requested_statement_id and edge_statement_id == requested_statement_id:
+            return {
+                "target_profile": _entity_id_from_reference(edge.get("entity")),
+                "target_entity": _entity_uri_from_reference(edge.get("entity")),
+                "via_statement": edge_statement_uri,
+                "relationship_type": edge.get("linkage_type"),
+                "label": edge.get("label"),
+            }
+        if requested_statement_uri and edge_statement_uri == requested_statement_uri:
+            return {
+                "target_profile": _entity_id_from_reference(edge.get("entity")),
+                "target_entity": _entity_uri_from_reference(edge.get("entity")),
+                "via_statement": edge_statement_uri,
+                "relationship_type": edge.get("linkage_type"),
+                "label": edge.get("label"),
+            }
 
     return None
 
@@ -2517,186 +2572,128 @@ def create_curation_packet(
     depth: int = 1,
     manifest: Optional[Manifest] = None,
 ) -> dict[str, Any]:
-    """Create a curation packet for multi-entity workflows.
+    """Create a curation packet from JSON Entity Profiles.
 
-    A curation packet is a self-contained work unit containing entity scaffolds,
-    cross-reference information, linkage metadata, and cardinality constraints.
-    It serves as the primary interface between gkc and the Wizard for guiding
-    curator workflows.
-
-    Args:
-        profile_id: Primary profile to create packet for
-        operation_mode: "single" (primary only) or "bulk" (with related profiles)
-        load_wikidata_qids: Whether to pre-populate from Wikidata (future enhancement)
-        depth: Related profile depth to include (for bulk mode)
-        manifest: Optional pre-loaded manifest (loaded if not provided)
-
-    Returns:
-        Curation packet dictionary with structure:
-        {
-            "packet_id": "pkt-...",
-            "operation_mode": "single" or "bulk",
-            "created_at": "ISO 8601",
-            "manifest_commit_sha": "...",
-            "entities": [...entity scaffolds...],
-            "cross_references": [...linkage info...],
-            "cardinality_constraints": [...constraints...],
-            "profile_package": {...profile data...}
-        }
-
-    Raises:
-        FileNotFoundError: If profile not found
-        ValueError: If configuration invalid
-
-    Example:
-        >>> packet = create_curation_packet("TribalGovernmentUS", "single")
-        >>> print(f"Packet {packet['packet_id']} for {len(packet['entities'])} entities")
-
-    Plain meaning: Create a work unit for multi-entity curation.
+    Packet assembly reads `profiles/<QID>.json` directly. The SpiritSafe
+    manifest remains a tooling/index artifact and is not required here.
     """
-    if manifest is None:
-        manifest = load_manifest()
 
-    # Determine packet depth and what to load
+    del load_wikidata_qids
+    del manifest
+
     actual_depth = depth if operation_mode == "bulk" else 0
+    package = load_profile_package(profile_id, depth=actual_depth)
 
-    # Load profile package
-    package = load_profile_package(profile_id, depth=actual_depth, manifest=manifest)
+    entities: list[dict[str, Any]] = []
+    entity_id_map: dict[str, str] = {}
 
-    # Build entity scaffolds
-    entities = []
-    entity_id_map = {}  # Map profile_id -> packet entity_id
-
-    for idx, (prof_id, profile_data) in enumerate(package["profiles"].items()):
+    for idx, (profile_qid, profile_data) in enumerate(package["profiles"].items()):
         entity_id = f"ent-{idx + 1:03d}"
-        entity_id_map[prof_id] = entity_id
+        entity_id_map[profile_qid] = entity_id
+        normalized_statements = [
+            _normalized_packet_statement(statement)
+            for statement in profile_data.get("statements", [])
+            if isinstance(statement, dict)
+        ]
+        entities.append(
+            {
+                "id": entity_id,
+                "profile": profile_qid,
+                "profile_entity": profile_data.get("entity"),
+                "data": {},
+                "profile_structure": {
+                    "identification": profile_data.get("identification", {}),
+                    "statements": normalized_statements,
+                },
+            }
+        )
 
-        # Create scaffold for this entity with profile structure
-        entity = {
-            "id": entity_id,
-            "profile": prof_id,
-            "data": {},  # Curator fills this in the wizard
-            "profile_structure": {
-                # This will be used by the Wizard for form generation
-                "statements": profile_data.get("statements", {}),
-            },
-        }
-        entities.append(entity)
-
-    # Build cross-references
-    cross_references = []
-
-    for source_profile_id in package["profiles"].keys():
-        profile_entry = manifest.get_profile_entry(source_profile_id)
-        if not profile_entry:
+    cross_references: list[dict[str, Any]] = []
+    for source_profile_id, profile_data in package["profiles"].items():
+        source_entity_id = entity_id_map.get(source_profile_id)
+        if not source_entity_id:
             continue
-
-        linkages = profile_entry.get("statement_linkages", [])
-        for linkage in linkages:
-            target_profile = linkage.get("linkage", {}).get("target_profile")
-            statement_id = linkage.get("statement_id")
-
-            if (
-                target_profile in package["profiles"]
-                and target_profile in entity_id_map
-            ):
-                source_entity_id = entity_id_map[source_profile_id]
-                target_entity_id = entity_id_map[target_profile]
-
-                cross_reference = {
+        for edge in profile_data.get("metadata", {}).get("profile_graph", []):
+            target_profile = _entity_id_from_reference(edge.get("entity"))
+            if not target_profile or target_profile not in entity_id_map:
+                continue
+            cross_references.append(
+                {
                     "from": source_entity_id,
                     "from_profile": source_profile_id,
-                    "to": target_entity_id,
+                    "from_entity": profile_data.get("entity"),
+                    "to": entity_id_map[target_profile],
                     "to_profile": target_profile,
-                    "via_statement": statement_id,
-                    "cardinality": linkage.get("linkage", {}).get("cardinality", {}),
-                    "workflow_policy": linkage.get("linkage", {}).get(
-                        "workflow_policy", {}
+                    "to_entity": _entity_uri_from_reference(edge.get("entity")),
+                    "via_statement": _entity_uri_from_reference(
+                        edge.get("via_statement")
                     ),
+                    "relationship_type": edge.get("linkage_type"),
+                    "cardinality": {},
+                    "workflow_policy": {},
                 }
-                cross_references.append(cross_reference)
+            )
 
-    # Build cardinality constraints (for validation)
-    cardinality_constraints = []
-    for cross_ref in cross_references:
-        constraint = {
-            "from": cross_ref["from"],
-            "to": cross_ref["to"],
-            "min": cross_ref.get("cardinality", {}).get("min", 0),
-            "max": cross_ref.get("cardinality", {}).get("max", -1),  # -1 = unlimited
+    cardinality_constraints = [
+        {
+            "from": cross_reference["from"],
+            "to": cross_reference["to"],
+            "min": 0,
+            "max": -1,
         }
-        cardinality_constraints.append(constraint)
+        for cross_reference in cross_references
+    ]
 
-    # Generate packet ID
-    packet_id = f"pkt-{uuid.uuid4().hex[:12]}"
-
-    # Build packet
-    packet = {
-        "packet_id": packet_id,
+    primary_profile_id = package["primary_profile"]
+    return {
+        "packet_id": f"pkt-{uuid.uuid4().hex[:12]}",
         "operation_mode": operation_mode,
-        "created_at": datetime.now().isoformat(),
-        "manifest_commit_sha": manifest.commit_sha,
-        "primary_profile": profile_id,
+        "created_at": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
+        "primary_profile": primary_profile_id,
+        "primary_profile_entity": package.get("primary_profile_entity"),
         "entities": entities,
         "cross_references": cross_references,
         "cardinality_constraints": cardinality_constraints,
         "profile_package": package,
     }
 
-    return packet
-
 
 def validate_packet_structure(packet: dict[str, Any]) -> tuple[bool, list[str]]:
-    """Validate packet structure and cardinality constraints.
+    """Validate packet structure and basic linkage consistency."""
 
-    Checks that:
-    - Required fields are present
-    - Entity IDs are consistent
-    - Cross-references point to valid entities
-    - Cardinality constraints are satisfiable
-
-    Args:
-        packet: Curation packet to validate
-
-    Returns:
-        Tuple of (is_valid, errors) where is_valid is bool and errors is list of strings
-
-    Example:
-        >>> is_valid, errors = validate_packet_structure(packet)
-        >>> if not is_valid:
-        ...     for error in errors:
-        ...         print(f"  - {error}")
-
-    Plain meaning: Check that a curation packet is well-formed.
-    """
     errors = []
-
-    # Check required fields
     required_fields = ["packet_id", "operation_mode", "entities", "cross_references"]
     for required_field in required_fields:
         if required_field not in packet:
             errors.append(f"Missing required field: {required_field}")
 
-    # Check entities
-    if "entities" in packet:
-        entity_ids = {e["id"] for e in packet["entities"]}
+    entity_ids = {
+        str(entity.get("id"))
+        for entity in packet.get("entities", [])
+        if isinstance(entity, dict) and entity.get("id")
+    }
 
-        # Validate cross-references
-        for cross_ref in packet.get("cross_references", []):
-            if cross_ref["from"] not in entity_ids:
-                errors.append(
-                    f"Cross-reference from {cross_ref['from']} points to unknown entity"
-                )
-            if cross_ref["to"] not in entity_ids:
-                errors.append(
-                    f"Cross-reference to {cross_ref['to']} points to unknown entity"
-                )
+    for cross_ref in packet.get("cross_references", []):
+        if cross_ref.get("from") not in entity_ids:
+            errors.append(
+                f"Cross-reference from {cross_ref.get('from')} points to unknown entity"
+            )
+        if cross_ref.get("to") not in entity_ids:
+            errors.append(
+                f"Cross-reference to {cross_ref.get('to')} points to unknown entity"
+            )
 
-    # Check cardinality is feasible
     for constraint in packet.get("cardinality_constraints", []):
-        if constraint["min"] < 0:
+        minimum = constraint.get("min")
+        maximum = constraint.get("max")
+        if isinstance(minimum, int) and minimum < 0:
             errors.append(f"Cardinality min must be >= 0: {constraint}")
-        if constraint["max"] != -1 and constraint["max"] < constraint["min"]:
+        if (
+            isinstance(minimum, int)
+            and isinstance(maximum, int)
+            and maximum != -1
+            and maximum < minimum
+        ):
             errors.append(f"Cardinality max must be >= min or -1: {constraint}")
 
     return (len(errors) == 0, errors)

@@ -787,6 +787,77 @@ def test_mash_eid_basic(monkeypatch, capsys):
     assert result["ok"] is True
     assert data["id"] == "E502"
 
+    def test_spiritsafe_manifest_build_json(capsys, tmp_path):
+        """spiritsafe manifest build writes a manifest and reports summary counts."""
+
+        fixture_root = Path(__file__).resolve().parent / "fixtures" / "spiritsafe"
+        output_path = tmp_path / "manifest.json"
+
+        exit_code = cli.main(
+            [
+                "--json",
+                "spiritsafe",
+                "manifest",
+                "build",
+                "--source",
+                "local",
+                "--local-root",
+                str(fixture_root),
+                "--output",
+                str(output_path),
+            ]
+        )
+
+        assert exit_code == 0
+        assert output_path.exists()
+        output = capsys.readouterr().out.strip()
+        data = json.loads(output)
+        assert data["command"] == "spiritsafe.manifest.build"
+        assert data["ok"] is True
+        assert data["details"]["profile_count"] == 2
+        assert data["details"]["entity_count"] == 1
+        assert data["details"]["query_count"] == 1
+        assert data["details"]["value_list_count"] == 1
+
+    def test_registry_list_json_uses_new_manifest_shape(capsys):
+        """registry list should emit QID-based profile entries from the new manifest."""
+
+        fixture_root = Path(__file__).resolve().parent / "fixtures" / "spiritsafe"
+
+        exit_code = cli.main(
+            [
+                "--json",
+                "registry",
+                "list",
+                "--source",
+                "local",
+                "--local-root",
+                str(fixture_root),
+            ]
+        )
+
+        assert exit_code == 0
+        output = capsys.readouterr().out.strip()
+        data = json.loads(output)
+        assert data["command"] == "registry.list"
+        assert data["ok"] is True
+        assert data["details"]["profiles"] == [
+            {
+                "qid": "Q4",
+                "entity": "https://datadistillery.wikibase.cloud/entity/Q4",
+                "label": "Tribal Government in the United States",
+                "description": "Profile for tribal government entities in the United States",
+                "statement_count": 2,
+            },
+            {
+                "qid": "Q39",
+                "entity": "https://datadistillery.wikibase.cloud/entity/Q39",
+                "label": "Office Held by Head of Government",
+                "description": "Profile for head-of-government office entities",
+                "statement_count": 2,
+            },
+        ]
+
 
 def test_mash_qid_summary(monkeypatch, capsys):
     """Mash qid with --summary flag returns summary."""

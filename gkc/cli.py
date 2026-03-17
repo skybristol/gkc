@@ -33,7 +33,7 @@ from gkc.spirit_safe import (
     build_entity_profile_json_documents,
     create_curation_packet,
     export_entity_profile_json_documents,
-    get_profile_graph,
+    export_spiritsafe_manifest,
     load_manifest,
     load_profile_package,
     validate_packet_structure,
@@ -729,19 +729,6 @@ def _build_parser() -> argparse.ArgumentParser:
         command_path="registry.list",
     )
 
-    registry_search = registry_subparsers.add_parser(
-        "search", help="Search profiles by keyword"
-    )
-    registry_search.add_argument(
-        "keyword",
-        help="Keyword to search for in profile names, descriptions, or tags",
-    )
-    _add_profile_source_args(registry_search)
-    registry_search.set_defaults(
-        handler=_handle_registry_search,
-        command_path="registry.search",
-    )
-
     registry_info = registry_subparsers.add_parser(
         "info", help="Show detailed profile metadata"
     )
@@ -765,17 +752,30 @@ def _build_parser() -> argparse.ArgumentParser:
         command_path="registry.validate",
     )
 
-    registry_graph = registry_subparsers.add_parser(
-        "graph", help="Show profile graph relationships"
+    spiritsafe_parser = subparsers.add_parser(
+        "spiritsafe", help="SpiritSafe artifact operations"
     )
-    registry_graph.add_argument(
-        "--profile",
-        help="Optional profile ID to show neighbors for",
+    spiritsafe_subparsers = spiritsafe_parser.add_subparsers(dest="spiritsafe_command")
+
+    spiritsafe_manifest = spiritsafe_subparsers.add_parser(
+        "manifest", help="Build and inspect SpiritSafe manifests"
     )
-    _add_profile_source_args(registry_graph)
-    registry_graph.set_defaults(
-        handler=_handle_registry_graph,
-        command_path="registry.graph",
+    spiritsafe_manifest_subparsers = spiritsafe_manifest.add_subparsers(
+        dest="spiritsafe_manifest_command"
+    )
+
+    spiritsafe_manifest_build = spiritsafe_manifest_subparsers.add_parser(
+        "build", help="Build cache/manifest.json from local SpiritSafe artifacts"
+    )
+    spiritsafe_manifest_build.add_argument(
+        "-o",
+        "--output",
+        help="Optional output path for the manifest JSON file",
+    )
+    _add_profile_source_args(spiritsafe_manifest_build)
+    spiritsafe_manifest_build.set_defaults(
+        handler=_handle_spiritsafe_manifest_build,
+        command_path="spiritsafe.manifest.build",
     )
 
     # Packet commands
@@ -1201,6 +1201,21 @@ def _restore_source_override(previous_source: Any, source_overridden: bool) -> N
             github_ref=previous_source.github_ref,
             local_root=previous_source.local_root,
         )
+
+
+def _preferred_manifest_text(values: Any) -> str:
+    """Pick a curator-facing string from a multilingual manifest text map."""
+
+    if not isinstance(values, dict):
+        return ""
+    for language in ("mul", "en"):
+        value = values.get(language)
+        if isinstance(value, str) and value:
+            return value
+    for value in values.values():
+        if isinstance(value, str) and value:
+            return value
+    return ""
 
 
 def _load_profile_from_reference(
@@ -2259,72 +2274,34 @@ def _handle_profile_value_lists_hydrate(args: argparse.Namespace) -> dict[str, A
 
 
 def _handle_registry_list(args: argparse.Namespace) -> dict[str, Any]:
-    """List all profiles in the SpiritSafe registry."""
+    """List all profiles in the SpiritSafe artifact manifest."""
     previous_source, source_overridden = _apply_source_override(args)
 
     try:
         manifest = load_manifest()
         profiles = []
 
-        for profile_id in manifest.profile_ids:
+        for profile_id in manifest.profile_qids:
             entry = manifest.get_profile_entry(profile_id)
             if entry:
                 profiles.append(
                     {
-                        "id": profile_id,
-                        "name": entry.get("name", profile_id),
-                        "description": entry.get("description", ""),
-                        "version": entry.get("version", ""),
+                        "qid": profile_id,
+                        "entity": entry.get("entity"),
+                        "label": _preferred_manifest_text(entry.get("labels", {})),
+                        "description": _preferred_manifest_text(
+                            entry.get("descriptions", {})
+                        ),
+                        "statement_count": entry.get("statement_count", 0),
                     }
                 )
 
         message = f"Found {len(profiles)} profiles in registry"
-        details = {"profiles": profiles, "manifest_commit": manifest.commit_sha}
-
-        return {
-            "command": args.command_path,
-            "ok": True,
-            "message": message,
-            "details": details,
+        details = {
+            "profiles": profiles,
+            "generated_at": manifest.generated_at,
+            "source": manifest.source,
         }
-    except Exception as exc:
-        raise CLIError(str(exc)) from exc
-    finally:
-        _restore_source_override(previous_source, source_overridden)
-
-
-def _handle_registry_search(args: argparse.Namespace) -> dict[str, Any]:
-    """Search profiles by keyword."""
-    previous_source, source_overridden = _apply_source_override(args)
-
-    try:
-        manifest = load_manifest()
-        keyword = args.keyword.lower()
-        matching_profiles = []
-
-        for profile_id in manifest.profile_ids:
-            entry = manifest.get_profile_entry(profile_id)
-            if not entry:
-                continue
-
-            # Search in name, description, tags
-            searchable_text = (
-                f"{profile_id} {entry.get('name', '')} "
-                f"{entry.get('description', '')} "
-                f"{' '.join(entry.get('tags', []))}"
-            ).lower()
-
-            if keyword in searchable_text:
-                matching_profiles.append(
-                    {
-                        "id": profile_id,
-                        "name": entry.get("name", profile_id),
-                        "description": entry.get("description", ""),
-                    }
-                )
-
-        message = f"Found {len(matching_profiles)} profiles matching '{args.keyword}'"
-        details = {"keyword": args.keyword, "matches": matching_profiles}
 
         return {
             "command": args.command_path,
@@ -2339,7 +2316,7 @@ def _handle_registry_search(args: argparse.Namespace) -> dict[str, Any]:
 
 
 def _handle_registry_info(args: argparse.Namespace) -> dict[str, Any]:
-    """Show detailed profile metadata."""
+    """Show detailed profile metadata from the artifact manifest."""
     previous_source, source_overridden = _apply_source_override(args)
 
     try:
@@ -2349,19 +2326,19 @@ def _handle_registry_info(args: argparse.Namespace) -> dict[str, Any]:
         if not entry:
             raise CLIError(
                 f"Profile '{args.profile}' not found. "
-                f"Available: {', '.join(manifest.profile_ids)}"
+                f"Available: {', '.join(manifest.profile_qids)}"
             )
 
-        message = f"Profile: {entry.get('name', args.profile)}"
+        profile_qid = entry.get("qid") or args.profile
+        message = f"Profile: {_preferred_manifest_text(entry.get('labels', {})) or profile_qid}"
         details = {
-            "profile_id": args.profile,
-            "name": entry.get("name"),
-            "description": entry.get("description"),
-            "version": entry.get("version"),
-            "tags": entry.get("tags", []),
-            "related_profiles": entry.get("related_profiles", []),
-            "statement_linkages": len(entry.get("statement_linkages", [])),
-            "files": entry.get("files", {}),
+            "qid": profile_qid,
+            "entity": entry.get("entity"),
+            "labels": entry.get("labels", {}),
+            "descriptions": entry.get("descriptions", {}),
+            "statement_count": entry.get("statement_count", 0),
+            "profile_graph": entry.get("profile_graph", []),
+            "value_list_graph": entry.get("value_list_graph", []),
         }
 
         return {
@@ -2377,35 +2354,40 @@ def _handle_registry_info(args: argparse.Namespace) -> dict[str, Any]:
 
 
 def _handle_registry_validate(args: argparse.Namespace) -> dict[str, Any]:
-    """Validate manifest structure."""
+    """Validate artifact manifest structure."""
     previous_source, source_overridden = _apply_source_override(args)
 
     try:
         manifest = load_manifest()
         errors = []
 
-        # Basic validation checks
         if not manifest.profiles:
             errors.append("No profiles found in manifest")
 
-        # Check each profile has required fields
-        for profile_id in manifest.profile_ids:
+        for profile_id in manifest.profile_qids:
             entry = manifest.get_profile_entry(profile_id)
             if not entry:
                 errors.append(f"Profile {profile_id} has no entry")
                 continue
 
-            if not entry.get("name"):
-                errors.append(f"Profile {profile_id} missing name")
-            if not entry.get("files", {}).get("profile_yaml"):
-                errors.append(f"Profile {profile_id} missing profile_yaml path")
+            if not entry.get("entity"):
+                errors.append(f"Profile {profile_id} missing entity URI")
+            if not isinstance(entry.get("profile_graph", []), list):
+                errors.append(f"Profile {profile_id} has invalid profile_graph")
+            if not isinstance(entry.get("value_list_graph", []), list):
+                errors.append(f"Profile {profile_id} has invalid value_list_graph")
+
+        if manifest.entities.get("count") != len(manifest.entities.get("qids", [])):
+            errors.append("Manifest entities.count does not match entities.qids length")
 
         ok = len(errors) == 0
         message = "✓ Manifest is valid" if ok else "✗ Manifest validation failed"
 
         details = {
-            "profile_count": len(manifest.profile_ids),
-            "manifest_commit": manifest.commit_sha,
+            "profile_count": len(manifest.profile_qids),
+            "entity_count": manifest.entities.get("count", 0),
+            "query_count": len(manifest.queries),
+            "value_list_count": len(manifest.value_lists),
             "generated_at": manifest.generated_at,
             "errors": errors,
         }
@@ -2422,55 +2404,37 @@ def _handle_registry_validate(args: argparse.Namespace) -> dict[str, Any]:
         _restore_source_override(previous_source, source_overridden)
 
 
-def _handle_registry_graph(args: argparse.Namespace) -> dict[str, Any]:
-    """Show profile graph relationships."""
-    previous_source, source_overridden = _apply_source_override(args)
+def _handle_spiritsafe_manifest_build(args: argparse.Namespace) -> dict[str, Any]:
+    """Build cache/manifest.json from local SpiritSafe artifacts."""
+
+    if args.source != "local" or not args.local_root:
+        raise CLIError(
+            "spirit_safe manifest build requires --source local --local-root /path/to/SpiritSafe"
+        )
 
     try:
-        manifest = load_manifest()
-        graph = get_profile_graph(manifest)
-
-        if args.profile:
-            # Show neighbors for specific profile
-            if args.profile not in graph.nodes:
-                raise CLIError(
-                    f"Profile '{args.profile}' not found in graph. "
-                    f"Available: {', '.join(sorted(graph.nodes.keys()))}"
-                )
-
-            neighbors = graph.get_neighbors(args.profile)
-            message = f"Profile '{args.profile}' has {len(neighbors)} neighbors"
-            details = {
-                "profile": args.profile,
-                "neighbors": list(neighbors),
-                "total_nodes": len(graph.nodes),
-            }
-        else:
-            # Show full graph summary
-            edges = []
-            for source_profile in graph.nodes:
-                for edge in graph.get_edges(source_profile):
-                    edges.append(
-                        (source_profile, edge.target_profile, edge.via_statement)
-                    )
-            message = f"Profile graph: {len(graph.nodes)} nodes, {len(edges)} edges"
-            details = {
-                "nodes": list(graph.nodes.keys()),
-                "edges": edges,
-                "total_nodes": len(graph.nodes),
-                "total_edges": len(edges),
-            }
-
+        local_root = Path(args.local_root).expanduser().resolve()
+        output_path = (
+            Path(args.output).expanduser().resolve()
+            if args.output
+            else local_root / "cache" / "manifest.json"
+        )
+        manifest_document = export_spiritsafe_manifest(local_root, output_path)
+        details = {
+            "output_path": str(output_path),
+            "profile_count": len(manifest_document.get("profiles", [])),
+            "entity_count": manifest_document.get("entities", {}).get("count", 0),
+            "query_count": len(manifest_document.get("queries", [])),
+            "value_list_count": len(manifest_document.get("value_lists", [])),
+        }
         return {
             "command": args.command_path,
             "ok": True,
-            "message": message,
+            "message": f"Built SpiritSafe manifest at {output_path}",
             "details": details,
         }
     except Exception as exc:
         raise CLIError(str(exc)) from exc
-    finally:
-        _restore_source_override(previous_source, source_overridden)
 
 
 def _handle_profile_package_load(args: argparse.Namespace) -> dict[str, Any]:
@@ -2487,9 +2451,9 @@ def _handle_profile_package_load(args: argparse.Namespace) -> dict[str, Any]:
 
         details = {
             "primary_profile": package["primary_profile"],
+            "primary_profile_entity": package.get("primary_profile_entity"),
             "depth": package["depth"],
             "profiles_included": list(package["profiles"].keys()),
-            "manifest_commit": package["manifest_commit_sha"],
         }
 
         return {
@@ -2509,29 +2473,18 @@ def _handle_profile_package_cardinality(args: argparse.Namespace) -> dict[str, A
     previous_source, source_overridden = _apply_source_override(args)
 
     try:
-        manifest = load_manifest()
-        package = load_profile_package(
-            args.profile, depth=args.depth, manifest=manifest
-        )
-
-        # Build cardinality report from linkages
+        package = load_profile_package(args.profile, depth=args.depth)
         cardinality_info = []
+        graph = package["graph"]
         for profile_id in package["profiles"].keys():
-            entry = manifest.get_profile_entry(profile_id)
-            if not entry:
-                continue
-
-            linkages = entry.get("statement_linkages", [])
-            for linkage in linkages:
-                linkage_meta = linkage.get("linkage", {})
-                cardinality = linkage_meta.get("cardinality", {})
+            for edge in graph.get_edges(profile_id):
                 cardinality_info.append(
                     {
                         "from": profile_id,
-                        "to": linkage_meta.get("target_profile"),
-                        "via": linkage.get("statement_id"),
-                        "min": cardinality.get("min", 0),
-                        "max": cardinality.get("max", -1),
+                        "to": edge.target_profile,
+                        "via": edge.via_statement,
+                        "min": edge.cardinality.get("min", 0),
+                        "max": edge.cardinality.get("max", -1),
                     }
                 )
 
@@ -2583,6 +2536,7 @@ def _handle_profile_package_validate(args: argparse.Namespace) -> dict[str, Any]
 
         details = {
             "primary_profile": package.get("primary_profile"),
+            "primary_profile_entity": package.get("primary_profile_entity"),
             "depth": package.get("depth"),
             "profiles_count": len(package.get("profiles", {})),
             "errors": errors,
@@ -2621,6 +2575,7 @@ def _handle_packet_create(args: argparse.Namespace) -> dict[str, Any]:
             "packet_id": packet["packet_id"],
             "operation_mode": packet["operation_mode"],
             "primary_profile": packet["primary_profile"],
+            "primary_profile_entity": packet.get("primary_profile_entity"),
             "entity_count": len(packet["entities"]),
             "cross_reference_count": len(packet["cross_references"]),
             "output_file": args.output,
@@ -2650,12 +2605,12 @@ def _handle_packet_info(args: argparse.Namespace) -> dict[str, Any]:
             "operation_mode": packet.get("operation_mode"),
             "created_at": packet.get("created_at"),
             "primary_profile": packet.get("primary_profile"),
+            "primary_profile_entity": packet.get("primary_profile_entity"),
             "entity_count": len(packet.get("entities", [])),
             "cross_reference_count": len(packet.get("cross_references", [])),
             "cardinality_constraint_count": len(
                 packet.get("cardinality_constraints", [])
             ),
-            "manifest_commit": packet.get("manifest_commit_sha"),
         }
 
         return {

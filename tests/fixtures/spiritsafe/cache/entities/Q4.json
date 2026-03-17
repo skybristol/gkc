@@ -1,0 +1,18 @@
+{
+  "entity_id": "Q4",
+  "entity": {
+    "labels": {
+      "mul": {
+        "language": "mul",
+        "value": "Tribal Government in the United States"
+      }
+    },
+    "descriptions": {
+      "mul": {
+        "language": "mul",
+        "value": "Profile for tribal government entities in the United States"
+      }
+    },
+    "claims": {}
+  }
+}

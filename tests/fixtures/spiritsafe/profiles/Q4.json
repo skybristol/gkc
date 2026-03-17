@@ -1,0 +1,100 @@
+{
+  "entity": "https://datadistillery.wikibase.cloud/entity/Q4",
+  "identification": {
+    "labels": {
+      "mul": {
+        "prompt": "primary label for the tribal government"
+      }
+    },
+    "descriptions": {
+      "mul": {
+        "prompt": "short description for the tribal government"
+      }
+    },
+    "aliases": {}
+  },
+  "statements": [
+    {
+      "entity": "https://datadistillery.wikibase.cloud/entity/Q16",
+      "label": "instance of",
+      "io_map": [
+        {
+          "to": "http://www.wikidata.org/entity/P31"
+        }
+      ],
+      "value": {
+        "type": "wikibase-item",
+        "value_list": [
+          {
+            "item": "Q7840353",
+            "itemLabel": "federally recognized Native American tribe in the United States"
+          }
+        ]
+      },
+      "messages": {
+        "mul": {
+          "prompt": "fixed classification for this entity type"
+        }
+      },
+      "max_count": 1,
+      "qualifiers": [],
+      "references": []
+    },
+    {
+      "entity": "https://datadistillery.wikibase.cloud/entity/Q40",
+      "label": "office held by head of government",
+      "io_map": [
+        {
+          "to": "http://www.wikidata.org/entity/P1313"
+        }
+      ],
+      "value": {
+        "type": "wikibase-item",
+        "profile": {
+          "entity": "https://datadistillery.wikibase.cloud/entity/Q39",
+          "label": "Office Held by Head of Government"
+        },
+        "value_list_reference": "cache/queries/Q39.json"
+      },
+      "messages": {
+        "mul": {
+          "prompt": "linked office profile"
+        }
+      },
+      "max_count": 1,
+      "qualifiers": [],
+      "references": []
+    }
+  ],
+  "metadata": {
+    "labels": {
+      "mul": "Tribal Government in the United States"
+    },
+    "descriptions": {
+      "mul": "Profile for tribal government entities in the United States"
+    },
+    "aliases": {},
+    "generated_at": "2026-03-17T18:00:00Z",
+    "languages": [
+      "mul"
+    ],
+    "statement_count": 2,
+    "profile_graph": [
+      {
+        "entity": "https://datadistillery.wikibase.cloud/entity/Q39",
+        "label": "Office Held by Head of Government",
+        "via_statement": "https://datadistillery.wikibase.cloud/entity/Q40",
+        "linkage_type": "P161"
+      }
+    ],
+    "value_list_graph": [
+      {
+        "entity": "https://datadistillery.wikibase.cloud/entity/Q28",
+        "label": "List of Federal Register Sources",
+        "via_statement": "https://datadistillery.wikibase.cloud/entity/Q16",
+        "cache_path": "cache/queries/Q28.json"
+      }
+    ],
+    "exported_from": "https://datadistillery.wikibase.cloud/entity/Q4"
+  }
+}
