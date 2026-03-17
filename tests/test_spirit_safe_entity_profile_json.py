@@ -215,3 +215,190 @@ def test_value_list_graph_includes_reference_and_qualifier_routes(tmp_path):
             "cache_path": "cache/queries/Q28.json",
         },
     ]
+
+
+def test_reference_statement_derives_value_from_parent_statement(tmp_path):
+    """Nested reference should expose statement_value source when P213 matches parent."""
+
+    cache_entities_dir = tmp_path / "cache" / "entities"
+    cache_entities_dir.mkdir(parents=True, exist_ok=True)
+
+    profile_payload = {
+        "entity_id": "Q4",
+        "entity": {
+            "labels": {"mul": {"value": "Tribal Government in the United States"}},
+            "descriptions": {"mul": {"value": "Example profile"}},
+            "aliases": {},
+            "claims": {
+                "P1": [_build_entity_claim_entity_id("Q3")],
+                "P157": [
+                    {
+                        "mainsnak": {
+                            "datavalue": {
+                                "value": {"id": "Q19"},
+                            }
+                        },
+                        "qualifiers": {
+                            "P211": [_build_qualifier_entity_id("Q29")],
+                        },
+                    }
+                ],
+            },
+        },
+    }
+    (cache_entities_dir / "Q4.json").write_text(
+        json.dumps(profile_payload), encoding="utf-8"
+    )
+
+    statement_payloads = {
+        "Q19": {
+            "entity_id": "Q19",
+            "entity": {
+                "labels": {"mul": {"value": "official website"}},
+                "claims": {
+                    "P5": [
+                        _build_entity_claim_string(
+                            "http://www.wikidata.org/entity/P856"
+                        )
+                    ],
+                    "P194": [_build_entity_claim_entity_id("Q54")],
+                },
+            },
+        },
+        "Q29": {
+            "entity_id": "Q29",
+            "entity": {
+                "labels": {"mul": {"value": "reference URL"}},
+                "claims": {
+                    "P5": [
+                        _build_entity_claim_string(
+                            "http://www.wikidata.org/entity/P854"
+                        )
+                    ],
+                    "P194": [_build_entity_claim_entity_id("Q54")],
+                    "P213": [_build_entity_claim_entity_id("Q19")],
+                },
+            },
+        },
+        "Q54": {
+            "entity_id": "Q54",
+            "entity": {
+                "labels": {"mul": {"value": "url"}},
+                "claims": {
+                    "P1": [_build_entity_claim_entity_id("Q44")],
+                },
+            },
+        },
+    }
+
+    for entity_id, payload in statement_payloads.items():
+        (cache_entities_dir / f"{entity_id}.json").write_text(
+            json.dumps(payload), encoding="utf-8"
+        )
+
+    docs = build_entity_profile_json_documents(cache_entities_dir)
+
+    references = docs[0]["statements"][0]["references"]
+    assert len(references) == 1
+    assert references[0]["value"]["value_source"] == "statement_value"
+    assert references[0]["value"]["value_source_statement"] == (
+        "https://datadistillery.wikibase.cloud/entity/Q19"
+    )
+
+
+def test_reference_statement_derived_value_respects_profile_scope(tmp_path):
+    """P205 profile scoping should prevent derived value source outside scope."""
+
+    cache_entities_dir = tmp_path / "cache" / "entities"
+    cache_entities_dir.mkdir(parents=True, exist_ok=True)
+
+    profile_payload = {
+        "entity_id": "Q4",
+        "entity": {
+            "labels": {"mul": {"value": "Tribal Government in the United States"}},
+            "descriptions": {"mul": {"value": "Example profile"}},
+            "aliases": {},
+            "claims": {
+                "P1": [_build_entity_claim_entity_id("Q3")],
+                "P157": [
+                    {
+                        "mainsnak": {
+                            "datavalue": {
+                                "value": {"id": "Q19"},
+                            }
+                        },
+                        "qualifiers": {
+                            "P211": [_build_qualifier_entity_id("Q29")],
+                        },
+                    }
+                ],
+            },
+        },
+    }
+    (cache_entities_dir / "Q4.json").write_text(
+        json.dumps(profile_payload), encoding="utf-8"
+    )
+
+    statement_payloads = {
+        "Q19": {
+            "entity_id": "Q19",
+            "entity": {
+                "labels": {"mul": {"value": "official website"}},
+                "claims": {
+                    "P5": [
+                        _build_entity_claim_string(
+                            "http://www.wikidata.org/entity/P856"
+                        )
+                    ],
+                    "P194": [_build_entity_claim_entity_id("Q54")],
+                },
+            },
+        },
+        "Q29": {
+            "entity_id": "Q29",
+            "entity": {
+                "labels": {"mul": {"value": "reference URL"}},
+                "claims": {
+                    "P5": [
+                        _build_entity_claim_string(
+                            "http://www.wikidata.org/entity/P854"
+                        )
+                    ],
+                    "P194": [_build_entity_claim_entity_id("Q54")],
+                    "P213": [
+                        {
+                            "mainsnak": {
+                                "datavalue": {
+                                    "value": {"id": "Q19"},
+                                }
+                            },
+                            "qualifiers": {
+                                "P205": [_build_qualifier_entity_id("Q39")],
+                            },
+                        }
+                    ],
+                },
+            },
+        },
+        "Q54": {
+            "entity_id": "Q54",
+            "entity": {
+                "labels": {"mul": {"value": "url"}},
+                "claims": {
+                    "P1": [_build_entity_claim_entity_id("Q44")],
+                },
+            },
+        },
+    }
+
+    for entity_id, payload in statement_payloads.items():
+        (cache_entities_dir / f"{entity_id}.json").write_text(
+            json.dumps(payload), encoding="utf-8"
+        )
+
+    docs = build_entity_profile_json_documents(cache_entities_dir)
+
+    references = docs[0]["statements"][0]["references"]
+    assert len(references) == 1
+    assert "value_source" not in references[0]["value"]
+    assert "value_source_statement" not in references[0]["value"]

@@ -1361,6 +1361,8 @@ class EntityProfileJsonBuilder:
     ERROR_MESSAGE = "P168"
     MAX_COUNT = "P182"
     HAS_REFERENCE = "P211"
+    APPLIES_TO_PROFILE = "P205"
+    DERIVES_DEFAULT_VALUE_FROM = "P213"
 
     LABEL_PROMPT = "P188"
     LABEL_GUIDANCE = "P185"
@@ -1608,6 +1610,7 @@ class EntityProfileJsonBuilder:
                 role="statement",
                 overlay_qualifiers=claim.get("qualifiers", {}),
                 visited={root_id} if root_id else set(),
+                current_profile_id=root_id,
             )
             if built:
                 statements.append(built)
@@ -1620,6 +1623,8 @@ class EntityProfileJsonBuilder:
         role: str,
         overlay_qualifiers: Optional[dict[str, list[dict[str, Any]]]] = None,
         visited: Optional[set[str]] = None,
+        current_profile_id: Optional[str] = None,
+        parent_statement_id: Optional[str] = None,
     ) -> Optional[dict[str, Any]]:
         if visited is None:
             visited = set()
@@ -1644,6 +1649,18 @@ class EntityProfileJsonBuilder:
             statement_json["value"]["type"], combined_value_ids
         )
 
+        source_statement_id = self._derived_value_source_statement_id(
+            statement_item=statement_item,
+            role=role,
+            parent_statement_id=parent_statement_id,
+            current_profile_id=current_profile_id,
+        )
+        if source_statement_id:
+            statement_json["value"]["value_source"] = "statement_value"
+            statement_json["value"][
+                "value_source_statement"
+            ] = f"{self.entity_prefix}{source_statement_id}"
+
         if qualifiers:
             statement_json["messages"] = self._merge_messages(
                 statement_json.get("messages", {}),
@@ -1664,11 +1681,15 @@ class EntityProfileJsonBuilder:
                     qualifier_ids,
                     role="qualifier",
                     visited=next_visited,
+                    current_profile_id=current_profile_id,
+                    parent_statement_id=entity_id,
                 )
                 statement_json["references"] = self._resolve_linked_statements(
                     reference_ids,
                     role="reference",
                     visited=next_visited,
+                    current_profile_id=current_profile_id,
+                    parent_statement_id=entity_id,
                 )
 
         if role in {"qualifier", "reference"}:
@@ -1683,11 +1704,17 @@ class EntityProfileJsonBuilder:
         *,
         role: str,
         visited: set[str],
+        current_profile_id: Optional[str],
+        parent_statement_id: str,
     ) -> list[dict[str, Any]]:
         resolved: list[dict[str, Any]] = []
         for entity_id in entity_ids:
             nested = self._build_statement_from_cache_id(
-                entity_id, role=role, visited=visited
+                entity_id,
+                role=role,
+                visited=visited,
+                current_profile_id=current_profile_id,
+                parent_statement_id=parent_statement_id,
             )
             if nested:
                 resolved.append(nested)
@@ -1993,6 +2020,48 @@ class EntityProfileJsonBuilder:
             if entity_id:
                 values.append(entity_id)
         return values
+
+    def _derived_value_source_statement_id(
+        self,
+        *,
+        statement_item: dict[str, Any],
+        role: str,
+        parent_statement_id: Optional[str],
+        current_profile_id: Optional[str],
+    ) -> Optional[str]:
+        if role not in {"qualifier", "reference"}:
+            return None
+        if not parent_statement_id:
+            return None
+
+        claims = statement_item.get("entity", {}).get("claims", {})
+        derives_claims = claims.get(self.DERIVES_DEFAULT_VALUE_FROM, [])
+        for claim in derives_claims:
+            source_statement_id = self._claim_entity_id(claim)
+            if not source_statement_id or source_statement_id != parent_statement_id:
+                continue
+            if self._claim_applies_to_profile(claim, current_profile_id):
+                return source_statement_id
+        return None
+
+    def _claim_applies_to_profile(
+        self,
+        claim: dict[str, Any],
+        current_profile_id: Optional[str],
+    ) -> bool:
+        if not current_profile_id:
+            return True
+
+        qualifiers = claim.get("qualifiers", {})
+        if not isinstance(qualifiers, dict):
+            return True
+
+        applies_to_profiles = self._qualifier_entity_ids(
+            qualifiers, self.APPLIES_TO_PROFILE
+        )
+        if not applies_to_profiles:
+            return True
+        return current_profile_id in applies_to_profiles
 
     def _claim_string_values(self, claims: list[dict[str, Any]]) -> list[str]:
         values: list[str] = []
