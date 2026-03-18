@@ -2044,6 +2044,12 @@ def _handle_profile_form(args: argparse.Namespace) -> dict[str, Any]:
         # Set environment variables for Streamlit app to read
         env = os.environ.copy()
         env["GKC_WIZARD_PROFILE"] = profile_entity
+        source_config = gkc.get_spirit_safe_source()
+        env["GKC_SPIRIT_SAFE_SOURCE_MODE"] = source_config.mode
+        env["GKC_SPIRIT_SAFE_GITHUB_REPO"] = source_config.github_repo
+        env["GKC_SPIRIT_SAFE_GITHUB_REF"] = source_config.github_ref
+        if source_config.local_root is not None:
+            env["GKC_SPIRIT_SAFE_LOCAL_ROOT"] = str(source_config.local_root)
         if args.qid:
             env["GKC_WIZARD_QID"] = args.qid
         if args.packet:

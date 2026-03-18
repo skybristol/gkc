@@ -3,11 +3,13 @@
 from __future__ import annotations
 
 import json
+import urllib.request
 from pathlib import Path
 from typing import Any
 
 import streamlit as st
 
+import gkc
 from gkc.profiles.forms.validation_bridge import validate_inline_value
 from gkc.profiles.forms.widgets import WidgetFactory
 from gkc.profiles.forms.wizard.step_base import Step
@@ -112,6 +114,65 @@ def _source_root_path() -> Path | None:
     return None
 
 
+def _wizard_value_list_cache_root() -> Path:
+    """Return the local cache root used by wizard value-list operations."""
+    source = gkc.get_spirit_safe_source()
+    repo_slug = source.github_repo.replace("/", "_")
+    if source.mode == "local" and source.local_root is not None:
+        # Keep local-mode cache names deterministic by source path hash.
+        source_id = str(source.local_root).replace("/", "_").strip("_")
+    else:
+        source_id = source.github_ref
+
+    cache_root = Path.home() / ".cache" / "gkc" / "wizard" / repo_slug / source_id
+    cache_root.mkdir(parents=True, exist_ok=True)
+    return cache_root
+
+
+def _materialize_value_list_cache(cache_ref: str) -> tuple[Path | None, str | None]:
+    """Materialize a value-list artifact into local wizard cache.
+
+    Returns (local_path, error_message).
+    """
+    cache_ref_clean = cache_ref.lstrip("/")
+    local_cache_path = _wizard_value_list_cache_root() / cache_ref_clean
+    local_cache_path.parent.mkdir(parents=True, exist_ok=True)
+
+    if local_cache_path.exists():
+        return local_cache_path, None
+
+    source = gkc.get_spirit_safe_source()
+
+    # Prefer direct local file copy when local source root is available.
+    source_root = _source_root_path()
+    if source_root is not None:
+        candidate = source_root / cache_ref_clean
+        if candidate.exists():
+            local_cache_path.write_text(
+                candidate.read_text(encoding="utf-8"), encoding="utf-8"
+            )
+            return local_cache_path, None
+
+    # Fallback: resolve from configured SpiritSafe source (usually GitHub raw URL).
+    try:
+        resolved = source.resolve_relative(cache_ref_clean)
+    except Exception as exc:
+        return None, f"Unable to resolve value-list source for {cache_ref_clean}: {exc}"
+
+    try:
+        if isinstance(resolved, Path):
+            if not resolved.exists():
+                return None, f"Value list cache file not found: {resolved}"
+            content = resolved.read_text(encoding="utf-8")
+        else:
+            with urllib.request.urlopen(str(resolved), timeout=10) as response:
+                content = response.read().decode("utf-8")
+        local_cache_path.write_text(content, encoding="utf-8")
+        return local_cache_path, None
+    except Exception as exc:
+        return None, f"Failed to materialize value list cache {cache_ref_clean}: {exc}"
+
+
 def _extract_value_list_candidates(cache_data: dict[str, Any]) -> list[dict[str, str]]:
     """Extract normalized item candidates from SpiritSafe cache payloads."""
     candidates: list[dict[str, str]] = []
@@ -160,18 +221,20 @@ def _value_list_search_text(candidate: dict[str, str]) -> str:
 
 
 def _filter_value_list_candidates(
-    candidates: list[dict[str, str]], query: str, limit: int = 200
+    candidates: list[dict[str, str]], query: str, limit: int | None = None
 ) -> list[dict[str, str]]:
     """Filter candidates for responsive type-ahead browsing."""
     normalized_query = query.strip().lower()
     if not normalized_query:
+        if limit is None:
+            return candidates
         return candidates[:limit]
 
     filtered: list[dict[str, str]] = []
     for candidate in candidates:
         if normalized_query in _value_list_search_text(candidate):
             filtered.append(candidate)
-            if len(filtered) >= limit:
+            if limit is not None and len(filtered) >= limit:
                 break
     return filtered
 
@@ -197,13 +260,11 @@ def _statement_value_list_candidates(
     if not isinstance(cache_ref, str) or not cache_ref:
         return [], None
 
-    source_root = _source_root_path()
-    if source_root is None:
-        return [], "Value list route is configured but source root is unavailable."
-
-    cache_path = source_root / cache_ref
-    if not cache_path.exists():
-        return [], f"Value list cache file not found: {cache_path}"
+    cache_path, cache_error = _materialize_value_list_cache(cache_ref)
+    if cache_error:
+        return [], cache_error
+    if cache_path is None:
+        return [], f"Value list cache for {cache_ref} could not be materialized."
 
     cache_store = st.session_state.setdefault("value_list_cache", {})
     cache_key = str(cache_path)
@@ -221,6 +282,50 @@ def _statement_value_list_candidates(
     candidates = _extract_value_list_candidates(cache_payload)
     cache_store[cache_key] = candidates
     return candidates, None
+
+
+def _value_list_widget_kwargs(statement_def: dict[str, Any]) -> dict[str, Any]:
+    """Build widget kwargs for statements constrained by hydrated value lists."""
+    dtype = _value_datatype(statement_def.get("value", {}))
+    if dtype not in {"item", "wikibase-item"}:
+        return {}
+
+    candidates, list_error = _statement_value_list_candidates(statement_def)
+    if list_error:
+        st.error(list_error)
+    if not candidates:
+        return {}
+
+    return {
+        "item_options": candidates,
+        "all_item_options_count": len(candidates),
+    }
+
+
+def _normalize_rendered_value(
+    *,
+    datatype: str,
+    value: Any,
+    statement_ref: str,
+) -> Any:
+    """Normalize widget output while preserving explicit item metadata."""
+    normalized, notices = validate_inline_value(
+        datatype=datatype,
+        value=value,
+        entity_ref=st.session_state.get("active_entity_id", "unknown"),
+        statement_ref=statement_ref,
+    )
+    if (
+        datatype in {"item", "wikibase-item"}
+        and isinstance(value, dict)
+        and isinstance(normalized, dict)
+    ):
+        if isinstance(value.get("item"), str):
+            normalized["item"] = value["item"]
+        if isinstance(value.get("itemLabel"), str):
+            normalized["itemLabel"] = value["itemLabel"]
+    del notices
+    return normalized
 
 
 class IdentificationStep(Step):
@@ -504,22 +609,7 @@ class StatementsStep(Step):
             value_data["value"] = fixed_value
             return
 
-        widget_kwargs: dict[str, Any] = {}
-        if dtype in {"item", "wikibase-item"}:
-            candidates, list_error = _statement_value_list_candidates(statement_def)
-            if list_error:
-                st.error(list_error)
-            if candidates:
-                search_query = st.text_input(
-                    "Search value list",
-                    key=f"value_search_{_statement_key(statement_def)}_{idx}",
-                    placeholder="Type to filter by label, QID, or URI",
-                )
-                filtered = _filter_value_list_candidates(candidates, search_query)
-                if not filtered:
-                    st.warning("No value-list matches found for current search.")
-                widget_kwargs["item_options"] = filtered
-                widget_kwargs["all_item_options_count"] = len(candidates)
+        widget_kwargs = _value_list_widget_kwargs(statement_def)
 
         original_value = WidgetFactory.render_widget(
             datatype=dtype,
@@ -529,26 +619,11 @@ class StatementsStep(Step):
             help_text=_statement_prompt(statement_def),
             **widget_kwargs,
         )
-        value_data["value"] = original_value
-
-        normalized, notices = validate_inline_value(
+        value_data["value"] = _normalize_rendered_value(
             datatype=dtype,
-            value=value_data["value"],
-            entity_ref=st.session_state.get("active_entity_id", "unknown"),
+            value=original_value,
             statement_ref=_statement_key(statement_def),
         )
-        if (
-            dtype in {"item", "wikibase-item"}
-            and isinstance(original_value, dict)
-            and isinstance(normalized, dict)
-        ):
-            if isinstance(original_value.get("item"), str):
-                normalized["item"] = original_value["item"]
-            if isinstance(original_value.get("itemLabel"), str):
-                normalized["itemLabel"] = original_value["itemLabel"]
-        value_data["value"] = normalized
-        # Inline entry applies coercion but defers conformance messaging to review phase.
-        del notices
 
     def _render_qualifiers(
         self, statement_def: dict[str, Any], value_data: dict[str, Any], idx: int
@@ -568,22 +643,20 @@ class StatementsStep(Step):
             qual_dtype = _value_datatype(qualifier_def.get("value", {}))
             current = value_data["qualifiers"].get(qual_key)
 
-            value_data["qualifiers"][qual_key] = WidgetFactory.render_widget(
+            widget_kwargs = _value_list_widget_kwargs(qualifier_def)
+            original_value = WidgetFactory.render_widget(
                 datatype=qual_dtype,
                 label=qual_label,
                 value=current,
                 key=f"qual_{_statement_key(statement_def)}_{qual_key}_{idx}",
                 help_text=_statement_prompt(qualifier_def),
+                **widget_kwargs,
             )
-
-            normalized, notices = validate_inline_value(
+            value_data["qualifiers"][qual_key] = _normalize_rendered_value(
                 datatype=qual_dtype,
-                value=value_data["qualifiers"][qual_key],
-                entity_ref=st.session_state.get("active_entity_id", "unknown"),
+                value=original_value,
                 statement_ref=qual_key,
             )
-            value_data["qualifiers"][qual_key] = normalized
-            del notices
 
     def _render_references(
         self, statement_def: dict[str, Any], value_data: dict[str, Any], idx: int
@@ -610,6 +683,7 @@ class StatementsStep(Step):
             ref_label = _statement_label(ref_def)
             ref_dtype = _value_datatype(ref_def.get("value", {}))
             existing = by_ref_key.get(ref_key, {"property": ref_key, "value": None})
+            widget_kwargs = _value_list_widget_kwargs(ref_def)
 
             ref_value = WidgetFactory.render_widget(
                 datatype=ref_dtype,
@@ -617,16 +691,14 @@ class StatementsStep(Step):
                 value=existing.get("value"),
                 key=f"ref_{_statement_key(statement_def)}_{ref_key}_{idx}",
                 help_text=_statement_prompt(ref_def),
-            )
-            normalized, notices = validate_inline_value(
-                datatype=ref_dtype,
-                value=ref_value,
-                entity_ref=st.session_state.get("active_entity_id", "unknown"),
-                statement_ref=ref_key,
+                **widget_kwargs,
             )
             updated.append({"property": ref_key, "value": ref_value})
-            updated[-1]["value"] = normalized
-            del notices
+            updated[-1]["value"] = _normalize_rendered_value(
+                datatype=ref_dtype,
+                value=ref_value,
+                statement_ref=ref_key,
+            )
 
         value_data["references"] = updated
 
