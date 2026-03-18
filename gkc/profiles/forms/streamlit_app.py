@@ -635,6 +635,22 @@ def render_step_content() -> None:
 
 
 def _load_packet_from_env_or_profile() -> None:
+    source_mode = os.environ.get("GKC_SPIRIT_SAFE_SOURCE_MODE")
+    if source_mode in {"github", "local"}:
+        source_kwargs: dict[str, Any] = {
+            "mode": source_mode,
+            "github_repo": os.environ.get(
+                "GKC_SPIRIT_SAFE_GITHUB_REPO", gkc.DEFAULT_SPIRIT_SAFE_GITHUB_REPO
+            ),
+            "github_ref": os.environ.get("GKC_SPIRIT_SAFE_GITHUB_REF", "main"),
+        }
+        if source_mode == "local":
+            local_root = os.environ.get("GKC_SPIRIT_SAFE_LOCAL_ROOT")
+            if local_root:
+                source_kwargs["local_root"] = local_root
+
+        gkc.set_spirit_safe_source(**source_kwargs)
+
     env_packet = os.environ.get("GKC_WIZARD_PACKET")
     env_profile = os.environ.get("GKC_WIZARD_PROFILE")
 

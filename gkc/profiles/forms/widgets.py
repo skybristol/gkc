@@ -5,9 +5,116 @@ MVP scope: All wikibase-item properties use QID text input (no autocomplete).
 """
 
 import re
+from html import escape
 from typing import Any, Dict, Optional
 
 import streamlit as st
+
+
+@st.dialog(
+    "Select Wikidata item",
+    width="large",
+    dismissible=True,
+    on_dismiss="rerun",
+)
+def _wikidata_item_picker_dialog(
+    *,
+    widget_key: str,
+    help_text: str | None,
+    ordered_uris: list[str],
+    by_uri: dict[str, dict[str, str]],
+    selected_uri_key: str,
+    disabled: bool,
+) -> None:
+    """Render modal picker for hydrated Wikidata value lists."""
+    search_key = f"{widget_key}_search"
+    page_key = f"{widget_key}_page"
+    last_query_key = f"{widget_key}_last_query"
+    page_size = 50
+
+    search_query = st.text_input(
+        "Search",
+        key=search_key,
+        help=help_text,
+        placeholder="Type label, QID, or URI",
+        disabled=disabled,
+    )
+    if page_key not in st.session_state:
+        st.session_state[page_key] = 0
+
+    if st.session_state.get(last_query_key) != search_query:
+        st.session_state[page_key] = 0
+        st.session_state[last_query_key] = search_query
+
+    normalized_query = search_query.strip().lower()
+    if normalized_query:
+        filtered_uris = [
+            uri
+            for uri in ordered_uris
+            if normalized_query
+            in (
+                f"{by_uri[uri].get('itemLabel', '')} "
+                f"{WidgetFactory._qid_from_uri(uri) or ''} {uri}"
+            ).lower()
+        ]
+    else:
+        filtered_uris = ordered_uris
+
+    total_filtered = len(filtered_uris)
+    if total_filtered == 0:
+        st.warning("No items match your search.")
+        return
+
+    max_page = max(0, (total_filtered - 1) // page_size)
+    page_index = min(st.session_state.get(page_key, 0), max_page)
+    st.session_state[page_key] = page_index
+
+    start = page_index * page_size
+    end = min(start + page_size, total_filtered)
+    page_uris = filtered_uris[start:end]
+
+    nav_col1, nav_col2, nav_col3 = st.columns([1, 2, 1])
+    with nav_col1:
+        if st.button(
+            "Previous",
+            key=f"{widget_key}_prev_page",
+            disabled=disabled or page_index <= 0,
+        ):
+            st.session_state[page_key] = max(0, page_index - 1)
+            st.rerun()
+    with nav_col2:
+        st.caption(f"Showing {start + 1}-{end} of {total_filtered} matched items")
+    with nav_col3:
+        if st.button(
+            "Next",
+            key=f"{widget_key}_next_page",
+            disabled=disabled or page_index >= max_page,
+        ):
+            st.session_state[page_key] = min(max_page, page_index + 1)
+            st.rerun()
+
+    for offset, uri in enumerate(page_uris):
+        item = by_uri[uri]
+        qid = WidgetFactory._qid_from_uri(uri) or uri
+        label_text = item.get("itemLabel") or qid
+
+        row_col1, row_col2, row_col3 = st.columns([1, 6, 2])
+        with row_col1:
+            if st.button(
+                "Select",
+                key=f"{widget_key}_pick_{start + offset}",
+                disabled=disabled,
+            ):
+                st.session_state[selected_uri_key] = uri
+                st.rerun()
+        with row_col2:
+            st.markdown(f"**{label_text}**")
+            st.caption(qid)
+        with row_col3:
+            st.markdown(
+                f'<a href="{escape(uri)}" target="_blank">Open in Wikidata</a>',
+                unsafe_allow_html=True,
+            )
 
 
 class WidgetFactory:
@@ -134,7 +241,7 @@ class WidgetFactory:
         item_options: list[dict[str, str]],
         all_item_options_count: Any,
     ) -> dict[str, str]:
-        """Render searchable item selector for value-list constrained statements."""
+        """Render a value-list picker with fixed search and browse pagination."""
         by_uri: dict[str, dict[str, str]] = {}
         ordered_uris: list[str] = []
         for candidate in item_options:
@@ -179,32 +286,53 @@ class WidgetFactory:
             }
             ordered_uris.insert(0, current_uri)
 
-        default_index = 0
-        if current_uri and current_uri in ordered_uris:
-            default_index = ordered_uris.index(current_uri)
+        selected_uri_key = f"{key}_selected_uri"
+        if selected_uri_key not in st.session_state:
+            st.session_state[selected_uri_key] = current_uri
 
-        if isinstance(all_item_options_count, int) and all_item_options_count > len(
-            ordered_uris
-        ):
-            st.caption(
-                f"Showing {len(ordered_uris)} matches out of {all_item_options_count} value-list entries."
+        selected_uri = st.session_state.get(selected_uri_key)
+        if selected_uri not in by_uri:
+            selected_uri = current_uri if current_uri in by_uri else None
+            st.session_state[selected_uri_key] = selected_uri
+
+        if selected_uri is not None:
+            selected = by_uri[selected_uri]
+            selected_qid = WidgetFactory._qid_from_uri(selected_uri) or selected_uri
+            st.info(
+                f"Selected item: {selected.get('itemLabel') or selected_qid} ({selected_qid})"
             )
+        else:
+            selected = None
+            st.caption("No Wikidata item selected yet.")
 
-        selected_uri = st.selectbox(
-            label,
-            ordered_uris,
-            index=default_index,
-            key=key,
-            help=help_text,
-            disabled=disabled,
-            format_func=lambda uri: (
-                f"{by_uri[uri]['itemLabel']} ({WidgetFactory._qid_from_uri(uri) or uri})"
-                if by_uri[uri].get("itemLabel")
-                else (WidgetFactory._qid_from_uri(uri) or uri)
-            ),
+        button_label = (
+            "Change Wikidata item"
+            if selected_uri is not None
+            else "Choose Wikidata item"
         )
+        button_col, clear_col = st.columns([3, 1])
+        with button_col:
+            if st.button(button_label, key=f"{key}_open_picker", disabled=disabled):
+                _wikidata_item_picker_dialog(
+                    widget_key=key,
+                    help_text=help_text,
+                    ordered_uris=ordered_uris,
+                    by_uri=by_uri,
+                    selected_uri_key=selected_uri_key,
+                    disabled=disabled,
+                )
+        with clear_col:
+            if st.button(
+                "Clear",
+                key=f"{key}_clear_picker",
+                disabled=disabled or selected_uri is None,
+            ):
+                st.session_state[selected_uri_key] = None
+                st.rerun()
 
-        selected = by_uri[selected_uri]
+        if selected_uri is None or selected is None:
+            return {}
+
         qid = WidgetFactory._qid_from_uri(selected_uri)
         result: dict[str, str] = {
             "item": selected_uri,
