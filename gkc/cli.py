@@ -460,6 +460,13 @@ def _build_parser() -> argparse.ArgumentParser:
             "(writes <output>/<QID>.json). If omitted, prints JSON to stdout"
         ),
     )
+    profile_export_json.add_argument(
+        "--summary-output",
+        help=(
+            "Optional summary JSON path to write/merge profile export diagnostics "
+            "(defaults to <cache_entities_dir>/../refresh/last_run_summary.json)"
+        ),
+    )
     _add_profile_source_args(profile_export_json)
     profile_export_json.set_defaults(
         handler=_handle_profile_export_json,
@@ -2100,6 +2107,20 @@ def _handle_profile_export_json(args: argparse.Namespace) -> dict[str, Any]:
                 output_dir=args.output,
                 profile_ids=selected_profile_ids or None,
             )
+
+            summary_output = _resolve_profile_export_summary_output(
+                cache_entities_dir=cache_entities_dir,
+                requested_summary_output=args.summary_output,
+            )
+            summary_output_file: Optional[str] = None
+            if summary_output is not None:
+                summary_output_file = _merge_profile_export_summary(
+                    summary_path=summary_output,
+                    export_result=export_result,
+                    requested_profile_ids=selected_profile_ids,
+                    cache_entities_dir=cache_entities_dir,
+                )
+
             message = (
                 "Exported JSON entity profiles to "
                 f"{export_result.output_dir} ({len(export_result.written_ids)} files)"
@@ -2110,7 +2131,14 @@ def _handle_profile_export_json(args: argparse.Namespace) -> dict[str, Any]:
                 "profile_ids_requested": selected_profile_ids,
                 "written_count": len(export_result.written_ids),
                 "written_ids": export_result.written_ids,
+                "skipped_count": len(export_result.skipped_ids),
+                "skipped_ids": export_result.skipped_ids,
+                "failure_count": len(export_result.failures),
+                "failures": export_result.failures,
+                "language_filtering": export_result.language_filtering,
             }
+            if summary_output_file:
+                details["summary_output_file"] = summary_output_file
             return {
                 "command": args.command_path,
                 "ok": True,
@@ -2144,6 +2172,63 @@ def _handle_profile_export_json(args: argparse.Namespace) -> dict[str, Any]:
         raise CLIError(str(exc)) from exc
     finally:
         _restore_source_override(previous_source, source_overridden)
+
+
+def _resolve_profile_export_summary_output(
+    *,
+    cache_entities_dir: Path,
+    requested_summary_output: Optional[str],
+) -> Optional[Path]:
+    if requested_summary_output:
+        return Path(requested_summary_output)
+
+    return cache_entities_dir.resolve().parent / "refresh" / "last_run_summary.json"
+
+
+def _merge_profile_export_summary(
+    *,
+    summary_path: Path,
+    export_result: Any,
+    requested_profile_ids: list[str],
+    cache_entities_dir: Path,
+) -> str:
+    summary_path.parent.mkdir(parents=True, exist_ok=True)
+
+    base_payload: dict[str, Any] = {}
+    if summary_path.exists():
+        try:
+            parsed = json.loads(summary_path.read_text(encoding="utf-8"))
+            if isinstance(parsed, dict):
+                base_payload = parsed
+        except Exception:
+            base_payload = {}
+
+    metadata = base_payload.get("metadata")
+    if not isinstance(metadata, dict):
+        metadata = {}
+
+    metadata.setdefault("cache_dir", str(cache_entities_dir.resolve()))
+    base_payload["metadata"] = metadata
+
+    profile_export = {
+        "summary": {
+            "requested_count": len(requested_profile_ids),
+            "written_count": len(export_result.written_ids),
+            "skipped_count": len(export_result.skipped_ids),
+            "failure_count": len(export_result.failures),
+            "language_filtered_count": len(export_result.language_filtering),
+        },
+        "requested_profile_ids": requested_profile_ids,
+        "written_ids": export_result.written_ids,
+        "skipped_ids": export_result.skipped_ids,
+        "failures": export_result.failures,
+        "language_filtering": export_result.language_filtering,
+        "output_dir": export_result.output_dir,
+    }
+    base_payload["profile_export"] = profile_export
+
+    summary_path.write_text(json.dumps(base_payload, indent=2), encoding="utf-8")
+    return str(summary_path.resolve())
 
 
 def _handle_profile_lookups_hydrate(args: argparse.Namespace) -> dict[str, Any]:
