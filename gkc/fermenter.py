@@ -387,22 +387,102 @@ def validate_by_datatype(datatype: str, value: Any) -> ValidationResult:
 # ============================================================================
 
 
+def _normalize_item_to_uri(value: Any) -> Optional[str]:
+    """Normalize an item value to a full Wikidata entity URI.
+
+    Supports:
+    - Full URI string: "http://www.wikidata.org/entity/Q12345"
+    - Wizard dict with "item" key: {"item": "<full URI>", "itemLabel": "..."}
+    - Wikibase dict with "id" key: {"id": "Q12345", ...}
+    - Bare QID string: "Q12345"
+    """
+    if isinstance(value, str):
+        if value.startswith("http://") or value.startswith("https://"):
+            return value
+        if value.startswith("Q") and value[1:].isdigit():
+            return f"http://www.wikidata.org/entity/{value}"
+    if isinstance(value, dict):
+        # Wizard format: {"item": "<full URI>", "itemLabel": "..."}
+        item_field = value.get("item")
+        if isinstance(item_field, str):
+            return _normalize_item_to_uri(item_field)
+        # Wikibase snakvalue format: {"id": "Q12345", ...}
+        id_field = value.get("id")
+        if isinstance(id_field, str):
+            return _normalize_item_to_uri(id_field)
+    return None
+
+
+def _extract_cache_uris_and_labels(
+    cache_data: dict,
+) -> tuple[set[str], list[tuple[str, str]]]:
+    """Extract item URIs and (uri, label) pairs from a SpiritSafe cache artifact.
+
+    Supports both formats:
+    - SpiritSafe items format: {"items": [{"item": "<uri>", "itemLabel": "<label>"}]}
+    - Raw SPARQL bindings format: {"results": {"bindings": [{"item": {"value": "<uri>"}, ...}]}}
+    """
+    uris: set[str] = set()
+    uri_labels: list[tuple[str, str]] = []
+
+    # SpiritSafe materialized items format
+    for entry in cache_data.get("items", []):
+        if not isinstance(entry, dict):
+            continue
+        uri = entry.get("item", "")
+        if isinstance(uri, str) and uri:
+            uris.add(uri)
+            label = entry.get("itemLabel", "")
+            if isinstance(label, str) and label:
+                uri_labels.append((uri, label.lower()))
+
+    # Raw SPARQL results-bindings format (hydration pipeline intermediate)
+    for binding in cache_data.get("results", {}).get("bindings", []):
+        if not isinstance(binding, dict):
+            continue
+        item_node = binding.get("item")
+        if isinstance(item_node, dict):
+            uri = item_node.get("value", "")
+            if isinstance(uri, str) and uri:
+                uris.add(uri)
+                label_node = binding.get("itemLabel", {})
+                label = (
+                    label_node.get("value", "") if isinstance(label_node, dict) else ""
+                )
+                if label:
+                    uri_labels.append((uri, label.lower()))
+
+    return uris, uri_labels
+
+
 def validate_value_from_list(
     value: Any, value_list_path: Path, match_policy: str = "strict"
 ) -> ValidationResult:
     """Validate a candidate item value against a cached value list.
 
     Args:
-        value: The value to validate (typically a QID string or dict)
-        value_list_path: Path to the cached value list JSON file
-        match_policy: "strict" (exact QID match) or "fuzzy" (label match fallback)
+        value: The item value to validate. Accepts:
+            - Full Wikidata URI string: "http://www.wikidata.org/entity/Q12345"
+            - Wizard dict: {"item": "<full URI>", "itemLabel": "..."}
+            - Wikibase snakvalue dict: {"id": "Q12345", ...}
+            - Bare QID string: "Q12345"
+        value_list_path: Path to the cached value list JSON file.
+        match_policy: "strict" (URI/QID exact match) or "fuzzy" (label match fallback).
 
     Returns:
         ValidationResult with valid=True if value is in the list, False otherwise.
 
-    If the cache file is absent, returns an error ConformanceNotice rather than
-    attempting live resolution (offline-first design).
+    If the value is empty/None, returns valid=True with no errors (unentered fields
+    are not a validation error at this layer; presence requirements are enforced
+    upstream by the packet validation logic).
+
+    If the cache file is absent, returns a ValidationResult with an error rather
+    than attempting live resolution (offline-first design).
     """
+    # Empty/unentered values pass through — presence enforcement is handled upstream.
+    if value in (None, "", {}, []):
+        return ValidationResult(valid=True, value=value)
+
     if not value_list_path.exists():
         return ValidationResult(
             valid=False,
@@ -417,45 +497,36 @@ def validate_value_from_list(
             valid=False, value=value, errors=[f"Failed to load value list cache: {e}"]
         )
 
-    # Normalize the incoming value to a QID if needed
-    if isinstance(value, dict) and "id" in value:
-        target_qid = value["id"]
-    elif isinstance(value, str) and value.startswith("Q"):
-        target_qid = value
-    else:
+    target_uri = _normalize_item_to_uri(value)
+    if target_uri is None:
         return ValidationResult(
             valid=False,
             value=value,
-            errors=[f"Cannot normalize value to QID for list matching: {value}"],
+            errors=[f"Cannot normalize value to item URI for list matching: {value!r}"],
         )
 
-    # Extract QIDs from cache
-    cache_qids = set()
-    if isinstance(cache_data, dict) and "results" in cache_data:
-        for item in cache_data["results"].get("bindings", []):
-            if "item" in item:
-                item_uri = item["item"].get("value", "")
-                qid = item_uri.split("/")[-1] if item_uri else None
-                if qid:
-                    cache_qids.add(qid)
+    cache_uris, uri_labels = _extract_cache_uris_and_labels(cache_data)
 
-    if target_qid in cache_qids:
+    if target_uri in cache_uris:
         return ValidationResult(valid=True, value=value)
 
-    # Fuzzy match by label if policy allows
     if match_policy == "fuzzy":
+        # Fuzzy: check if any cache label matches a label on the incoming value
         target_label = None
-        if isinstance(value, dict) and "label" in value:
-            target_label = value["label"].lower()
+        if isinstance(value, dict):
+            raw_label = value.get("itemLabel") or value.get("label")
+            if isinstance(raw_label, str):
+                target_label = raw_label.lower()
 
         if target_label:
-            for item in cache_data.get("results", {}).get("bindings", []):
-                item_label = item.get("itemLabel", {}).get("value", "").lower()
-                if item_label == target_label:
+            for _uri, cached_label in uri_labels:
+                if cached_label == target_label:
                     return ValidationResult(valid=True, value=value)
 
     return ValidationResult(
-        valid=False, value=value, errors=[f"Value {target_qid} not found in value list"]
+        valid=False,
+        value=value,
+        errors=[f"Value {target_uri} not found in value list"],
     )
 
 
