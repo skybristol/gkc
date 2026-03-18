@@ -1302,22 +1302,18 @@ def test_profile_form_schema_resolves_profile_name_local_source(capsys):
 
 
 def test_profile_form_launches_streamlit_app(monkeypatch):
-    """Profile form command loads profile and runs Streamlit app."""
-    profile_path = (
-        Path(__file__).parent
-        / "fixtures"
-        / "profiles"
-        / "TribalGovernmentUS"
-        / "profile.yaml"
-    )
+    """Profile form command loads JSON profile and runs Streamlit app."""
+    local_root = Path(__file__).parent / "fixtures" / "spiritsafe"
 
     args = argparse.Namespace(
-        profile=str(profile_path),
+        profile="Q4",
         qid="Q123",
-        source=None,
-        local_root=None,
+        packet=None,
+        source="local",
+        local_root=str(local_root),
         repo=None,
         github_ref=None,
+        depth=1,
         command_path="profile.form",
     )
 
@@ -1335,11 +1331,11 @@ def test_profile_form_launches_streamlit_app(monkeypatch):
 
 
 def test_profile_form_from_profile_name_with_local_source(monkeypatch):
-    """Profile form command resolves profile names via local SpiritSafe source override.
+    """Profile form command resolves QID references via local SpiritSafe source override.
 
     This test verifies profile resolution with local source while mocking Streamlit launch.
     """
-    fixtures_root = Path(__file__).parent / "fixtures"
+    fixtures_root = Path(__file__).parent / "fixtures" / "spiritsafe"
 
     class FakeResult:
         returncode = 0
@@ -1355,7 +1351,7 @@ def test_profile_form_from_profile_name_with_local_source(monkeypatch):
             "profile",
             "form",
             "--profile",
-            "TribalGovernmentUS",
+            "Q4",
             "--source",
             "local",
             "--local-root",

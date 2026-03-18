@@ -1,196 +1,21 @@
-"""Streamlit-based wizard for entity profile data curation.
-
-Plain meaning: Interactive web form for creating/editing Wikidata entities from profiles.
-"""
+"""Streamlit-based packet-native wizard for JSON entity profile curation."""
 
 from __future__ import annotations
 
+import json
 import os
 from datetime import datetime, timezone
-from typing import Any
+from pathlib import Path
+from typing import Any, Optional
 
-import requests
 import streamlit as st
 
 import gkc
-from gkc.profiles import ProfileLoader
 from gkc.profiles.forms.draft_manager import DraftManager
+from gkc.profiles.forms.validation_bridge import validate_entity_packet_data
 from gkc.profiles.forms.wizard import IdentificationStep, SitelinksStep, StatementsStep
-from gkc.profiles.validators import EntityJSONValidator
-
-# ============================================================================
-# SESSION STATE INITIALIZATION
-# ============================================================================
-
-
-def _create_primary_entity(profile_name: str) -> dict[str, Any]:
-    """Create a new primary entity following GKC Entity JSON schema.
-
-    Args:
-        profile_name: The profile name for this entity (e.g., "TribalGovernmentUS").
-
-    Returns:
-        GKC Entity JSON object for the primary entity.
-
-    Plain meaning: Build the template for a new entity being curated.
-    """
-    username = os.environ.get("WIKIVERSE_USERNAME", "unknown")
-    timestamp = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
-
-    return {
-        "packet_id": "ent-001-primary",
-        "profile_name": profile_name,
-        "username": username,
-        "status": "in_progress",
-        "created_at": timestamp,
-        "creation_path": "primary",
-        "labels": {},
-        "descriptions": {},
-        "aliases": {},
-        "statements": {},
-        "sitelinks": {},
-    }
-
-
-def init_session_state() -> None:
-    """Initialize Streamlit session state with default values.
-
-    Plain meaning: Set up the persistent data store for the wizard session.
-    """
-    if "draft_data" not in st.session_state:
-        # Initialize empty curation packet (entity will be added once profile loads)
-        st.session_state.draft_data = {
-            "metadata": {
-                "created_at": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
-                "last_modified": datetime.now(timezone.utc).strftime(
-                    "%Y-%m-%dT%H:%M:%SZ"
-                ),
-                "curator": os.environ.get("WIKIVERSE_USERNAME", "unknown"),
-            },
-            "entities": [],
-        }
-
-    if "current_step" not in st.session_state:
-        st.session_state.current_step = "plan"
-
-    if "profile" not in st.session_state:
-        st.session_state.profile = None
-
-    if "profile_name" not in st.session_state:
-        st.session_state.profile_name = None
-
-    if "profile_metadata" not in st.session_state:
-        st.session_state.profile_metadata = None
-
-    if "validation_errors" not in st.session_state:
-        st.session_state.validation_errors = {}
-
-    if "draft_manager" not in st.session_state:
-        st.session_state.draft_manager = DraftManager()
-
-    if "current_draft_path" not in st.session_state:
-        st.session_state.current_draft_path = None
-
-    if "save_success_message" not in st.session_state:
-        st.session_state.save_success_message = None
-
-
-def get_primary_entity() -> dict[str, Any]:
-    """Get the primary entity from the curation packet.
-
-    Returns:
-        The primary entity (packet_id "ent-001-primary").
-
-    Plain meaning: Access the main entity being edited (for MVP, always the first/only one).
-    """
-    entities = st.session_state.draft_data.get("entities", [])
-
-    # Find primary entity
-    for entity in entities:
-        if entity["packet_id"] == "ent-001-primary":
-            return entity
-
-    # If no primary entity exists, create one
-    if st.session_state.profile_name:
-        primary = _create_primary_entity(st.session_state.profile_name)
-        st.session_state.draft_data["entities"].append(primary)
-        return primary
-
-    # Fallback (should not reach here in normal flow)
-    return {}
-
-
-# ============================================================================
-# PROFILE LOADING
-# ============================================================================
-
-
-@st.cache_resource
-def get_profile_loader() -> ProfileLoader:
-    """Get cached ProfileLoader instance.
-
-    Plain meaning: Reuse the same profile loader across reruns.
-    """
-    return ProfileLoader()
-
-
-@st.cache_data(ttl=3600)  # Cache for 1 hour
-def load_profile(profile_name: str) -> Any:
-    """Load a profile by name from SpiritSafe (cached to avoid rate limits).
-
-    Args:
-        profile_name: Name of the profile to load (e.g., "TribalGovernmentUS").
-
-    Returns:
-        ProfileDefinition object.
-
-    Plain meaning: Fetch the profile YAML and parse it, caching to avoid repeated API calls.
-    """
-    loader = get_profile_loader()
-    resolved_profile = gkc.resolve_profile_path(profile_name)
-
-    resolved_profile_str = str(resolved_profile)
-    try:
-        # First try direct path load (works for absolute/relative paths)
-        return loader.load_from_file(resolved_profile_str)
-    except FileNotFoundError:
-        # If relative path doesn't exist, resolve via SpiritSafe source
-        source = gkc.get_spirit_safe_source()
-        resolved = source.resolve_relative(resolved_profile_str)
-
-        if isinstance(resolved, str):
-            # It's a GitHub URL
-            response = requests.get(resolved, timeout=30)
-            response.raise_for_status()
-            return loader.load_from_text(response.text)
-        else:
-            # It's a Path
-            return loader.load_from_file(resolved)
-
-
-@st.cache_data(ttl=3600)  # Cache for 1 hour
-def load_profile_metadata(profile_name: str) -> Any:
-    """Load profile metadata from metadata.yaml (cached to avoid rate limits).
-
-    Args:
-        profile_name: Name of the profile (e.g., "TribalGovernmentUS").
-
-    Returns:
-        ProfileMetadata object or None if not found.
-
-    Plain meaning: Fetch the profile's metadata.yaml and parse it, caching to avoid repeated API calls.
-    """
-    try:
-        return gkc.get_profile_metadata(profile_name)
-    except (FileNotFoundError, ValueError) as e:
-        st.warning(f"Could not load metadata for {profile_name}: {e}")
-        return None
-
-
-# ============================================================================
-# STEP NAVIGATION
-# ============================================================================
-
+from gkc.spirit_safe import load_profile
+from gkc.still_charger import build_curation_packet_from_json_profile
 
 STEPS = [
     {"id": "plan", "title": "Plan", "icon": "📋"},
@@ -201,70 +26,426 @@ STEPS = [
 ]
 
 
-def render_status_widget() -> None:
-    """Render entity status widget in sidebar (Phase 7.2).
+def _utc_now_iso() -> str:
+    return datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
 
-    Shows:
-    - Entity label with fallback
-    - Progress (X of Y completed)
-    - Progress bar visualization
 
-    Plain meaning: Display curation progress summary for quick reference.
-    """
-    if not st.session_state.profile:
+def _entity_id_from_uri(entity_uri: str) -> str:
+    if "/" in entity_uri:
+        return entity_uri.split("/")[-1]
+    return entity_uri
+
+
+def _profile_display_name(profile_doc: dict[str, Any]) -> str:
+    metadata = profile_doc.get("metadata", {})
+    labels = metadata.get("labels", {})
+    return (
+        labels.get("mul")
+        or labels.get("en")
+        or _entity_id_from_uri(profile_doc.get("entity", "unknown"))
+    )
+
+
+def _profile_description(profile_doc: dict[str, Any]) -> str:
+    metadata = profile_doc.get("metadata", {})
+    descriptions = metadata.get("descriptions", {})
+    return descriptions.get("mul") or descriptions.get("en") or ""
+
+
+def _metadata_text(messages: dict[str, Any], key: str) -> str:
+    if not isinstance(messages, dict):
+        return ""
+    for lang in ("mul", "en", "es"):
+        lang_map = messages.get(lang)
+        if isinstance(lang_map, dict) and isinstance(lang_map.get(key), str):
+            return lang_map[key]
+    return ""
+
+
+def _statement_label(statement_def: dict[str, Any]) -> str:
+    label = statement_def.get("label")
+    if isinstance(label, str) and label.strip():
+        return label
+    entity_ref = statement_def.get("entity", "statement")
+    return _entity_id_from_uri(str(entity_ref))
+
+
+def _statement_label_map(entity_slot: dict[str, Any]) -> dict[str, str]:
+    labels: dict[str, str] = {}
+    for statement_def in entity_slot.get("statements", []):
+        if not isinstance(statement_def, dict):
+            continue
+        statement_ref = statement_def.get("entity")
+        if not isinstance(statement_ref, str) or not statement_ref:
+            continue
+        labels[statement_ref] = _statement_label(statement_def)
+    return labels
+
+
+def _collect_review_consequences(entity_slot: dict[str, Any]) -> dict[str, str]:
+    statements = entity_slot.get("statements", [])
+    data = entity_slot.get("data", {})
+    data_statements = data.get("statements", {}) if isinstance(data, dict) else {}
+
+    consequences: dict[str, str] = {}
+    for statement_def in statements:
+        if not isinstance(statement_def, dict):
+            continue
+
+        statement_ref = statement_def.get("entity")
+        if not isinstance(statement_ref, str) or not statement_ref:
+            continue
+
+        configured_values = data_statements.get(statement_ref, [])
+        has_value = isinstance(configured_values, list) and len(configured_values) > 0
+        if has_value:
+            continue
+
+        consequence = _metadata_text(
+            statement_def.get("messages", {}),
+            "consequences_message",
+        )
+        if consequence:
+            consequences[statement_ref] = consequence
+
+    return consequences
+
+
+def _group_review_items(
+    *,
+    entity_slot: dict[str, Any],
+    notices: list[Any],
+) -> tuple[list[dict[str, Any]], list[Any]]:
+    statement_labels = _statement_label_map(entity_slot)
+    consequences = _collect_review_consequences(entity_slot)
+    entity_ref = entity_slot.get("id") or entity_slot.get("profile_entity")
+
+    grouped: dict[str, dict[str, Any]] = {}
+    for statement_ref, label in statement_labels.items():
+        grouped[statement_ref] = {
+            "statement_ref": statement_ref,
+            "label": label,
+            "consequence": consequences.get(statement_ref),
+            "notices": [],
+        }
+
+    ungrouped: list[Any] = []
+    for notice in notices:
+        if entity_ref and notice.entity_ref != entity_ref:
+            ungrouped.append(notice)
+            continue
+
+        statement_ref = notice.statement_ref
+        if isinstance(statement_ref, str) and statement_ref in grouped:
+            grouped[statement_ref]["notices"].append(notice)
+        else:
+            ungrouped.append(notice)
+
+    ordered_sections = [
+        grouped[statement_ref]
+        for statement_ref in statement_labels
+        if grouped[statement_ref]["consequence"] or grouped[statement_ref]["notices"]
+    ]
+    return ordered_sections, ungrouped
+
+
+def _normalize_profile_ref(profile_ref: str) -> str:
+    if profile_ref.startswith("http://") or profile_ref.startswith("https://"):
+        return profile_ref
+    if profile_ref.startswith("Q"):
+        return f"https://datadistillery.wikibase.cloud/entity/{profile_ref}"
+    raise ValueError(
+        f"Invalid profile reference '{profile_ref}'. Use QID or full entity URI."
+    )
+
+
+def _build_initial_packet(
+    profile_ref: str,
+) -> tuple[dict[str, Any], dict[str, dict[str, Any]]]:
+    profile_entity = _normalize_profile_ref(profile_ref)
+    primary_doc = load_profile(profile_entity)
+
+    source = gkc.get_spirit_safe_source()
+    source_root: Optional[Path] = (
+        source.local_root if source.mode == "local" and source.local_root else None
+    )
+
+    packet = build_curation_packet_from_json_profile(
+        profile_entity=profile_entity,
+        json_profile_doc=primary_doc,
+        source_root=source_root,
+    )
+
+    profile_docs: dict[str, dict[str, Any]] = {}
+    for entity_slot in packet.get("entities", []):
+        slot_uri = entity_slot.get("profile_entity")
+        if not isinstance(slot_uri, str) or not slot_uri:
+            continue
+        try:
+            profile_docs[slot_uri] = load_profile(slot_uri)
+        except Exception:
+            pass
+
+    # Ensure primary profile doc is always present.
+    profile_docs.setdefault(profile_entity, primary_doc)
+
+    # Ensure packet metadata exists for draft persistence.
+    packet.setdefault(
+        "metadata",
+        {
+            "created_at": _utc_now_iso(),
+            "last_modified": _utc_now_iso(),
+            "curator": os.environ.get("WIKIVERSE_USERNAME", "unknown"),
+            "profile_entity": profile_entity,
+        },
+    )
+
+    return packet, profile_docs
+
+
+def _entity_sort_key(entity_slot: dict[str, Any]) -> tuple[int, str]:
+    entity_id = str(entity_slot.get("id", ""))
+    # Primary packet slot tends to be ent-001; keep deterministic order.
+    is_primary = 0 if entity_id == "ent-001" else 1
+    return (is_primary, entity_id)
+
+
+def _entity_label(entity_slot: dict[str, Any], profile_doc: dict[str, Any]) -> str:
+    entity_uri = entity_slot.get("profile_entity", "")
+    entity_id = entity_slot.get("id", "unknown")
+    profile_name = _profile_display_name(profile_doc)
+    data = entity_slot.get("data", {})
+    labels = data.get("labels", {}) if isinstance(data, dict) else {}
+    chosen = labels.get("mul") or labels.get("en")
+    if chosen:
+        return f"{entity_id} - {chosen} ({profile_name})"
+    return f"{entity_id} - New {profile_name} ({_entity_id_from_uri(entity_uri)})"
+
+
+def init_session_state() -> None:
+    if "packet" not in st.session_state:
+        st.session_state.packet = None
+    if "profile_docs" not in st.session_state:
+        st.session_state.profile_docs = {}
+    if "root_profile_entity" not in st.session_state:
+        st.session_state.root_profile_entity = None
+    if "current_step" not in st.session_state:
+        st.session_state.current_step = "plan"
+    if "active_entity_id" not in st.session_state:
+        st.session_state.active_entity_id = None
+    if "draft_manager" not in st.session_state:
+        st.session_state.draft_manager = DraftManager()
+    if "current_draft_path" not in st.session_state:
+        st.session_state.current_draft_path = None
+    if "save_success_message" not in st.session_state:
+        st.session_state.save_success_message = None
+    if "source_root" not in st.session_state:
+        st.session_state.source_root = None
+    if "conformance_notices" not in st.session_state:
+        st.session_state.conformance_notices = []
+
+
+def _find_active_entity_slot() -> Optional[dict[str, Any]]:
+    packet = st.session_state.packet or {}
+    entities = packet.get("entities", [])
+    if not entities:
+        return None
+
+    active_id = st.session_state.active_entity_id
+    if active_id:
+        for entity_slot in entities:
+            if entity_slot.get("id") == active_id:
+                return entity_slot
+
+    entities_sorted = sorted(entities, key=_entity_sort_key)
+    chosen = entities_sorted[0]
+    st.session_state.active_entity_id = chosen.get("id")
+    return chosen
+
+
+def _active_profile_doc() -> Optional[dict[str, Any]]:
+    entity_slot = _find_active_entity_slot()
+    if not entity_slot:
+        return None
+    entity_uri = entity_slot.get("profile_entity")
+    return st.session_state.profile_docs.get(entity_uri)
+
+
+def _active_entity_data() -> dict[str, Any]:
+    entity_slot = _find_active_entity_slot()
+    if entity_slot is None:
+        return {}
+    if "data" not in entity_slot or not isinstance(entity_slot["data"], dict):
+        entity_slot["data"] = {}
+    data = entity_slot["data"]
+    data.setdefault("labels", {})
+    data.setdefault("descriptions", {})
+    data.setdefault("aliases", {})
+    data.setdefault("statements", {})
+    data.setdefault("sitelinks", {})
+    return data
+
+
+def _auto_save_draft() -> None:
+    packet = st.session_state.packet
+    if not isinstance(packet, dict):
         return
 
-    entity = get_primary_entity()
-    profile = st.session_state.profile
-    profile_name = st.session_state.profile_name
+    metadata = packet.setdefault("metadata", {})
+    metadata["last_modified"] = _utc_now_iso()
 
-    # Calculate completeness
-    completeness = EntityJSONValidator.calculate_completeness(
-        entity, profile, required_languages=None
+    root_entity = st.session_state.root_profile_entity or "packet"
+    draft_name = _entity_id_from_uri(root_entity)
+
+    if st.session_state.current_draft_path is None:
+        st.session_state.current_draft_path = (
+            st.session_state.draft_manager.create_draft_path(draft_name)
+        )
+
+    st.session_state.draft_manager.save(st.session_state.current_draft_path, packet)
+
+
+def _save_draft_manual() -> None:
+    _auto_save_draft()
+    draft_path = st.session_state.current_draft_path
+    if draft_path:
+        st.session_state.save_success_message = f"Draft saved to: {draft_path.name}"
+
+
+def _run_packet_validation() -> list[Any]:
+    packet = st.session_state.packet or {}
+    source_root = st.session_state.source_root
+    if isinstance(source_root, str) and source_root:
+        source_root = Path(source_root)
+    if not isinstance(source_root, Path):
+        source_root = None
+
+    notices = []
+    for entity_slot in packet.get("entities", []):
+        notices.extend(
+            validate_entity_packet_data(
+                entity_slot=entity_slot,
+                packet=packet,
+                source_root=source_root,
+            )
+        )
+
+    st.session_state.conformance_notices = notices
+    return notices
+
+
+def _render_conformance_notices(notices: list[Any]) -> None:
+    if not notices:
+        st.success("No conformance notices detected.")
+        return
+
+    error_count = sum(1 for n in notices if n.severity == "error")
+    warning_count = sum(1 for n in notices if n.severity == "warning")
+    info_count = sum(1 for n in notices if n.severity == "info")
+
+    st.write(
+        f"Errors: **{error_count}** | Warnings: **{warning_count}** | Info: **{info_count}**"
     )
 
-    # Determine display label (priority: curator label → fallback)
-    entity_labels = entity.get("labels", {})
-    if entity_labels:
-        # Use first available label
-        display_label = next(iter(entity_labels.values()))
-        # Truncate if too long for sidebar
-        if len(display_label) > 30:
-            display_label = display_label[:27] + "..."
-    else:
-        display_label = f"New {profile_name}"
+    for notice in notices:
+        message = (
+            f"[{notice.code}] {notice.message} "
+            f"(entity={notice.entity_ref}, statement={notice.statement_ref or 'n/a'})"
+        )
+        if notice.severity == "error":
+            st.error(message)
+        elif notice.severity == "warning":
+            st.warning(message)
+        else:
+            st.info(message)
 
-    # Render status widget
-    st.sidebar.subheader("📊 Status")
-    st.sidebar.write(f"**{display_label}**")
-    st.sidebar.caption(f"Profile: {profile_name}")
 
-    # Progress metrics
-    st.sidebar.progress(completeness.progress_percentage / 100)
-    st.sidebar.write(
-        f"**{completeness.completed_fields} of {completeness.required_fields_total}** completed"
+def _render_grouped_review_sections(
+    sections: list[dict[str, Any]],
+    ungrouped_notices: list[Any],
+) -> None:
+    if not sections and not ungrouped_notices:
+        st.success(
+            "No statement-level consequences or conformance notices for the active entity."
+        )
+        return
+
+    for section in sections:
+        label = section["label"]
+        statement_ref = section["statement_ref"]
+        consequence = section["consequence"]
+        section_notices = section["notices"]
+
+        with st.expander(
+            f"{label} ({_entity_id_from_uri(statement_ref)})", expanded=True
+        ):
+            if consequence:
+                st.warning(f"Consequence: {consequence}")
+
+            if not section_notices:
+                st.info("No conformance notices for this statement.")
+                continue
+
+            for notice in section_notices:
+                message = f"[{notice.code}] {notice.message}"
+                if notice.severity == "error":
+                    st.error(message)
+                elif notice.severity == "warning":
+                    st.warning(message)
+                else:
+                    st.info(message)
+
+    if ungrouped_notices:
+        with st.expander("Other Notices", expanded=False):
+            _render_conformance_notices(ungrouped_notices)
+
+
+def render_entity_sidebar() -> None:
+    packet = st.session_state.packet or {}
+    entities = packet.get("entities", [])
+    if not entities:
+        return
+
+    st.sidebar.subheader("Entities")
+
+    entities_sorted = sorted(entities, key=_entity_sort_key)
+    options = []
+    labels = []
+    for entity_slot in entities_sorted:
+        entity_id = entity_slot.get("id")
+        profile_uri = entity_slot.get("profile_entity")
+        profile_doc = st.session_state.profile_docs.get(profile_uri, {})
+        options.append(entity_id)
+        labels.append(_entity_label(entity_slot, profile_doc))
+
+    label_by_id = dict(zip(options, labels))
+    active = st.session_state.active_entity_id or options[0]
+
+    selected = st.sidebar.selectbox(
+        "Active entity",
+        options,
+        format_func=lambda x: label_by_id.get(x, x),
+        index=options.index(active) if active in options else 0,
     )
-    st.sidebar.caption(f"{completeness.progress_percentage:.0f}% complete")
+
+    if selected != st.session_state.active_entity_id:
+        st.session_state.active_entity_id = selected
+        st.rerun()
 
     st.sidebar.divider()
 
 
 def render_step_sidebar() -> None:
-    """Render step navigation in sidebar.
-
-    Plain meaning: Show clickable step buttons with visual highlighting.
-    """
     st.sidebar.title("Wizard Steps")
 
     for step in STEPS:
-        # Visual indicator for current step
-        if st.session_state.current_step == step["id"]:
-            button_label = f"**→ {step['icon']} {step['title']}**"
-            button_type = "primary"
-        else:
-            button_label = f"{step['icon']} {step['title']}"
-            button_type = "secondary"
-
+        is_current = st.session_state.current_step == step["id"]
+        button_label = (
+            f"**-> {step['icon']} {step['title']}**"
+            if is_current
+            else f"{step['icon']} {step['title']}"
+        )
+        button_type = "primary" if is_current else "secondary"
         if st.sidebar.button(
             button_label,
             key=f"nav_{step['id']}",
@@ -275,13 +456,170 @@ def render_step_sidebar() -> None:
             st.rerun()
 
 
+def render_plan_step() -> None:
+    st.header("📋 Plan")
+
+    profile_doc = _active_profile_doc()
+    entity_slot = _find_active_entity_slot()
+    if not profile_doc or not entity_slot:
+        st.warning("No active profile/entity loaded")
+        return
+
+    st.subheader(_profile_display_name(profile_doc))
+    description = _profile_description(profile_doc)
+    if description:
+        st.write(description)
+
+    statements = entity_slot.get("statements", [])
+    st.subheader("Profile Statements")
+    for statement_def in statements:
+        label = statement_def.get("label") or _entity_id_from_uri(
+            statement_def.get("entity", "statement")
+        )
+        if st.button(
+            label,
+            key=f"goto_stmt_{statement_def.get('entity')}",
+            use_container_width=True,
+        ):
+            st.session_state.current_step = "statements"
+            st.session_state.expand_statement = statement_def.get("entity")
+            st.rerun()
+
+    col1, col2, col3 = st.columns([1, 1, 1])
+    with col3:
+        if st.button("Next: Identification ->", type="primary", key="next_plan"):
+            st.session_state.current_step = "identification"
+            st.rerun()
+
+
+def render_identification_step() -> None:
+    entity_data = _active_entity_data()
+    step = IdentificationStep(id="identification", title="", description="")
+    step.render(entity_data)
+    _auto_save_draft()
+
+    warnings = step.validate(entity_data)
+    if warnings:
+        with st.expander("⚠️ Validation Warnings"):
+            for messages in warnings.values():
+                for message in messages:
+                    st.warning(message)
+
+    col1, _, col3 = st.columns([1, 1, 1])
+    with col1:
+        if st.button("<- Back: Plan", type="secondary", key="back_identification"):
+            st.session_state.current_step = "plan"
+            st.rerun()
+    with col3:
+        if st.button("Next: Statements ->", type="primary", key="next_identification"):
+            st.session_state.current_step = "statements"
+            st.rerun()
+
+
+def render_statements_step() -> None:
+    entity_data = _active_entity_data()
+    step = StatementsStep(id="statements", title="", description="")
+    step.render(entity_data)
+    _auto_save_draft()
+
+    warnings = step.validate(entity_data)
+    if warnings:
+        with st.expander("⚠️ Validation Warnings", expanded=False):
+            for section, messages in warnings.items():
+                st.warning(f"{section}: {'; '.join(messages)}")
+
+    col1, _, col3 = st.columns([1, 1, 1])
+    with col1:
+        if st.button(
+            "<- Back: Identification", type="secondary", key="back_statements"
+        ):
+            st.session_state.current_step = "identification"
+            st.rerun()
+    with col3:
+        if st.button("Next: Sitelinks ->", type="primary", key="next_statements"):
+            st.session_state.current_step = "sitelinks"
+            st.rerun()
+
+
+def render_sitelinks_step() -> None:
+    entity_data = _active_entity_data()
+    step = SitelinksStep(id="sitelinks", title="", description="")
+    step.render(entity_data)
+    _auto_save_draft()
+
+    col1, _, col3 = st.columns([1, 1, 1])
+    with col1:
+        if st.button("<- Back: Statements", type="secondary", key="back_sitelinks"):
+            st.session_state.current_step = "statements"
+            st.rerun()
+    with col3:
+        if st.button("Next: Review ->", type="primary", key="next_sitelinks"):
+            st.session_state.current_step = "review"
+            st.rerun()
+
+
+def render_review_step() -> None:
+    st.header("✅ Review")
+
+    packet = st.session_state.packet or {}
+    entity_slot = _find_active_entity_slot()
+    entity_data = _active_entity_data()
+
+    if entity_slot:
+        st.subheader(
+            f"Active Entity: {entity_slot.get('id')} ({_entity_id_from_uri(entity_slot.get('profile_entity', ''))})"
+        )
+
+    if st.session_state.save_success_message:
+        st.success(st.session_state.save_success_message)
+        st.session_state.save_success_message = None
+
+    col1, col2, _ = st.columns([1, 1, 1])
+    with col1:
+        if st.button("💾 Save Draft", type="primary", key="save_review"):
+            _save_draft_manual()
+            st.rerun()
+
+    with col2:
+        if st.button("Re-run Session Validation", key="rerun_validation"):
+            _run_packet_validation()
+            st.rerun()
+
+    notices = st.session_state.conformance_notices
+    if not notices:
+        notices = _run_packet_validation()
+
+    st.write("### Statement Review")
+    sections: list[dict[str, Any]] = []
+    ungrouped_notices: list[Any] = notices
+    if entity_slot:
+        sections, ungrouped_notices = _group_review_items(
+            entity_slot=entity_slot,
+            notices=notices,
+        )
+    _render_grouped_review_sections(sections, ungrouped_notices)
+
+    blocking_errors = [n for n in notices if n.severity == "error"]
+    if blocking_errors:
+        st.error("Submission is currently blocked because error-level notices exist.")
+    else:
+        st.success("No error-level notices. Submission would be allowed.")
+
+    st.write("### Active Entity Data")
+    st.code(json.dumps(entity_data, indent=2, ensure_ascii=False), language="json")
+
+    st.write("### Full Curation Packet")
+    st.code(json.dumps(packet, indent=2, ensure_ascii=False), language="json")
+
+    col1, _, _ = st.columns([1, 1, 1])
+    with col1:
+        if st.button("<- Back: Sitelinks", type="secondary", key="back_review"):
+            st.session_state.current_step = "sitelinks"
+            st.rerun()
+
+
 def render_step_content() -> None:
-    """Render the content for the current step.
-
-    Plain meaning: Show the form fields appropriate for the current wizard step.
-    """
     current_step = st.session_state.current_step
-
     if current_step == "plan":
         render_plan_step()
     elif current_step == "identification":
@@ -296,576 +634,109 @@ def render_step_content() -> None:
         st.error(f"Unknown step: {current_step}")
 
 
-# ============================================================================
-# STEP IMPLEMENTATIONS (PHASE 2-6)
-# ============================================================================
+def _load_packet_from_env_or_profile() -> None:
+    env_packet = os.environ.get("GKC_WIZARD_PACKET")
+    env_profile = os.environ.get("GKC_WIZARD_PROFILE")
 
+    if env_packet:
+        packet_path = Path(env_packet)
+        if not packet_path.exists():
+            st.sidebar.error(f"Packet file not found: {packet_path}")
+            st.stop()
 
-def _auto_save_draft() -> None:
-    """Auto-save the current draft after step changes.
+        try:
+            packet = json.loads(packet_path.read_text(encoding="utf-8"))
+        except Exception as exc:
+            st.sidebar.error(f"Failed to load packet JSON: {exc}")
+            st.stop()
 
-    Plain meaning: Persist data to disk so work isn't lost.
-    """
-    if st.session_state.profile_name and st.session_state.draft_manager:
-        # Update last_modified timestamp
-        st.session_state.draft_data["metadata"]["last_modified"] = datetime.now(
-            timezone.utc
-        ).strftime("%Y-%m-%dT%H:%M:%SZ")
+        profile_docs: dict[str, dict[str, Any]] = {}
+        for entity_slot in packet.get("entities", []):
+            profile_uri = entity_slot.get("profile_entity")
+            if not profile_uri:
+                continue
+            try:
+                profile_docs[profile_uri] = load_profile(profile_uri)
+            except Exception:
+                pass
 
-        # Use existing draft path or create new one
-        if st.session_state.current_draft_path is None:
-            draft_path = st.session_state.draft_manager.create_draft_path(
-                st.session_state.profile_name
-            )
-            st.session_state.current_draft_path = draft_path
-        else:
-            draft_path = st.session_state.current_draft_path
-
-        st.session_state.draft_manager.save(draft_path, st.session_state.draft_data)
-
-
-def _save_draft_manual() -> None:
-    """Manually save draft and provide user feedback.
-
-    Plain meaning: Save the draft and show confirmation to the user.
-    """
-    _auto_save_draft()
-    draft_path = st.session_state.current_draft_path
-    if draft_path:
-        st.session_state.save_success_message = f"Draft saved to: {draft_path.name}"
-    else:
-        st.session_state.save_success_message = "Draft saved successfully!"
-
-
-def render_plan_step() -> None:
-    """Render the Plan step (Phase 2).
-
-    Plain meaning: Show planning/overview of the editing session.
-    """
-    if st.session_state.profile:
-        profile = st.session_state.profile
-        metadata = st.session_state.profile_metadata
-
-        # Show profile name
-        st.subheader(profile.name)
-
-        # Show extended description from metadata if available, otherwise profile description
-        if metadata and metadata.description:
-            st.write(metadata.description)
-        else:
-            st.write(profile.description)
-
-        # Show full metadata in an expander
-        if metadata:
-            with st.expander("📄 View Full Profile Metadata"):
-                import yaml
-
-                # Convert metadata to dict for YAML rendering
-                metadata_dict = {
-                    "name": metadata.name,
-                    "description": metadata.description,
-                    "version": metadata.version,
-                    "status": metadata.status,
-                    "published_date": metadata.published_date,
-                }
-                if metadata.authors:
-                    metadata_dict["authors"] = metadata.authors
-                if metadata.maintainers:
-                    metadata_dict["maintainers"] = metadata.maintainers
-                if metadata.source_references:
-                    metadata_dict["source_references"] = metadata.source_references
-                if metadata.related_profiles:
-                    metadata_dict["related_profiles"] = metadata.related_profiles
-                if metadata.community_feedback:
-                    metadata_dict["community_feedback"] = metadata.community_feedback
-                if metadata.datatypes_used:
-                    metadata_dict["datatypes_used"] = metadata.datatypes_used
-                if metadata.statements_count is not None:
-                    metadata_dict["statements_count"] = metadata.statements_count
-                if metadata.references_required is not None:
-                    metadata_dict["references_required"] = metadata.references_required
-                if metadata.qualifiers_used:
-                    metadata_dict["qualifiers_used"] = metadata.qualifiers_used
-                if metadata.sparql_sources:
-                    metadata_dict["sparql_sources"] = metadata.sparql_sources
-
-                st.code(
-                    yaml.dump(metadata_dict, sort_keys=False, allow_unicode=True),
-                    language="yaml",
-                )
-
-        # Show profile statements
-        if hasattr(profile, "statements") and profile.statements:
-            st.subheader("Profile Statements")
-            for stmt in profile.statements:
-                # Display statement label as clickable link to jump to Statements step
-                if st.button(
-                    stmt.label, key=f"goto_{stmt.id}", use_container_width=True
-                ):
-                    st.session_state.expand_statement = stmt.id
-                    st.session_state.current_step = "statements"
-                    st.rerun()
-    else:
-        st.warning("No profile loaded. Please select a profile from the configuration.")
-
-    # Navigation
-    col1, col2, col3 = st.columns([1, 1, 1])
-    with col3:
-        if st.button("Next: Identification →", type="primary", key="next_plan"):
-            st.session_state.current_step = "identification"
-            st.rerun()
-
-
-def render_identification_step() -> None:
-    """Render the Identification step.
-
-    Plain meaning: Collect labels, descriptions, and aliases.
-    """
-    # Get primary entity from curation packet
-    entity = get_primary_entity()
-
-    step = IdentificationStep(
-        id="identification",
-        title="",
-        description="",
-    )
-
-    # Pass entity data to step renderer (step modifies in-place)
-    step.render(entity)
-
-    # Auto-save after rendering
-    _auto_save_draft()
-
-    # Show validation warnings
-    validation_errors = step.validate(entity)
-    if validation_errors:
-        with st.expander("⚠️ Validation Warnings"):
-            for field, messages in validation_errors.items():
-                for msg in messages:
-                    st.warning(msg)
-
-    # Navigation
-    col1, col2, col3 = st.columns([1, 1, 1])
-    with col1:
-        if st.button("← Back: Plan", type="secondary", key="back_identification"):
-            st.session_state.current_step = "plan"
-            st.rerun()
-    with col3:
-        if st.button("Next: Statements →", type="primary", key="next_identification"):
-            st.session_state.current_step = "statements"
-            st.rerun()
-
-
-def render_statements_step() -> None:
-    """Render the Statements step.
-
-    Plain meaning: Collect statement values with qualifiers and references.
-    """
-    # Get primary entity from curation packet
-    entity = get_primary_entity()
-
-    # Create step instance
-    step = StatementsStep(
-        id="statements",
-        title="",  # Title shown in step header
-        description="",  # Description not needed, profile provides context
-    )
-
-    # Render step content and collect data (step modifies entity in-place)
-    step.render(entity)
-
-    # Run validation (non-blocking)
-    warnings = step.validate(entity)
-    if warnings:
-        with st.expander("⚠️ Validation Warnings", expanded=False):
-            for section, messages in warnings.items():
-                st.warning(f"**{section.title()}**: " + "; ".join(messages))
-
-    # Navigation
-    st.write("---")
-    col1, col2, col3 = st.columns([1, 1, 1])
-    with col1:
-        if st.button("← Back: Identification", type="secondary"):
-            _auto_save_draft()
-            st.session_state.current_step = "identification"
-            st.rerun()
-    with col3:
-        if st.button("Next: Sitelinks →", type="primary"):
-            _auto_save_draft()
-            st.session_state.current_step = "sitelinks"
-            st.rerun()
-
-
-def render_sitelinks_step() -> None:
-    """Render the Sitelinks step.
-
-    Plain meaning: Collect Wikipedia/sister project links.
-    """
-    # Get primary entity from curation packet
-    entity = get_primary_entity()
-
-    step = SitelinksStep(
-        id="sitelinks",
-        title="",
-        description="",
-    )
-
-    step.render(entity)
-
-    # Auto-save after rendering
-    _auto_save_draft()
-
-    # Show validation warnings
-    validation_errors = step.validate(entity)
-    if validation_errors:
-        with st.expander("⚠️ Validation Warnings"):
-            for field, messages in validation_errors.items():
-                for msg in messages:
-                    st.warning(msg)
-
-    # Navigation
-    col1, col2, col3 = st.columns([1, 1, 1])
-    with col1:
-        if st.button("← Back: Statements", type="secondary", key="back_sitelinks"):
-            st.session_state.current_step = "statements"
-            st.rerun()
-    with col3:
-        if st.button("Next: Review →", type="primary", key="next_sitelinks"):
-            st.session_state.current_step = "review"
-            st.rerun()
-
-
-def render_review_step() -> None:
-    """Render the Review step (Phase 6 + 7.3).
-
-    Plain meaning: Show collected data, calculate completeness, and export options.
-    """
-    st.header("✅ Review & Export")
-
-    entity = get_primary_entity()
-    profile = st.session_state.profile
-
-    # Calculate completeness
-    if profile:
-        completeness = EntityJSONValidator.calculate_completeness(
-            entity, profile, required_languages=None
+        st.session_state.packet = packet
+        st.session_state.profile_docs = profile_docs
+        st.session_state.root_profile_entity = packet.get("profile_entity")
+        source = gkc.get_spirit_safe_source()
+        st.session_state.source_root = (
+            str(source.local_root)
+            if source.mode == "local" and source.local_root is not None
+            else None
         )
+        if packet.get("entities"):
+            st.session_state.active_entity_id = packet["entities"][0].get("id")
 
-        # Show progress (Phase 7.3: larger format in review)
-        st.subheader("Curation Progress")
-        st.progress(completeness.progress_percentage / 100)
-        st.write(
-            f"**{completeness.progress_text}** ({completeness.progress_percentage:.0f}% complete)"
+        st.sidebar.success(f"Loaded packet: {packet_path.name}")
+        return
+
+    if not env_profile:
+        st.sidebar.warning(
+            "No profile specified. Set GKC_WIZARD_PROFILE or GKC_WIZARD_PACKET."
         )
+        st.stop()
 
-        # Phase 7.3: Statement-level completeness breakdown
-        st.subheader("📋 Statement Completeness")
-        entity_statements = entity.get("statements", {})
+    profile_ref = str(env_profile)
 
-        # Display all statements from profile in order
-        for stmt_def in profile.statements:
-            statement_id = stmt_def.id
-            statement_label = stmt_def.label
-            is_filled = (
-                statement_id in entity_statements and entity_statements[statement_id]
-            )
-            is_required = stmt_def.required
-
-            # Visual indicator
-            if is_filled:
-                icon = "✅"
-                status = "Completed"
-                status_color = "green"
-            elif is_required:
-                icon = "❌"
-                status = "Required - Missing"
-                status_color = "red"
-            else:
-                icon = "⚪"
-                status = "Optional - Not filled"
-                status_color = "gray"
-
-            # Display row
-            col1, col2, col3 = st.columns([1, 3, 2])
-            with col1:
-                st.write(icon)
-            with col2:
-                st.write(f"**{statement_label}**")
-                if stmt_def.input_prompt:
-                    st.caption(stmt_def.input_prompt)
-            with col3:
-                if status_color == "green":
-                    st.success(status)
-                elif status_color == "red":
-                    st.error(status)
-                else:
-                    st.write(status)
-
-        st.write("---")
-
-        # Show language coverage
-        with st.expander("🌐 Language Coverage"):
-            st.write(f"**Required:** {', '.join(completeness.required_languages)}")
-            st.write(
-                f"**Completed:** {', '.join(completeness.completed_languages) or 'None'}"
-            )
-            if completeness.missing_languages:
-                st.write(f"**Missing:** {', '.join(completeness.missing_languages)}")
-
-    # Validate schema compliance (Phase 7.4: validation display)
-    st.subheader("Schema Validation")
-    validation_result = EntityJSONValidator.validate_schema(entity)
-
-    if validation_result.is_valid:
-        st.success("✅ Entity JSON schema is valid")
-    else:
-        st.error("❌ Schema validation failed")
-
-    if validation_result.issues:
-        with st.expander(
-            f"⚠️ Validation Issues ({len(validation_result.issues)})", expanded=True
-        ):
-            for issue in validation_result.issues:
-                if issue.severity == "error":
-                    st.error(f"**{issue.field}**: {issue.message}")
-                elif issue.severity == "warning":
-                    st.warning(f"**{issue.field}**: {issue.message}")
-                else:
-                    st.info(f"**{issue.field}**: {issue.message}")
-
-                if issue.suggestion:
-                    st.caption(f"💡 {issue.suggestion}")
-
-    # Save draft button
-    st.subheader("Actions")
-
-    # Show save success message if present
-    if st.session_state.save_success_message:
-        st.success(st.session_state.save_success_message)
-        st.session_state.save_success_message = None  # Clear after displaying
-
-    col1, col2, col3 = st.columns([1, 1, 1])
-    with col1:
-        if st.button("💾 Save Draft", type="primary"):
-            _save_draft_manual()
-            st.rerun()
-
-    # Show current draft path info
-    if st.session_state.current_draft_path:
-        with st.expander("💾 Draft File Info", expanded=False):
-            st.write(f"**Location:** `{st.session_state.current_draft_path}`")
-            st.write(
-                f"**Last modified:** {st.session_state.draft_data.get('metadata', {}).get('last_modified', 'N/A')}"
-            )
-            st.caption(
-                "💡 Your work is automatically saved as you navigate between steps. "
-                "Drafts are stored in `~/.gkc/drafts/` (Streamlit standard approach). "
-                "Use the 'Save Draft' button above to force a save at any time."
-            )
-
-    # Navigation
-    st.write("---")
-    col1, col2, col3 = st.columns([1, 1, 1])
-    with col1:
-        if st.button("← Back: Sitelinks", type="secondary"):
-            st.session_state.current_step = "sitelinks"
-            st.rerun()
-
-
-# ============================================================================
-# DRAFT LOADING
-# ============================================================================
-
-
-def load_most_recent_draft(
-    profile_name: str, draft_manager: DraftManager
-) -> tuple[dict[str, Any] | None, list[str]]:
-    """Load the most recent draft for a profile if one exists.
-
-    Args:
-        profile_name: Profile name to load draft for
-        draft_manager: DraftManager instance
-
-    Returns:
-        Tuple of (draft_data, validation_errors). If no draft exists, returns (None, []).
-
-    Plain meaning: Find and load the latest saved draft with validation.
-    """
-    # Find all drafts for this profile
-    safe_name = "_".join(profile_name.split())
-    draft_files = sorted(
-        draft_manager.drafts_dir.glob(f"{safe_name}_*.json"), reverse=True
-    )
-
-    if not draft_files:
-        return None, []
-
-    # Load the most recent draft
     try:
-        draft_path = draft_files[0]
-        draft_data = draft_manager.load(draft_path)
-        validation_errors = []
+        packet, profile_docs = _build_initial_packet(profile_ref)
+    except Exception as exc:
+        st.sidebar.error(f"Failed to build packet: {exc}")
+        st.stop()
 
-        # Validate structure (basic checks)
-        if not isinstance(draft_data, dict):
-            return None, ["Draft file is not a valid JSON object"]
+    st.session_state.packet = packet
+    st.session_state.profile_docs = profile_docs
+    st.session_state.root_profile_entity = packet.get("profile_entity")
+    source = gkc.get_spirit_safe_source()
+    st.session_state.source_root = (
+        str(source.local_root)
+        if source.mode == "local" and source.local_root is not None
+        else None
+    )
+    if packet.get("entities"):
+        st.session_state.active_entity_id = packet["entities"][0].get("id")
 
-        # Check for curation packet structure
-        if "entities" not in draft_data:
-            # Legacy format - convert to new format
-            validation_errors.append(
-                "Legacy draft format detected - creating new packet structure"
-            )
-            return None, validation_errors
-
-        # Validate each entity's schema
-        for i, entity in enumerate(draft_data.get("entities", [])):
-            result = EntityJSONValidator.validate_schema(entity)
-            if not result.is_valid:
-                error_count = len(
-                    [issue for issue in result.issues if issue.severity == "error"]
-                )
-                validation_errors.append(
-                    f"Entity {i + 1} has {error_count} schema errors"
-                )
-
-        return draft_data, validation_errors
-
-    except Exception as e:
-        return None, [f"Failed to load draft: {str(e)}"]
-
-
-# ============================================================================
-# MAIN APPLICATION
-# ============================================================================
+    root_qid = _entity_id_from_uri(packet.get("profile_entity", env_profile))
+    st.sidebar.success(f"Built uncharged packet from {root_qid}")
 
 
 def main() -> None:
-    """Main Streamlit app entry point.
-
-    Plain meaning: Run the wizard application.
-    """
-    # Page configuration
     st.set_page_config(
-        page_title="GKC Entity Wizard",
+        page_title="GKC Packet Wizard",
         page_icon="🏛️",
         layout="wide",
         initial_sidebar_state="expanded",
     )
 
-    # Initialize session state
     init_session_state()
 
-    # Configuration sidebar
     st.sidebar.title("Configuration")
 
-    # Check for environment variable from CLI
-    env_profile = os.environ.get("GKC_WIZARD_PROFILE")
-    env_qid = os.environ.get("GKC_WIZARD_QID")
+    if st.session_state.packet is None:
+        _load_packet_from_env_or_profile()
 
-    # Determine which profile to load
-    # Profile is set via CLI (GKC_WIZARD_PROFILE env var) or defaults to first available
-    if st.session_state.profile_name is None:
-        # First run: load profile from environment or default
-        if env_profile:
-            profile_to_load = env_profile
-        else:
-            st.sidebar.warning(
-                "No profile specified. Set GKC_WIZARD_PROFILE environment variable."
-            )
-            st.stop()
-
-        try:
-            profile = load_profile(profile_to_load)
-            metadata = load_profile_metadata(profile_to_load)
-            st.session_state.profile = profile
-            st.session_state.profile_name = profile_to_load
-            st.session_state.profile_metadata = metadata
-
-            # Try to load existing draft for this profile
-            draft_data, load_errors = load_most_recent_draft(
-                profile_to_load, st.session_state.draft_manager
-            )
-
-            if draft_data:
-                st.session_state.draft_data = draft_data
-                # Track the loaded draft path
-                draft_files = sorted(
-                    st.session_state.draft_manager.drafts_dir.glob(
-                        f"{('_'.join(profile_to_load.split()))}_*.json"
-                    ),
-                    reverse=True,
-                )
-                if draft_files:
-                    st.session_state.current_draft_path = draft_files[0]
-
-                if load_errors:
-                    st.sidebar.warning(f"Draft loaded with {len(load_errors)} issues")
-                else:
-                    st.sidebar.info(
-                        f"📂 Loaded draft: {draft_files[0].name if draft_files else 'N/A'}"
-                    )
-            else:
-                # No valid draft - ensure primary entity exists
-                if load_errors:
-                    for error in load_errors:
-                        st.sidebar.info(f"ℹ️ {error}")
-
-                # Create primary entity if it doesn't exist
-                get_primary_entity()
-
-        except Exception as e:
-            st.sidebar.error(f"Failed to load profile '{profile_to_load}': {e}")
-            st.stop()
-
-    # Show loaded profile
-    st.sidebar.success(f"✓ Loaded {st.session_state.profile_name}")
-
-    # Show QID input if editing existing item
-    if env_qid:
-        st.sidebar.text_input(
-            "Editing QID",
-            value=env_qid,
-            disabled=True,
-            help="Wikidata QID passed from CLI (edit mode not yet implemented)",
-        )
-
+    packet = st.session_state.packet or {}
+    st.sidebar.caption(f"Packet: {packet.get('packet_id', 'unknown')}")
+    st.sidebar.caption(
+        f"Root: {_entity_id_from_uri(packet.get('profile_entity', 'unknown'))}"
+    )
     st.sidebar.divider()
 
-    # Entity status widget (Phase 7.2)
-    render_status_widget()
-
-    # Step navigation sidebar
+    render_entity_sidebar()
     render_step_sidebar()
 
-    # Main content area
-    if st.session_state.profile is None:
-        st.warning("⚠️ No profile loaded")
-    else:
-        render_step_content()
+    render_step_content()
 
-    # Footer with draft info
     st.divider()
-    with st.expander("🔧 Debug Info", expanded=False):
-        st.write("**Current Step:**", st.session_state.current_step)
-        st.write("**Profile:**", st.session_state.profile_name)
-        st.write("**Working Directory:**", os.getcwd())
-        st.write(
-            "**Draft Path:**",
-            (
-                str(st.session_state.current_draft_path)
-                if st.session_state.current_draft_path
-                else "N/A"
-            ),
-        )
-        st.write("**GKC Entity JSON (Curation Packet):**")
-
-        import json
-
-        st.code(
-            json.dumps(st.session_state.draft_data, indent=2, ensure_ascii=False),
-            language="json",
-        )
+    with st.expander("Debug", expanded=False):
+        st.write("Current step:", st.session_state.current_step)
+        st.write("Active entity:", st.session_state.active_entity_id)
+        st.write("Draft path:", str(st.session_state.current_draft_path or "N/A"))
 
 
 if __name__ == "__main__":

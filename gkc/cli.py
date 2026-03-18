@@ -384,7 +384,7 @@ def _build_parser() -> argparse.ArgumentParser:
     )
 
     # Profile commands
-    profile_parser = subparsers.add_parser("profile", help="YAML profile utilities")
+    profile_parser = subparsers.add_parser("profile", help="Profile utilities")
     profile_subparsers = profile_parser.add_subparsers(dest="profile_command")
 
     profile_validate = profile_subparsers.add_parser(
@@ -467,12 +467,12 @@ def _build_parser() -> argparse.ArgumentParser:
     )
 
     profile_run_form = profile_subparsers.add_parser(
-        "form", help="Launch an interactive Textual wizard for a YAML profile"
+        "form", help="Launch an interactive Streamlit wizard for a JSON profile"
     )
     profile_run_form.add_argument(
         "--profile",
         required=True,
-        help="Path to YAML profile definition",
+        help="Profile reference (QID or full profile entity URI)",
     )
     profile_run_form.add_argument(
         "--qid",
@@ -2002,7 +2002,7 @@ def _handle_profile_form_schema(args: argparse.Namespace) -> dict[str, Any]:
 
 
 def _handle_profile_form(args: argparse.Namespace) -> dict[str, Any]:
-    """Launch an interactive Streamlit wizard from a YAML profile.
+    """Launch an interactive Streamlit wizard from a JSON profile or packet.
 
     Note: Starts a local Streamlit server at http://localhost:8501
     """
@@ -2014,9 +2014,14 @@ def _handle_profile_form(args: argparse.Namespace) -> dict[str, Any]:
     previous_source, source_overridden = _apply_source_override(args)
 
     try:
-        # Verify profile exists before launching Streamlit
-        loader = ProfileLoader()
-        profile, resolved_profile = _load_profile_from_reference(loader, args.profile)
+        # Verify profile is loadable before launching Streamlit.
+        profile_doc = load_profile(args.profile)
+        profile_entity = profile_doc.get("entity", args.profile)
+        profile_name = (
+            profile_doc.get("metadata", {}).get("labels", {}).get("mul")
+            or profile_doc.get("metadata", {}).get("labels", {}).get("en")
+            or profile_entity
+        )
 
         try:
             from gkc.profiles.forms import streamlit_app
@@ -2031,12 +2036,14 @@ def _handle_profile_form(args: argparse.Namespace) -> dict[str, Any]:
 
         # Set environment variables for Streamlit app to read
         env = os.environ.copy()
-        env["GKC_WIZARD_PROFILE"] = args.profile
+        env["GKC_WIZARD_PROFILE"] = profile_entity
         if args.qid:
             env["GKC_WIZARD_QID"] = args.qid
+        if args.packet:
+            env["GKC_WIZARD_PACKET"] = args.packet
 
         # Launch Streamlit in subprocess
-        print(f"🚀 Launching Streamlit wizard for profile: {profile.name}")
+        print(f"🚀 Launching Streamlit wizard for profile: {profile_name}")
         print("📍 URL: http://localhost:8501")
         print("⌨️  Press Ctrl+C to stop the server")
         print()
@@ -2051,9 +2058,10 @@ def _handle_profile_form(args: argparse.Namespace) -> dict[str, Any]:
             "ok": result.returncode == 0,
             "message": "Streamlit wizard closed",
             "details": {
-                "profile": profile.name,
-                "profile_ref": resolved_profile,
+                "profile": profile_name,
+                "profile_ref": profile_entity,
                 "qid": args.qid,
+                "packet": args.packet,
             },
         }
     finally:
