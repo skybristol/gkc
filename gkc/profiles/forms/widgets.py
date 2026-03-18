@@ -57,8 +57,51 @@ class WidgetFactory:
     @staticmethod
     def _render_item(
         label: str, value: Any, key: str, help_text: str, disabled: bool, **kwargs
+    ) -> Any:
+        """Render widget for wikibase-item datatype.
+
+        Supports two modes:
+        - Expert mode (default): QID text input.
+        - Value-list mode: searchable selectbox returning URI+label metadata.
+        """
+        item_options = kwargs.get("item_options")
+        if isinstance(item_options, list) and item_options:
+            return WidgetFactory._render_item_value_list_mode(
+                label,
+                value,
+                key,
+                help_text,
+                disabled,
+                item_options,
+                kwargs.get("all_item_options_count"),
+            )
+
+        return WidgetFactory._render_item_expert_mode(
+            label,
+            value,
+            key,
+            help_text,
+            disabled,
+        )
+
+    @staticmethod
+    def _qid_from_uri(uri: str) -> Optional[str]:
+        if not isinstance(uri, str) or not uri:
+            return None
+        candidate = uri.rsplit("/", 1)[-1] if "/" in uri else uri
+        if re.match(r"^Q\d+$", candidate):
+            return candidate
+        return None
+
+    @staticmethod
+    def _render_item_expert_mode(
+        label: str,
+        value: Any,
+        key: str,
+        help_text: str,
+        disabled: bool,
     ) -> str:
-        """Render widget for wikibase-item datatype (MVP: QID text input)."""
+        """Render QID text entry for unconstrained item fields."""
         qid_value = value if value else ""
 
         # Extract QID if value is a dict with 'id' key
@@ -79,6 +122,96 @@ class WidgetFactory:
             if not re.match(r"^Q\d+$", result):
                 st.warning(f"⚠️ Expected QID format (e.g., Q12345), got: {result}")
 
+        return result
+
+    @staticmethod
+    def _render_item_value_list_mode(
+        label: str,
+        value: Any,
+        key: str,
+        help_text: str,
+        disabled: bool,
+        item_options: list[dict[str, str]],
+        all_item_options_count: Any,
+    ) -> dict[str, str]:
+        """Render searchable item selector for value-list constrained statements."""
+        by_uri: dict[str, dict[str, str]] = {}
+        ordered_uris: list[str] = []
+        for candidate in item_options:
+            if not isinstance(candidate, dict):
+                continue
+            uri = candidate.get("item")
+            if not isinstance(uri, str) or not uri:
+                continue
+            if uri in by_uri:
+                continue
+            by_uri[uri] = {
+                "item": uri,
+                "itemLabel": (
+                    candidate.get("itemLabel", "")
+                    if isinstance(candidate.get("itemLabel"), str)
+                    else ""
+                ),
+            }
+            ordered_uris.append(uri)
+
+        if not ordered_uris:
+            st.warning(
+                "⚠️ Value list is configured but no selectable items were loaded."
+            )
+            return {"id": ""}
+
+        current_uri: Optional[str] = None
+        if isinstance(value, dict):
+            if isinstance(value.get("item"), str):
+                current_uri = value["item"]
+            elif isinstance(value.get("id"), str):
+                current_uri = f"http://www.wikidata.org/entity/{value['id']}"
+        elif isinstance(value, str) and value.startswith(("http://", "https://")):
+            current_uri = value
+        elif isinstance(value, str) and value.startswith("Q"):
+            current_uri = f"http://www.wikidata.org/entity/{value}"
+
+        if current_uri and current_uri not in by_uri:
+            by_uri[current_uri] = {
+                "item": current_uri,
+                "itemLabel": "Current value",
+            }
+            ordered_uris.insert(0, current_uri)
+
+        default_index = 0
+        if current_uri and current_uri in ordered_uris:
+            default_index = ordered_uris.index(current_uri)
+
+        if isinstance(all_item_options_count, int) and all_item_options_count > len(
+            ordered_uris
+        ):
+            st.caption(
+                f"Showing {len(ordered_uris)} matches out of {all_item_options_count} value-list entries."
+            )
+
+        selected_uri = st.selectbox(
+            label,
+            ordered_uris,
+            index=default_index,
+            key=key,
+            help=help_text,
+            disabled=disabled,
+            format_func=lambda uri: (
+                f"{by_uri[uri]['itemLabel']} ({WidgetFactory._qid_from_uri(uri) or uri})"
+                if by_uri[uri].get("itemLabel")
+                else (WidgetFactory._qid_from_uri(uri) or uri)
+            ),
+        )
+
+        selected = by_uri[selected_uri]
+        qid = WidgetFactory._qid_from_uri(selected_uri)
+        result: dict[str, str] = {
+            "item": selected_uri,
+            "itemLabel": selected.get("itemLabel", ""),
+        }
+        if qid:
+            result["id"] = qid
         return result
 
     @staticmethod

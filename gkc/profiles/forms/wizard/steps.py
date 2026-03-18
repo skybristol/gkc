@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import json
+from pathlib import Path
 from typing import Any
 
 import streamlit as st
@@ -99,6 +101,126 @@ def _value_datatype(value_block: dict[str, Any]) -> str:
     if dtype == "globe-coordinate":
         return "globecoordinate"
     return dtype
+
+
+def _source_root_path() -> Path | None:
+    raw_source_root = st.session_state.get("source_root")
+    if isinstance(raw_source_root, str) and raw_source_root:
+        return Path(raw_source_root)
+    if isinstance(raw_source_root, Path):
+        return raw_source_root
+    return None
+
+
+def _extract_value_list_candidates(cache_data: dict[str, Any]) -> list[dict[str, str]]:
+    """Extract normalized item candidates from SpiritSafe cache payloads."""
+    candidates: list[dict[str, str]] = []
+    seen: set[str] = set()
+
+    for entry in cache_data.get("items", []):
+        if not isinstance(entry, dict):
+            continue
+        item_uri = entry.get("item")
+        if not isinstance(item_uri, str) or not item_uri or item_uri in seen:
+            continue
+        label = entry.get("itemLabel")
+        candidates.append(
+            {
+                "item": item_uri,
+                "itemLabel": label if isinstance(label, str) else "",
+            }
+        )
+        seen.add(item_uri)
+
+    for binding in cache_data.get("results", {}).get("bindings", []):
+        if not isinstance(binding, dict):
+            continue
+        item_node = binding.get("item")
+        if not isinstance(item_node, dict):
+            continue
+        item_uri = item_node.get("value")
+        if not isinstance(item_uri, str) or not item_uri or item_uri in seen:
+            continue
+        label_node = binding.get("itemLabel")
+        label = (
+            label_node.get("value")
+            if isinstance(label_node, dict) and isinstance(label_node.get("value"), str)
+            else ""
+        )
+        candidates.append({"item": item_uri, "itemLabel": label})
+        seen.add(item_uri)
+
+    return candidates
+
+
+def _value_list_search_text(candidate: dict[str, str]) -> str:
+    item_uri = candidate.get("item", "")
+    qid = item_uri.rsplit("/", 1)[-1] if "/" in item_uri else item_uri
+    return f"{candidate.get('itemLabel', '')} {qid} {item_uri}".lower()
+
+
+def _filter_value_list_candidates(
+    candidates: list[dict[str, str]], query: str, limit: int = 200
+) -> list[dict[str, str]]:
+    """Filter candidates for responsive type-ahead browsing."""
+    normalized_query = query.strip().lower()
+    if not normalized_query:
+        return candidates[:limit]
+
+    filtered: list[dict[str, str]] = []
+    for candidate in candidates:
+        if normalized_query in _value_list_search_text(candidate):
+            filtered.append(candidate)
+            if len(filtered) >= limit:
+                break
+    return filtered
+
+
+def _statement_value_list_candidates(
+    statement_def: dict[str, Any],
+) -> tuple[list[dict[str, str]], str | None]:
+    """Resolve and load value-list candidates for one statement.
+
+    Returns a tuple of (candidates, error_message).
+    """
+    value_block = statement_def.get("value", {})
+    statement_ref = _statement_key(statement_def)
+
+    packet = st.session_state.get("packet", {})
+    route_map = packet.get("value_list_routes", {}) if isinstance(packet, dict) else {}
+    route = route_map.get(statement_ref, {}) if isinstance(route_map, dict) else {}
+
+    cache_ref = value_block.get("value_list_reference")
+    if not isinstance(cache_ref, str) or not cache_ref:
+        cache_ref = route.get("cache_path") if isinstance(route, dict) else None
+
+    if not isinstance(cache_ref, str) or not cache_ref:
+        return [], None
+
+    source_root = _source_root_path()
+    if source_root is None:
+        return [], "Value list route is configured but source root is unavailable."
+
+    cache_path = source_root / cache_ref
+    if not cache_path.exists():
+        return [], f"Value list cache file not found: {cache_path}"
+
+    cache_store = st.session_state.setdefault("value_list_cache", {})
+    cache_key = str(cache_path)
+    if cache_key in cache_store:
+        return cache_store[cache_key], None
+
+    try:
+        cache_payload = json.loads(cache_path.read_text(encoding="utf-8"))
+    except Exception as exc:
+        return [], f"Failed to read value list cache at {cache_path}: {exc}"
+
+    if not isinstance(cache_payload, dict):
+        return [], f"Value list cache payload must be a JSON object: {cache_path}"
+
+    candidates = _extract_value_list_candidates(cache_payload)
+    cache_store[cache_key] = candidates
+    return candidates, None
 
 
 class IdentificationStep(Step):
@@ -382,13 +504,32 @@ class StatementsStep(Step):
             value_data["value"] = fixed_value
             return
 
-        value_data["value"] = WidgetFactory.render_widget(
+        widget_kwargs: dict[str, Any] = {}
+        if dtype in {"item", "wikibase-item"}:
+            candidates, list_error = _statement_value_list_candidates(statement_def)
+            if list_error:
+                st.error(list_error)
+            if candidates:
+                search_query = st.text_input(
+                    "Search value list",
+                    key=f"value_search_{_statement_key(statement_def)}_{idx}",
+                    placeholder="Type to filter by label, QID, or URI",
+                )
+                filtered = _filter_value_list_candidates(candidates, search_query)
+                if not filtered:
+                    st.warning("No value-list matches found for current search.")
+                widget_kwargs["item_options"] = filtered
+                widget_kwargs["all_item_options_count"] = len(candidates)
+
+        original_value = WidgetFactory.render_widget(
             datatype=dtype,
             label="Value",
             value=current_value,
             key=f"value_{_statement_key(statement_def)}_{idx}",
             help_text=_statement_prompt(statement_def),
+            **widget_kwargs,
         )
+        value_data["value"] = original_value
 
         normalized, notices = validate_inline_value(
             datatype=dtype,
@@ -396,6 +537,15 @@ class StatementsStep(Step):
             entity_ref=st.session_state.get("active_entity_id", "unknown"),
             statement_ref=_statement_key(statement_def),
         )
+        if (
+            dtype in {"item", "wikibase-item"}
+            and isinstance(original_value, dict)
+            and isinstance(normalized, dict)
+        ):
+            if isinstance(original_value.get("item"), str):
+                normalized["item"] = original_value["item"]
+            if isinstance(original_value.get("itemLabel"), str):
+                normalized["itemLabel"] = original_value["itemLabel"]
         value_data["value"] = normalized
         # Inline entry applies coercion but defers conformance messaging to review phase.
         del notices
