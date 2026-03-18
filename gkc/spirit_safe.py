@@ -1402,14 +1402,46 @@ class EntityProfileJsonBuilder:
 
     def build_all(self) -> list[dict[str, Any]]:
         """Build JSON documents for every cache entity typed as a profile."""
+        return self.build_all_with_report()["documents"]
+
+    def build_all_with_report(self) -> dict[str, Any]:
+        """Build JSON profile documents and collect language-policy diagnostics."""
         results: list[dict[str, Any]] = []
+        skipped_profiles: list[dict[str, Any]] = []
+        language_filtering: list[dict[str, Any]] = []
+
         for doc in self._cache_index.values():
             if self._is_profile_item(doc):
-                results.append(self.build_one(doc))
-        return results
+                try:
+                    built, filtering_report = self._build_one_with_language_policy(doc)
+                    results.append(built)
+                    if filtering_report.get("excluded_languages"):
+                        language_filtering.append(filtering_report)
+                except EntityProfileLanguageCoverageError as exc:
+                    skipped_profiles.append(
+                        {
+                            "profile_id": exc.profile_id,
+                            "code": "mul_language_coverage_failed",
+                            "message": str(exc),
+                            "missing_paths": exc.missing_paths,
+                        }
+                    )
+
+        return {
+            "documents": results,
+            "skipped_profiles": skipped_profiles,
+            "language_filtering": language_filtering,
+        }
 
     def build_one(self, wikibase_item: dict[str, Any]) -> dict[str, Any]:
         """Build one JSON profile document from a single cache entity."""
+        built, _ = self._build_one_with_language_policy(wikibase_item)
+        return built
+
+    def _build_one_with_language_policy(
+        self, wikibase_item: dict[str, Any]
+    ) -> tuple[dict[str, Any], dict[str, Any]]:
+        """Build one JSON profile and enforce profile language completeness policy."""
         entity_uri = f"{self.entity_prefix}{wikibase_item.get('entity_id', '')}"
 
         identification = {
@@ -1432,12 +1464,187 @@ class EntityProfileJsonBuilder:
             entity_uri=entity_uri,
         )
 
-        return {
+        profile_doc = {
             "entity": entity_uri,
             "identification": identification,
             "statements": statements,
             "metadata": metadata,
         }
+
+        return self._apply_language_completeness_policy(profile_doc)
+
+    def _apply_language_completeness_policy(
+        self, profile_doc: dict[str, Any]
+    ) -> tuple[dict[str, Any], dict[str, Any]]:
+        profile_id = str(profile_doc.get("entity", "")).rstrip("/").split("/")[-1]
+        candidates = set(self._collect_languages(profile_doc))
+        candidates.add("mul")
+
+        missing_by_language: dict[str, list[str]] = {}
+        for language in sorted(candidates):
+            missing = self._missing_language_coverage(profile_doc, language)
+            if missing:
+                missing_by_language[language] = missing
+
+        mul_missing = missing_by_language.get("mul", [])
+        if mul_missing:
+            raise EntityProfileLanguageCoverageError(
+                profile_id=profile_id or "<unknown>",
+                missing_paths=mul_missing,
+            )
+
+        allowed_languages = {"mul"}
+        excluded_languages: list[dict[str, Any]] = []
+        for language in sorted(candidates):
+            if language == "mul":
+                continue
+            missing = missing_by_language.get(language, [])
+            if missing:
+                excluded_languages.append(
+                    {
+                        "language": language,
+                        "missing_paths": missing,
+                    }
+                )
+                continue
+            allowed_languages.add(language)
+
+        self._prune_profile_languages(profile_doc, allowed_languages)
+        self._recompute_profile_languages(profile_doc)
+
+        return profile_doc, {
+            "profile_id": profile_id,
+            "excluded_languages": excluded_languages,
+        }
+
+    def _missing_language_coverage(
+        self, profile_doc: dict[str, Any], language: str
+    ) -> list[str]:
+        missing: list[str] = []
+
+        metadata = profile_doc.get("metadata", {})
+        identification = profile_doc.get("identification", {})
+
+        labels = metadata.get("labels", {}) if isinstance(metadata, dict) else {}
+        descriptions = (
+            metadata.get("descriptions", {}) if isinstance(metadata, dict) else {}
+        )
+        aliases = metadata.get("aliases", {}) if isinstance(metadata, dict) else {}
+
+        if not self._metadata_has_label(labels, language):
+            missing.append(f"metadata.labels.{language}")
+
+        if not self._metadata_has_description(descriptions, language):
+            if language == "mul":
+                missing.append("metadata.descriptions.mul_or_en")
+            else:
+                missing.append(f"metadata.descriptions.{language}")
+
+        if aliases and not self._metadata_has_alias(aliases, language):
+            missing.append(f"metadata.aliases.{language}")
+
+        if not self._identification_has_prompt(identification, "labels", language):
+            missing.append(f"identification.labels.{language}.prompt")
+
+        if not self._identification_has_prompt(
+            identification, "descriptions", language
+        ):
+            missing.append(f"identification.descriptions.{language}.prompt")
+
+        if not self._identification_has_prompt(identification, "aliases", language):
+            missing.append(f"identification.aliases.{language}.prompt")
+
+        statements = profile_doc.get("statements", [])
+        for statement in self._iter_statement_nodes(statements):
+            entity = statement.get("entity", "<unknown>")
+            messages = statement.get("messages", {})
+            if not isinstance(messages, dict):
+                missing.append(f"statement:{entity}.messages.{language}.prompt")
+                continue
+            prompt = messages.get(language, {}).get("prompt")
+            if not isinstance(prompt, str) or not prompt.strip():
+                missing.append(f"statement:{entity}.messages.{language}.prompt")
+
+        return sorted(set(missing))
+
+    def _metadata_has_label(self, labels: Any, language: str) -> bool:
+        return isinstance(labels, dict) and isinstance(labels.get(language), str)
+
+    def _metadata_has_description(self, descriptions: Any, language: str) -> bool:
+        if not isinstance(descriptions, dict):
+            return False
+        if language == "mul":
+            mul_value = descriptions.get("mul")
+            en_value = descriptions.get("en")
+            return isinstance(mul_value, str) or isinstance(en_value, str)
+        return isinstance(descriptions.get(language), str)
+
+    def _metadata_has_alias(self, aliases: Any, language: str) -> bool:
+        if not isinstance(aliases, dict):
+            return False
+        values = aliases.get(language)
+        return isinstance(values, list) and any(
+            isinstance(value, str) and value.strip() for value in values
+        )
+
+    def _identification_has_prompt(
+        self, identification: Any, section_name: str, language: str
+    ) -> bool:
+        if not isinstance(identification, dict):
+            return False
+        section = identification.get(section_name, {})
+        if not isinstance(section, dict):
+            return False
+        payload = section.get(language, {})
+        if not isinstance(payload, dict):
+            return False
+        prompt = payload.get("prompt")
+        return isinstance(prompt, str) and bool(prompt.strip())
+
+    def _prune_profile_languages(
+        self, profile_doc: dict[str, Any], allowed_languages: set[str]
+    ) -> None:
+        identification = profile_doc.get("identification", {})
+        if isinstance(identification, dict):
+            for field_name in ("labels", "descriptions", "aliases"):
+                section = identification.get(field_name)
+                if isinstance(section, dict):
+                    for language in list(section.keys()):
+                        if language not in allowed_languages:
+                            section.pop(language, None)
+
+        metadata = profile_doc.get("metadata", {})
+        if isinstance(metadata, dict):
+            for field_name in ("labels", "descriptions", "aliases"):
+                section = metadata.get(field_name)
+                if isinstance(section, dict):
+                    for language in list(section.keys()):
+                        if language not in allowed_languages:
+                            section.pop(language, None)
+
+        statements = profile_doc.get("statements", [])
+        for statement in self._iter_statement_nodes(statements):
+            messages = statement.get("messages")
+            if isinstance(messages, dict):
+                for language in list(messages.keys()):
+                    if language not in allowed_languages:
+                        messages.pop(language, None)
+
+    def _recompute_profile_languages(self, profile_doc: dict[str, Any]) -> None:
+        metadata = profile_doc.get("metadata", {})
+        if not isinstance(metadata, dict):
+            return
+        metadata["languages"] = self._collect_languages(
+            {
+                "identification": profile_doc.get("identification", {}),
+                "statements": profile_doc.get("statements", []),
+                "metadata": {
+                    "labels": metadata.get("labels", {}),
+                    "descriptions": metadata.get("descriptions", {}),
+                    "aliases": metadata.get("aliases", {}),
+                },
+            }
+        )
 
     def _build_profile_metadata(
         self,
@@ -2142,12 +2349,27 @@ class EntityProfileJsonBuilder:
         )
 
 
+class EntityProfileLanguageCoverageError(ValueError):
+    """Raised when a profile fails required language completeness coverage."""
+
+    def __init__(self, profile_id: str, missing_paths: list[str]) -> None:
+        self.profile_id = profile_id
+        self.missing_paths = sorted(set(missing_paths))
+        super().__init__(
+            f"Profile '{profile_id}' failed required mul language coverage: "
+            + ", ".join(self.missing_paths)
+        )
+
+
 @dataclass(frozen=True)
 class EntityProfileJsonExportResult:
     """Summary of JSON entity profile export writes."""
 
     output_dir: str
     written_ids: list[str]
+    skipped_ids: list[str] = field(default_factory=list)
+    failures: list[dict[str, Any]] = field(default_factory=list)
+    language_filtering: list[dict[str, Any]] = field(default_factory=list)
 
 
 def build_entity_profile_json_documents(
@@ -2191,10 +2413,12 @@ def export_entity_profile_json_documents(
     Returns:
         Export result summary.
     """
-    documents = build_entity_profile_json_documents(
+    builder = EntityProfileJsonBuilder(
         cache_entities_dir=cache_entities_dir,
         entity_prefix=entity_prefix,
     )
+    build_result = builder.build_all_with_report()
+    documents = build_result["documents"]
 
     requested_ids = set(profile_ids or [])
     if requested_ids:
@@ -2220,6 +2444,15 @@ def export_entity_profile_json_documents(
     return EntityProfileJsonExportResult(
         output_dir=str(out_dir.resolve()),
         written_ids=sorted(written_ids),
+        skipped_ids=sorted(
+            [
+                str(item.get("profile_id"))
+                for item in build_result["skipped_profiles"]
+                if item.get("profile_id")
+            ]
+        ),
+        failures=build_result["skipped_profiles"],
+        language_filtering=build_result["language_filtering"],
     )
 
 

@@ -1589,7 +1589,8 @@ def test_profile_export_json_writes_output_directory(capsys, tmp_path):
                 "entity_id": "Q4",
                 "entity": {
                     "labels": {
-                        "en": {"value": "Tribal Government in the United States"}
+                        "mul": {"value": "Tribal Government in the United States"},
+                        "en": {"value": "Tribal Government in the United States"},
                     },
                     "descriptions": {"en": {"value": "Example profile"}},
                     "aliases": {},
@@ -1600,6 +1601,42 @@ def test_profile_export_json_writes_output_directory(capsys, tmp_path):
                                     "datavalue": {
                                         "value": {
                                             "id": "Q3",
+                                        }
+                                    }
+                                }
+                            }
+                        ],
+                        "P188": [
+                            {
+                                "mainsnak": {
+                                    "datavalue": {
+                                        "value": {
+                                            "text": "Enter label",
+                                            "language": "mul",
+                                        }
+                                    }
+                                }
+                            }
+                        ],
+                        "P189": [
+                            {
+                                "mainsnak": {
+                                    "datavalue": {
+                                        "value": {
+                                            "text": "Enter description",
+                                            "language": "mul",
+                                        }
+                                    }
+                                }
+                            }
+                        ],
+                        "P190": [
+                            {
+                                "mainsnak": {
+                                    "datavalue": {
+                                        "value": {
+                                            "text": "Enter aliases",
+                                            "language": "mul",
                                         }
                                     }
                                 }
