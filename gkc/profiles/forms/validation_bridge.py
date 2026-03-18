@@ -18,6 +18,24 @@ from gkc.fermenter import (
 )
 
 
+def _merge_wikibase_item_metadata(original: Any, normalized: Any) -> Any:
+    """Preserve wizard-selected URI/label metadata after datatype normalization."""
+    if not isinstance(normalized, dict):
+        return normalized
+
+    merged = dict(normalized)
+    if isinstance(original, dict):
+        item_uri = original.get("item")
+        item_label = original.get("itemLabel")
+        if isinstance(item_uri, str) and item_uri:
+            merged["item"] = item_uri
+        if isinstance(item_label, str) and item_label:
+            merged["itemLabel"] = item_label
+    elif isinstance(original, str) and original.startswith(("http://", "https://")):
+        merged["item"] = original
+    return merged
+
+
 def _validation_result_notices(
     result: ValidationResult,
     *,
@@ -73,7 +91,10 @@ def validate_inline_value(
     )
 
     if result.valid:
-        return result.value, notices
+        normalized = result.value
+        if datatype in {"item", "wikibase-item"}:
+            normalized = _merge_wikibase_item_metadata(value, normalized)
+        return normalized, notices
     return value, notices
 
 
@@ -239,7 +260,13 @@ def validate_entity_packet_data(
             )
 
             if datatype_result.valid:
-                statement_value["value"] = datatype_result.value
+                normalized_value = datatype_result.value
+                if datatype in {"item", "wikibase-item"}:
+                    normalized_value = _merge_wikibase_item_metadata(
+                        candidate,
+                        normalized_value,
+                    )
+                statement_value["value"] = normalized_value
 
             if value_list_path is not None and datatype_result.valid:
                 list_result = validate_value_from_list(candidate, value_list_path)
@@ -293,7 +320,13 @@ def validate_entity_packet_data(
                     )
                 )
                 if q_result.valid:
-                    qualifiers[qualifier_ref] = q_result.value
+                    normalized_qualifier = q_result.value
+                    if q_datatype in {"item", "wikibase-item"}:
+                        normalized_qualifier = _merge_wikibase_item_metadata(
+                            q_value,
+                            normalized_qualifier,
+                        )
+                    qualifiers[qualifier_ref] = normalized_qualifier
 
             references = statement_value.get("references", [])
             if not isinstance(references, list):
@@ -354,7 +387,13 @@ def validate_entity_packet_data(
                     )
                 )
                 if r_result.valid:
-                    ref_entry["value"] = r_result.value
+                    normalized_reference = r_result.value
+                    if r_datatype in {"item", "wikibase-item"}:
+                        normalized_reference = _merge_wikibase_item_metadata(
+                            ref_value,
+                            normalized_reference,
+                        )
+                    ref_entry["value"] = normalized_reference
 
             for ref_prop, ref_def in reference_defs.items():
                 if ref_prop not in present_reference_props:
