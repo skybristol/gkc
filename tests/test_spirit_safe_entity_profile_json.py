@@ -281,6 +281,101 @@ def test_value_list_graph_includes_reference_and_qualifier_routes(tmp_path):
     ]
 
 
+def test_profile_statement_has_value_link_to_wikidata_entity_emits_fixed_value_list(
+    tmp_path,
+):
+    """P161 links to Q52-typed entities should emit fixed value list entries."""
+
+    cache_entities_dir = tmp_path / "cache" / "entities"
+    cache_entities_dir.mkdir(parents=True, exist_ok=True)
+
+    profile_payload = {
+        "entity_id": "Q4",
+        "entity": {
+            "labels": {"mul": {"value": "Example profile"}},
+            "descriptions": {"mul": {"value": "Example profile"}},
+            "aliases": {},
+            "claims": {
+                "P1": [_build_entity_claim_entity_id("Q3")],
+                "P188": [_build_entity_claim_monolingual("Enter label")],
+                "P189": [_build_entity_claim_monolingual("Enter description")],
+                "P190": [_build_entity_claim_monolingual("Enter aliases")],
+                "P157": [
+                    {
+                        "mainsnak": {
+                            "datavalue": {
+                                "value": {"id": "Q16"},
+                            }
+                        },
+                        "qualifiers": {
+                            "P161": [_build_qualifier_entity_id("Q54")],
+                        },
+                    }
+                ],
+            },
+        },
+    }
+    (cache_entities_dir / "Q4.json").write_text(
+        json.dumps(profile_payload), encoding="utf-8"
+    )
+
+    statement_payloads = {
+        "Q16": {
+            "entity_id": "Q16",
+            "entity": {
+                "labels": {"mul": {"value": "instance of"}},
+                "claims": {
+                    "P5": [
+                        _build_entity_claim_string("http://www.wikidata.org/entity/P31")
+                    ],
+                    "P194": [_build_entity_claim_entity_id("Q52")],
+                    "P171": [_build_entity_claim_monolingual("Statement prompt")],
+                },
+            },
+        },
+        "Q54": {
+            "entity_id": "Q54",
+            "entity": {
+                "labels": {
+                    "mul": {
+                        "value": "federally recognized Native American tribe in the United States"
+                    }
+                },
+                "claims": {
+                    "P1": [_build_entity_claim_entity_id("Q52")],
+                    "P5": [
+                        _build_entity_claim_string(
+                            "http://www.wikidata.org/entity/Q7840353"
+                        )
+                    ],
+                },
+            },
+        },
+        "Q52": {
+            "entity_id": "Q52",
+            "entity": {
+                "labels": {"mul": {"value": "Wikidata Entity"}},
+                "claims": {},
+            },
+        },
+    }
+
+    for entity_id, payload in statement_payloads.items():
+        (cache_entities_dir / f"{entity_id}.json").write_text(
+            json.dumps(payload), encoding="utf-8"
+        )
+
+    docs = build_entity_profile_json_documents(cache_entities_dir)
+    value_payload = docs[0]["statements"][0]["value"]
+
+    assert value_payload["value_list"] == [
+        {
+            "item": "Q7840353",
+            "itemLabel": "federally recognized Native American tribe in the United States",
+        }
+    ]
+
+
 def test_reference_statement_derives_value_from_parent_statement(tmp_path):
     """Nested reference should expose statement_value source when P213 matches parent."""
 
@@ -520,7 +615,9 @@ def test_statement_level_value_claim_respects_p163_parent_scope(tmp_path):
             "entity": {
                 "labels": {"mul": {"value": "instance of"}},
                 "claims": {
-                    "P5": [_build_entity_claim_string("http://www.wikidata.org/entity/P31")],
+                    "P5": [
+                        _build_entity_claim_string("http://www.wikidata.org/entity/P31")
+                    ],
                     "P194": [_build_entity_claim_entity_id("Q52")],
                     "P171": [_build_entity_claim_monolingual("Statement prompt")],
                 },
@@ -531,7 +628,11 @@ def test_statement_level_value_claim_respects_p163_parent_scope(tmp_path):
             "entity": {
                 "labels": {"mul": {"value": "applies to jurisdiction"}},
                 "claims": {
-                    "P5": [_build_entity_claim_string("http://www.wikidata.org/entity/P1001")],
+                    "P5": [
+                        _build_entity_claim_string(
+                            "http://www.wikidata.org/entity/P1001"
+                        )
+                    ],
                     "P194": [_build_entity_claim_entity_id("Q52")],
                     "P171": [_build_entity_claim_monolingual("Qualifier prompt")],
                     "P161": [
@@ -621,7 +722,11 @@ def test_profile_level_p158_claim_overrides_targeted_nested_statement_only(tmp_p
                         "mainsnak": {"datavalue": {"value": {"id": "Q41"}}},
                         "qualifiers": {
                             "P163": [_build_qualifier_entity_id("Q16")],
-                            "P171": [_build_qualifier_monolingual("Override qualifier prompt")],
+                            "P171": [
+                                _build_qualifier_monolingual(
+                                    "Override qualifier prompt"
+                                )
+                            ],
                         },
                     }
                 ],
@@ -638,7 +743,9 @@ def test_profile_level_p158_claim_overrides_targeted_nested_statement_only(tmp_p
             "entity": {
                 "labels": {"mul": {"value": "instance of"}},
                 "claims": {
-                    "P5": [_build_entity_claim_string("http://www.wikidata.org/entity/P31")],
+                    "P5": [
+                        _build_entity_claim_string("http://www.wikidata.org/entity/P31")
+                    ],
                     "P194": [_build_entity_claim_entity_id("Q52")],
                     "P171": [_build_entity_claim_monolingual("Statement prompt")],
                     "P158": [
@@ -653,9 +760,15 @@ def test_profile_level_p158_claim_overrides_targeted_nested_statement_only(tmp_p
             "entity": {
                 "labels": {"mul": {"value": "applies to jurisdiction"}},
                 "claims": {
-                    "P5": [_build_entity_claim_string("http://www.wikidata.org/entity/P1001")],
+                    "P5": [
+                        _build_entity_claim_string(
+                            "http://www.wikidata.org/entity/P1001"
+                        )
+                    ],
                     "P194": [_build_entity_claim_entity_id("Q52")],
-                    "P171": [_build_entity_claim_monolingual("Default qualifier prompt")],
+                    "P171": [
+                        _build_entity_claim_monolingual("Default qualifier prompt")
+                    ],
                 },
             },
         },
@@ -664,9 +777,15 @@ def test_profile_level_p158_claim_overrides_targeted_nested_statement_only(tmp_p
             "entity": {
                 "labels": {"mul": {"value": "point in time"}},
                 "claims": {
-                    "P5": [_build_entity_claim_string("http://www.wikidata.org/entity/P585")],
+                    "P5": [
+                        _build_entity_claim_string(
+                            "http://www.wikidata.org/entity/P585"
+                        )
+                    ],
                     "P194": [_build_entity_claim_entity_id("Q55")],
-                    "P171": [_build_entity_claim_monolingual("Untouched qualifier prompt")],
+                    "P171": [
+                        _build_entity_claim_monolingual("Untouched qualifier prompt")
+                    ],
                 },
             },
         },
@@ -741,7 +860,9 @@ def test_profile_level_max_count_overrides_statement_level_baseline(tmp_path):
             "entity": {
                 "labels": {"mul": {"value": "instance of"}},
                 "claims": {
-                    "P5": [_build_entity_claim_string("http://www.wikidata.org/entity/P31")],
+                    "P5": [
+                        _build_entity_claim_string("http://www.wikidata.org/entity/P31")
+                    ],
                     "P194": [_build_entity_claim_entity_id("Q52")],
                     "P171": [_build_entity_claim_monolingual("Statement prompt")],
                     "P182": [_build_entity_claim_quantity("+3")],
@@ -753,7 +874,11 @@ def test_profile_level_max_count_overrides_statement_level_baseline(tmp_path):
             "entity": {
                 "labels": {"mul": {"value": "part of"}},
                 "claims": {
-                    "P5": [_build_entity_claim_string("http://www.wikidata.org/entity/P361")],
+                    "P5": [
+                        _build_entity_claim_string(
+                            "http://www.wikidata.org/entity/P361"
+                        )
+                    ],
                     "P194": [_build_entity_claim_entity_id("Q52")],
                     "P171": [_build_entity_claim_monolingual("Statement prompt")],
                     "P182": [_build_entity_claim_quantity("+2")],

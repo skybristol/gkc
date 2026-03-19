@@ -1373,6 +1373,7 @@ class EntityProfileJsonBuilder:
     ALIAS_GUIDANCE = "P187"
 
     SAME_AS = "P212"
+    WIKIDATA_ENTITY_URL = "P5"
     GKC_ENTITY_PROFILE_CLASS = "Q3"
     GKC_VALUE_LIST_CLASS = "Q7"
     WIKIDATA_ENTITY_CLASS = "Q52"
@@ -1804,9 +1805,7 @@ class EntityProfileJsonBuilder:
                 claim.get("qualifiers", {}), self.HAS_VALUE
             )
             effective = overlay if overlay else intrinsic
-            linkages.append(
-                (statement_id, self._dedupe_preserve_order(effective))
-            )
+            linkages.append((statement_id, self._dedupe_preserve_order(effective)))
         return linkages
 
     def _build_profile_statements(
@@ -2217,7 +2216,13 @@ class EntityProfileJsonBuilder:
                 payload["value_list_reference"] = f"cache/queries/{target_id}.json"
 
             if self.WIKIDATA_ENTITY_CLASS in type_ids:
-                for url in self._entity_string_claim_values(target_doc, self.SAME_AS):
+                wikidata_urls = self._dedupe_preserve_order(
+                    self._entity_string_claim_values(target_doc, self.SAME_AS)
+                    + self._entity_string_claim_values(
+                        target_doc, self.WIKIDATA_ENTITY_URL
+                    )
+                )
+                for url in wikidata_urls:
                     qid = self._extract_wikidata_qid_from_url(url)
                     if qid:
                         value_list.append({"item": qid, "itemLabel": target_label})
@@ -2517,19 +2522,12 @@ class EntityProfileJsonBuilder:
             qualifiers, self.APPLIES_TO_STATEMENT
         )
 
-        profile_matches = (
-            not applies_to_profiles
-            or (
-                current_profile_id is not None
-                and current_profile_id in applies_to_profiles
-            )
+        profile_matches = not applies_to_profiles or (
+            current_profile_id is not None and current_profile_id in applies_to_profiles
         )
-        statement_matches = (
-            not applies_to_statements
-            or (
-                parent_statement_id is not None
-                and parent_statement_id in applies_to_statements
-            )
+        statement_matches = not applies_to_statements or (
+            parent_statement_id is not None
+            and parent_statement_id in applies_to_statements
         )
         return profile_matches and statement_matches
 

@@ -121,6 +121,64 @@ def _resolve_value_list_path(
     return source_root / cache_path
 
 
+def _empty_nested_statement_entry(value: Any = None) -> dict[str, Any]:
+    return {
+        "value": value,
+        "qualifiers": {},
+        "references": {},
+    }
+
+
+def _normalize_nested_statement_entry(entry: Any) -> dict[str, Any]:
+    if not isinstance(entry, dict):
+        return _empty_nested_statement_entry(entry)
+
+    if not any(key in entry for key in ("value", "qualifiers", "references")):
+        return _empty_nested_statement_entry(entry)
+
+    normalized = {
+        "value": entry.get("value"),
+        "qualifiers": entry.get("qualifiers", {}),
+        "references": entry.get("references", {}),
+    }
+    if not isinstance(normalized["qualifiers"], dict):
+        normalized["qualifiers"] = {}
+    if not isinstance(normalized["references"], dict):
+        normalized["references"] = {}
+    return normalized
+
+
+def _normalize_nested_statement_map(raw: Any) -> dict[str, list[dict[str, Any]]]:
+    """Normalize nested qualifier/reference packet data to URI-keyed lists."""
+    normalized: dict[str, list[dict[str, Any]]] = {}
+
+    if isinstance(raw, list):
+        for entry in raw:
+            if not isinstance(entry, dict):
+                continue
+            statement_ref = entry.get("property") or entry.get("statement")
+            if not isinstance(statement_ref, str) or not statement_ref:
+                continue
+            normalized.setdefault(statement_ref, []).append(
+                _normalize_nested_statement_entry({"value": entry.get("value")})
+            )
+        return normalized
+
+    if not isinstance(raw, dict):
+        return normalized
+
+    for statement_ref, payload in raw.items():
+        if not isinstance(statement_ref, str) or not statement_ref:
+            continue
+        if isinstance(payload, list):
+            entries = [_normalize_nested_statement_entry(entry) for entry in payload]
+        else:
+            entries = [_normalize_nested_statement_entry(payload)]
+        normalized[statement_ref] = entries
+
+    return normalized
+
+
 def validate_entity_packet_data(
     *,
     entity_slot: dict[str, Any],
@@ -279,23 +337,24 @@ def validate_entity_packet_data(
                     )
                 )
 
-            qualifiers = statement_value.get("qualifiers", {})
-            if not isinstance(qualifiers, dict):
+            raw_qualifiers = statement_value.get("qualifiers", {})
+            qualifiers = _normalize_nested_statement_map(raw_qualifiers)
+            statement_value["qualifiers"] = qualifiers
+            if raw_qualifiers not in ({}, None) and not qualifiers:
                 notices.append(
                     ConformanceNotice(
                         severity="error",
                         entity_ref=entity_ref,
                         statement_ref=statement_ref,
                         code="qualifiers_shape_invalid",
-                        message="Qualifiers must be stored as a mapping.",
+                        message="Qualifiers must be stored as a URI-keyed mapping.",
                     )
                 )
-                qualifiers = {}
 
             for qualifier_ref, qualifier_def in qualifier_defs.items():
                 q_datatype = qualifier_def.get("value", {}).get("type", "string")
-                q_value = qualifiers.get(qualifier_ref)
-                if q_value in (None, "", {}, []):
+                q_entries = qualifiers.get(qualifier_ref, [])
+                if not q_entries:
                     notices.append(
                         ConformanceNotice(
                             severity="warning",
@@ -310,47 +369,91 @@ def validate_entity_packet_data(
                     )
                     continue
 
-                q_result = validate_by_datatype(q_datatype, q_value)
-                notices.extend(
-                    _validation_result_notices(
-                        q_result,
-                        entity_ref=entity_ref,
-                        statement_ref=str(qualifier_ref),
-                        code_prefix="qualifier",
-                    )
-                )
-                if q_result.valid:
-                    normalized_qualifier = q_result.value
-                    if q_datatype in {"item", "wikibase-item"}:
-                        normalized_qualifier = _merge_wikibase_item_metadata(
-                            q_value,
-                            normalized_qualifier,
+                q_max_count = qualifier_def.get("max_count")
+                if isinstance(q_max_count, int) and len(q_entries) > q_max_count:
+                    notices.append(
+                        ConformanceNotice(
+                            severity="error",
+                            entity_ref=entity_ref,
+                            statement_ref=qualifier_ref,
+                            code="qualifier_max_count_exceeded",
+                            message=(
+                                f"Qualifier has {len(q_entries)} values, "
+                                f"but max_count is {q_max_count}."
+                            ),
                         )
-                    qualifiers[qualifier_ref] = normalized_qualifier
+                    )
 
-            references = statement_value.get("references", [])
-            if not isinstance(references, list):
+                normalized_entries: list[dict[str, Any]] = []
+                for q_index, q_entry in enumerate(q_entries):
+                    q_entry_normalized = _normalize_nested_statement_entry(q_entry)
+                    normalized_entries.append(q_entry_normalized)
+                    q_value = q_entry_normalized.get("value")
+
+                    if q_value in (None, "", {}, []):
+                        notices.append(
+                            ConformanceNotice(
+                                severity="warning",
+                                entity_ref=entity_ref,
+                                statement_ref=qualifier_ref,
+                                code="qualifier_missing_value",
+                                message=(
+                                    "Qualifier entry exists but has no value "
+                                    f"({qualifier_def.get('label', qualifier_ref)}) "
+                                    f"at position {q_index + 1}."
+                                ),
+                            )
+                        )
+                        continue
+
+                    q_result = validate_by_datatype(q_datatype, q_value)
+                    notices.extend(
+                        _validation_result_notices(
+                            q_result,
+                            entity_ref=entity_ref,
+                            statement_ref=str(qualifier_ref),
+                            code_prefix="qualifier",
+                        )
+                    )
+                    if q_result.valid:
+                        normalized_qualifier = q_result.value
+                        if q_datatype in {"item", "wikibase-item"}:
+                            normalized_qualifier = _merge_wikibase_item_metadata(
+                                q_value,
+                                normalized_qualifier,
+                            )
+                        q_entry_normalized["value"] = normalized_qualifier
+
+                qualifiers[qualifier_ref] = normalized_entries
+
+            for qualifier_ref in qualifiers.keys():
+                if qualifier_ref not in qualifier_defs:
+                    notices.append(
+                        ConformanceNotice(
+                            severity="warning",
+                            entity_ref=entity_ref,
+                            statement_ref=qualifier_ref,
+                            code="qualifier_unexpected",
+                            message=f"Qualifier {qualifier_ref} is not defined in profile statement.",
+                        )
+                    )
+
+            raw_references = statement_value.get("references", {})
+            references = _normalize_nested_statement_map(raw_references)
+            statement_value["references"] = references
+            if raw_references not in ({}, None, []) and not references:
                 notices.append(
                     ConformanceNotice(
                         severity="error",
                         entity_ref=entity_ref,
                         statement_ref=statement_ref,
                         code="references_shape_invalid",
-                        message="References must be stored as a list.",
+                        message="References must be stored as a URI-keyed mapping.",
                     )
                 )
-                references = []
 
-            present_reference_props = set()
-            for ref_entry in references:
-                if not isinstance(ref_entry, dict):
-                    continue
-                ref_prop = ref_entry.get("property")
-                ref_value = ref_entry.get("value")
-                if not isinstance(ref_prop, str):
-                    continue
-                present_reference_props.add(ref_prop)
-
+            present_reference_props = set(references.keys())
+            for ref_prop, ref_entries in references.items():
                 ref_def = reference_defs.get(ref_prop)
                 if not ref_def:
                     notices.append(
@@ -365,35 +468,60 @@ def validate_entity_packet_data(
                     continue
 
                 r_datatype = ref_def.get("value", {}).get("type", "string")
-                if ref_value in (None, "", {}, []):
+                r_max_count = ref_def.get("max_count")
+                if isinstance(r_max_count, int) and len(ref_entries) > r_max_count:
                     notices.append(
                         ConformanceNotice(
-                            severity="warning",
+                            severity="error",
                             entity_ref=entity_ref,
                             statement_ref=ref_prop,
-                            code="reference_missing_value",
-                            message="Reference entry exists but has no value.",
+                            code="reference_max_count_exceeded",
+                            message=(
+                                f"Reference has {len(ref_entries)} values, "
+                                f"but max_count is {r_max_count}."
+                            ),
                         )
                     )
-                    continue
 
-                r_result = validate_by_datatype(r_datatype, ref_value)
-                notices.extend(
-                    _validation_result_notices(
-                        r_result,
-                        entity_ref=entity_ref,
-                        statement_ref=str(ref_prop),
-                        code_prefix="reference",
-                    )
-                )
-                if r_result.valid:
-                    normalized_reference = r_result.value
-                    if r_datatype in {"item", "wikibase-item"}:
-                        normalized_reference = _merge_wikibase_item_metadata(
-                            ref_value,
-                            normalized_reference,
+                normalized_entries: list[dict[str, Any]] = []
+                for ref_index, ref_entry in enumerate(ref_entries):
+                    ref_entry_normalized = _normalize_nested_statement_entry(ref_entry)
+                    normalized_entries.append(ref_entry_normalized)
+                    ref_value = ref_entry_normalized.get("value")
+                    if ref_value in (None, "", {}, []):
+                        notices.append(
+                            ConformanceNotice(
+                                severity="warning",
+                                entity_ref=entity_ref,
+                                statement_ref=ref_prop,
+                                code="reference_missing_value",
+                                message=(
+                                    "Reference entry exists but has no value "
+                                    f"at position {ref_index + 1}."
+                                ),
+                            )
                         )
-                    ref_entry["value"] = normalized_reference
+                        continue
+
+                    r_result = validate_by_datatype(r_datatype, ref_value)
+                    notices.extend(
+                        _validation_result_notices(
+                            r_result,
+                            entity_ref=entity_ref,
+                            statement_ref=str(ref_prop),
+                            code_prefix="reference",
+                        )
+                    )
+                    if r_result.valid:
+                        normalized_reference = r_result.value
+                        if r_datatype in {"item", "wikibase-item"}:
+                            normalized_reference = _merge_wikibase_item_metadata(
+                                ref_value,
+                                normalized_reference,
+                            )
+                        ref_entry_normalized["value"] = normalized_reference
+
+                references[ref_prop] = normalized_entries
 
             for ref_prop, ref_def in reference_defs.items():
                 if ref_prop not in present_reference_props:
