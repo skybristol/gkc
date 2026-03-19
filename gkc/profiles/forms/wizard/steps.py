@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import urllib.request
+from copy import deepcopy
 from pathlib import Path
 from typing import Any
 
@@ -75,6 +76,88 @@ def _statement_consequence(statement_def: dict[str, Any]) -> str:
 
 def _statement_label(statement_def: dict[str, Any]) -> str:
     return statement_def.get("label") or _statement_key(statement_def).split("/")[-1]
+
+
+def _empty_statement_entry(value: Any = None) -> dict[str, Any]:
+    return {
+        "value": value,
+        "qualifiers": {},
+        "references": {},
+    }
+
+
+def _normalize_statement_entry(entry: Any) -> dict[str, Any]:
+    if not isinstance(entry, dict):
+        return _empty_statement_entry(entry)
+
+    if not any(key in entry for key in ("value", "qualifiers", "references")):
+        return _empty_statement_entry(entry)
+
+    normalized = {
+        "value": entry.get("value"),
+        "qualifiers": entry.get("qualifiers", {}),
+        "references": entry.get("references", {}),
+    }
+    if not isinstance(normalized["qualifiers"], dict):
+        normalized["qualifiers"] = {}
+    if not isinstance(normalized["references"], dict):
+        normalized["references"] = {}
+    return normalized
+
+
+def _coerce_nested_statement_map(raw: Any) -> dict[str, list[dict[str, Any]]]:
+    """Normalize nested qualifier/reference storage to URI-keyed statement lists."""
+    normalized: dict[str, list[dict[str, Any]]] = {}
+
+    if isinstance(raw, list):
+        for entry in raw:
+            if not isinstance(entry, dict):
+                continue
+            statement_ref = entry.get("property") or entry.get("statement")
+            if not isinstance(statement_ref, str) or not statement_ref:
+                continue
+            normalized.setdefault(statement_ref, []).append(
+                _normalize_statement_entry({"value": entry.get("value")})
+            )
+        return normalized
+
+    if not isinstance(raw, dict):
+        return normalized
+
+    for statement_ref, payload in raw.items():
+        if not isinstance(statement_ref, str) or not statement_ref:
+            continue
+
+        if isinstance(payload, list):
+            entries = [_normalize_statement_entry(entry) for entry in payload]
+        else:
+            entries = [_normalize_statement_entry(payload)]
+
+        normalized[statement_ref] = entries
+
+    return normalized
+
+
+def _ensure_nested_statement_map(
+    statement_value: dict[str, Any],
+    field_name: str,
+) -> dict[str, list[dict[str, Any]]]:
+    normalized = _coerce_nested_statement_map(statement_value.get(field_name))
+    statement_value[field_name] = normalized
+    return normalized
+
+
+def _has_parent_derived_value(statement_def: dict[str, Any]) -> bool:
+    value_block = statement_def.get("value", {})
+    return value_block.get("value_source") == "statement_value"
+
+
+def _has_meaningful_value(value: Any) -> bool:
+    if value in (None, "", [], {}):
+        return False
+    if isinstance(value, dict):
+        return any(_has_meaningful_value(member) for member in value.values())
+    return True
 
 
 def _is_fixed(statement_def: dict[str, Any]) -> bool:
@@ -247,16 +330,12 @@ def _statement_value_list_candidates(
     Returns a tuple of (candidates, error_message).
     """
     value_block = statement_def.get("value", {})
-    statement_ref = _statement_key(statement_def)
-
-    packet = st.session_state.get("packet", {})
-    route_map = packet.get("value_list_routes", {}) if isinstance(packet, dict) else {}
-    route = route_map.get(statement_ref, {}) if isinstance(route_map, dict) else {}
 
     cache_ref = value_block.get("value_list_reference")
-    if not isinstance(cache_ref, str) or not cache_ref:
-        cache_ref = route.get("cache_path") if isinstance(route, dict) else None
-
+    # Value-list behavior is statement-local in JSON profile contracts.
+    # Do not infer from packet-level route maps when the statement omits
+    # value_list_reference, otherwise one statement's constrained picker can
+    # incorrectly bleed into every use of the same statement URI.
     if not isinstance(cache_ref, str) or not cache_ref:
         return [], None
 
@@ -531,14 +610,14 @@ class StatementsStep(Step):
 
         draft_data["statements"].setdefault(stmt_key, [])
         current_values = draft_data["statements"][stmt_key]
+        draft_data["statements"][stmt_key] = [
+            _normalize_statement_entry(entry) for entry in current_values
+        ]
+        current_values = draft_data["statements"][stmt_key]
 
         if _is_fixed(statement_def) and not current_values:
             current_values.append(
-                {
-                    "value": _initial_fixed_value(statement_def),
-                    "qualifiers": {},
-                    "references": [],
-                }
+                _empty_statement_entry(_initial_fixed_value(statement_def))
             )
 
         auto_expand = (
@@ -575,16 +654,20 @@ class StatementsStep(Step):
                             st.rerun()
 
                     self._render_value_input(statement_def, value_data, idx, is_fixed)
+                    parent_value = value_data.get("value")
                     self._render_qualifiers(statement_def, value_data, idx)
-                    self._render_references(statement_def, value_data, idx)
+                    self._render_references(
+                        statement_def,
+                        value_data,
+                        idx,
+                        parent_value=parent_value,
+                    )
 
             max_count = statement_def.get("max_count")
             can_add_more = (max_count is None) or (len(current_values) < max_count)
             if not is_fixed and can_add_more:
                 if st.button(f"➕ Add {stmt_label}", key=f"add_stmt_{stmt_key}"):
-                    current_values.append(
-                        {"value": None, "qualifiers": {}, "references": []}
-                    )
+                    current_values.append(_empty_statement_entry())
                     st.rerun()
 
     def _render_value_input(
@@ -632,75 +715,184 @@ class StatementsStep(Step):
         if not qualifiers:
             return
 
-        st.write("**Qualifiers**")
-        value_data.setdefault("qualifiers", {})
-
-        for qualifier_def in qualifiers:
-            if not isinstance(qualifier_def, dict):
-                continue
-            qual_key = _statement_key(qualifier_def)
-            qual_label = _statement_label(qualifier_def)
-            qual_dtype = _value_datatype(qualifier_def.get("value", {}))
-            current = value_data["qualifiers"].get(qual_key)
-
-            widget_kwargs = _value_list_widget_kwargs(qualifier_def)
-            original_value = WidgetFactory.render_widget(
-                datatype=qual_dtype,
-                label=qual_label,
-                value=current,
-                key=f"qual_{_statement_key(statement_def)}_{qual_key}_{idx}",
-                help_text=_statement_prompt(qualifier_def),
-                **widget_kwargs,
-            )
-            value_data["qualifiers"][qual_key] = _normalize_rendered_value(
-                datatype=qual_dtype,
-                value=original_value,
-                statement_ref=qual_key,
-            )
+        self._render_nested_statement_section(
+            section_label="Qualifiers",
+            category_label="qualifier",
+            field_name="qualifiers",
+            parent_statement_def=statement_def,
+            nested_defs=qualifiers,
+            value_data=value_data,
+            idx=idx,
+            parent_value=value_data.get("value"),
+        )
 
     def _render_references(
-        self, statement_def: dict[str, Any], value_data: dict[str, Any], idx: int
+        self,
+        statement_def: dict[str, Any],
+        value_data: dict[str, Any],
+        idx: int,
+        *,
+        parent_value: Any,
     ) -> None:
         references = statement_def.get("references", [])
         if not references:
             return
 
-        st.write("**References**")
-        value_data.setdefault("references", [])
+        self._render_nested_statement_section(
+            section_label="References",
+            category_label="reference",
+            field_name="references",
+            parent_statement_def=statement_def,
+            nested_defs=references,
+            value_data=value_data,
+            idx=idx,
+            parent_value=parent_value,
+        )
 
-        by_ref_key = {
-            r.get("property"): r
-            for r in value_data["references"]
-            if isinstance(r, dict)
-        }
+    def _render_nested_statement_section(
+        self,
+        *,
+        section_label: str,
+        category_label: str,
+        field_name: str,
+        parent_statement_def: dict[str, Any],
+        nested_defs: list[dict[str, Any]],
+        value_data: dict[str, Any],
+        idx: int,
+        parent_value: Any,
+    ) -> None:
+        st.write(f"**{section_label}**")
+        st.caption(f"Choose which {category_label} statements to add for this value.")
 
-        updated: list[dict[str, Any]] = []
-        for ref_def in references:
-            if not isinstance(ref_def, dict):
+        nested_values = _ensure_nested_statement_map(value_data, field_name)
+        parent_stmt_key = _statement_key(parent_statement_def)
+
+        for nested_def in nested_defs:
+            if not isinstance(nested_def, dict):
                 continue
 
-            ref_key = _statement_key(ref_def)
-            ref_label = _statement_label(ref_def)
-            ref_dtype = _value_datatype(ref_def.get("value", {}))
-            existing = by_ref_key.get(ref_key, {"property": ref_key, "value": None})
-            widget_kwargs = _value_list_widget_kwargs(ref_def)
-
-            ref_value = WidgetFactory.render_widget(
-                datatype=ref_dtype,
-                label=ref_label,
-                value=existing.get("value"),
-                key=f"ref_{_statement_key(statement_def)}_{ref_key}_{idx}",
-                help_text=_statement_prompt(ref_def),
-                **widget_kwargs,
-            )
-            updated.append({"property": ref_key, "value": ref_value})
-            updated[-1]["value"] = _normalize_rendered_value(
-                datatype=ref_dtype,
-                value=ref_value,
-                statement_ref=ref_key,
+            nested_key = _statement_key(nested_def)
+            nested_label = _statement_label(nested_def)
+            entries = nested_values.setdefault(nested_key, [])
+            max_count = nested_def.get("max_count")
+            can_add_more = (max_count is None) or (len(entries) < max_count)
+            derived_from_parent = _has_parent_derived_value(nested_def)
+            parent_ready = _has_meaningful_value(parent_value)
+            add_disabled = not can_add_more or (
+                derived_from_parent and not parent_ready
             )
 
-        value_data["references"] = updated
+            add_help = _statement_prompt(nested_def) or _statement_guidance(nested_def)
+            if st.button(
+                f"Add {nested_label} {category_label}",
+                key=f"add_{field_name}_{parent_stmt_key}_{nested_key}_{idx}",
+                disabled=add_disabled,
+                help=add_help,
+            ):
+                entry = _empty_statement_entry()
+                if derived_from_parent and parent_ready:
+                    entry["value"] = deepcopy(parent_value)
+                entries.append(entry)
+                st.rerun()
+
+            if derived_from_parent and not parent_ready and not entries:
+                st.caption(
+                    f"{nested_label} becomes available after the statement value is set."
+                )
+
+            for nested_idx, entry in enumerate(entries):
+                normalized_entry = _normalize_statement_entry(entry)
+                entries[nested_idx] = normalized_entry
+
+                with st.container(border=True):
+                    c1, c2 = st.columns([5, 1])
+                    with c1:
+                        st.markdown(
+                            f"**{nested_label} {category_label} {nested_idx + 1}**"
+                        )
+                    with c2:
+                        if st.button(
+                            "🗑️",
+                            key=(
+                                f"delete_{field_name}_{parent_stmt_key}_{nested_key}_"
+                                f"{idx}_{nested_idx}"
+                            ),
+                        ):
+                            entries.pop(nested_idx)
+                            st.rerun()
+
+                    self._render_nested_value_input(
+                        nested_def=nested_def,
+                        nested_entry=normalized_entry,
+                        widget_key=(
+                            f"{field_name}_{parent_stmt_key}_{nested_key}_{idx}_{nested_idx}"
+                        ),
+                        parent_value=parent_value,
+                    )
+
+    def _render_nested_value_input(
+        self,
+        *,
+        nested_def: dict[str, Any],
+        nested_entry: dict[str, Any],
+        widget_key: str,
+        parent_value: Any,
+    ) -> None:
+        prompt = _statement_prompt(nested_def)
+        if prompt:
+            st.caption(prompt)
+
+        guidance = _statement_guidance(nested_def)
+        if guidance:
+            with st.popover("ℹ️ Guidance"):
+                st.write(guidance)
+
+        if _is_fixed(nested_def):
+            fixed_value = _initial_fixed_value(nested_def)
+            st.text_input(
+                "Value",
+                value=str(fixed_value or ""),
+                key=f"fixed_{widget_key}",
+                disabled=True,
+            )
+            nested_entry["value"] = fixed_value
+            return
+
+        value_block = nested_def.get("value", {})
+        dtype = _value_datatype(value_block)
+        current_value = nested_entry.get("value")
+        disabled = False
+
+        if _has_parent_derived_value(nested_def):
+            nested_entry["value"] = (
+                deepcopy(parent_value) if _has_meaningful_value(parent_value) else None
+            )
+            current_value = nested_entry["value"]
+            disabled = True
+            st.info("This value is derived from the parent statement value.")
+
+        widget_kwargs = _value_list_widget_kwargs(nested_def)
+        original_value = WidgetFactory.render_widget(
+            datatype=dtype,
+            label="Value",
+            value=current_value,
+            key=f"value_{widget_key}",
+            help_text=prompt,
+            disabled=disabled,
+            **widget_kwargs,
+        )
+
+        if disabled:
+            nested_entry["value"] = (
+                deepcopy(parent_value) if _has_meaningful_value(parent_value) else None
+            )
+            return
+
+        nested_entry["value"] = _normalize_rendered_value(
+            datatype=dtype,
+            value=original_value,
+            statement_ref=_statement_key(nested_def),
+        )
 
     def validate(self, draft_data: dict[str, Any]) -> dict[str, list[str]]:
         warnings: dict[str, list[str]] = {}

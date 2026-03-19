@@ -10,6 +10,7 @@ from gkc.profiles.forms.validation_bridge import (
     validate_inline_value,
 )
 from gkc.profiles.forms.wizard.steps import (
+    _coerce_nested_statement_map,
     _extract_value_list_candidates,
     _filter_value_list_candidates,
     _materialize_value_list_cache,
@@ -133,7 +134,62 @@ def test_materialize_value_list_cache_from_local_source(
         )
 
 
-def test_value_list_widget_kwargs_uses_packet_route_for_nested_statement(
+def test_value_list_widget_kwargs_uses_statement_local_value_list_reference(
+    monkeypatch, tmp_path: Path
+) -> None:
+    spirit_safe_root = tmp_path / "SpiritSafe"
+    source_file = spirit_safe_root / "cache" / "queries" / "Q28.json"
+    source_file.parent.mkdir(parents=True, exist_ok=True)
+    source_file.write_text(
+        '{"items": [{"item": "http://www.wikidata.org/entity/Q1", "itemLabel": "Universe"}]}',
+        encoding="utf-8",
+    )
+
+    original_source = gkc.get_spirit_safe_source()
+    original_session = dict(st.session_state)
+    gkc.set_spirit_safe_source(mode="local", local_root=spirit_safe_root)
+
+    try:
+        monkeypatch.setattr(Path, "home", lambda: tmp_path)
+        st.session_state.clear()
+        st.session_state["packet"] = {
+            "value_list_routes": {
+                "https://datadistillery.wikibase.cloud/entity/Q30": {
+                    "cache_path": "cache/queries/Q28.json"
+                }
+            }
+        }
+        st.session_state["source_root"] = str(spirit_safe_root)
+
+        widget_kwargs = _value_list_widget_kwargs(
+            {
+                "entity": "https://datadistillery.wikibase.cloud/entity/Q30",
+                "label": "stated in",
+                "value": {
+                    "type": "wikibase-item",
+                    "value_list_reference": "cache/queries/Q28.json",
+                },
+            }
+        )
+
+        assert widget_kwargs["all_item_options_count"] == 1
+        assert (
+            widget_kwargs["item_options"][0]["item"]
+            == "http://www.wikidata.org/entity/Q1"
+        )
+        assert widget_kwargs["item_options"][0]["itemLabel"] == "Universe"
+    finally:
+        st.session_state.clear()
+        st.session_state.update(original_session)
+        gkc.set_spirit_safe_source(
+            mode=original_source.mode,
+            github_repo=original_source.github_repo,
+            github_ref=original_source.github_ref,
+            local_root=original_source.local_root,
+        )
+
+
+def test_value_list_widget_kwargs_does_not_fallback_to_route_only(
     monkeypatch, tmp_path: Path
 ) -> None:
     spirit_safe_root = tmp_path / "SpiritSafe"
@@ -168,12 +224,7 @@ def test_value_list_widget_kwargs_uses_packet_route_for_nested_statement(
             }
         )
 
-        assert widget_kwargs["all_item_options_count"] == 1
-        assert (
-            widget_kwargs["item_options"][0]["item"]
-            == "http://www.wikidata.org/entity/Q1"
-        )
-        assert widget_kwargs["item_options"][0]["itemLabel"] == "Universe"
+        assert widget_kwargs == {}
     finally:
         st.session_state.clear()
         st.session_state.update(original_session)
@@ -183,3 +234,37 @@ def test_value_list_widget_kwargs_uses_packet_route_for_nested_statement(
             github_ref=original_source.github_ref,
             local_root=original_source.local_root,
         )
+
+
+def test_coerce_nested_statement_map_from_legacy_reference_list() -> None:
+    statement_ref = "https://datadistillery.wikibase.cloud/entity/Q29"
+
+    normalized = _coerce_nested_statement_map(
+        [
+            {"property": statement_ref, "value": "https://example.org/source"},
+            {"property": statement_ref, "value": "https://example.org/backup"},
+        ]
+    )
+
+    assert list(normalized.keys()) == [statement_ref]
+    assert [entry["value"] for entry in normalized[statement_ref]] == [
+        "https://example.org/source",
+        "https://example.org/backup",
+    ]
+
+
+def test_coerce_nested_statement_map_from_legacy_qualifier_scalar_map() -> None:
+    statement_ref = "https://datadistillery.wikibase.cloud/entity/Q27"
+
+    normalized = _coerce_nested_statement_map(
+        {
+            statement_ref: {
+                "id": "Q1860",
+                "item": "http://www.wikidata.org/entity/Q1860",
+                "itemLabel": "English",
+            }
+        }
+    )
+
+    assert list(normalized.keys()) == [statement_ref]
+    assert normalized[statement_ref][0]["value"]["id"] == "Q1860"
