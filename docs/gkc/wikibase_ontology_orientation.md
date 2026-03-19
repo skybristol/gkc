@@ -57,9 +57,10 @@ The following properties are in active use for profile modeling. Properties use 
 | P158 | has qualifier | wikibase-item | qualifier on P157 | Links to a GKC Entity Statement specifying an expected qualifier type for that statement |
 | P161 | has value | wikibase-item | qualifier on P157; claim on Q5 items | Value specification; target class determines semantics: Q52 = fixed, Q3 = linked profile, Q7 = value list |
 | P194 | statement type | wikibase-item | GKC Entity Statement (Q5) | Links to a Wikibase Property Template (Q44) encoding the primitive Wikibase datatype |
-| P205 | applies to profile | wikibase-item | qualifier on P161 at Q5 item level | Associates a value list (P161 → Q7) claim on a GKC Entity Statement with a specific profile |
+| P205 | applies to profile | wikibase-item | qualifier on statement-level directive claims | Scopes statement-level P161/P158/P211/P213 behavior to one or more profiles |
+| P163 | applies to statement | wikibase-item | qualifier on statement-level directive claims; qualifier on profile-level P158/P211 claims | Scopes directives to specific parent statement contexts |
 | P210 | refresh policy | wikibase-item | GKC Value List (Q7) | Required; links to a refresh policy item (e.g., Q50 manual refresh) |
-| P211 | has reference | wikibase-item | qualifier on P157 | Links to a GKC Entity Statement specifying an expected reference type; OR semantics when multiple are present |
+| P211 | has reference | wikibase-item | qualifier on P157; claim on Q5 items; claim on Q3 items | Links to expected reference statement definitions; supports statement-level defaults and profile-level targeted overrides |
 | P212 | same as | url | Wikidata Entity (Q52) | URL of the specific Wikidata entity (e.g., `http://www.wikidata.org/entity/Q7840353`) |
 | P213 | derives default value from | wikibase-item | GKC Entity Statement (Q5) | Declares that when this statement is used as a reference/qualifier on the target statement, its value is derived from the parent statement value |
 
@@ -85,7 +86,6 @@ All guidance properties are monolingual text. They may appear as independent cla
 | P190 | alias prompt | GKC Entity Profile (Q3) | Prompt text for the alias input field |
 | P168 | error message | GKC Entity Statement (Q5) or Q44 item; qualifier on P157 | Error message shown when statement validation fails; at Q44 level covers primitive type failures |
 | P169 | statement guidance | GKC Entity Statement (Q5); qualifier on P157 | Contextual guidance for curators filling out a statement value |
-| P170 | consequences message | GKC Entity Statement (Q5); qualifier on P157 | Message about downstream effects of a statement value choice |
 | P171 | statement prompt | GKC Entity Statement (Q5); qualifier on P157 | Prompt text for the statement value input |
 
 ## GKC Entity Profile Structure
@@ -138,7 +138,7 @@ Statement values are specified using `has value` (P161) qualifiers on a P157 cla
 
 **Linked Profile (P161 → Q3):** The target is a GKC Entity Profile item. The statement value should be fulfilled by an existing entity conforming to that profile, or by creating a new one.
 
-**Value List (P161 → Q7):** The target is a GKC Value List item. The list provides a curated set of allowed values optimized for type-ahead delivery. When this appears as a claim on a GKC Entity Statement item rather than as a profile qualifier, it must include an `applies to profile` (P205) qualifier associating it with the relevant profile.
+**Value List (P161 → Q7):** The target is a GKC Value List item. The list provides a curated set of allowed values optimized for type-ahead delivery. Statement-level P161 defaults may be global (no scoping qualifiers) or context-scoped using `applies to profile` (P205), `applies to statement` (P163), or both.
 
 Multiple P161 qualifiers may appear on a single P157 claim. Profile (Q3) and value list (Q7) targets may coexist and surface together as `options` in the materialized JSON.
 
@@ -159,15 +159,25 @@ GKC Value List items (`P1 = Q7`) must have a `refresh policy` (P210) claim linki
 
 ### Statement Qualifiers
 
-Expected qualifiers for a statement are specified using `has qualifier` (P158) qualifiers on the P157 claim in the profile item. Each P158 qualifier targets a GKC Entity Statement item that defines the qualifier type. All the same structural rules that apply to profile statements — statement type, cardinality, value, and guidance — apply to qualifiers through the targeted GKC Entity Statement item.
+Expected qualifiers for a statement can be declared from three sources:
 
-Qualifier specifications do not currently appear at the GKC Entity Statement item level; they are only encoded as P158 qualifiers on P157 claims within profile items.
+- Statement-level defaults via `has qualifier` (P158) claims on the GKC Entity Statement item.
+- Profile-local links via P158 qualifiers on the P157 claim.
+- Profile-level targeted overrides via P158 claims on the profile item, qualified with `applies to statement` (P163).
+
+All the same structural rules that apply to profile statements — statement type, cardinality, value, and guidance — apply to qualifiers through the targeted GKC Entity Statement item.
+
+For effective resolution, profile-local entries win for nested statement ids they explicitly define; statement-level defaults remain active for nested statement ids not overridden at profile level.
 
 ### Statement References
 
-Expected references for a statement are specified using `has reference` (P211) qualifiers on the P157 claim in the profile item. Each P211 qualifier targets a GKC Entity Statement item. When multiple P211 qualifiers are present on a single P157 claim, the rule is OR — at least one reference conforming to any of the listed types is expected.
+Expected references for a statement can be declared from three sources:
 
-Reference specifications do not currently appear at the GKC Entity Statement item level.
+- Statement-level defaults via `has reference` (P211) claims on the GKC Entity Statement item.
+- Profile-local links via P211 qualifiers on the P157 claim.
+- Profile-level targeted overrides via P211 claims on the profile item, qualified with `applies to statement` (P163).
+
+When multiple P211 entries are present for a statement context, effective reference resolution is computed per nested statement id using the same partial-override rule as qualifiers.
 
 Reference value-derivation rules can appear at the GKC Entity Statement item level via P213. Consumers should apply those rules when reference/qualifier statements are instantiated in profile context, honoring any P205 profile constraints attached to the P213 claim.
 
@@ -175,7 +185,7 @@ Reference value-derivation rules can appear at the GKC Entity Statement item lev
 
 When resolving guidance or prompt text for a statement, the precedence order is:
 
-1. **P157 qualifier level** — the guidance property (P169, P170, P171, P168) as a qualifier on the P157 claim in the profile item. Most specific; always preferred.
+1. **P157 qualifier level** — the guidance property (P169, P171, P168) as a qualifier on the P157 claim in the profile item. Most specific; always preferred.
 2. **GKC Entity Statement item level** — the same property as an independent claim on the Q5 item. Shared default across all profiles that include the statement.
 3. **Wikibase Property Template level** — guidance or error messages on the Q44 statement type item. Broadest fallback; primarily applicable to type-level error messages (P168).
 

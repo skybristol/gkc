@@ -40,6 +40,18 @@ def _build_entity_claim_string(value: str) -> dict:
     }
 
 
+def _build_entity_claim_quantity(amount: str) -> dict:
+    return {
+        "mainsnak": {
+            "datavalue": {
+                "value": {
+                    "amount": amount,
+                }
+            }
+        }
+    }
+
+
 def _build_entity_claim_monolingual(text: str, language: str = "mul") -> dict:
     return {
         "mainsnak": {
@@ -48,6 +60,27 @@ def _build_entity_claim_monolingual(text: str, language: str = "mul") -> dict:
                     "text": text,
                     "language": language,
                 }
+            }
+        }
+    }
+
+
+def _build_qualifier_monolingual(text: str, language: str = "mul") -> dict:
+    return {
+        "datavalue": {
+            "value": {
+                "text": text,
+                "language": language,
+            }
+        }
+    }
+
+
+def _build_qualifier_quantity(amount: str) -> dict:
+    return {
+        "datavalue": {
+            "value": {
+                "amount": amount,
             }
         }
     }
@@ -447,6 +480,307 @@ def test_reference_statement_derived_value_respects_profile_scope(tmp_path):
     assert len(references) == 1
     assert "value_source" not in references[0]["value"]
     assert "value_source_statement" not in references[0]["value"]
+
+
+def test_statement_level_value_claim_respects_p163_parent_scope(tmp_path):
+    """Statement-level P161 with P163 should apply only when parent statement matches."""
+
+    cache_entities_dir = tmp_path / "cache" / "entities"
+    cache_entities_dir.mkdir(parents=True, exist_ok=True)
+
+    profile_payload = {
+        "entity_id": "Q4",
+        "entity": {
+            "labels": {"mul": {"value": "Example profile"}},
+            "descriptions": {"mul": {"value": "Example profile"}},
+            "aliases": {},
+            "claims": {
+                "P1": [_build_entity_claim_entity_id("Q3")],
+                "P188": [_build_entity_claim_monolingual("Enter label")],
+                "P189": [_build_entity_claim_monolingual("Enter description")],
+                "P190": [_build_entity_claim_monolingual("Enter aliases")],
+                "P157": [
+                    {
+                        "mainsnak": {"datavalue": {"value": {"id": "Q16"}}},
+                        "qualifiers": {
+                            "P158": [_build_qualifier_entity_id("Q41")],
+                        },
+                    }
+                ],
+            },
+        },
+    }
+    (cache_entities_dir / "Q4.json").write_text(
+        json.dumps(profile_payload), encoding="utf-8"
+    )
+
+    statement_payloads = {
+        "Q16": {
+            "entity_id": "Q16",
+            "entity": {
+                "labels": {"mul": {"value": "instance of"}},
+                "claims": {
+                    "P5": [_build_entity_claim_string("http://www.wikidata.org/entity/P31")],
+                    "P194": [_build_entity_claim_entity_id("Q52")],
+                    "P171": [_build_entity_claim_monolingual("Statement prompt")],
+                },
+            },
+        },
+        "Q41": {
+            "entity_id": "Q41",
+            "entity": {
+                "labels": {"mul": {"value": "applies to jurisdiction"}},
+                "claims": {
+                    "P5": [_build_entity_claim_string("http://www.wikidata.org/entity/P1001")],
+                    "P194": [_build_entity_claim_entity_id("Q52")],
+                    "P171": [_build_entity_claim_monolingual("Qualifier prompt")],
+                    "P161": [
+                        {
+                            "mainsnak": {"datavalue": {"value": {"id": "Q43"}}},
+                            "qualifiers": {
+                                "P163": [_build_qualifier_entity_id("Q16")],
+                            },
+                        }
+                    ],
+                },
+            },
+        },
+        "Q43": {
+            "entity_id": "Q43",
+            "entity": {
+                "labels": {"mul": {"value": "List of Tribal Jurisdictions"}},
+                "claims": {
+                    "P1": [_build_entity_claim_entity_id("Q7")],
+                },
+            },
+        },
+        "Q52": {
+            "entity_id": "Q52",
+            "entity": {
+                "labels": {"mul": {"value": "wikibase-item"}},
+                "claims": {"P1": [_build_entity_claim_entity_id("Q44")]},
+            },
+        },
+        "Q54": {
+            "entity_id": "Q54",
+            "entity": {
+                "labels": {"mul": {"value": "url"}},
+                "claims": {"P1": [_build_entity_claim_entity_id("Q44")]},
+            },
+        },
+        "Q7": {
+            "entity_id": "Q7",
+            "entity": {
+                "labels": {"mul": {"value": "GKC Value List"}},
+                "claims": {"P1": [_build_entity_claim_entity_id("Q1")]},
+            },
+        },
+        "Q1": {
+            "entity_id": "Q1",
+            "entity": {
+                "labels": {"mul": {"value": "Root class"}},
+                "claims": {},
+            },
+        },
+    }
+
+    for entity_id, payload in statement_payloads.items():
+        (cache_entities_dir / f"{entity_id}.json").write_text(
+            json.dumps(payload), encoding="utf-8"
+        )
+
+    docs = build_entity_profile_json_documents(cache_entities_dir)
+    qualifier = docs[0]["statements"][0]["qualifiers"][0]
+    assert qualifier["value"]["value_list_reference"] == "cache/queries/Q43.json"
+
+
+def test_profile_level_p158_claim_overrides_targeted_nested_statement_only(tmp_path):
+    """Profile-level P158 claim should override only the targeted nested statement spec."""
+
+    cache_entities_dir = tmp_path / "cache" / "entities"
+    cache_entities_dir.mkdir(parents=True, exist_ok=True)
+
+    profile_payload = {
+        "entity_id": "Q4",
+        "entity": {
+            "labels": {"mul": {"value": "Example profile"}},
+            "descriptions": {"mul": {"value": "Example profile"}},
+            "aliases": {},
+            "claims": {
+                "P1": [_build_entity_claim_entity_id("Q3")],
+                "P188": [_build_entity_claim_monolingual("Enter label")],
+                "P189": [_build_entity_claim_monolingual("Enter description")],
+                "P190": [_build_entity_claim_monolingual("Enter aliases")],
+                "P157": [
+                    {
+                        "mainsnak": {"datavalue": {"value": {"id": "Q16"}}},
+                    }
+                ],
+                "P158": [
+                    {
+                        "mainsnak": {"datavalue": {"value": {"id": "Q41"}}},
+                        "qualifiers": {
+                            "P163": [_build_qualifier_entity_id("Q16")],
+                            "P171": [_build_qualifier_monolingual("Override qualifier prompt")],
+                        },
+                    }
+                ],
+            },
+        },
+    }
+    (cache_entities_dir / "Q4.json").write_text(
+        json.dumps(profile_payload), encoding="utf-8"
+    )
+
+    statement_payloads = {
+        "Q16": {
+            "entity_id": "Q16",
+            "entity": {
+                "labels": {"mul": {"value": "instance of"}},
+                "claims": {
+                    "P5": [_build_entity_claim_string("http://www.wikidata.org/entity/P31")],
+                    "P194": [_build_entity_claim_entity_id("Q52")],
+                    "P171": [_build_entity_claim_monolingual("Statement prompt")],
+                    "P158": [
+                        _build_entity_claim_entity_id("Q41"),
+                        _build_entity_claim_entity_id("Q42"),
+                    ],
+                },
+            },
+        },
+        "Q41": {
+            "entity_id": "Q41",
+            "entity": {
+                "labels": {"mul": {"value": "applies to jurisdiction"}},
+                "claims": {
+                    "P5": [_build_entity_claim_string("http://www.wikidata.org/entity/P1001")],
+                    "P194": [_build_entity_claim_entity_id("Q52")],
+                    "P171": [_build_entity_claim_monolingual("Default qualifier prompt")],
+                },
+            },
+        },
+        "Q42": {
+            "entity_id": "Q42",
+            "entity": {
+                "labels": {"mul": {"value": "point in time"}},
+                "claims": {
+                    "P5": [_build_entity_claim_string("http://www.wikidata.org/entity/P585")],
+                    "P194": [_build_entity_claim_entity_id("Q55")],
+                    "P171": [_build_entity_claim_monolingual("Untouched qualifier prompt")],
+                },
+            },
+        },
+        "Q52": {
+            "entity_id": "Q52",
+            "entity": {
+                "labels": {"mul": {"value": "wikibase-item"}},
+                "claims": {"P1": [_build_entity_claim_entity_id("Q44")]},
+            },
+        },
+        "Q55": {
+            "entity_id": "Q55",
+            "entity": {
+                "labels": {"mul": {"value": "time"}},
+                "claims": {"P1": [_build_entity_claim_entity_id("Q44")]},
+            },
+        },
+    }
+
+    for entity_id, payload in statement_payloads.items():
+        (cache_entities_dir / f"{entity_id}.json").write_text(
+            json.dumps(payload), encoding="utf-8"
+        )
+
+    docs = build_entity_profile_json_documents(cache_entities_dir)
+    qualifiers = docs[0]["statements"][0]["qualifiers"]
+    by_entity = {entry["entity"].rsplit("/", 1)[-1]: entry for entry in qualifiers}
+
+    assert set(by_entity.keys()) == {"Q41", "Q42"}
+    assert by_entity["Q41"]["messages"]["mul"]["prompt"] == "Override qualifier prompt"
+    assert by_entity["Q42"]["messages"]["mul"]["prompt"] == "Untouched qualifier prompt"
+
+
+def test_profile_level_max_count_overrides_statement_level_baseline(tmp_path):
+    """Statement baseline max_count should be replaced only when P157 qualifier sets P182."""
+
+    cache_entities_dir = tmp_path / "cache" / "entities"
+    cache_entities_dir.mkdir(parents=True, exist_ok=True)
+
+    profile_payload = {
+        "entity_id": "Q4",
+        "entity": {
+            "labels": {"mul": {"value": "Example profile"}},
+            "descriptions": {"mul": {"value": "Example profile"}},
+            "aliases": {},
+            "claims": {
+                "P1": [_build_entity_claim_entity_id("Q3")],
+                "P188": [_build_entity_claim_monolingual("Enter label")],
+                "P189": [_build_entity_claim_monolingual("Enter description")],
+                "P190": [_build_entity_claim_monolingual("Enter aliases")],
+                "P157": [
+                    {
+                        "mainsnak": {"datavalue": {"value": {"id": "Q16"}}},
+                        "qualifiers": {
+                            "P182": [_build_qualifier_quantity("+1")],
+                        },
+                    },
+                    {
+                        "mainsnak": {"datavalue": {"value": {"id": "Q17"}}},
+                    },
+                ],
+            },
+        },
+    }
+    (cache_entities_dir / "Q4.json").write_text(
+        json.dumps(profile_payload), encoding="utf-8"
+    )
+
+    statement_payloads = {
+        "Q16": {
+            "entity_id": "Q16",
+            "entity": {
+                "labels": {"mul": {"value": "instance of"}},
+                "claims": {
+                    "P5": [_build_entity_claim_string("http://www.wikidata.org/entity/P31")],
+                    "P194": [_build_entity_claim_entity_id("Q52")],
+                    "P171": [_build_entity_claim_monolingual("Statement prompt")],
+                    "P182": [_build_entity_claim_quantity("+3")],
+                },
+            },
+        },
+        "Q17": {
+            "entity_id": "Q17",
+            "entity": {
+                "labels": {"mul": {"value": "part of"}},
+                "claims": {
+                    "P5": [_build_entity_claim_string("http://www.wikidata.org/entity/P361")],
+                    "P194": [_build_entity_claim_entity_id("Q52")],
+                    "P171": [_build_entity_claim_monolingual("Statement prompt")],
+                    "P182": [_build_entity_claim_quantity("+2")],
+                },
+            },
+        },
+        "Q52": {
+            "entity_id": "Q52",
+            "entity": {
+                "labels": {"mul": {"value": "wikibase-item"}},
+                "claims": {"P1": [_build_entity_claim_entity_id("Q44")]},
+            },
+        },
+    }
+
+    for entity_id, payload in statement_payloads.items():
+        (cache_entities_dir / f"{entity_id}.json").write_text(
+            json.dumps(payload), encoding="utf-8"
+        )
+
+    docs = build_entity_profile_json_documents(cache_entities_dir)
+    by_entity = {
+        entry["entity"].rsplit("/", 1)[-1]: entry for entry in docs[0]["statements"]
+    }
+
+    assert by_entity["Q16"]["max_count"] == 1
+    assert by_entity["Q17"]["max_count"] == 2
 
 
 def test_export_json_skips_profile_when_mul_language_coverage_fails(tmp_path):

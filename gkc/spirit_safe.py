@@ -1362,6 +1362,7 @@ class EntityProfileJsonBuilder:
     MAX_COUNT = "P182"
     HAS_REFERENCE = "P211"
     APPLIES_TO_PROFILE = "P205"
+    APPLIES_TO_STATEMENT = "P163"
     DERIVES_DEFAULT_VALUE_FROM = "P213"
 
     LABEL_PROMPT = "P188"
@@ -1781,6 +1782,7 @@ class EntityProfileJsonBuilder:
     ) -> list[tuple[str, list[str]]]:
         linkages: list[tuple[str, list[str]]] = []
         claims = wikibase_item.get("entity", {}).get("claims", {})
+        current_profile_id = wikibase_item.get("entity_id")
         for claim in claims.get(self.PROFILE_STATEMENT, []):
             statement_id = self._claim_entity_id(claim)
             if not statement_id:
@@ -1792,13 +1794,18 @@ class EntityProfileJsonBuilder:
                 else {}
             )
             intrinsic = self._claim_entity_values(
-                statement_claims.get(self.HAS_VALUE, [])
+                self._applicable_claims(
+                    statement_claims.get(self.HAS_VALUE, []),
+                    current_profile_id=current_profile_id,
+                    parent_statement_id=None,
+                )
             )
             overlay = self._qualifier_entity_ids(
                 claim.get("qualifiers", {}), self.HAS_VALUE
             )
+            effective = overlay if overlay else intrinsic
             linkages.append(
-                (statement_id, self._dedupe_preserve_order(intrinsic + overlay))
+                (statement_id, self._dedupe_preserve_order(effective))
             )
         return linkages
 
@@ -1808,6 +1815,9 @@ class EntityProfileJsonBuilder:
         statements: list[dict[str, Any]] = []
         claims = wikibase_item.get("entity", {}).get("claims", {})
         root_id = wikibase_item.get("entity_id")
+        profile_spec_index = self._build_profile_statement_spec_index(
+            wikibase_item, current_profile_id=root_id
+        )
         for claim in claims.get(self.PROFILE_STATEMENT, []):
             statement_id = self._claim_entity_id(claim)
             if not statement_id:
@@ -1818,10 +1828,43 @@ class EntityProfileJsonBuilder:
                 overlay_qualifiers=claim.get("qualifiers", {}),
                 visited={root_id} if root_id else set(),
                 current_profile_id=root_id,
+                profile_spec_index=profile_spec_index,
             )
             if built:
                 statements.append(built)
         return statements
+
+    def _build_profile_statement_spec_index(
+        self,
+        profile_item: dict[str, Any],
+        *,
+        current_profile_id: Optional[str],
+    ) -> dict[str, dict[str, list[dict[str, Any]]]]:
+        """Index profile-level P158/P211 claims by targeted statement (P163)."""
+        index: dict[str, dict[str, list[dict[str, Any]]]] = {}
+        claims = profile_item.get("entity", {}).get("claims", {})
+
+        for prop_id in (self.HAS_QUALIFIER, self.HAS_REFERENCE):
+            for claim in claims.get(prop_id, []):
+                target_statement_ids = self._qualifier_entity_ids(
+                    claim.get("qualifiers", {}), self.APPLIES_TO_STATEMENT
+                )
+                if not target_statement_ids:
+                    continue
+
+                for target_statement_id in target_statement_ids:
+                    if not self._claim_applies_in_context(
+                        claim,
+                        current_profile_id=current_profile_id,
+                        parent_statement_id=target_statement_id,
+                    ):
+                        continue
+
+                    index.setdefault(target_statement_id, {}).setdefault(
+                        prop_id, []
+                    ).append(claim)
+
+        return index
 
     def _build_statement_from_cache_id(
         self,
@@ -1832,11 +1875,14 @@ class EntityProfileJsonBuilder:
         visited: Optional[set[str]] = None,
         current_profile_id: Optional[str] = None,
         parent_statement_id: Optional[str] = None,
+        profile_spec_index: Optional[dict[str, dict[str, list[dict[str, Any]]]]] = None,
     ) -> Optional[dict[str, Any]]:
         if visited is None:
             visited = set()
         if entity_id in visited:
             return None
+        if profile_spec_index is None:
+            profile_spec_index = {}
 
         statement_item = self._cache_index.get(entity_id)
         if not statement_item:
@@ -1845,13 +1891,18 @@ class EntityProfileJsonBuilder:
         next_visited = set(visited)
         next_visited.add(entity_id)
 
-        statement_json = self._build_statement_from_item(statement_item)
+        statement_json = self._build_statement_from_item(
+            statement_item,
+            current_profile_id=current_profile_id,
+            parent_statement_id=parent_statement_id,
+        )
 
         qualifiers = overlay_qualifiers or {}
         overlay_value_ids = self._qualifier_entity_ids(qualifiers, self.HAS_VALUE)
-        combined_value_ids = self._dedupe_preserve_order(
-            statement_json["value"]["linked_entity_ids"] + overlay_value_ids
-        )
+        if overlay_value_ids:
+            combined_value_ids = self._dedupe_preserve_order(overlay_value_ids)
+        else:
+            combined_value_ids = statement_json["value"]["linked_entity_ids"]
         statement_json["value"] = self._build_value_payload(
             statement_json["value"]["type"], combined_value_ids
         )
@@ -1873,31 +1924,50 @@ class EntityProfileJsonBuilder:
                 statement_json.get("messages", {}),
                 self._build_messages_from_qualifiers(qualifiers),
             )
-            statement_json["max_count"] = self._qualifier_first_quantity_int(
-                qualifiers, self.MAX_COUNT
+            if self.MAX_COUNT in qualifiers:
+                statement_json["max_count"] = self._qualifier_first_quantity_int(
+                    qualifiers, self.MAX_COUNT
+                )
+
+        if role == "statement":
+            statement_claims = statement_item.get("entity", {}).get("claims", {})
+            profile_overrides = profile_spec_index.get(entity_id, {})
+
+            qualifier_specs = self._resolve_statement_spec_entries(
+                statement_claims=statement_claims.get(self.HAS_QUALIFIER, []),
+                claim_level_overlay_ids=self._qualifier_entity_ids(
+                    qualifiers, self.HAS_QUALIFIER
+                ),
+                profile_override_claims=profile_overrides.get(self.HAS_QUALIFIER, []),
+                current_profile_id=current_profile_id,
+                parent_statement_id=parent_statement_id,
+            )
+            reference_specs = self._resolve_statement_spec_entries(
+                statement_claims=statement_claims.get(self.HAS_REFERENCE, []),
+                claim_level_overlay_ids=self._qualifier_entity_ids(
+                    qualifiers, self.HAS_REFERENCE
+                ),
+                profile_override_claims=profile_overrides.get(self.HAS_REFERENCE, []),
+                current_profile_id=current_profile_id,
+                parent_statement_id=parent_statement_id,
             )
 
-            if role == "statement":
-                qualifier_ids = self._qualifier_entity_ids(
-                    qualifiers, self.HAS_QUALIFIER
-                )
-                reference_ids = self._qualifier_entity_ids(
-                    qualifiers, self.HAS_REFERENCE
-                )
-                statement_json["qualifiers"] = self._resolve_linked_statements(
-                    qualifier_ids,
-                    role="qualifier",
-                    visited=next_visited,
-                    current_profile_id=current_profile_id,
-                    parent_statement_id=entity_id,
-                )
-                statement_json["references"] = self._resolve_linked_statements(
-                    reference_ids,
-                    role="reference",
-                    visited=next_visited,
-                    current_profile_id=current_profile_id,
-                    parent_statement_id=entity_id,
-                )
+            statement_json["qualifiers"] = self._resolve_linked_statements(
+                qualifier_specs,
+                role="qualifier",
+                visited=next_visited,
+                current_profile_id=current_profile_id,
+                parent_statement_id=entity_id,
+                profile_spec_index=profile_spec_index,
+            )
+            statement_json["references"] = self._resolve_linked_statements(
+                reference_specs,
+                role="reference",
+                visited=next_visited,
+                current_profile_id=current_profile_id,
+                parent_statement_id=entity_id,
+                profile_spec_index=profile_spec_index,
+            )
 
         if role in {"qualifier", "reference"}:
             statement_json.pop("qualifiers", None)
@@ -1907,28 +1977,124 @@ class EntityProfileJsonBuilder:
 
     def _resolve_linked_statements(
         self,
-        entity_ids: list[str],
+        statement_specs: list[dict[str, Any]],
         *,
         role: str,
         visited: set[str],
         current_profile_id: Optional[str],
         parent_statement_id: str,
+        profile_spec_index: dict[str, dict[str, list[dict[str, Any]]]],
     ) -> list[dict[str, Any]]:
         resolved: list[dict[str, Any]] = []
-        for entity_id in entity_ids:
+        for spec in statement_specs:
+            entity_id = str(spec.get("entity_id", "")).strip()
+            if not entity_id:
+                continue
             nested = self._build_statement_from_cache_id(
                 entity_id,
                 role=role,
+                overlay_qualifiers=spec.get("overlay_qualifiers", {}),
                 visited=visited,
                 current_profile_id=current_profile_id,
                 parent_statement_id=parent_statement_id,
+                profile_spec_index=profile_spec_index,
             )
             if nested:
                 resolved.append(nested)
         return resolved
 
+    def _resolve_statement_spec_entries(
+        self,
+        *,
+        statement_claims: list[dict[str, Any]],
+        claim_level_overlay_ids: list[str],
+        profile_override_claims: list[dict[str, Any]],
+        current_profile_id: Optional[str],
+        parent_statement_id: Optional[str],
+    ) -> list[dict[str, Any]]:
+        """Resolve nested statement specs with partial profile-level override semantics."""
+
+        candidates: list[dict[str, Any]] = []
+        order = 0
+
+        for claim in statement_claims:
+            if not self._claim_applies_in_context(
+                claim,
+                current_profile_id=current_profile_id,
+                parent_statement_id=parent_statement_id,
+            ):
+                continue
+            entity_id = self._claim_entity_id(claim)
+            if not entity_id:
+                continue
+            candidates.append(
+                {
+                    "entity_id": entity_id,
+                    "overlay_qualifiers": claim.get("qualifiers", {}),
+                    "source_rank": 1,
+                    "scope_rank": self._claim_scope_rank(claim),
+                    "order": order,
+                }
+            )
+            order += 1
+
+        for entity_id in claim_level_overlay_ids:
+            candidates.append(
+                {
+                    "entity_id": entity_id,
+                    "overlay_qualifiers": {},
+                    "source_rank": 2,
+                    "scope_rank": 0,
+                    "order": order,
+                }
+            )
+            order += 1
+
+        for claim in profile_override_claims:
+            entity_id = self._claim_entity_id(claim)
+            if not entity_id:
+                continue
+            candidates.append(
+                {
+                    "entity_id": entity_id,
+                    "overlay_qualifiers": claim.get("qualifiers", {}),
+                    "source_rank": 3,
+                    "scope_rank": self._claim_scope_rank(claim),
+                    "order": order,
+                }
+            )
+            order += 1
+
+        winners: dict[str, dict[str, Any]] = {}
+        for candidate in candidates:
+            entity_id = candidate["entity_id"]
+            existing = winners.get(entity_id)
+            if not existing:
+                winners[entity_id] = candidate
+                continue
+
+            better_source = candidate["source_rank"] > existing["source_rank"]
+            better_scope = candidate["scope_rank"] > existing["scope_rank"]
+            if better_source or (
+                candidate["source_rank"] == existing["source_rank"] and better_scope
+            ):
+                winners[entity_id] = candidate
+
+        selected = sorted(winners.values(), key=lambda entry: entry["order"])
+        return [
+            {
+                "entity_id": entry["entity_id"],
+                "overlay_qualifiers": entry["overlay_qualifiers"],
+            }
+            for entry in selected
+        ]
+
     def _build_statement_from_item(
-        self, statement_item: dict[str, Any]
+        self,
+        statement_item: dict[str, Any],
+        *,
+        current_profile_id: Optional[str],
+        parent_statement_id: Optional[str],
     ) -> dict[str, Any]:
         entity_id = statement_item.get("entity_id")
         label = self._get_localized_text(
@@ -1946,7 +2112,21 @@ class EntityProfileJsonBuilder:
         if type_refs:
             value_type = self._entity_label(type_refs[0]) or type_refs[0]
 
-        intrinsic_value_ids = self._claim_entity_values(claims.get(self.HAS_VALUE, []))
+        intrinsic_value_ids = self._claim_entity_values(
+            self._applicable_claims(
+                claims.get(self.HAS_VALUE, []),
+                current_profile_id=current_profile_id,
+                parent_statement_id=parent_statement_id,
+            )
+        )
+
+        max_count = self._claim_first_quantity_int(
+            self._applicable_claims(
+                claims.get(self.MAX_COUNT, []),
+                current_profile_id=current_profile_id,
+                parent_statement_id=parent_statement_id,
+            )
+        )
 
         return {
             "entity": f"{self.entity_prefix}{entity_id}",
@@ -1957,10 +2137,63 @@ class EntityProfileJsonBuilder:
                 "linked_entity_ids": intrinsic_value_ids,
             },
             "messages": self._build_messages_from_claims(claims),
-            "max_count": None,
+            "max_count": max_count,
             "qualifiers": [],
             "references": [],
         }
+
+    def _claim_scope_rank(self, claim: dict[str, Any]) -> int:
+        qualifiers = claim.get("qualifiers", {})
+        if not isinstance(qualifiers, dict):
+            return 0
+
+        has_profile_scope = bool(
+            self._qualifier_entity_ids(qualifiers, self.APPLIES_TO_PROFILE)
+        )
+        has_statement_scope = bool(
+            self._qualifier_entity_ids(qualifiers, self.APPLIES_TO_STATEMENT)
+        )
+
+        if has_profile_scope and has_statement_scope:
+            return 3
+        if has_profile_scope:
+            return 2
+        if has_statement_scope:
+            return 1
+        return 0
+
+    def _applicable_claims(
+        self,
+        claims: list[dict[str, Any]],
+        *,
+        current_profile_id: Optional[str],
+        parent_statement_id: Optional[str],
+    ) -> list[dict[str, Any]]:
+        applicable: list[dict[str, Any]] = []
+        for claim in claims:
+            if self._claim_applies_in_context(
+                claim,
+                current_profile_id=current_profile_id,
+                parent_statement_id=parent_statement_id,
+            ):
+                applicable.append(claim)
+        return applicable
+
+    def _claim_first_quantity_int(
+        self,
+        claims: list[dict[str, Any]],
+    ) -> Optional[int]:
+        for claim in claims:
+            value = claim.get("mainsnak", {}).get("datavalue", {}).get("value", {})
+            if not isinstance(value, dict):
+                continue
+            amount = value.get("amount")
+            if isinstance(amount, str):
+                try:
+                    return int(float(amount))
+                except ValueError:
+                    return None
+        return None
 
     def _build_value_payload(
         self, value_type: Optional[str], target_ids: list[str]
@@ -2247,7 +2480,11 @@ class EntityProfileJsonBuilder:
             source_statement_id = self._claim_entity_id(claim)
             if not source_statement_id or source_statement_id != parent_statement_id:
                 continue
-            if self._claim_applies_to_profile(claim, current_profile_id):
+            if self._claim_applies_in_context(
+                claim,
+                current_profile_id=current_profile_id,
+                parent_statement_id=parent_statement_id,
+            ):
                 return source_statement_id
         return None
 
@@ -2256,9 +2493,19 @@ class EntityProfileJsonBuilder:
         claim: dict[str, Any],
         current_profile_id: Optional[str],
     ) -> bool:
-        if not current_profile_id:
-            return True
+        return self._claim_applies_in_context(
+            claim,
+            current_profile_id=current_profile_id,
+            parent_statement_id=None,
+        )
 
+    def _claim_applies_in_context(
+        self,
+        claim: dict[str, Any],
+        *,
+        current_profile_id: Optional[str],
+        parent_statement_id: Optional[str],
+    ) -> bool:
         qualifiers = claim.get("qualifiers", {})
         if not isinstance(qualifiers, dict):
             return True
@@ -2266,9 +2513,25 @@ class EntityProfileJsonBuilder:
         applies_to_profiles = self._qualifier_entity_ids(
             qualifiers, self.APPLIES_TO_PROFILE
         )
-        if not applies_to_profiles:
-            return True
-        return current_profile_id in applies_to_profiles
+        applies_to_statements = self._qualifier_entity_ids(
+            qualifiers, self.APPLIES_TO_STATEMENT
+        )
+
+        profile_matches = (
+            not applies_to_profiles
+            or (
+                current_profile_id is not None
+                and current_profile_id in applies_to_profiles
+            )
+        )
+        statement_matches = (
+            not applies_to_statements
+            or (
+                parent_statement_id is not None
+                and parent_statement_id in applies_to_statements
+            )
+        )
+        return profile_matches and statement_matches
 
     def _claim_string_values(self, claims: list[dict[str, Any]]) -> list[str]:
         values: list[str] = []

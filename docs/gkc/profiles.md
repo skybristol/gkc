@@ -57,6 +57,16 @@ Statement `value` payloads may also include derived-value semantics used by down
 
 These fields are emitted for qualifier/reference statement instances when the corresponding GKC Entity Statement item declares `derives default value from` semantics in Wikibase, with `applies to profile` scoping honored when present.
 
+Statement-spec resolution in materialized JSON follows a specificity-first contract:
+
+- `statement type` and `same as` are always statement-authoritative and are not profile-overrideable.
+- `max_count` can be set at statement level and overridden at the profile claim level.
+- `has value` at profile claim level replaces statement-level value linkage for that statement instance.
+- `has qualifier` and `has reference` are resolved per nested statement id:
+  - profile-local entries win for nested statement ids explicitly configured in profile context.
+  - statement-level defaults still apply for nested statement ids not explicitly configured in profile context.
+- Statement-level directive scoping uses `applies to profile` and `applies to statement` qualifiers with AND-across-properties semantics.
+
 The SpiritSafe manifest (`cache/manifest.json`) is generated as an artifact index over these files.
 
 ## Profile Anatomy
