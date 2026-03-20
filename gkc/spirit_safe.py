@@ -2011,31 +2011,37 @@ class EntityProfileJsonBuilder:
         current_profile_id: Optional[str],
         parent_statement_id: Optional[str],
     ) -> list[dict[str, Any]]:
-        """Resolve nested statement specs with partial profile-level override semantics."""
+        """Resolve nested statement specs with profile-level supersede semantics.
+
+        When profile-level override claims (P158/P211 with P163) are present for a
+        statement, they fully supersede the underlying statement entity's defaults.
+        Statement-level defaults are only used when no profile-level overrides exist.
+        """
 
         candidates: list[dict[str, Any]] = []
         order = 0
 
-        for claim in statement_claims:
-            if not self._claim_applies_in_context(
-                claim,
-                current_profile_id=current_profile_id,
-                parent_statement_id=parent_statement_id,
-            ):
-                continue
-            entity_id = self._claim_entity_id(claim)
-            if not entity_id:
-                continue
-            candidates.append(
-                {
-                    "entity_id": entity_id,
-                    "overlay_qualifiers": claim.get("qualifiers", {}),
-                    "source_rank": 1,
-                    "scope_rank": self._claim_scope_rank(claim),
-                    "order": order,
-                }
-            )
-            order += 1
+        if not profile_override_claims:
+            for claim in statement_claims:
+                if not self._claim_applies_in_context(
+                    claim,
+                    current_profile_id=current_profile_id,
+                    parent_statement_id=parent_statement_id,
+                ):
+                    continue
+                entity_id = self._claim_entity_id(claim)
+                if not entity_id:
+                    continue
+                candidates.append(
+                    {
+                        "entity_id": entity_id,
+                        "overlay_qualifiers": claim.get("qualifiers", {}),
+                        "source_rank": 1,
+                        "scope_rank": self._claim_scope_rank(claim),
+                        "order": order,
+                    }
+                )
+                order += 1
 
         for entity_id in claim_level_overlay_ids:
             candidates.append(

@@ -695,8 +695,14 @@ def test_statement_level_value_claim_respects_p163_parent_scope(tmp_path):
     assert qualifier["value"]["value_list_reference"] == "cache/queries/Q43.json"
 
 
-def test_profile_level_p158_claim_overrides_targeted_nested_statement_only(tmp_path):
-    """Profile-level P158 claim should override only the targeted nested statement spec."""
+def test_profile_level_p158_claim_supersedes_statement_level_defaults(tmp_path):
+    """Profile-level P158 claim should fully supersede all statement-level qualifier defaults.
+
+    When a profile carries P158 (has qualifier) claims targeting a specific statement
+    via P163 (applies to statement), those override claims replace the entire set of
+    qualifier defaults from the underlying statement entity — not just the same-entity
+    entries.  Statement-level defaults that lack a profile counterpart are dropped.
+    """
 
     cache_entities_dir = tmp_path / "cache" / "entities"
     cache_entities_dir.mkdir(parents=True, exist_ok=True)
@@ -814,9 +820,9 @@ def test_profile_level_p158_claim_overrides_targeted_nested_statement_only(tmp_p
     qualifiers = docs[0]["statements"][0]["qualifiers"]
     by_entity = {entry["entity"].rsplit("/", 1)[-1]: entry for entry in qualifiers}
 
-    assert set(by_entity.keys()) == {"Q41", "Q42"}
+    # Profile override (Q41) is present; statement-default Q42 is dropped entirely.
+    assert set(by_entity.keys()) == {"Q41"}
     assert by_entity["Q41"]["messages"]["mul"]["prompt"] == "Override qualifier prompt"
-    assert by_entity["Q42"]["messages"]["mul"]["prompt"] == "Untouched qualifier prompt"
 
 
 def test_profile_level_max_count_overrides_statement_level_baseline(tmp_path):
