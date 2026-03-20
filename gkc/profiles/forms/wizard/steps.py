@@ -176,9 +176,42 @@ def _initial_fixed_value(statement_def: dict[str, Any]) -> Any:
     if isinstance(value_list, list) and value_list:
         first = value_list[0]
         if isinstance(first, dict):
-            return first.get("item") or first.get("id") or first.get("itemLabel")
+            normalized = deepcopy(first)
+            item_value = normalized.get("item")
+            item_qid = (
+                WidgetFactory._qid_from_uri(item_value)
+                if isinstance(item_value, str)
+                else None
+            )
+            if item_qid and not isinstance(normalized.get("id"), str):
+                normalized["id"] = item_qid
+            elif isinstance(normalized.get("id"), str) and not isinstance(
+                normalized.get("item"), str
+            ):
+                normalized["item"] = normalized["id"]
+            return normalized
         return first
     return None
+
+
+def _fixed_value_widget_kwargs(statement_def: dict[str, Any]) -> dict[str, Any]:
+    """Build widget kwargs for inline fixed value-list item displays."""
+    dtype = _value_datatype(statement_def.get("value", {}))
+    if dtype not in {"item", "wikibase-item"}:
+        return {}
+
+    value_list = statement_def.get("value", {}).get("value_list")
+    if not isinstance(value_list, list) or not value_list:
+        return {}
+
+    item_options = [entry for entry in value_list if isinstance(entry, dict)]
+    if not item_options:
+        return {}
+
+    return {
+        "item_options": item_options,
+        "all_item_options_count": len(item_options),
+    }
 
 
 def _value_datatype(value_block: dict[str, Any]) -> str:
@@ -186,6 +219,42 @@ def _value_datatype(value_block: dict[str, Any]) -> str:
     if dtype == "globe-coordinate":
         return "globecoordinate"
     return dtype
+
+
+def _render_prompt_with_guidance(
+    *,
+    prompt: str,
+    guidance: str,
+    guidance_key: str,
+) -> None:
+    """Render prompt text with an inline more/less guidance toggle."""
+    if not prompt and not guidance:
+        return
+
+    toggle_key = f"{guidance_key}_show_guidance"
+    if toggle_key not in st.session_state:
+        st.session_state[toggle_key] = False
+
+    if prompt and guidance:
+        prompt_col, link_col = st.columns([12, 1])
+        with prompt_col:
+            st.caption(prompt)
+        with link_col:
+            link_label = "less" if st.session_state[toggle_key] else "more"
+            if st.button(link_label, key=f"{guidance_key}_toggle", type="tertiary"):
+                st.session_state[toggle_key] = not st.session_state[toggle_key]
+                st.rerun()
+    elif prompt:
+        st.caption(prompt)
+    else:
+        link_label = "less" if st.session_state[toggle_key] else "more"
+        if st.button(link_label, key=f"{guidance_key}_toggle_only", type="tertiary"):
+            st.session_state[toggle_key] = not st.session_state[toggle_key]
+            st.rerun()
+
+    if guidance and st.session_state[toggle_key]:
+        with st.container(border=True):
+            st.caption(guidance)
 
 
 def _source_root_path() -> Path | None:
@@ -629,13 +698,12 @@ class StatementsStep(Step):
 
         with st.expander(f"**{stmt_label}**", expanded=auto_expand):
             prompt = _statement_prompt(statement_def)
-            if prompt:
-                st.caption(prompt)
-
             guidance = _statement_guidance(statement_def)
-            if guidance:
-                with st.popover("ℹ️ Guidance"):
-                    st.write(guidance)
+            _render_prompt_with_guidance(
+                prompt=prompt,
+                guidance=guidance,
+                guidance_key=f"stmt_{stmt_key}",
+            )
 
             is_fixed = _is_fixed(statement_def)
             if is_fixed:
@@ -683,12 +751,24 @@ class StatementsStep(Step):
 
         if is_fixed:
             fixed_value = _initial_fixed_value(statement_def)
-            st.text_input(
-                "Value",
-                value=str(fixed_value or ""),
-                key=f"fixed_{_statement_key(statement_def)}_{idx}",
-                disabled=True,
-            )
+            fixed_widget_kwargs = _fixed_value_widget_kwargs(statement_def)
+            if fixed_widget_kwargs:
+                WidgetFactory.render_widget(
+                    datatype=dtype,
+                    label="Value",
+                    value=fixed_value,
+                    key=f"fixed_{_statement_key(statement_def)}_{idx}",
+                    help_text=_statement_prompt(statement_def),
+                    disabled=True,
+                    **fixed_widget_kwargs,
+                )
+            else:
+                st.text_input(
+                    "Value",
+                    value=str(fixed_value or ""),
+                    key=f"fixed_{_statement_key(statement_def)}_{idx}",
+                    disabled=True,
+                )
             value_data["value"] = fixed_value
             return
 
@@ -839,22 +919,33 @@ class StatementsStep(Step):
         parent_value: Any,
     ) -> None:
         prompt = _statement_prompt(nested_def)
-        if prompt:
-            st.caption(prompt)
-
         guidance = _statement_guidance(nested_def)
-        if guidance:
-            with st.popover("ℹ️ Guidance"):
-                st.write(guidance)
+        _render_prompt_with_guidance(
+            prompt=prompt,
+            guidance=guidance,
+            guidance_key=f"nested_{widget_key}",
+        )
 
         if _is_fixed(nested_def):
             fixed_value = _initial_fixed_value(nested_def)
-            st.text_input(
-                "Value",
-                value=str(fixed_value or ""),
-                key=f"fixed_{widget_key}",
-                disabled=True,
-            )
+            fixed_widget_kwargs = _fixed_value_widget_kwargs(nested_def)
+            if fixed_widget_kwargs:
+                WidgetFactory.render_widget(
+                    datatype=_value_datatype(nested_def.get("value", {})),
+                    label="Value",
+                    value=fixed_value,
+                    key=f"fixed_{widget_key}",
+                    help_text=prompt,
+                    disabled=True,
+                    **fixed_widget_kwargs,
+                )
+            else:
+                st.text_input(
+                    "Value",
+                    value=str(fixed_value or ""),
+                    key=f"fixed_{widget_key}",
+                    disabled=True,
+                )
             nested_entry["value"] = fixed_value
             return
 
