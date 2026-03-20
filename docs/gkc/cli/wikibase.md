@@ -113,13 +113,13 @@ When `--output` is used, command output includes:
 
 - `spirit_safe.create_curation_packet`
 - `still_charger.charge_curation_packet`
-- `cooperage.barrel_curation_packet_to_wikibase_plan`
+- `wikibase.orchestration.barrel_curation_packet_to_wikibase_plan`
 - optional `shipper.plan_batch`
 
 ### Common usage
 
 ```bash
-# build packet -> charge -> barrel plan only
+# build packet -> charge -> write plan only
 poetry run gkc wikibase plan-write \
   --profile TribalGovernmentUS \
   --source-values-file /tmp/gkc_plan_source_values.json \
@@ -177,7 +177,7 @@ Execution path:
 
 - `spirit_safe.create_curation_packet`
 - `still_charger.charge_curation_packet`
-- `cooperage.barrel_curation_packet_to_wikibase_plan`
+- `wikibase.orchestration.barrel_curation_packet_to_wikibase_plan`
 - `shipper.write_item` / `shipper.write_property`
 
 Authentication is required for this command.

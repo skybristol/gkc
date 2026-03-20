@@ -17,7 +17,6 @@ GKC modules are grouped by their role in the distillery pipeline:
 | **Mash** | [mash](mash.md) | Load data from Wikidata and other sources |
 | | [mash_formatters](mash_formatters.md) | Convert templates to output formats |
 | **Packet Fill** | [still_charger](still_charger.md) | Fill curation packet scaffolds with concrete source values |
-| **Barreling Transform** | [cooperage](cooperage.md) | Convert charged packet data into shippable operation plans |
 | **Validation / Registry** | [spirit_safe](spirit_safe.md) | SpiritSafe source config, registry discovery, query hydration, and caching |
 | **Transform** | [bottler](bottler.md) | Transform data into Wikidata format |
 | **Deliver** | [shipper](shipper.md) | Submit data to Wikibase-compatible APIs |
@@ -122,21 +121,6 @@ Convert templates to different output formats.
 **Key classes:**
 - `QSV1Formatter` - Format as QuickStatements V1
 
-### [Cooperage](cooperage.md)
-
-Convert charged curation packet content into shippable write operations.
-
-**Key functions:**
-
-- `barrel_curation_packet_to_wikibase_plan()` - Build operation plans from charged packets
-- `BarrelPlanReport` and `BarrelIssue` - Structured barreling diagnostics
-- `fetch_entity_rdf()` - Get entity RDF data
-- `fetch_schema_specification()` - Get EntitySchema ShEx
-- `fetch_entity_schema_json()` - Get EntitySchema JSON
-- `fetch_entity_schema_metadata()` - Get EntitySchema label/description metadata
-- `get_entity_uri()` - Build canonical entity URI
-- `validate_entity_reference()` - Validate ID format (`Q`, `P`, `L`, `E`)
-
 ### [Still Charger](still_charger.md)
 
 Fill curation packet scaffolds with concrete values from source payloads.
@@ -178,6 +162,17 @@ Submit data to Wikibase via the API.
 - `WikibaseShipper` - Primary write interface for Wikibase item/property operations
 - `CommonsShipper` - Wikimedia Commons submission (planned)
 - `OpenStreetMapShipper` - OSM submission (planned)
+
+### [Wikibase](wikibase.md)
+
+Coordinate foundation workflows and convert charged packets into shippable write operations.
+
+**Key classes/functions:**
+
+- `build_wikibase_write_plan()` - Build packet -> charge -> operation planning results
+- `execute_wikibase_write_plan()` - Replay planned operations through shipper writes
+- `barrel_curation_packet_to_wikibase_plan()` - Convert charged packets into plan operations
+- `BarrelPlanReport` and `BarrelIssue` - Structured write-planning diagnostics
 
 ### [Wikibase](wikibase.md)
 

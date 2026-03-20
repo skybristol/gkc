@@ -26,17 +26,23 @@ from gkc.wikibase.ontology import (
     resolve_statement_guidance,
 )
 from gkc.wikibase.orchestration import (
+    BarrelIssue,
+    BarrelPlanReport,
     WikibaseWriteExecutionResult,
     WikibaseWritePlanResult,
+    barrel_curation_packet_to_wikibase_plan,
     build_wikibase_write_plan,
     execute_wikibase_write_plan,
 )
 
 __all__ = [
+    "BarrelIssue",
+    "BarrelPlanReport",
     "DDOntologyIndex",
     "DDProfileCacheExportResult",
     "DDProfileGraph",
     "WikibaseCacheBuildResult",
+    "barrel_curation_packet_to_wikibase_plan",
     "build_discovery_sparql_query",
     "build_profile_ids_sparql_query",
     "build_entity_profile_identifiers_sparql_query",

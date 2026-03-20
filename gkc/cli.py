@@ -3058,7 +3058,7 @@ def _handle_wikibase_plan_write(args: argparse.Namespace) -> dict[str, Any]:
                 "still_charger.charge_curation_packet"
                 + (" [specificationless]" if not args.strict_charging else " [strict]")
             ),
-            "cooperage.barrel_curation_packet_to_wikibase_plan",
+            "wikibase.orchestration.barrel_curation_packet_to_wikibase_plan",
         ]
 
         if args.with_shipper_plan:
@@ -3266,7 +3266,7 @@ def _handle_wikibase_execute_write(args: argparse.Namespace) -> dict[str, Any]:
                 "still_charger.charge_curation_packet"
                 + (" [specificationless]" if not args.strict_charging else " [strict]")
             ),
-            "cooperage.barrel_curation_packet_to_wikibase_plan",
+            "wikibase.orchestration.barrel_curation_packet_to_wikibase_plan",
             "shipper.write_item/write_property",
         ]
 

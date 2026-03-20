@@ -226,5 +226,5 @@ with tempfile.TemporaryDirectory() as tmpdir:
 ## See Also
 
 - [Mash API](mash.md)
-- [Cooperage API](cooperage.md)
+- [Wikibase API](wikibase.md)
 - [Shipper API](shipper.md)

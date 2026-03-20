@@ -13,12 +13,12 @@ GKC uses a two-schema design to enable multi-system data distribution:
 2. **Barrel Schemas** - Target system schemas (Wikidata EntitySchemas,
    OSM tagging, etc.)
 
-Data flows: Source → Still → Unified Still Schema → Barrel Schema → Target
+Data flows: Source → Still → Unified Still Schema → Target Schema → Target
 
 ## Key Components
 
-- **Cooperage** - Manages Barrel Schemas from target systems
-  (EntitySchemas, tagging schemes, etc.)
+- **Mash** - Loads data and schema artifacts from source systems
+- **Wikibase** - Coordinates profile-driven write planning and Wikibase flows
 - **Spirit Safe** - Validates data against profiles before processing
 - **Bottler** - Transforms and exports data using specifications
 
@@ -40,11 +40,6 @@ from gkc.bottler import (
     DataTypeTransformer,
     Distillate,
     SnakBuilder,
-)
-from gkc.cooperage import (
-    BarrelIssue,
-    BarrelPlanReport,
-    barrel_curation_packet_to_wikibase_plan,
 )
 
 # Entity Profiles (GKC Entity Profile definitions)
@@ -162,7 +157,13 @@ from gkc.utilities import (
     search_exact_label,
     validate_entity_reference,
 )
-from gkc.wikibase import WikibaseWritePlanResult, build_wikibase_write_plan
+from gkc.wikibase import (
+    BarrelIssue,
+    BarrelPlanReport,
+    WikibaseWritePlanResult,
+    barrel_curation_packet_to_wikibase_plan,
+    build_wikibase_write_plan,
+)
 
 # Language Configuration
 # Package-level language settings for multilingual data handling
@@ -216,7 +217,7 @@ __all__ = [
     "DataTypeTransformer",
     "Distillate",
     "SnakBuilder",
-    # Cooperage (barreling transforms)
+    # Wikibase write planning
     "BarrelIssue",
     "BarrelPlanReport",
     "barrel_curation_packet_to_wikibase_plan",

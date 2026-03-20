@@ -1,4 +1,4 @@
-from gkc.cooperage import barrel_curation_packet_to_wikibase_plan
+from gkc.wikibase.orchestration import barrel_curation_packet_to_wikibase_plan
 
 
 def _charged_packet_example():

@@ -2,7 +2,7 @@
 
 ## Purpose
 
-This document defines the current architectural contract between `mash`, `spirit_safe`, `still_charger`, `fermenter`, `cooperage`, `bottler`, `shipper`, and `wikibase` for Data Distillery and broader GKC workflows.
+This document defines the current architectural contract between `mash`, `spirit_safe`, `still_charger`, `fermenter`, `bottler`, `shipper`, and `wikibase` for Data Distillery and broader GKC workflows.
 
 It is written as a practical anti-reinvention guide for contributors and custom agents.
 
@@ -102,29 +102,6 @@ Current anchor surface:
 - `validate_*` datatype validators
 - `coerce_*` datatype coercers
 
-### Cooperage (`gkc.cooperage`)
-
-Responsibility:
-
-- Convert charged curation packet content into shippable operation plans.
-- Host reusable transformation/projection logic that sits between charging and transport.
-- Provide compatibility re-exports for schema/specification retrieval utilities.
-
-Out of scope:
-
-- Direct submission to Wikibase/other write APIs.
-- Owning profile registry source-of-truth decisions.
-
-Current anchor surface:
-
-- `fetch_entity_rdf`
-- `fetch_schema_specification`
-- `fetch_entity_schema_json`
-- `fetch_entity_schema_metadata`
-- `barrel_curation_packet_to_wikibase_plan`
-- `BarrelPlanReport`
-- `BarrelIssue`
-
 ### Bottler (`gkc.bottler`)
 
 Responsibility:
@@ -180,6 +157,9 @@ Out of scope:
 
 Current anchor surface:
 
+- `barrel_curation_packet_to_wikibase_plan`
+- `BarrelPlanReport`
+- `BarrelIssue`
 - `load_foundation_profiles`
 - `audit_wikibase_foundation`
 - `init_wikibase_foundation`
@@ -199,7 +179,7 @@ Current anchor surface:
 1. Profile definitions describe ontology entities to provision.
 2. `wikibase` orchestration resolves desired vs existing state.
 3. `mash` performs lookup/reconciliation reads.
-4. `bottler` (and cooperage where appropriate) shape payload structures.
+4. `bottler` and `wikibase` orchestration shape payload structures.
 5. `shipper` performs dry-run/execute writes.
 
 ### Flow 2.5: Shared Profile-to-Write Planning Pipeline (Active)
@@ -207,7 +187,7 @@ Current anchor surface:
 1. `spirit_safe` loads and exports JSON Entity Profiles and value-list cache artifacts.
 2. `still_charger` assembles curation packets from profile JSON and charges packet entities with source values.
 3. `fermenter` validates and coerces charged values, emitting shared conformance notices.
-4. `cooperage` transforms charged packet data into `WikibaseShipper.plan_batch` operations.
+4. `wikibase` orchestration transforms charged packet data into `WikibaseShipper.plan_batch` operations.
 5. `wikibase` orchestration coordinates this flow for Data Distillery-specific workflows.
 6. `shipper` computes create/update/no-op diff plans and executes writes when enabled.
 
@@ -229,7 +209,7 @@ Current anchor surface:
 ### Flow 3: Semantic Projection for Runtime Artifacts
 
 1. `mash` retrieves semantic entities and related metadata.
-2. `cooperage` applies projection/transformation rules.
+2. `wikibase` orchestration applies current write-planning transformations.
 3. `bottler` shapes final claim/snak structures where transport payload format is required.
 4. Artifacts are validated against SpiritSafe/runtime schema contracts.
 5. `wikibase` tracks projection provenance and drift metadata.
@@ -237,7 +217,7 @@ Current anchor surface:
 ### Flow 4: Sync and Drift Management
 
 1. `mash` reads revision/update baselines.
-2. `cooperage` computes deterministic artifact diffs.
+2. `shipper.plan_batch` computes deterministic write-operation diffs.
 3. `wikibase` applies sync policy and conflict strategy.
 4. `shipper` executes writes when sync direction targets remote Wikibase.
 5. Reports and manifest metadata are emitted for traceability.
@@ -259,7 +239,8 @@ When adding new functionality, assign ownership using this matrix:
 - Need to assemble curation packets from profile JSON and populate them with source values? -> `still_charger`
 - Need atomic validation/coercion and conformance notices? -> `fermenter`
 - Need to build/shape values into claim/snak/payload structures? -> `bottler`
-- Need schema/specification retrieval or reusable projection logic? -> `cooperage`
+- Need schema/specification retrieval? -> `mash`
+- Need reusable charged-packet to Wikibase operation planning? -> `wikibase`
 - Need to execute write operations to external APIs? -> `shipper`
 - Need Data Distillery semantic orchestration, ontology conformance, or sync policy? -> `wikibase`
 
@@ -267,8 +248,7 @@ When adding new functionality, assign ownership using this matrix:
 
 - Still Charger URI-keyed packet assembly and source resolution are still in active migration from profile-name keyed behavior.
 - Fermenter module implementation is pending; current validation/coercion logic remains distributed and not yet unified.
-- Cooperage currently provides packet-to-Wikibase operation planning; additional target transformers still need explicit acceptance criteria per phase.
-- Boundaries between cooperage and bottler for transformation stages still need explicit acceptance criteria per phase.
+- Boundaries between wikibase write planning and bottler transformation stages still need explicit acceptance criteria per phase.
 - Wikibase orchestration should continue preferring composition over new transport abstractions.
 - Cross-module tests should identify failure source by layer (read, transform, payload-shape, write, orchestration).
 - Curation packet v2 contract migration from profile-name keys to entity-URI keys remains unfinished and is the next high-risk integration step.
