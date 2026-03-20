@@ -13,6 +13,8 @@ from gkc.profiles.forms.wizard.steps import (
     _coerce_nested_statement_map,
     _extract_value_list_candidates,
     _filter_value_list_candidates,
+    _fixed_value_widget_kwargs,
+    _initial_fixed_value,
     _materialize_value_list_cache,
     _value_list_widget_kwargs,
 )
@@ -234,6 +236,54 @@ def test_value_list_widget_kwargs_does_not_fallback_to_route_only(
             github_ref=original_source.github_ref,
             local_root=original_source.local_root,
         )
+
+
+def test_initial_fixed_value_preserves_item_metadata_for_single_value_list() -> None:
+    fixed_value = _initial_fixed_value(
+        {
+            "value": {
+                "type": "wikibase-item",
+                "value_list": [
+                    {
+                        "item": "Q7840353",
+                        "itemLabel": "federally recognized Native American tribe in the United States",
+                    }
+                ],
+            }
+        }
+    )
+
+    assert fixed_value == {
+        "item": "Q7840353",
+        "id": "Q7840353",
+        "itemLabel": "federally recognized Native American tribe in the United States",
+    }
+
+
+def test_fixed_value_widget_kwargs_support_inline_item_value_list() -> None:
+    widget_kwargs = _fixed_value_widget_kwargs(
+        {
+            "value": {
+                "type": "wikibase-item",
+                "value_list": [
+                    {
+                        "item": "Q7840353",
+                        "itemLabel": "federally recognized Native American tribe in the United States",
+                    }
+                ],
+            }
+        }
+    )
+
+    assert widget_kwargs == {
+        "item_options": [
+            {
+                "item": "Q7840353",
+                "itemLabel": "federally recognized Native American tribe in the United States",
+            }
+        ],
+        "all_item_options_count": 1,
+    }
 
 
 def test_coerce_nested_statement_map_from_legacy_reference_list() -> None:
