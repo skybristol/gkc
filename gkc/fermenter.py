@@ -3,7 +3,7 @@ Fermenter: Validation and coercion layer for GKC curation pipelines.
 
 The fermenter is the atomic validation and coercion layer. It does not assemble packets
 or coordinate pipelines — it validates and normalizes individual values against
-profile-defined constraints. Both the still charger and the barrel/cooperage layer consume it.
+profile-defined constraints. Both the still charger and the write-planning layer consume it.
 
 All validation surfaces return a shared ConformanceNotice envelope for consistent error
 reporting across wizard, CLI, and bulk pipelines.

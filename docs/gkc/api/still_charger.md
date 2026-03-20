@@ -2,7 +2,7 @@
 
 ## Overview
 
-The `gkc.still_charger` module fills curation packet scaffolds with concrete source values before cooperage transformation and shipper planning.
+The `gkc.still_charger` module fills curation packet scaffolds with concrete source values before Wikibase write planning and shipper planning.
 
 It supports both local-profile packet assembly (new URI-keyed contract) and specificationless charging for open-ended source data.
 Validation and coercion notices are emitted as `ConformanceNotice` objects (see [Fermenter API](fermenter.md)).
@@ -200,6 +200,5 @@ print(report.entities_charged, report.issues[0].severity)
 
 ## See Also
 
-- [Cooperage API](cooperage.md)
 - [Wikibase API](wikibase.md)
 - [Shipper API](shipper.md)

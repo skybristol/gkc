@@ -76,7 +76,6 @@ nav:
       - Mash Formatters: gkc/api/mash_formatters.md
       - Still Charger: gkc/api/still_charger.md
       - Fermenter: gkc/api/fermenter.md
-      - Cooperage: gkc/api/cooperage.md
       - Bottler: gkc/api/bottler.md
       - Profiles: gkc/api/profiles.md
       - SpiritSafe: gkc/api/spirit_safe.md

@@ -11,7 +11,7 @@ A profile package defines:
 - How statements map to inbound and outbound systems.
 - How references and qualifiers are collected for provenance and context.
 
-Profiles are curator-facing documents and machine-readable contracts. Runtime components (`still_charger`, `cooperage`, `shipper`, and validation layers) consume profile structure directly.
+Profiles are curator-facing documents and machine-readable contracts. Runtime components (`still_charger`, `wikibase`, `shipper`, and validation layers) consume profile structure directly.
 
 ## Implementation Status
 

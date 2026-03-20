@@ -5,7 +5,7 @@
 The `gkc.wikibase` module provides Data Distillery orchestration for:
 
 - foundation ontology profile loading, auditing, and initialization
-- shared packet-to-write planning (`spirit_safe` → `still_charger` → `cooperage` → optional `shipper.plan_batch`)
+- shared packet-to-write planning (`spirit_safe` → `still_charger` → `wikibase.orchestration.barrel_curation_packet_to_wikibase_plan` → optional `shipper.plan_batch`)
 - authenticated operation replay (`execute_wikibase_write_plan`) with dry-run-by-default write control
 
 ## Public API
@@ -96,6 +96,23 @@ print(len(result.operations))
 
 If a `WikibaseShipper` instance is provided through `shipper=...`, the orchestration also computes `result.diff_plan` via `shipper.plan_batch`.
 
+### `barrel_curation_packet_to_wikibase_plan(...)`
+
+Converts charged packet content into Wikibase shipper-compatible operations.
+
+```python
+from gkc.wikibase import barrel_curation_packet_to_wikibase_plan
+
+operations, report = barrel_curation_packet_to_wikibase_plan(charged_packet)
+
+print(report.operations_created)
+print(len(operations))
+```
+
+### `BarrelPlanReport` and `BarrelIssue`
+
+Structured diagnostics for the charged-packet to operation-planning step.
+
 ### `WikibaseWritePlanResult`
 
 Dataclass container returned by `build_wikibase_write_plan()`.
@@ -165,10 +182,9 @@ This instance-specific behavior is surfaced through init and shipper flows and s
 
 - `execute_wikibase_write_plan(...)` keeps planning and execution as separate API calls while reusing identical operation payloads.
 - Dry-run replay is supported through `dry_run=True`; write submission occurs only with `dry_run=False`.
-- Operation order currently follows packet/barreling output order.
+- Operation order currently follows packet/write-planning output order.
 
 ## See Also
 
 - [Still Charger API](still_charger.md)
-- [Cooperage API](cooperage.md)
 - [Shipper API](shipper.md)

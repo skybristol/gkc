@@ -4,7 +4,7 @@
 
 The `gkc.fermenter` module is the atomic validation and coercion layer for GKC curation pipelines.
 It validates and normalizes individual values against profile-defined constraints.
-Both the still charger and the cooperage/barrel layer consume it, and all wizard and CLI pipelines share its output envelope.
+Both the still charger and the Wikibase write-planning layer consume it, and all wizard and CLI pipelines share its output envelope.
 
 All validation surfaces return a `ConformanceNotice` (or internal `ValidationResult`) for consistent error reporting across wizard, CLI, and bulk pipelines.
 
