@@ -53,13 +53,18 @@ def test_build_packet_expands_linked_profiles_from_graph():
         source_root=fixture_root,
     )
 
-    assert packet["profile_entity"] == "https://datadistillery.wikibase.cloud/entity/Q4"
-    assert len(packet["entities"]) == 2
-    assert {entity["profile_entity"] for entity in packet["entities"]} == {
+    assert packet["metadata"]["primary_profile"]["id"] == (
+        "https://datadistillery.wikibase.cloud/entity/Q4"
+    )
+    assert len(packet["data"]["entities"]) == 2
+    assert {entity["id"] for entity in packet["data"]["entities"]} == {
         "https://datadistillery.wikibase.cloud/entity/Q4",
         "https://datadistillery.wikibase.cloud/entity/Q39",
     }
-    assert len(packet["cross_references"]) == 2
+    edge_types = {
+        edge["relationship_type"] for edge in packet["metadata"]["graph"]["edges"]
+    }
+    assert "P161" in edge_types
 
 
 def test_build_packet_value_list_routes_use_statement_uris_and_item_counts():
@@ -72,12 +77,17 @@ def test_build_packet_value_list_routes_use_statement_uris_and_item_counts():
         source_root=fixture_root,
     )
 
-    routes = packet["value_list_routes"]
-    assert "https://datadistillery.wikibase.cloud/entity/Q16" in routes
-    assert routes["https://datadistillery.wikibase.cloud/entity/Q16"]["cache_path"] == (
-        "cache/queries/Q28.json"
+    value_list_edges = [
+        edge
+        for edge in packet["metadata"]["graph"]["edges"]
+        if edge.get("relationship_type") == "value_list_link"
+    ]
+    assert any(
+        edge.get("via_statement") == "https://datadistillery.wikibase.cloud/entity/Q16"
+        and edge.get("cache_path") == "cache/queries/Q28.json"
+        and edge.get("item_count") == 2
+        for edge in value_list_edges
     )
-    assert routes["https://datadistillery.wikibase.cloud/entity/Q16"]["item_count"] == 2
 
 
 def test_charge_packet_by_profile_id():

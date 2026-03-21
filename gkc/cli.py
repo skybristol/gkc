@@ -2723,13 +2723,25 @@ def _handle_packet_create(args: argparse.Namespace) -> dict[str, Any]:
         else:
             message = f"Created packet {packet['packet_id']}"
 
+        entity_count = len(
+            packet.get("data", {}).get("entities", packet.get("entities", []))
+        )
+        graph_edge_count = len(
+            packet.get("metadata", {})
+            .get("graph", {})
+            .get("edges", packet.get("cross_references", []))
+        )
+        primary_profile = packet.get("metadata", {}).get("primary_profile", {})
+
         details = {
             "packet_id": packet["packet_id"],
             "operation_mode": packet["operation_mode"],
-            "primary_profile": packet["primary_profile"],
-            "primary_profile_entity": packet.get("primary_profile_entity"),
-            "entity_count": len(packet["entities"]),
-            "cross_reference_count": len(packet["cross_references"]),
+            "primary_profile": primary_profile.get("name_identifier")
+            or packet.get("primary_profile"),
+            "primary_profile_entity": primary_profile.get("id")
+            or packet.get("primary_profile_entity"),
+            "entity_count": entity_count,
+            "graph_edge_count": graph_edge_count,
             "output_file": args.output,
         }
 
@@ -2751,18 +2763,29 @@ def _handle_packet_info(args: argparse.Namespace) -> dict[str, Any]:
         with open(args.packet_file, "r") as f:
             packet = json.load(f)
 
+        entity_count = len(
+            packet.get("data", {}).get("entities", packet.get("entities", []))
+        )
+        graph_edge_count = len(
+            packet.get("metadata", {})
+            .get("graph", {})
+            .get("edges", packet.get("cross_references", []))
+        )
+        primary_profile = packet.get("metadata", {}).get("primary_profile", {})
+
         message = f"Packet {packet.get('packet_id', 'unknown')}"
         details = {
             "packet_id": packet.get("packet_id"),
             "operation_mode": packet.get("operation_mode"),
-            "created_at": packet.get("created_at"),
-            "primary_profile": packet.get("primary_profile"),
-            "primary_profile_entity": packet.get("primary_profile_entity"),
-            "entity_count": len(packet.get("entities", [])),
-            "cross_reference_count": len(packet.get("cross_references", [])),
-            "cardinality_constraint_count": len(
-                packet.get("cardinality_constraints", [])
-            ),
+            "minted_at": packet.get("metadata", {})
+            .get("mint", {})
+            .get("minted_at", packet.get("created_at")),
+            "primary_profile": primary_profile.get("name_identifier")
+            or packet.get("primary_profile"),
+            "primary_profile_entity": primary_profile.get("id")
+            or packet.get("primary_profile_entity"),
+            "entity_count": entity_count,
+            "graph_edge_count": graph_edge_count,
         }
 
         return {
@@ -2787,6 +2810,15 @@ def _handle_packet_validate(args: argparse.Namespace) -> dict[str, Any]:
 
         is_valid, errors = validate_packet_structure(packet)
 
+        entity_count = len(
+            packet.get("data", {}).get("entities", packet.get("entities", []))
+        )
+        graph_edge_count = len(
+            packet.get("metadata", {})
+            .get("graph", {})
+            .get("edges", packet.get("cross_references", []))
+        )
+
         message = (
             f"✓ Packet {packet.get('packet_id', 'unknown')} is valid"
             if is_valid
@@ -2797,8 +2829,8 @@ def _handle_packet_validate(args: argparse.Namespace) -> dict[str, Any]:
             "packet_id": packet.get("packet_id"),
             "is_valid": is_valid,
             "errors": errors,
-            "entity_count": len(packet.get("entities", [])),
-            "cross_reference_count": len(packet.get("cross_references", [])),
+            "entity_count": entity_count,
+            "graph_edge_count": graph_edge_count,
         }
 
         return {
@@ -2863,12 +2895,22 @@ def _handle_packet_build(args: argparse.Namespace) -> dict[str, Any]:
         else:
             message = f"Built packet {packet['packet_id']}"
 
+        entity_count = len(
+            packet.get("data", {}).get("entities", packet.get("entities", []))
+        )
+        graph_edge_count = len(
+            packet.get("metadata", {})
+            .get("graph", {})
+            .get("edges", packet.get("cross_references", []))
+        )
+        primary_profile = packet.get("metadata", {}).get("primary_profile", {})
+
         details = {
             "packet_id": packet["packet_id"],
-            "profile_entity": packet.get("profile_entity"),
-            "entity_count": len(packet.get("entities", [])),
-            "cross_reference_count": len(packet.get("cross_references", [])),
-            "value_list_routes_count": len(packet.get("value_list_routes", {})),
+            "profile_entity": primary_profile.get("id") or packet.get("profile_entity"),
+            "profile_name_identifier": primary_profile.get("name_identifier"),
+            "entity_count": entity_count,
+            "graph_edge_count": graph_edge_count,
             "output_file": args.output,
         }
 

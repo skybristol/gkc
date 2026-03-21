@@ -5,13 +5,17 @@ profile-generated curation packets are populated with real input values before
 barreling/transformation for shipping.
 """
 
+import hashlib
 import json
+import re
 import uuid
 from copy import deepcopy
 from dataclasses import dataclass, field
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Optional
 
+import gkc
 from gkc.fermenter import ConformanceNotice
 
 
@@ -70,11 +74,166 @@ def _normalize_statement_scaffold(statement: dict[str, Any]) -> dict[str, Any]:
 
 def _target_profile_uri_from_edge(edge: dict[str, Any]) -> Optional[str]:
     """Extract target profile URI from a profile graph edge."""
-    target_ref = edge.get("entity") or edge.get("target")
+    target_ref = edge.get("id") or edge.get("entity") or edge.get("target")
     if not isinstance(target_ref, str) or not target_ref:
         return None
     target_uri, _ = _normalize_entity_uri(target_ref)
     return target_uri
+
+
+def _profile_uri_from_doc(profile_doc: dict[str, Any], fallback_uri: str) -> str:
+    candidate = profile_doc.get("id") or profile_doc.get("entity")
+    if isinstance(candidate, str) and candidate:
+        normalized, _ = _normalize_entity_uri(candidate)
+        return normalized
+    return fallback_uri
+
+
+def _profile_name_identifier(profile_doc: dict[str, Any], profile_uri: str) -> str:
+    name_identifier = profile_doc.get("name_identifier")
+    if isinstance(name_identifier, str) and name_identifier.strip():
+        return name_identifier.strip()
+    return profile_uri.rstrip("/").split("/")[-1]
+
+
+def _statement_identifier(statement: dict[str, Any]) -> Optional[str]:
+    candidate = statement.get("id") or statement.get("entity")
+    if not isinstance(candidate, str) or not candidate:
+        return None
+    normalized, _ = _normalize_entity_uri(candidate)
+    return normalized
+
+
+def _statement_name_identifier(statement: dict[str, Any]) -> str:
+    explicit = statement.get("name_identifier")
+    if isinstance(explicit, str) and explicit.strip():
+        return explicit.strip()
+
+    statement_id = _statement_identifier(statement)
+    if statement_id:
+        return statement_id.rstrip("/").split("/")[-1]
+
+    label = statement.get("label")
+    if isinstance(label, str) and label.strip():
+        normalized = re.sub(r"[^A-Za-z0-9_]+", "_", label.strip()).strip("_")
+        if normalized:
+            return normalized
+
+    return "statement"
+
+
+def _statement_data_slot(statement: dict[str, Any]) -> dict[str, Any]:
+    value_block = statement.get("value")
+    data_type = value_block.get("type") if isinstance(value_block, dict) else None
+    data_value: Any = None
+
+    if isinstance(value_block, dict):
+        value_list = value_block.get("value_list")
+        if isinstance(value_list, list) and len(value_list) == 1:
+            data_value = value_list[0]
+
+    return {
+        "id": _statement_identifier(statement),
+        "data-type": data_type,
+        "data-value": data_value,
+    }
+
+
+def _canonical_json_digest(payload: dict[str, Any]) -> str:
+    canonical = json.dumps(payload, sort_keys=True, separators=(",", ":"))
+    return hashlib.sha256(canonical.encode("utf-8")).hexdigest()
+
+
+def _build_unified_graph(
+    profile_docs: dict[str, dict[str, Any]],
+    name_by_uri: dict[str, str],
+    source_root: Optional[Path],
+) -> dict[str, list[dict[str, Any]]]:
+    nodes: dict[str, dict[str, Any]] = {}
+    edges: list[dict[str, Any]] = []
+    value_list_routes = _build_value_list_routes(profile_docs, source_root)
+
+    for profile_uri, profile_doc in profile_docs.items():
+        profile_name = name_by_uri[profile_uri]
+        nodes[profile_name] = {
+            "kind": "profile",
+            "name_identifier": profile_name,
+            "id": profile_uri,
+            "label": profile_doc.get("metadata", {}).get("labels", {}).get("mul")
+            or profile_doc.get("metadata", {}).get("labels", {}).get("en"),
+        }
+
+        for edge in profile_doc.get("metadata", {}).get("profile_graph", []):
+            if not isinstance(edge, dict):
+                continue
+            target_uri = _target_profile_uri_from_edge(edge)
+            if not target_uri:
+                continue
+            target_name = name_by_uri.get(
+                target_uri, target_uri.rstrip("/").split("/")[-1]
+            )
+            edges.append(
+                {
+                    "from": profile_name,
+                    "to": target_name,
+                    "from_id": profile_uri,
+                    "to_id": target_uri,
+                    "via_statement": edge.get("via_statement"),
+                    "relationship_type": edge.get("linkage_type") or "profile_link",
+                }
+            )
+
+        for route in profile_doc.get("metadata", {}).get("value_list_graph", []):
+            if not isinstance(route, dict):
+                continue
+            value_list_id = route.get("id") or route.get("entity")
+            if not isinstance(value_list_id, str) or not value_list_id:
+                continue
+            value_list_uri, _ = _normalize_entity_uri(value_list_id)
+            value_list_name = route.get("name_identifier")
+            if not isinstance(value_list_name, str) or not value_list_name:
+                value_list_name = value_list_uri.rstrip("/").split("/")[-1]
+
+            nodes.setdefault(
+                value_list_name,
+                {
+                    "kind": "value_list",
+                    "name_identifier": value_list_name,
+                    "id": value_list_uri,
+                    "label": route.get("label"),
+                },
+            )
+
+            statement_uri = route.get("via_statement")
+            route_info = (
+                value_list_routes.get(statement_uri, {})
+                if isinstance(statement_uri, str)
+                else {}
+            )
+
+            edges.append(
+                {
+                    "from": profile_name,
+                    "to": value_list_name,
+                    "from_id": profile_uri,
+                    "to_id": value_list_uri,
+                    "via_statement": statement_uri,
+                    "relationship_type": "value_list_link",
+                    "cache_path": route.get("cache_path")
+                    or route_info.get("cache_path"),
+                    "item_count": route_info.get("item_count"),
+                }
+            )
+
+    edges.sort(
+        key=lambda edge: (
+            str(edge.get("from", "")),
+            str(edge.get("to", "")),
+            str(edge.get("via_statement", "")),
+        )
+    )
+    ordered_nodes = [nodes[key] for key in sorted(nodes.keys())]
+    return {"nodes": ordered_nodes, "edges": edges}
 
 
 def _load_related_profile_documents(
@@ -110,9 +269,13 @@ def _load_related_profile_documents(
                 except Exception:
                     continue
                 loaded_uri = (
-                    loaded.get("entity")
-                    if isinstance(loaded.get("entity"), str)
-                    else target_uri
+                    loaded.get("id")
+                    if isinstance(loaded.get("id"), str)
+                    else (
+                        loaded.get("entity")
+                        if isinstance(loaded.get("entity"), str)
+                        else target_uri
+                    )
                 )
                 profile_docs[loaded_uri] = loaded
                 _visit(loaded_uri, loaded)
@@ -270,22 +433,27 @@ def build_curation_packet_from_json_profile(
             "value_list_routes": {...}
         }
     """
-    # Step 1: Normalize profile_entity to full URI and extract QID
-    full_profile_uri, profile_qid = _normalize_entity_uri(profile_entity)
+    # Step 1: Normalize profile_entity to full URI
+    full_profile_uri, _ = _normalize_entity_uri(profile_entity)
 
     # Step 2: Load primary + linked profile documents from metadata.profile_graph
     profile_docs = _load_related_profile_documents(full_profile_uri, json_profile_doc)
 
-    # Step 3: Build entities list (primary first, then deterministic linked order)
+    # Step 3: Build ordered profiles (primary first, then deterministic linked order)
     ordered_profile_uris = [full_profile_uri] + sorted(
         uri for uri in profile_docs.keys() if uri != full_profile_uri
     )
 
-    entity_id_by_uri: dict[str, str] = {}
-    entities: list[dict[str, Any]] = []
+    data_entities: list[dict[str, Any]] = []
+    metadata_profiles: list[dict[str, Any]] = []
+    profile_name_by_uri: dict[str, str] = {}
 
-    for index, profile_uri in enumerate(ordered_profile_uris, start=1):
+    for profile_uri in ordered_profile_uris:
         profile_doc = profile_docs[profile_uri]
+        profile_uri = _profile_uri_from_doc(profile_doc, profile_uri)
+        profile_name = _profile_name_identifier(profile_doc, profile_uri)
+        profile_name_by_uri[profile_uri] = profile_name
+
         statements = profile_doc.get("statements", [])
         if not isinstance(statements, list):
             statements = []
@@ -296,32 +464,76 @@ def build_curation_packet_from_json_profile(
             if isinstance(statement, dict)
         ]
 
-        entity_id = f"ent-{index:03d}"
-        entity_id_by_uri[profile_uri] = entity_id
-        entities.append(
+        statement_slots: dict[str, dict[str, Any]] = {}
+        for statement in normalized_statements:
+            key_base = _statement_name_identifier(statement)
+            key = key_base
+            suffix = 2
+            while key in statement_slots:
+                key = f"{key_base}_{suffix}"
+                suffix += 1
+            statement_slots[key] = _statement_data_slot(statement)
+
+        metadata_profiles.append(
             {
-                "id": entity_id,
-                "profile_entity": profile_uri,
-                "data": {},
+                "id": profile_uri,
+                "name_identifier": profile_name,
+                "identification": deepcopy(profile_doc.get("identification", {})),
                 "statements": normalized_statements,
+                "metadata": deepcopy(profile_doc.get("metadata", {})),
             }
         )
 
-    # Step 4: Build cross references and value-list routes from metadata graphs
-    cross_references = _build_cross_references(profile_docs, entity_id_by_uri)
-    value_list_routes = _build_value_list_routes(profile_docs, source_root)
+        data_entities.append(
+            {
+                "profile": profile_name,
+                "id": profile_uri,
+                "labels": {},
+                "descriptions": {},
+                "aliases": {},
+                "statements": statement_slots,
+            }
+        )
+
+    primary_profile_name = profile_name_by_uri.get(
+        full_profile_uri, full_profile_uri.rstrip("/").split("/")[-1]
+    )
+
+    # Step 4: Build packet metadata graph and mint metadata
+    unified_graph = _build_unified_graph(profile_docs, profile_name_by_uri, source_root)
+    minted_at = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
 
     # Step 5: Generate packet_id
     packet_id = f"pkt-{uuid.uuid4()}"
 
-    # Assemble the final packet
+    metadata = {
+        "primary_profile": {
+            "name_identifier": primary_profile_name,
+            "id": full_profile_uri,
+        },
+        "profiles": metadata_profiles,
+        "graph": unified_graph,
+        "mint": {
+            "minted_at": minted_at,
+            "generator": "gkc.still_charger.build_curation_packet_from_json_profile",
+            "gkc_version": gkc.__version__,
+        },
+    }
+
+    metadata_digest = _canonical_json_digest(metadata)
+    metadata["integrity"] = {
+        "metadata_canonicalization": "json-sort-keys-v1",
+        "metadata_digest_algorithm": "sha256",
+        "metadata_digest": metadata_digest,
+    }
+
     packet = {
         "packet_id": packet_id,
         "operation_mode": "new",
-        "profile_entity": full_profile_uri,
-        "entities": entities,
-        "cross_references": cross_references,
-        "value_list_routes": value_list_routes,
+        "metadata": metadata,
+        "data": {
+            "entities": data_entities,
+        },
     }
 
     return packet

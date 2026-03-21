@@ -37,6 +37,7 @@ Responsibility:
 - Hydrate value-list cache artifacts from extracted SPARQL queries.
 - Export profile JSON artifacts for downstream packet assembly and hydration.
 - Provide profile graph metadata and profile-loading utilities.
+- Publish artifact metadata needed to compare long-lived curation packets against the SpiritSafe state from which they were minted.
 
 Out of scope:
 
@@ -88,6 +89,7 @@ Responsibility:
 - Provide atomic datatype validators and coercion primitives.
 - Enforce fixed values, value-list constraints, and reference-level constraints.
 - Enforce derived-value constraints (for example, reference/qualifier values sourced from parent statement values).
+- Validate packet-level compatibility and lifecycle conformance for long-lived curation packets.
 - Emit shared `ConformanceNotice` records with actionable feedback.
 
 Out of scope:
@@ -206,6 +208,16 @@ Current anchor surface:
 4. `sparql` executes paginated query hydration to `cache/queries/QID.json`.
 5. Failed hydration does not overwrite an existing cache file for that value list.
 
+### Flow 2.8: Packet Re-entry and Forward Migration (Planned)
+
+1. `still_charger` or another caller loads a previously minted curation packet.
+2. `fermenter` validates packet type/shape first; structural/type failures are hard blockers.
+3. `spirit_safe` provides current profile/value-list artifact metadata for compatibility comparison.
+4. `wikibase` may provide current semantic revision context when network-backed comparison is available.
+5. `fermenter` classifies drift (`patch_compatible`, `minor_compatible`, `migration_required`, `breaking`) and applies approved migration transforms when available.
+6. `fermenter` re-validates the packet after migration and emits compatibility notices plus migration report data.
+7. Downstream write-planning and shipping proceed only if the packet remains structurally valid and any required migration succeeded.
+
 ### Flow 3: Semantic Projection for Runtime Artifacts
 
 1. `mash` retrieves semantic entities and related metadata.
@@ -229,6 +241,7 @@ Current anchor surface:
 - Keep SpiritSafe runtime contracts stable and testable.
 - Preserve offline-first behavior: network-backed enhancement must not break cache-only operation.
 - Preserve JSON profile export determinism (stable ordering and artifact path shape).
+- Treat packet type/shape conformance as the primary hard blocker; other conformance failures should default to actionable notices unless policy explicitly escalates them.
 
 ## Decision Matrix for New Work
 
@@ -252,6 +265,7 @@ When adding new functionality, assign ownership using this matrix:
 - Wikibase orchestration should continue preferring composition over new transport abstractions.
 - Cross-module tests should identify failure source by layer (read, transform, payload-shape, write, orchestration).
 - Curation packet v2 contract migration from profile-name keys to entity-URI keys remains unfinished and is the next high-risk integration step.
+- Packet compatibility metadata, change classification, and forward-migration rules for long-lived offline packets remain to be implemented.
 
 ## Theoretical Design Notes
 
