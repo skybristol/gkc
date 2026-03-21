@@ -1377,6 +1377,7 @@ class EntityProfileJsonBuilder:
     GKC_ENTITY_PROFILE_CLASS = "Q3"
     GKC_VALUE_LIST_CLASS = "Q7"
     WIKIDATA_ENTITY_CLASS = "Q52"
+    STATEMENT_MODIFIER_CLASS = "Q58"
 
     LANGUAGE_KEY_PATTERN = re.compile(
         r"^(mul|[a-z]{2,3}(?:-[a-z0-9]+)*)$", re.IGNORECASE
@@ -2152,6 +2153,7 @@ class EntityProfileJsonBuilder:
             "name_identifier": self._entity_name_identifier(statement_item),
             "entity": f"{self.entity_prefix}{entity_id}",
             "label": label,
+            "entity_classes": self._entity_type_ids(statement_item),
             "io_map": [{"to": target} for target in io_targets],
             "value": {
                 "type": value_type,

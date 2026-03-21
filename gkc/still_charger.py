@@ -122,7 +122,12 @@ def _statement_name_identifier(statement: dict[str, Any]) -> str:
     return "statement"
 
 
-def _statement_data_slot(statement: dict[str, Any]) -> dict[str, Any]:
+def _statement_data_slot(
+    statement: dict[str, Any],
+    value_list_routes: Optional[dict[str, dict[str, Any]]] = None,
+    *,
+    include_children: bool = False,
+) -> dict[str, Any]:
     value_block = statement.get("value")
     data_type = value_block.get("type") if isinstance(value_block, dict) else None
     data_value: Any = None
@@ -132,11 +137,90 @@ def _statement_data_slot(statement: dict[str, Any]) -> dict[str, Any]:
         if isinstance(value_list, list) and len(value_list) == 1:
             data_value = value_list[0]
 
-    return {
-        "id": _statement_identifier(statement),
+    statement_id = _statement_identifier(statement)
+    value_list_path: Any = None
+    if isinstance(value_block, dict):
+        route_ref = value_block.get("value_list_reference")
+        if isinstance(route_ref, str) and route_ref:
+            value_list_path = route_ref
+
+    if value_list_path is None and statement_id and isinstance(value_list_routes, dict):
+        route_entry = value_list_routes.get(statement_id, {})
+        if isinstance(route_entry, dict):
+            route_path = route_entry.get("cache_path")
+            if isinstance(route_path, str) and route_path:
+                value_list_path = route_path
+
+    slot: dict[str, Any] = {
+        "id": statement_id,
         "data-type": data_type,
         "data-value": data_value,
     }
+    if value_list_path is not None:
+        slot["value-list"] = value_list_path
+
+    if include_children:
+        qualifiers = statement.get("qualifiers")
+        if isinstance(qualifiers, list) and qualifiers:
+            qualifier_slots: dict[str, list[dict[str, Any]]] = {}
+            for qualifier in qualifiers:
+                if not isinstance(qualifier, dict):
+                    continue
+                qualifier_key = _statement_name_identifier(qualifier)
+                qualifier_entity_classes = qualifier.get("entity_classes", [])
+                qualifier_is_modifier = "Q58" in qualifier_entity_classes
+                qualifier_slots.setdefault(qualifier_key, []).append(
+                    _statement_data_slot(
+                        qualifier,
+                        value_list_routes,
+                        include_children=qualifier_is_modifier,
+                    )
+                )
+            if qualifier_slots:
+                slot["qualifiers"] = qualifier_slots
+
+        references = statement.get("references")
+        if isinstance(references, list) and references:
+            reference_slots: dict[str, list[dict[str, Any]]] = {}
+            for reference in references:
+                if not isinstance(reference, dict):
+                    continue
+                reference_key = _statement_name_identifier(reference)
+                reference_entity_classes = reference.get("entity_classes", [])
+                reference_is_modifier = "Q58" in reference_entity_classes
+                reference_slots.setdefault(reference_key, []).append(
+                    _statement_data_slot(
+                        reference,
+                        value_list_routes,
+                        include_children=reference_is_modifier,
+                    )
+                )
+            if reference_slots:
+                slot["references"] = reference_slots
+
+    return slot
+
+
+def _identification_language_slots(
+    identification: dict[str, Any],
+) -> tuple[dict[str, Any], dict[str, Any], dict[str, Any]]:
+    def _slots_for(field_name: str) -> dict[str, Any]:
+        field_def = identification.get(field_name)
+        if isinstance(field_def, dict):
+            languages = sorted(
+                language
+                for language, value in field_def.items()
+                if isinstance(language, str) and language and isinstance(value, dict)
+            )
+            if languages:
+                return {language: {"data-value": ""} for language in languages}
+        return {"mul": {"data-value": ""}}
+
+    return (
+        _slots_for("labels"),
+        _slots_for("descriptions"),
+        _slots_for("aliases"),
+    )
 
 
 def _canonical_json_digest(payload: dict[str, Any]) -> str:
@@ -147,11 +231,9 @@ def _canonical_json_digest(payload: dict[str, Any]) -> str:
 def _build_unified_graph(
     profile_docs: dict[str, dict[str, Any]],
     name_by_uri: dict[str, str],
-    source_root: Optional[Path],
 ) -> dict[str, list[dict[str, Any]]]:
     nodes: dict[str, dict[str, Any]] = {}
     edges: list[dict[str, Any]] = []
-    value_list_routes = _build_value_list_routes(profile_docs, source_root)
 
     for profile_uri, profile_doc in profile_docs.items():
         profile_name = name_by_uri[profile_uri]
@@ -180,48 +262,6 @@ def _build_unified_graph(
                     "to_id": target_uri,
                     "via_statement": edge.get("via_statement"),
                     "relationship_type": edge.get("linkage_type") or "profile_link",
-                }
-            )
-
-        for route in profile_doc.get("metadata", {}).get("value_list_graph", []):
-            if not isinstance(route, dict):
-                continue
-            value_list_id = route.get("id") or route.get("entity")
-            if not isinstance(value_list_id, str) or not value_list_id:
-                continue
-            value_list_uri, _ = _normalize_entity_uri(value_list_id)
-            value_list_name = route.get("name_identifier")
-            if not isinstance(value_list_name, str) or not value_list_name:
-                value_list_name = value_list_uri.rstrip("/").split("/")[-1]
-
-            nodes.setdefault(
-                value_list_name,
-                {
-                    "kind": "value_list",
-                    "name_identifier": value_list_name,
-                    "id": value_list_uri,
-                    "label": route.get("label"),
-                },
-            )
-
-            statement_uri = route.get("via_statement")
-            route_info = (
-                value_list_routes.get(statement_uri, {})
-                if isinstance(statement_uri, str)
-                else {}
-            )
-
-            edges.append(
-                {
-                    "from": profile_name,
-                    "to": value_list_name,
-                    "from_id": profile_uri,
-                    "to_id": value_list_uri,
-                    "via_statement": statement_uri,
-                    "relationship_type": "value_list_link",
-                    "cache_path": route.get("cache_path")
-                    or route_info.get("cache_path"),
-                    "item_count": route_info.get("item_count"),
                 }
             )
 
@@ -447,6 +487,7 @@ def build_curation_packet_from_json_profile(
     data_entities: list[dict[str, Any]] = []
     metadata_profiles: list[dict[str, Any]] = []
     profile_name_by_uri: dict[str, str] = {}
+    value_list_routes = _build_value_list_routes(profile_docs, source_root)
 
     for profile_uri in ordered_profile_uris:
         profile_doc = profile_docs[profile_uri]
@@ -472,13 +513,25 @@ def build_curation_packet_from_json_profile(
             while key in statement_slots:
                 key = f"{key_base}_{suffix}"
                 suffix += 1
-            statement_slots[key] = _statement_data_slot(statement)
+            statement_slots[key] = _statement_data_slot(
+                statement,
+                value_list_routes,
+                include_children=True,
+            )
+
+        identification = deepcopy(profile_doc.get("identification", {}))
+        if not isinstance(identification, dict):
+            identification = {}
+
+        labels_slot, descriptions_slot, aliases_slot = _identification_language_slots(
+            identification
+        )
 
         metadata_profiles.append(
             {
                 "id": profile_uri,
                 "name_identifier": profile_name,
-                "identification": deepcopy(profile_doc.get("identification", {})),
+                "identification": identification,
                 "statements": normalized_statements,
                 "metadata": deepcopy(profile_doc.get("metadata", {})),
             }
@@ -488,9 +541,9 @@ def build_curation_packet_from_json_profile(
             {
                 "profile": profile_name,
                 "id": profile_uri,
-                "labels": {},
-                "descriptions": {},
-                "aliases": {},
+                "labels": labels_slot,
+                "descriptions": descriptions_slot,
+                "aliases": aliases_slot,
                 "statements": statement_slots,
             }
         )
@@ -500,7 +553,7 @@ def build_curation_packet_from_json_profile(
     )
 
     # Step 4: Build packet metadata graph and mint metadata
-    unified_graph = _build_unified_graph(profile_docs, profile_name_by_uri, source_root)
+    unified_graph = _build_unified_graph(profile_docs, profile_name_by_uri)
     minted_at = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
 
     # Step 5: Generate packet_id

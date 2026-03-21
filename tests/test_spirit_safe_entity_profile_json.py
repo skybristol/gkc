@@ -1001,3 +1001,72 @@ def test_export_json_filters_incomplete_non_mul_language(tmp_path):
     assert written["metadata"]["languages"] == ["mul"]
     assert "es" not in written["identification"]["labels"]
     assert "es" not in written["metadata"]["labels"]
+
+
+def test_statement_node_emits_entity_classes_from_p1(tmp_path):
+    """Built statement nodes should include entity_classes derived from P1 claims."""
+
+    cache_entities_dir = tmp_path / "cache" / "entities"
+    cache_entities_dir.mkdir(parents=True, exist_ok=True)
+
+    profile_payload = {
+        "entity_id": "Q4",
+        "entity": {
+            "labels": {"mul": {"value": "Example profile"}},
+            "descriptions": {"mul": {"value": "Example profile"}},
+            "aliases": {},
+            "claims": {
+                "P1": [_build_entity_claim_entity_id("Q3")],
+                "P188": [_build_entity_claim_monolingual("Enter label")],
+                "P189": [_build_entity_claim_monolingual("Enter description")],
+                "P190": [_build_entity_claim_monolingual("Enter aliases")],
+                "P157": [
+                    {
+                        "mainsnak": {
+                            "datavalue": {"value": {"id": "Q57"}},
+                        }
+                    }
+                ],
+            },
+        },
+    }
+    (cache_entities_dir / "Q4.json").write_text(
+        json.dumps(profile_payload), encoding="utf-8"
+    )
+
+    statement_payload = {
+        "entity_id": "Q57",
+        "entity": {
+            "labels": {"mul": {"value": "units"}},
+            "claims": {
+                "P1": [
+                    _build_entity_claim_entity_id("Q5"),
+                    _build_entity_claim_entity_id("Q58"),
+                ],
+                "P194": [_build_entity_claim_entity_id("Q16")],
+                "P171": [_build_entity_claim_monolingual("Select units")],
+            },
+        },
+    }
+    (cache_entities_dir / "Q57.json").write_text(
+        json.dumps(statement_payload), encoding="utf-8"
+    )
+
+    value_type_payload = {
+        "entity_id": "Q16",
+        "entity": {
+            "labels": {"mul": {"value": "wikibase-item"}},
+            "claims": {},
+        },
+    }
+    (cache_entities_dir / "Q16.json").write_text(
+        json.dumps(value_type_payload), encoding="utf-8"
+    )
+
+    docs = build_entity_profile_json_documents(cache_entities_dir)
+
+    assert len(docs) == 1
+    assert len(docs[0]["statements"]) == 1
+    statement_node = docs[0]["statements"][0]
+    assert "entity_classes" in statement_node
+    assert set(statement_node["entity_classes"]) == {"Q5", "Q58"}

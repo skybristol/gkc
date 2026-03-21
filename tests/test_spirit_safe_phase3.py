@@ -164,8 +164,15 @@ def test_create_curation_packet_bulk_mode():
     packet = create_curation_packet("Q4", operation_mode="bulk", depth=1)
 
     assert len(packet["data"]["entities"]) == 2
-    assert len(packet["metadata"]["graph"]["edges"]) == 4
+    assert len(packet["metadata"]["graph"]["edges"]) == 2
     assert "integrity" in packet["metadata"]
+
+    tribal_government = next(
+        entity for entity in packet["data"]["entities"] if entity["profile"] == "Q4"
+    )
+    assert tribal_government["statements"]["Q16"]["value-list"] == (
+        "cache/queries/Q28.json"
+    )
 
 
 def test_validate_packet_structure_reports_invalid_data_entity_id():
