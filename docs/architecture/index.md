@@ -123,6 +123,24 @@ This enables dependency ordering (ship entities depth-first), audit trails, and 
 
 For complete documentation on SpiritSafe, see [SpiritSafe Registry](SpiritSafe.md).
 
+### SpiritSafe Entity Index
+
+**Purpose:** The SpiritSafe Entity Index is a normalized, derived artifact that enables efficient runtime lookups of entity metadata and relationships without traversing raw Wikibase JSON.
+
+**Implementation:** Built during the `spiritsafe manifest build` operation, it provides:
+
+- **Normalized per-entity metadata** — Labels, identifiers, guidance messages, class membership organized for fast access
+- **Class-index partition** — O(1) lookups for queries like "what are all profiles?" or "what entities are value lists?"
+- **Pre-extracted link relationships** — Statement linkages, qualifier linkages, reference definitions, value sets with scope metadata pre-computed
+
+**Usage:** Validation engines and form generators consume the entity index to:
+- Retrieve entity metadata for UI rendering (labels, prompts, guidance)
+- Perform class membership checks without full JSON traversal
+- Determine applicable statements/qualifiers/references by profile and context
+- Discover value sets and reference options
+
+For detailed schema, consumption patterns, and examples, see [SpiritSafe Entity Index Architecture](spiritsafe-entity-index.md).
+
 ---
 
 ## Architectural Data Flow

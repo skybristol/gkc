@@ -69,6 +69,14 @@ Statement-spec resolution in materialized JSON follows a specificity-first contr
 
 The SpiritSafe manifest (`cache/manifest.json`) is generated as an artifact index over these files.
 
+The **SpiritSafe Entity Index** (`cache/entity_index.json`) is an additional derived artifact that normalizes and indexes all entity metadata from the Wikibase cache for efficient runtime consumption. It provides:
+
+- Normalized per-entity metadata (labels, identifiers, guidance messages, class membership)
+- O(1) class membership lookups for queries like "what are all profiles?" or "what are all value lists?"
+- Pre-extracted link relationships with scope metadata (profile/statement applicability)
+
+Validation engines and form generators use the entity index to avoid repeated traversal of raw Wikibase JSON. For detailed schema and consumption patterns, see [SpiritSafe Entity Index Architecture](../architecture/spiritsafe-entity-index.md).
+
 ## Profile Anatomy
 
 ### Top-Level Keys (`profile.yaml`)

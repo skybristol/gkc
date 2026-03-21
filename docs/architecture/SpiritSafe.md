@@ -13,19 +13,22 @@ SpiritSafe provides deterministic, version-controlled artifacts consumed by `gkc
 - `cache/entities/*.json` - Wikibase cache substrate.
 - `cache/queries/<QID>.json` - hydrated value-list artifacts.
 - `cache/manifest.json` - URI-keyed artifact index.
+- `cache/entity_index.json` - Normalized entity metadata and class-index partition for efficient runtime lookups.
 
 ## Build Pipeline
 
 1. Refresh `cache/entities` from Wikibase.
 2. Export JSON profiles to `profiles/<QID>.json`.
 3. Export and hydrate value-list queries.
-4. Build `cache/manifest.json` from artifacts.
+4. Build `cache/manifest.json` and normalized `cache/entity_index.json` from artifacts.
 
-`cache/manifest.json` is built by:
+`cache/manifest.json` and `cache/entity_index.json` are built by:
 
 ```bash
 gkc --json spiritsafe manifest build --source local --local-root .
 ```
+
+Both artifacts are generated in a single operation and are kept in sync.
 
 ## Runtime Consumption Model
 
@@ -34,8 +37,16 @@ gkc --json spiritsafe manifest build --source local --local-root .
 - profile definitions from `profiles/<QID>.json`
 - value-list items from `cache/queries/<QID>.json`
 - manifest index from `cache/manifest.json` for registry/discovery tooling
+- entity metadata index from `cache/entity_index.json` for efficient lookups of entity metadata, class membership, and semantic relationships
 
-Packet assembly routes (`create_curation_packet`) do not require manifest lookups.
+**Entity Index Role**: The entity index provides pre-normalized access to Wikibase semantics without traversing raw JSON. Validation engines and form generators use it to:
+- Retrieve normalized entity metadata (labels, identifiers, guidance messages)
+- Perform O(1) class membership lookups via the class-index partition
+- Access link relationships with pre-extracted scope metadata (profile/statement applicability)
+
+See [SpiritSafe Entity Index Architecture](spiritsafe-entity-index.md) for detailed schema and consumption patterns.
+
+Packet assembly routes (`create_curation_packet`) do not require manifest or entity index lookups; they consume profiles directly.
 
 ## Manifest Sections
 
