@@ -6,6 +6,8 @@ from gkc.spirit_safe import load_profile, set_spirit_safe_source
 from gkc.still_charger import (
     build_curation_packet_from_json_profile,
     charge_curation_packet,
+    charge_packet_from_wikidata_items,
+    create_curation_packet,
 )
 
 
@@ -65,6 +67,23 @@ def test_build_packet_expands_linked_profiles_from_graph():
         edge["relationship_type"] for edge in packet["metadata"]["graph"]["edges"]
     }
     assert "P161" in edge_types
+
+
+def test_create_curation_packet_single_mode_is_primary_only():
+    packet = create_curation_packet("Q4", operation_mode="single")
+
+    assert packet["operation_mode"] == "single"
+    assert len(packet["data"]["entities"]) == 1
+    graph_edges = packet["metadata"]["graph"]["edges"]
+    assert all(edge.get("relationship_type") != "P161" for edge in graph_edges)
+
+
+def test_create_curation_packet_bulk_mode_expands_profile_graph():
+    packet = create_curation_packet("Q4", operation_mode="bulk")
+
+    assert packet["operation_mode"] == "bulk"
+    assert len(packet["data"]["entities"]) == 2
+    assert len(packet["metadata"]["graph"]["edges"]) == 2
 
 
 def test_build_packet_materializes_value_list_path_on_statement_slots():
@@ -326,3 +345,38 @@ def test_build_packet_includes_nested_children_for_q58_modifier_qualifier():
     unit_value_slot = units_slot["qualifiers"]["unit_value"][0]
     assert unit_value_slot["id"] == "https://datadistillery.wikibase.cloud/entity/Q56"
     assert unit_value_slot["value-list"] == "cache/queries/Q56.json"
+
+
+def test_charge_wikidata_supports_data_entities_packet_schema():
+    packet = create_curation_packet("Q4", operation_mode="single")
+
+    class _FakeTemplate:
+        def to_dict(self):
+            return {
+                "labels": {"en": {"language": "en", "value": "Cherokee Nation"}},
+                "descriptions": {
+                    "en": {
+                        "language": "en",
+                        "value": "federally recognized Native American tribe",
+                    }
+                },
+                "aliases": {"en": [{"language": "en", "value": "Cherokee"}]},
+                "claims": {},
+            }
+
+    class _FakeMashClient:
+        def load_item(self, qid: str):
+            _ = qid
+            return _FakeTemplate()
+
+    qid_map = {entity["id"]: "Q195562" for entity in packet["data"]["entities"]}
+    charged, notices = charge_packet_from_wikidata_items(
+        packet,
+        qid_map,
+        mash_client=_FakeMashClient(),
+    )
+
+    entity_data = charged["data"]["entities"][0]["data"]
+    assert "labels" in entity_data
+    assert entity_data["labels"]["en"]["value"] == "Cherokee Nation"
+    assert any(n.code == "statement_missing" for n in notices)

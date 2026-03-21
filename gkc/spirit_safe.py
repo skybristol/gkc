@@ -3461,47 +3461,6 @@ def resolve_profile_link(
     return None
 
 
-def create_curation_packet(
-    profile_id: str,
-    operation_mode: str = "single",
-    load_wikidata_qids: bool = False,
-    depth: int = 1,
-    manifest: Optional[Manifest] = None,
-) -> dict[str, Any]:
-    """Create a curation packet from JSON Entity Profiles.
-
-    Packet assembly reads `profiles/<QID>.json` directly. The SpiritSafe
-    manifest remains a tooling/index artifact and is not required here.
-    """
-
-    del load_wikidata_qids
-    del depth
-    del manifest
-
-    from gkc.still_charger import build_curation_packet_from_json_profile
-
-    profile_doc = load_profile(profile_id)
-    profile_uri = _entity_uri_from_reference(profile_doc.get("id") or profile_id)
-    if not profile_uri:
-        raise ValueError(f"Invalid profile identifier: {profile_id}")
-
-    if operation_mode == "single":
-        profile_doc = deepcopy(profile_doc)
-        profile_doc.setdefault("metadata", {})["profile_graph"] = []
-
-    packet = build_curation_packet_from_json_profile(
-        profile_entity=profile_uri,
-        json_profile_doc=profile_doc,
-        source_root=(
-            get_spirit_safe_source().local_root
-            if get_spirit_safe_source().mode == "local"
-            else None
-        ),
-    )
-    packet["operation_mode"] = operation_mode
-    return packet
-
-
 def validate_packet_structure(packet: dict[str, Any]) -> tuple[bool, list[str]]:
     """Validate packet structure and basic linkage consistency."""
 

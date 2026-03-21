@@ -75,10 +75,20 @@ The active scaffold contract produced by `build_curation_packet_from_json_profil
 {
   "packet_id": "pkt-<uuid>",
   "operation_mode": "new",
-  "profile_entity": "https://datadistillery.wikibase.cloud/entity/Q4",
-  "entities": [],
-  "cross_references": [],
-  "value_list_routes": {}
+  "metadata": {
+    "primary_profile": {
+      "name_identifier": "Q4",
+      "id": "https://datadistillery.wikibase.cloud/entity/Q4"
+    },
+    "profiles": [],
+    "graph": {
+      "nodes": [],
+      "edges": []
+    }
+  },
+  "data": {
+    "entities": []
+  }
 }
 ```
 
@@ -88,40 +98,41 @@ The active scaffold contract produced by `build_curation_packet_from_json_profil
 |---|---|---|---|
 | `packet_id` | string | Yes | Packet-local identifier |
 | `operation_mode` | string | Yes | Current mode (`new` in scaffold builder) |
-| `profile_entity` | string | Yes | Primary profile URI used to mint packet |
-| `entities` | array | Yes | Entity slots in this packet |
-| `cross_references` | array | Yes | URI-aware profile graph edges mapped to entity IDs |
-| `value_list_routes` | object | Yes | Statement URI keyed value-list route metadata |
+| `metadata.primary_profile.id` | string | Yes | Primary profile URI used to mint packet |
+| `metadata.profiles` | array | Yes | Profile metadata and statement definitions in packet scope |
+| `metadata.graph.edges` | array | Yes | URI-aware profile graph edges |
+| `data.entities` | array | Yes | Entity slots in this packet |
 | `minted_from` | object | No (recommended) | Provenance and compatibility metadata |
 | `compatibility_status` | string | No | Re-entry compatibility outcome |
 | `migration_report` | object | No | Migration actions and warnings |
 
 ### Entity Slot Scaffold Shape
 
-Each entry in `entities[]` includes:
+Each entry in `data.entities[]` includes:
 
 ```json
 {
-  "id": "ent-001",
-  "profile_entity": "https://datadistillery.wikibase.cloud/entity/Q4",
-  "data": {},
-  "statements": [
-    {
-      "entity": "https://datadistillery.wikibase.cloud/entity/Q16",
-      "value": {"type": "wikibase-item"},
-      "qualifiers": [],
-      "references": []
+  "profile": "Q4",
+  "id": "https://datadistillery.wikibase.cloud/entity/Q4",
+  "labels": {"mul": {"data-value": ""}},
+  "descriptions": {"mul": {"data-value": ""}},
+  "aliases": {"mul": {"data-value": ""}},
+  "statements": {
+    "Q16": {
+      "id": "https://datadistillery.wikibase.cloud/entity/Q16",
+      "data-type": "item",
+      "data-value": ""
     }
-  ]
+  }
 }
 ```
 
 | Field | Type | Required | Meaning |
 |---|---|---|---|
-| `id` | string | Yes | Packet-local entity slot ID (`ent-###`) |
-| `profile_entity` | string | Yes | Profile URI for this slot |
-| `data` | object | Yes | Charged curator/source data payload |
-| `statements` | array | Yes | Statement scaffold copied from profile JSON |
+| `profile` | string | Yes | Profile name identifier for this entity slot |
+| `id` | string | Yes | Entity URI for this slot |
+| `labels/descriptions/aliases` | object | Yes | Identification field slots |
+| `statements` | object | Yes | Statement slot map keyed by statement identifier |
 
 ## Charged Entity Data Contract
 

@@ -31,7 +31,6 @@ from gkc.shipper import WikibaseShipper
 from gkc.sparql import fetch_entity_labels
 from gkc.spirit_safe import (
     build_entity_profile_json_documents,
-    create_curation_packet,
     export_entity_profile_json_documents,
     export_spiritsafe_entity_index,
     export_spiritsafe_manifest,
@@ -41,6 +40,7 @@ from gkc.spirit_safe import (
     load_profile_package,
     validate_packet_structure,
 )
+from gkc.still_charger import create_curation_packet
 from gkc.wikibase import (
     build_wikibase_cache,
     build_wikibase_write_plan,
@@ -3104,7 +3104,7 @@ def _handle_wikibase_plan_write(args: argparse.Namespace) -> dict[str, Any]:
         )
 
         logical_path = [
-            "spirit_safe.create_curation_packet",
+            "still_charger.create_curation_packet",
             (
                 "still_charger.charge_curation_packet"
                 + (" [specificationless]" if not args.strict_charging else " [strict]")
@@ -3312,7 +3312,7 @@ def _handle_wikibase_execute_write(args: argparse.Namespace) -> dict[str, Any]:
         )
 
         logical_path = [
-            "spirit_safe.create_curation_packet",
+            "still_charger.create_curation_packet",
             (
                 "still_charger.charge_curation_packet"
                 + (" [specificationless]" if not args.strict_charging else " [strict]")

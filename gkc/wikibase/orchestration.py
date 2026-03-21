@@ -5,11 +5,12 @@ from pathlib import Path
 from typing import Any, Optional
 
 from gkc.shipper import WriteResult
-from gkc.spirit_safe import Manifest, create_curation_packet
+from gkc.spirit_safe import Manifest
 from gkc.still_charger import (
     ChargeReport,
     build_curation_packet_from_json_profile,
     charge_curation_packet,
+    create_curation_packet,
 )
 from gkc.utilities import validate_entity_reference
 
@@ -340,33 +341,33 @@ def build_wikibase_write_plan(
     """Build a Wikibase write plan from profile and source values.
 
     Pipeline:
-    1) Create curation packet from profile scaffolds (old or new method)
+    1) Create curation packet from profile scaffolds (still_charger)
     2) Charge packet with concrete values
     3) Barrel charged packet into shipper-compatible operations
     4) Optionally compute diff plan using WikibaseShipper.plan_batch
 
     Args:
-        profile_id: (deprecated) Profile name string for old create_curation_packet path
+        profile_id: Profile identifier used by still_charger.create_curation_packet.
         source_values: Source values mapping for charging
-        profile_entity: Full profile entity URI for new path
-        json_profile_doc: Pre-loaded JSON profile document for new path
+        profile_entity: Full profile entity URI for direct JSON-doc assembly mode.
+        json_profile_doc: Pre-loaded JSON profile document for direct assembly mode.
         source_root: Optional path root for value list cache hydration
         operation_mode: Mode for packet assembly
-        manifest: Old manifest (for transitional create_curation_packet)
+        manifest: Optional compatibility argument passed through to packet creation.
         Other args: same as before
     """
 
     if source_values is None:
         source_values = {}
 
-    # New path: build packet from JSON profile
+    # Direct path: build packet from explicit JSON profile document.
     if json_profile_doc is not None and profile_entity is not None:
         packet = build_curation_packet_from_json_profile(
             profile_entity=profile_entity,
             json_profile_doc=json_profile_doc,
             source_root=source_root,
         )
-    # Old path: build packet from profile_id + manifest (transitional)
+    # Canonical path: build packet from profile identifier.
     elif profile_id is not None:
         packet = create_curation_packet(
             profile_id=profile_id,
