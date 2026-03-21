@@ -5,8 +5,10 @@ from pathlib import Path
 import pytest
 
 from gkc.spirit_safe import (
+    build_spiritsafe_entity_index_document,
     build_spiritsafe_manifest_document,
     create_curation_packet,
+    export_spiritsafe_entity_index,
     export_spiritsafe_manifest,
     get_profile_graph,
     load_manifest,
@@ -72,6 +74,33 @@ def test_export_spiritsafe_manifest(fixture_root: Path, tmp_path: Path):
 
     assert output_path.exists()
     assert {profile["qid"] for profile in manifest["profiles"]} == {"Q4", "Q39"}
+
+
+def test_build_spiritsafe_entity_index_document(fixture_root: Path):
+    """Entity index builder should normalize cached entity artifacts."""
+
+    index = build_spiritsafe_entity_index_document(fixture_root)
+
+    assert index["source"] == "https://github.com/skybristol/SpiritSafe"
+    assert index["entity_count"] == 1
+    assert "Q4" in index["entities"]
+    q4 = index["entities"]["Q4"]
+    assert q4["id"] == "Q4"
+    assert q4["entity"] == "https://datadistillery.wikibase.cloud/entity/Q4"
+    assert q4["label"] == "Tribal Government in the United States"
+    assert q4["classes"] == []
+    assert q4["links"]["statements"] == []
+
+
+def test_export_spiritsafe_entity_index(fixture_root: Path, tmp_path: Path):
+    """Entity index export should write JSON to the requested path."""
+
+    output_path = tmp_path / "entity_index.json"
+    index = export_spiritsafe_entity_index(fixture_root, output_path)
+
+    assert output_path.exists()
+    assert index["entity_count"] == 1
+    assert index["class_index"] == {}
 
 
 def test_load_manifest_reads_new_shape():
