@@ -12,6 +12,40 @@ Current architecture:
 
 ## Quick Start
 
+### Complete Workflow: Create, Charge, and Validate a Packet
+
+The typical workflow for curation involves three stages:
+
+1. **Create** — Scaffold packet from profile (spirit_safe module)
+2. **Charge** — Populate packet with data from Wikidata (still_charger module)
+3. **Validate** — Check completeness and constraints (validation module)
+
+```python
+from pathlib import Path
+from gkc.spirit_safe import create_curation_packet, set_spirit_safe_source
+from gkc.still_charger import charge_packet_from_wikidata_items
+
+# 1. Configure source
+set_spirit_safe_source(mode="local", local_root="/path/to/SpiritSafe")
+
+# 2. Create empty scaffold from profile Q4 (TribalGovernmentUS)
+packet = create_curation_packet("Q4", operation_mode="single", depth=1)
+print(f"Created packet {packet['packet_id']} with {len(packet['entities'])} entities")
+
+# 3. Map entities to Wikidata QIDs and charge
+qid_map = {entity["id"]: "Q195562" for entity in packet["entities"]}  # Cherokee Nation
+charged_packet, notices = charge_packet_from_wikidata_items(packet, qid_map)
+
+# 4. Check for issues
+errors = [n for n in notices if n.severity == "error"]
+warnings = [n for n in notices if n.severity == "warning"]
+print(f"Charged: {len(charged_packet['entities'])} entities, {len(errors)} errors, {len(warnings)} warnings")
+
+# Now packet is ready for validation or review
+```
+
+See [Still Charger API](still_charger.md) for detailed charging documentation.
+
 ### Configure SpiritSafe Source
 
 ```python
@@ -83,10 +117,27 @@ print(link)
 ```python
 from gkc.spirit_safe import create_curation_packet, validate_packet_structure
 
+# Creates an EMPTY scaffold with entity slots defined by the profile
 packet = create_curation_packet("Q4", operation_mode="bulk", depth=1)
 is_valid, errors = validate_packet_structure(packet)
 print(packet["packet_id"], is_valid, errors)
+
+# Packets are empty at this point - no data values populated
+# To populate with Wikidata or other source data, see still_charger.charge_packet_from_wikidata_items()
+for entity in packet["entities"]:
+    print(entity["id"], "data:" if entity["data"] else "empty")
 ```
+
+**Important:** `create_curation_packet()` returns an **empty scaffold**. To populate it with data from Wikidata or other sources, use the **Still Charger** module:
+
+```python
+from gkc.still_charger import charge_packet_from_wikidata_items
+
+qid_map = {entity["id"]: "Q195562" for entity in packet["entities"]}
+charged_packet, notices = charge_packet_from_wikidata_items(packet, qid_map)
+```
+
+See [Still Charger API](still_charger.md) for complete documentation on charging packets.
 
 ### Export JSON Profiles from Cache Entities
 
