@@ -34,7 +34,7 @@ These components are designed to work together as a layered model where profiles
 Purpose:
 Defines an entity-shaped curation surface, including identification prompts and statement composition for packet and wizard workflows.
 
-Required profile-level identification messaging includes:
+Profile-level identification messaging fields include:
 
 - `label prompt` (P188)
 - `label guidance` (P185)
@@ -150,7 +150,7 @@ flowchart TD
 Purpose:
 Represents a reusable statement primitive used for claims, qualifiers, and references.
 
-Required statement-level configuration currently includes:
+Expected statement-level configuration commonly includes:
 
 - `statement type` (P194), linked to a Wikibase Property Template.
 - `same as` (P5), used for canonical cross-system URI/PID mappings.
@@ -264,6 +264,29 @@ Core principles:
 - Profile-level directives should capture entity-context specialization.
 - Resolution behavior must be deterministic and auditable.
 
+### Conformance Semantics
+
+Fermenter conformance is target-state oriented, not strict required-field enforcement.
+
+In this model:
+
+- Profile statements represent expected curation coverage for an entity type.
+- Runtime validation/coercion accepts partial and incomplete entities as normal operating reality.
+- Missing expected statements, qualifiers, or references produce actionable conformance notices with severity, not automatic hard-failure by default.
+- Hard-failure behavior is policy-driven and should be applied only where explicitly configured.
+
+Cardinality interpretation:
+
+- `max count` (P182) defines upper-bound target semantics.
+- Lower-bound expectation is effectively zero in current operating practice unless an explicit minimum policy is introduced.
+- `novalue`/unbounded forms remain valid where modeled.
+
+Validation and coercion must stay statement-instance scoped:
+
+- Notice and resolution logic is anchored to the active profile statement instance.
+- Optional parent-statement scope (`applies to statement`, P163) and profile scope (`applies to profile`, P205) determine contextual applicability.
+- This preserves deterministic behavior across wizard, CLI, and batch packet workflows while supporting incremental curation improvement.
+
 ### Scoping and Rule Resolution
 
 For statement-level directives that include applicability qualifiers:
@@ -291,9 +314,13 @@ Property-template error messages are directly applicable defaults for statements
 
 ### Foundation Modeling
 
-- Foundation ontology definitions are represented as machine-readable profiles in `gkc/wikibase/foundation_profiles/`.
-- `gkc wikibase audit` validates conformance against those profiles.
-- `gkc wikibase init` performs creation planning and optional writes for missing foundation terms.
+Legacy `foundation_profiles` artifacts are non-authoritative for the current Profiles V2 and Fermenter V1 direction.
+
+Current contract:
+
+- Live Data Distillery Wikibase semantics are the authoritative source for semantic identifiers and relationships.
+- SpiritSafe artifacts remain the authoritative runtime materialization for offline execution.
+- `gkc wikibase audit` and related workflows remain useful operational tools, but they should not be treated as the primary semantic authority contract.
 
 ### Operational Modes
 

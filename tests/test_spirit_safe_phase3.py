@@ -140,18 +140,22 @@ def test_create_curation_packet_single_mode():
 
     packet = create_curation_packet("Q4", operation_mode="single")
 
-    assert packet["primary_profile"] == "Q4"
-    assert packet["primary_profile_entity"] == (
+    assert packet["metadata"]["primary_profile"]["name_identifier"] == "Q4"
+    assert packet["metadata"]["primary_profile"]["id"] == (
         "https://datadistillery.wikibase.cloud/entity/Q4"
     )
-    assert len(packet["entities"]) == 1
-    assert packet["cross_references"] == []
+    assert len(packet["data"]["entities"]) == 1
+    graph_edges = packet["metadata"]["graph"]["edges"]
+    assert all(edge.get("relationship_type") != "P161" for edge in graph_edges)
 
     statement_ids = [
-        statement.get("id")
-        for statement in packet["entities"][0]["profile_structure"]["statements"]
+        statement.get("id") or statement.get("entity")
+        for statement in packet["metadata"]["profiles"][0]["statements"]
     ]
-    assert statement_ids == ["Q16", "Q40"]
+    assert statement_ids == [
+        "https://datadistillery.wikibase.cloud/entity/Q16",
+        "https://datadistillery.wikibase.cloud/entity/Q40",
+    ]
 
 
 def test_create_curation_packet_bulk_mode():
@@ -159,21 +163,18 @@ def test_create_curation_packet_bulk_mode():
 
     packet = create_curation_packet("Q4", operation_mode="bulk", depth=1)
 
-    assert len(packet["entities"]) == 2
-    assert len(packet["cross_references"]) == 2
-    assert packet["cardinality_constraints"] == [
-        {"from": "ent-001", "to": "ent-002", "min": 0, "max": -1},
-        {"from": "ent-002", "to": "ent-001", "min": 0, "max": -1},
-    ]
+    assert len(packet["data"]["entities"]) == 2
+    assert len(packet["metadata"]["graph"]["edges"]) == 4
+    assert "integrity" in packet["metadata"]
 
 
-def test_validate_packet_structure_reports_invalid_cross_reference():
-    """Packet validation should catch broken entity references."""
+def test_validate_packet_structure_reports_invalid_data_entity_id():
+    """Packet validation should catch invalid entity identifiers in new schema."""
 
     packet = create_curation_packet("Q4", operation_mode="bulk", depth=1)
-    packet["cross_references"][0]["to"] = "ent-999"
+    packet["data"]["entities"][0]["id"] = "Q4"
 
     is_valid, errors = validate_packet_structure(packet)
 
     assert is_valid is False
-    assert "Cross-reference to ent-999 points to unknown entity" in errors
+    assert "Each data.entities item id must be an HTTP URI" in errors

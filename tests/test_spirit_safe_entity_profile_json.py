@@ -267,12 +267,14 @@ def test_value_list_graph_includes_reference_and_qualifier_routes(tmp_path):
     value_list_graph = docs[0]["metadata"]["value_list_graph"]
     assert value_list_graph == [
         {
+            "id": "https://datadistillery.wikibase.cloud/entity/Q43",
             "entity": "https://datadistillery.wikibase.cloud/entity/Q43",
             "label": "List of Tribal Jurisdictions",
             "via_statement": "https://datadistillery.wikibase.cloud/entity/Q41",
             "cache_path": "cache/queries/Q43.json",
         },
         {
+            "id": "https://datadistillery.wikibase.cloud/entity/Q28",
             "entity": "https://datadistillery.wikibase.cloud/entity/Q28",
             "label": "List of Federal Register Sources",
             "via_statement": "https://datadistillery.wikibase.cloud/entity/Q30",

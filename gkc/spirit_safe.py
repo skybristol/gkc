@@ -16,7 +16,6 @@ from __future__ import annotations
 import hashlib
 import json
 import re
-import uuid
 from copy import deepcopy
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta, timezone
@@ -1372,7 +1371,8 @@ class EntityProfileJsonBuilder:
     ALIAS_PROMPT = "P190"
     ALIAS_GUIDANCE = "P187"
 
-    SAME_AS = "P212"
+    NAME_IDENTIFIER = "P214"
+    SAME_AS = "P5"
     WIKIDATA_ENTITY_URL = "P5"
     GKC_ENTITY_PROFILE_CLASS = "Q3"
     GKC_VALUE_LIST_CLASS = "Q7"
@@ -1445,6 +1445,7 @@ class EntityProfileJsonBuilder:
     ) -> tuple[dict[str, Any], dict[str, Any]]:
         """Build one JSON profile and enforce profile language completeness policy."""
         entity_uri = f"{self.entity_prefix}{wikibase_item.get('entity_id', '')}"
+        name_identifier = self._entity_name_identifier(wikibase_item)
 
         identification = {
             "labels": self._build_language_section(
@@ -1467,6 +1468,8 @@ class EntityProfileJsonBuilder:
         )
 
         profile_doc = {
+            "id": entity_uri,
+            "name_identifier": name_identifier,
             "entity": entity_uri,
             "identification": identification,
             "statements": statements,
@@ -1699,14 +1702,19 @@ class EntityProfileJsonBuilder:
                 if key in seen:
                     continue
                 seen.add(key)
-                graph.append(
-                    {
-                        "entity": f"{self.entity_prefix}{target_id}",
-                        "label": self._entity_label(target_id),
-                        "via_statement": f"{self.entity_prefix}{statement_id}",
-                        "linkage_type": self.HAS_VALUE,
-                    }
+                target_name_identifier = self._entity_name_identifier(
+                    self._cache_index.get(target_id)
                 )
+                entry: dict[str, Optional[str]] = {
+                    "id": f"{self.entity_prefix}{target_id}",
+                    "entity": f"{self.entity_prefix}{target_id}",
+                    "label": self._entity_label(target_id),
+                    "via_statement": f"{self.entity_prefix}{statement_id}",
+                    "linkage_type": self.HAS_VALUE,
+                }
+                if target_name_identifier:
+                    entry["name_identifier"] = target_name_identifier
+                graph.append(entry)
         return graph
 
     def _build_value_list_graph(
@@ -1744,14 +1752,20 @@ class EntityProfileJsonBuilder:
                 continue
             seen.add(key)
 
-            graph.append(
-                {
-                    "entity": f"{self.entity_prefix}{target_id}",
-                    "label": self._entity_label(target_id),
-                    "via_statement": statement_entity,
-                    "cache_path": cache_path,
-                }
+            target_name_identifier = self._entity_name_identifier(
+                self._cache_index.get(target_id)
             )
+            entry: dict[str, Optional[str]] = {
+                "id": f"{self.entity_prefix}{target_id}",
+                "entity": f"{self.entity_prefix}{target_id}",
+                "label": self._entity_label(target_id),
+                "via_statement": statement_entity,
+                "cache_path": cache_path,
+            }
+            if target_name_identifier:
+                entry["name_identifier"] = target_name_identifier
+
+            graph.append(entry)
         return graph
 
     def _iter_statement_nodes(
@@ -2134,6 +2148,8 @@ class EntityProfileJsonBuilder:
         )
 
         return {
+            "id": f"{self.entity_prefix}{entity_id}",
+            "name_identifier": self._entity_name_identifier(statement_item),
             "entity": f"{self.entity_prefix}{entity_id}",
             "label": label,
             "io_map": [{"to": target} for target in io_targets],
@@ -2615,6 +2631,17 @@ class EntityProfileJsonBuilder:
             required=False,
         )
 
+    def _entity_name_identifier(
+        self, entity_doc: Optional[dict[str, Any]]
+    ) -> Optional[str]:
+        if not entity_doc:
+            return None
+        claims = entity_doc.get("entity", {}).get("claims", {})
+        values = self._claim_string_values(claims.get(self.NAME_IDENTIFIER, []))
+        if values:
+            return values[0]
+        return None
+
 
 class EntityProfileLanguageCoverageError(ValueError):
     """Raised when a profile fails required language completeness coverage."""
@@ -2798,6 +2825,10 @@ def _label_from_cache_entity(document: dict[str, Any]) -> str:
 
 
 def _statement_id_from_definition(statement: dict[str, Any]) -> Optional[str]:
+    entity_id = _entity_id_from_reference(statement.get("id"))
+    if entity_id:
+        return entity_id
+
     entity_id = _entity_id_from_reference(statement.get("entity"))
     if entity_id:
         return entity_id
@@ -2822,7 +2853,7 @@ def _normalized_packet_statement(statement: dict[str, Any]) -> dict[str, Any]:
     normalized = deepcopy(statement)
     statement_id = _statement_id_from_definition(normalized)
     if statement_id and "id" not in normalized:
-        normalized["id"] = statement_id
+        normalized["id"] = f"{SPIRITSAFE_ENTITY_URI_PREFIX}{statement_id}"
     return normalized
 
 
@@ -3123,7 +3154,8 @@ def load_profile_package(
 
     return {
         "primary_profile": normalized_profile_id,
-        "primary_profile_entity": primary_profile.get("entity"),
+        "primary_profile_entity": primary_profile.get("id")
+        or primary_profile.get("entity"),
         "profiles": profiles_to_load,
         "graph": graph,
         "depth": depth,
@@ -3191,93 +3223,79 @@ def create_curation_packet(
     """
 
     del load_wikidata_qids
+    del depth
     del manifest
 
-    actual_depth = depth if operation_mode == "bulk" else 0
-    package = load_profile_package(profile_id, depth=actual_depth)
+    from gkc.still_charger import build_curation_packet_from_json_profile
 
-    entities: list[dict[str, Any]] = []
-    entity_id_map: dict[str, str] = {}
+    profile_doc = load_profile(profile_id)
+    profile_uri = _entity_uri_from_reference(profile_doc.get("id") or profile_id)
+    if not profile_uri:
+        raise ValueError(f"Invalid profile identifier: {profile_id}")
 
-    for idx, (profile_qid, profile_data) in enumerate(package["profiles"].items()):
-        entity_id = f"ent-{idx + 1:03d}"
-        entity_id_map[profile_qid] = entity_id
-        normalized_statements = [
-            _normalized_packet_statement(statement)
-            for statement in profile_data.get("statements", [])
-            if isinstance(statement, dict)
-        ]
-        entities.append(
-            {
-                "id": entity_id,
-                "profile": profile_qid,
-                "profile_entity": profile_data.get("entity"),
-                "data": {},
-                "profile_structure": {
-                    "identification": profile_data.get("identification", {}),
-                    "statements": normalized_statements,
-                },
-            }
-        )
+    if operation_mode == "single":
+        profile_doc = deepcopy(profile_doc)
+        profile_doc.setdefault("metadata", {})["profile_graph"] = []
 
-    cross_references: list[dict[str, Any]] = []
-    for source_profile_id, profile_data in package["profiles"].items():
-        source_entity_id = entity_id_map.get(source_profile_id)
-        if not source_entity_id:
-            continue
-        for edge in profile_data.get("metadata", {}).get("profile_graph", []):
-            target_profile = _entity_id_from_reference(edge.get("entity"))
-            if not target_profile or target_profile not in entity_id_map:
-                continue
-            cross_references.append(
-                {
-                    "from": source_entity_id,
-                    "from_profile": source_profile_id,
-                    "from_entity": profile_data.get("entity"),
-                    "to": entity_id_map[target_profile],
-                    "to_profile": target_profile,
-                    "to_entity": _entity_uri_from_reference(edge.get("entity")),
-                    "via_statement": _entity_uri_from_reference(
-                        edge.get("via_statement")
-                    ),
-                    "relationship_type": edge.get("linkage_type"),
-                    "cardinality": {},
-                    "workflow_policy": {},
-                }
-            )
-
-    cardinality_constraints = [
-        {
-            "from": cross_reference["from"],
-            "to": cross_reference["to"],
-            "min": 0,
-            "max": -1,
-        }
-        for cross_reference in cross_references
-    ]
-
-    primary_profile_id = package["primary_profile"]
-    return {
-        "packet_id": f"pkt-{uuid.uuid4().hex[:12]}",
-        "operation_mode": operation_mode,
-        "created_at": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
-        "primary_profile": primary_profile_id,
-        "primary_profile_entity": package.get("primary_profile_entity"),
-        "entities": entities,
-        "cross_references": cross_references,
-        "cardinality_constraints": cardinality_constraints,
-        "profile_package": package,
-    }
+    packet = build_curation_packet_from_json_profile(
+        profile_entity=profile_uri,
+        json_profile_doc=profile_doc,
+        source_root=(
+            get_spirit_safe_source().local_root
+            if get_spirit_safe_source().mode == "local"
+            else None
+        ),
+    )
+    packet["operation_mode"] = operation_mode
+    return packet
 
 
 def validate_packet_structure(packet: dict[str, Any]) -> tuple[bool, list[str]]:
     """Validate packet structure and basic linkage consistency."""
 
     errors = []
-    required_fields = ["packet_id", "operation_mode", "entities", "cross_references"]
+    if "metadata" in packet and "data" in packet:
+        required_fields = ["packet_id", "operation_mode", "metadata", "data"]
+    else:
+        required_fields = [
+            "packet_id",
+            "operation_mode",
+            "entities",
+            "cross_references",
+        ]
+
     for required_field in required_fields:
         if required_field not in packet:
             errors.append(f"Missing required field: {required_field}")
+
+    if "metadata" in packet and "data" in packet:
+        data_entities = packet.get("data", {}).get("entities", [])
+        if not isinstance(data_entities, list):
+            errors.append("data.entities must be a list")
+            data_entities = []
+
+        for entity in data_entities:
+            if not isinstance(entity, dict):
+                errors.append("Each data.entities item must be an object")
+                continue
+            if not entity.get("profile"):
+                errors.append("Each data.entities item must include profile")
+            entity_id = entity.get("id")
+            if not isinstance(entity_id, str) or not entity_id.startswith("http"):
+                errors.append("Each data.entities item id must be an HTTP URI")
+
+        metadata = packet.get("metadata", {})
+        if not isinstance(metadata.get("profiles", []), list):
+            errors.append("metadata.profiles must be a list")
+
+        integrity = metadata.get("integrity", {})
+        if not isinstance(integrity, dict):
+            errors.append("metadata.integrity must be an object")
+        else:
+            if not integrity.get("metadata_digest"):
+                errors.append("metadata.integrity.metadata_digest is required")
+
+        return (len(errors) == 0, errors)
 
     entity_ids = {
         str(entity.get("id"))
