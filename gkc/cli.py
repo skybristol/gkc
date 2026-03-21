@@ -33,6 +33,7 @@ from gkc.spirit_safe import (
     build_entity_profile_json_documents,
     create_curation_packet,
     export_entity_profile_json_documents,
+    export_spiritsafe_entity_index,
     export_spiritsafe_manifest,
     get_spirit_safe_source,
     load_manifest,
@@ -2557,7 +2558,7 @@ def _handle_registry_validate(args: argparse.Namespace) -> dict[str, Any]:
 
 
 def _handle_spiritsafe_manifest_build(args: argparse.Namespace) -> dict[str, Any]:
-    """Build cache/manifest.json from local SpiritSafe artifacts."""
+    """Build cache/manifest.json and cache/entity_index.json from local artifacts."""
 
     if args.source != "local" or not args.local_root:
         raise CLIError(
@@ -2571,18 +2572,26 @@ def _handle_spiritsafe_manifest_build(args: argparse.Namespace) -> dict[str, Any
             if args.output
             else local_root / "cache" / "manifest.json"
         )
+        index_output_path = local_root / "cache" / "entity_index.json"
         manifest_document = export_spiritsafe_manifest(local_root, output_path)
+        index_document = export_spiritsafe_entity_index(local_root, index_output_path)
         details = {
             "output_path": str(output_path),
+            "entity_index_output_path": str(index_output_path),
             "profile_count": len(manifest_document.get("profiles", [])),
             "entity_count": manifest_document.get("entities", {}).get("count", 0),
             "query_count": len(manifest_document.get("queries", [])),
             "value_list_count": len(manifest_document.get("value_lists", [])),
+            "indexed_entity_count": index_document.get("entity_count", 0),
+            "indexed_class_count": index_document.get("class_count", 0),
         }
         return {
             "command": args.command_path,
             "ok": True,
-            "message": f"Built SpiritSafe manifest at {output_path}",
+            "message": (
+                f"Built SpiritSafe manifest at {output_path} "
+                f"and entity index at {index_output_path}"
+            ),
             "details": details,
         }
     except Exception as exc:

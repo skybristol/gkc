@@ -2826,6 +2826,256 @@ def _label_from_cache_entity(document: dict[str, Any]) -> str:
     return ""
 
 
+def _claim_entity_id_value(claim: dict[str, Any]) -> Optional[str]:
+    value = claim.get("mainsnak", {}).get("datavalue", {}).get("value", {})
+    return value.get("id") if isinstance(value, dict) else None
+
+
+def _claim_string_value(claim: dict[str, Any]) -> Optional[str]:
+    value = claim.get("mainsnak", {}).get("datavalue", {}).get("value")
+    return value if isinstance(value, str) and value else None
+
+
+def _claim_quantity_int_value(claim: dict[str, Any]) -> Optional[int]:
+    value = claim.get("mainsnak", {}).get("datavalue", {}).get("value", {})
+    if not isinstance(value, dict):
+        return None
+    amount = value.get("amount")
+    if not isinstance(amount, str) or not amount:
+        return None
+    try:
+        return int(float(amount))
+    except ValueError:
+        return None
+
+
+def _qualifier_entity_ids(
+    qualifiers: Any,
+    prop_id: str,
+) -> list[str]:
+    if not isinstance(qualifiers, dict):
+        return []
+
+    values: list[str] = []
+    for snak in qualifiers.get(prop_id, []):
+        value = snak.get("datavalue", {}).get("value", {})
+        entity_id = value.get("id") if isinstance(value, dict) else None
+        if isinstance(entity_id, str) and entity_id:
+            values.append(entity_id)
+    return values
+
+
+def _claim_monolingual_by_language(claims: list[dict[str, Any]]) -> dict[str, str]:
+    by_language: dict[str, str] = {}
+    for claim in claims:
+        value = claim.get("mainsnak", {}).get("datavalue", {}).get("value", {})
+        if not isinstance(value, dict):
+            continue
+        language = value.get("language")
+        text = value.get("text")
+        if (
+            isinstance(language, str)
+            and language
+            and isinstance(text, str)
+            and text
+            and language not in by_language
+        ):
+            by_language[language] = text
+    return by_language
+
+
+def _sorted_unique(values: list[str]) -> list[str]:
+    return sorted({value for value in values if isinstance(value, str) and value})
+
+
+def _build_link_entries(
+    claims: list[dict[str, Any]],
+    *,
+    applies_to_profile_prop: str,
+    applies_to_statement_prop: str,
+) -> list[dict[str, Any]]:
+    entries: list[dict[str, Any]] = []
+    for claim in claims:
+        target_id = _claim_entity_id_value(claim)
+        if not target_id:
+            continue
+
+        entry: dict[str, Any] = {"target": target_id}
+        scope_profiles = _sorted_unique(
+            _qualifier_entity_ids(claim.get("qualifiers", {}), applies_to_profile_prop)
+        )
+        scope_statements = _sorted_unique(
+            _qualifier_entity_ids(
+                claim.get("qualifiers", {}),
+                applies_to_statement_prop,
+            )
+        )
+        if scope_profiles or scope_statements:
+            entry["scope"] = {
+                "profiles": scope_profiles,
+                "statements": scope_statements,
+            }
+        entries.append(entry)
+
+    return sorted(entries, key=lambda entry: (entry["target"], json.dumps(entry)))
+
+
+def _build_entity_index_entry(entity_doc: dict[str, Any]) -> dict[str, Any]:
+    entity_id = str(entity_doc.get("entity_id") or "")
+    claims = entity_doc.get("entity", {}).get("claims", {})
+    classes = _sorted_unique(
+        [
+            entity_id_value
+            for entity_id_value in (
+                _claim_entity_id_value(claim) for claim in claims.get("P1", [])
+            )
+            if entity_id_value
+        ]
+    )
+
+    value_type = next(
+        (
+            value
+            for value in (
+                _claim_entity_id_value(claim) for claim in claims.get("P194", [])
+            )
+            if value
+        ),
+        None,
+    )
+    max_count = next(
+        (
+            value
+            for value in (
+                _claim_quantity_int_value(claim) for claim in claims.get("P182", [])
+            )
+            if value is not None
+        ),
+        None,
+    )
+    name_identifier = next(
+        (
+            value
+            for value in (
+                _claim_string_value(claim) for claim in claims.get("P214", [])
+            )
+            if value
+        ),
+        None,
+    )
+
+    messages: dict[str, dict[str, str]] = {}
+    for prop_id, field_name in {
+        "P171": "prompt",
+        "P169": "guidance",
+        "P170": "consequences_message",
+        "P168": "error_message",
+    }.items():
+        for language, text in _claim_monolingual_by_language(
+            claims.get(prop_id, [])
+        ).items():
+            messages.setdefault(language, {})[field_name] = text
+
+    return {
+        "id": entity_id,
+        "entity": f"{SPIRITSAFE_ENTITY_URI_PREFIX}{entity_id}",
+        "label": _label_from_cache_entity(entity_doc),
+        "name_identifier": name_identifier,
+        "classes": classes,
+        "value_type": value_type,
+        "io_map": _sorted_unique(
+            [
+                value
+                for value in (
+                    _claim_string_value(claim) for claim in claims.get("P5", [])
+                )
+                if value
+            ]
+        ),
+        "max_count": max_count,
+        "messages": messages,
+        "links": {
+            "statements": _build_link_entries(
+                claims.get("P157", []),
+                applies_to_profile_prop="P205",
+                applies_to_statement_prop="P163",
+            ),
+            "qualifiers": _build_link_entries(
+                claims.get("P158", []),
+                applies_to_profile_prop="P205",
+                applies_to_statement_prop="P163",
+            ),
+            "references": _build_link_entries(
+                claims.get("P211", []),
+                applies_to_profile_prop="P205",
+                applies_to_statement_prop="P163",
+            ),
+            "values": _build_link_entries(
+                claims.get("P161", []),
+                applies_to_profile_prop="P205",
+                applies_to_statement_prop="P163",
+            ),
+            "derives_default_value_from": _build_link_entries(
+                claims.get("P213", []),
+                applies_to_profile_prop="P205",
+                applies_to_statement_prop="P163",
+            ),
+        },
+    }
+
+
+def build_spiritsafe_entity_index_document(
+    spiritsafe_root: Union[str, Path],
+) -> dict[str, Any]:
+    """Build a normalized entity index from cached SpiritSafe entity JSON docs."""
+
+    root = Path(spiritsafe_root).expanduser().resolve()
+    cache_entities_dir = root / "cache" / "entities"
+
+    entities: dict[str, dict[str, Any]] = {}
+    by_class: dict[str, list[str]] = {}
+
+    for entity_path in sorted(cache_entities_dir.glob("*.json")):
+        entity_doc = json.loads(entity_path.read_text(encoding="utf-8"))
+        entry = _build_entity_index_entry(entity_doc)
+        entity_id = str(entry.get("id") or entity_path.stem)
+        entities[entity_id] = entry
+
+        for class_id in entry.get("classes", []):
+            by_class.setdefault(class_id, []).append(entity_id)
+
+    for class_id, members in by_class.items():
+        by_class[class_id] = sorted(set(members))
+
+    return {
+        "generated_at": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
+        "source": _manifest_source_url(),
+        "entity_count": len(entities),
+        "class_count": len(by_class),
+        "entities": entities,
+        "class_index": by_class,
+    }
+
+
+def export_spiritsafe_entity_index(
+    spiritsafe_root: Union[str, Path],
+    output_path: Optional[Union[str, Path]] = None,
+) -> dict[str, Any]:
+    """Build and write the SpiritSafe normalized entity index document."""
+
+    root = Path(spiritsafe_root).expanduser().resolve()
+    destination = (
+        Path(output_path).expanduser().resolve()
+        if output_path is not None
+        else (root / "cache" / "entity_index.json")
+    )
+
+    index_document = build_spiritsafe_entity_index_document(root)
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    destination.write_text(json.dumps(index_document, indent=2), encoding="utf-8")
+    return index_document
+
+
 def _statement_id_from_definition(statement: dict[str, Any]) -> Optional[str]:
     entity_id = _entity_id_from_reference(statement.get("id"))
     if entity_id:
