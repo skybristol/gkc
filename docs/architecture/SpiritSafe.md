@@ -46,7 +46,7 @@ Both artifacts are generated in a single operation and are kept in sync.
 
 See [SpiritSafe Entity Index Architecture](spiritsafe-entity-index.md) for detailed schema and consumption patterns.
 
-Packet assembly routes (`create_curation_packet`) do not require manifest or entity index lookups; they consume profiles directly.
+Packet assembly routes in `still_charger.create_curation_packet` do not require manifest or entity index lookups; they consume profile JSON directly.
 
 ## Manifest Sections
 

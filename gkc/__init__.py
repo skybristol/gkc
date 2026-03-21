@@ -120,7 +120,6 @@ from gkc.spirit_safe import (
     ValueListHydrationResult,
     build_entity_profile_json_documents,
     build_spiritsafe_manifest_document,
-    create_curation_packet,
     discover_value_list_ids,
     export_entity_profile_json_documents,
     export_spiritsafe_manifest,
@@ -148,6 +147,7 @@ from gkc.still_charger import (
     build_curation_packet_from_json_profile,
     charge_curation_packet,
     charge_packet_from_wikidata_items,
+    create_curation_packet,
 )
 
 # Utilities (common helpers)

@@ -56,7 +56,6 @@ Current anchor surface:
 
 Transition-only legacy surface (deferred removal):
 
-- `create_curation_packet`
 - `validate_packet_structure`
 
 ### Still Charger (`gkc.still_charger`)
@@ -75,6 +74,7 @@ Out of scope:
 
 Current anchor surface:
 
+- `create_curation_packet`
 - `build_curation_packet_from_json_profile`
 - `charge_curation_packet`
 - `charge_packet_from_wikidata_items`

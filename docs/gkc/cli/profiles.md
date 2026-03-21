@@ -134,10 +134,10 @@ gkc packet build --profile Q4 --source github --repo skybristol/SpiritSafe --ref
 The output packet includes:
 
 - `packet_id` — UUID for this packet
-- `profile_entity` — Full URI of the source profile
-- `entities[]` — Entity slots with statement slots pre-scaffolded
-- `cross_references[]` — Cross-reference slots for linked profiles
-- `value_list_routes{}` — Cached value-list file paths keyed by statement entity URI
+- `operation_mode` — Scaffold mode indicator
+- `metadata.primary_profile` — Full URI and identifier for the source profile
+- `metadata.graph.edges[]` — Linked-profile graph edges for packet traversal
+- `data.entities[]` — Entity slots with statement slots pre-scaffolded
 
 ### `gkc packet charge`
 

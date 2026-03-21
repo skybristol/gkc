@@ -7,7 +7,6 @@ import pytest
 from gkc.spirit_safe import (
     build_spiritsafe_entity_index_document,
     build_spiritsafe_manifest_document,
-    create_curation_packet,
     export_spiritsafe_entity_index,
     export_spiritsafe_manifest,
     get_profile_graph,
@@ -18,6 +17,7 @@ from gkc.spirit_safe import (
     set_spirit_safe_source,
     validate_packet_structure,
 )
+from gkc.still_charger import create_curation_packet
 
 
 @pytest.fixture

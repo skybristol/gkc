@@ -12,9 +12,17 @@ Validation and coercion notices are emitted as `ConformanceNotice` objects (see 
 ```python
 from pathlib import Path
 from gkc.still_charger import (
+  create_curation_packet,
     build_curation_packet_from_json_profile,
     charge_packet_from_wikidata_items,
 )
+
+from gkc.spirit_safe import set_spirit_safe_source
+
+set_spirit_safe_source(mode="local", local_root="/path/to/SpiritSafe")
+
+# 0. Create scaffold directly from profile id (canonical entrypoint)
+packet = create_curation_packet("Q4", operation_mode="bulk")
 
 # 1. Load a JSON profile from local SpiritSafe
 import json
@@ -31,10 +39,10 @@ packet = build_curation_packet_from_json_profile(
 )
 
 print(packet["packet_id"])
-print(len(packet["entities"]))
+print(len(packet["data"]["entities"]))
 
 # 3. Charge from Wikidata (e.g., Cherokee Nation Q195562)
-qid_map = {entity["id"]: "Q195562" for entity in packet["entities"]}
+qid_map = {entity["id"]: "Q195562" for entity in packet["data"]["entities"]}
 charged_packet, notices = charge_packet_from_wikidata_items(packet, qid_map)
 
 for notice in notices:
@@ -42,6 +50,27 @@ for notice in notices:
 ```
 
 ## Public API
+
+### `create_curation_packet()`
+
+Create a packet scaffold from SpiritSafe by profile identifier.
+
+```python
+from gkc.still_charger import create_curation_packet
+
+packet = create_curation_packet("Q4", operation_mode="single")
+```
+
+**Arguments:**
+
+| Argument | Type | Description |
+|---|---|---|
+| `profile_id` | `str` | Profile QID or full profile URI |
+| `operation_mode` | `str` | `single` for primary-only scaffold or `bulk` for profile-graph expansion |
+
+**Returns:** `dict` — Packet scaffold in the URI-keyed contract.
+
+---
 
 ### `build_curation_packet_from_json_profile()`
 
@@ -70,21 +99,27 @@ packet = build_curation_packet_from_json_profile(
 
 ```json
 {
-  "packet_id": "uuid-...",
-  "profile_entity": "https://datadistillery.wikibase.cloud/entity/Q4",
-  "entities": [
-    {
-      "id": "uuid-...",
-      "profile_entity": "https://datadistillery.wikibase.cloud/entity/Q4",
-      "statements": [
-        {"entity": "https://datadistillery.wikibase.cloud/entity/P5", "data": {}}
-      ],
-      "data": {}
-    }
-  ],
-  "cross_references": [],
-  "value_list_routes": {
-    "https://datadistillery.wikibase.cloud/entity/P5": "/path/to/cache/queries/Q28.json"
+  "packet_id": "pkt-...",
+  "operation_mode": "new",
+  "metadata": {
+    "primary_profile": {
+      "name_identifier": "Q4",
+      "id": "https://datadistillery.wikibase.cloud/entity/Q4"
+    },
+    "profiles": [],
+    "graph": {"nodes": [], "edges": []}
+  },
+  "data": {
+    "entities": [
+      {
+        "profile": "Q4",
+        "id": "https://datadistillery.wikibase.cloud/entity/Q4",
+        "labels": {},
+        "descriptions": {},
+        "aliases": {},
+        "statements": {}
+      }
+    ]
   }
 }
 ```
@@ -99,7 +134,7 @@ Charge a packet scaffold with live data fetched from Wikidata.
 from gkc.still_charger import charge_packet_from_wikidata_items
 
 # Map all packet entities to a single QID
-qid_map = {entity["id"]: "Q195562" for entity in packet["entities"]}
+qid_map = {entity["id"]: "Q195562" for entity in packet["data"]["entities"]}
 
 charged_packet, notices = charge_packet_from_wikidata_items(packet, qid_map)
 
@@ -124,8 +159,7 @@ warnings = [n for n in notices if n.severity == "warning"]
 
 1. Intra-packet UUID → exact key match in `qid_map`
 2. Full entity URI → key match in `qid_map`
-3. QID string → direct Wikidata lookup
-4. Profile name (legacy) → backward-compatible fallback
+3. Profile entity URI tail QID → direct Wikidata lookup
 
 ---
 
@@ -187,6 +221,20 @@ print(report.entities_charged, report.issues[0].severity)
 ### `ChargeReport`
 
 ::: gkc.still_charger.ChargeReport
+    options:
+      show_root_heading: false
+      heading_level: 4
+
+### `create_curation_packet()`
+
+::: gkc.still_charger.create_curation_packet
+    options:
+      show_root_heading: false
+      heading_level: 4
+
+### `build_curation_packet_from_json_profile()`
+
+::: gkc.still_charger.build_curation_packet_from_json_profile
     options:
       show_root_heading: false
       heading_level: 4

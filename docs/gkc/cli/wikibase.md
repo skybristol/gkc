@@ -111,7 +111,7 @@ When `--output` is used, command output includes:
 
 `plan-write` runs the shared pipeline:
 
-- `spirit_safe.create_curation_packet`
+- `still_charger.create_curation_packet`
 - `still_charger.charge_curation_packet`
 - `wikibase.orchestration.barrel_curation_packet_to_wikibase_plan`
 - optional `shipper.plan_batch`
@@ -175,7 +175,7 @@ With `--with-shipper-plan`, output also includes:
 
 Execution path:
 
-- `spirit_safe.create_curation_packet`
+- `still_charger.create_curation_packet`
 - `still_charger.charge_curation_packet`
 - `wikibase.orchestration.barrel_curation_packet_to_wikibase_plan`
 - `shipper.write_item` / `shipper.write_property`

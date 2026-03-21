@@ -592,6 +592,48 @@ def build_curation_packet_from_json_profile(
     return packet
 
 
+def create_curation_packet(
+    profile_id: str,
+    operation_mode: str = "single",
+    load_wikidata_qids: bool = False,
+    depth: int = 1,
+    manifest: Optional[Any] = None,
+) -> dict[str, Any]:
+    """Create a curation packet scaffold from SpiritSafe JSON profiles.
+
+    This is the canonical packet-assembly entrypoint. It loads the primary
+    profile from SpiritSafe, applies operation-mode expansion policy, and
+    delegates scaffold construction to ``build_curation_packet_from_json_profile``.
+    """
+
+    del load_wikidata_qids
+    del depth
+    del manifest
+
+    if operation_mode not in {"single", "bulk"}:
+        raise ValueError(
+            f"Unsupported operation_mode '{operation_mode}'. Expected 'single' or 'bulk'."
+        )
+
+    from gkc.spirit_safe import get_spirit_safe_source, load_profile
+
+    profile_doc = load_profile(profile_id)
+    profile_uri, _ = _normalize_entity_uri(str(profile_doc.get("id") or profile_id))
+
+    if operation_mode == "single":
+        profile_doc = deepcopy(profile_doc)
+        profile_doc.setdefault("metadata", {})["profile_graph"] = []
+
+    source = get_spirit_safe_source()
+    packet = build_curation_packet_from_json_profile(
+        profile_entity=profile_uri,
+        json_profile_doc=profile_doc,
+        source_root=source.local_root if source.mode == "local" else None,
+    )
+    packet["operation_mode"] = operation_mode
+    return packet
+
+
 def charge_packet_from_wikidata_items(
     packet: dict[str, Any],
     qid_map: dict[str, str],
@@ -631,10 +673,38 @@ def charge_packet_from_wikidata_items(
     if mash_client is None:
         mash_client = WikibaseLoader()
 
-    entities = charged.get("entities", [])
+    entities = charged.get("data", {}).get("entities")
+    if not isinstance(entities, list):
+        entities = charged.get("entities", [])
+
+    metadata_profiles = charged.get("metadata", {}).get("profiles", [])
+    if not isinstance(metadata_profiles, list):
+        metadata_profiles = []
+
+    profile_statements_by_key: dict[str, list[dict[str, Any]]] = {}
+    for profile_meta in metadata_profiles:
+        if not isinstance(profile_meta, dict):
+            continue
+        statements = profile_meta.get("statements", [])
+        if not isinstance(statements, list):
+            continue
+        profile_id = profile_meta.get("id")
+        name_identifier = profile_meta.get("name_identifier")
+        if isinstance(profile_id, str) and profile_id:
+            profile_statements_by_key[profile_id] = statements
+        if isinstance(name_identifier, str) and name_identifier:
+            profile_statements_by_key[name_identifier] = statements
+
     for entity in entities:
         entity_id = entity.get("id")
         profile_entity = entity.get("profile_entity")
+        if not isinstance(profile_entity, str) or not profile_entity:
+            if isinstance(entity_id, str) and (
+                entity_id.startswith("http://") or entity_id.startswith("https://")
+            ):
+                profile_entity = entity_id
+
+        entity_profile_name = entity.get("profile")
 
         # Resolve the QID for this entity
         target_qid = (
@@ -686,6 +756,23 @@ def charge_packet_from_wikidata_items(
 
         # Build a mapping from Wikidata property ID to packet statements
         statements = entity.get("statements", [])
+        if isinstance(statements, dict):
+            if (
+                isinstance(profile_entity, str)
+                and profile_entity in profile_statements_by_key
+            ):
+                statements = profile_statements_by_key[profile_entity]
+            elif (
+                isinstance(entity_profile_name, str)
+                and entity_profile_name in profile_statements_by_key
+            ):
+                statements = profile_statements_by_key[entity_profile_name]
+            else:
+                statements = []
+
+        if not isinstance(statements, list):
+            statements = []
+
         io_map_by_property_id = {}
         for stmt in statements:
             if isinstance(stmt, dict):

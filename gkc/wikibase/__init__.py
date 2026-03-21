@@ -1,7 +1,7 @@
 """Wikibase integration utilities for GKC.
 
 Scope: Wikibase-first ProfilesV2 support, including live ontology snapshots
-for semantic resolution, write plan orchestration, and legacy foundation workflows.
+for semantic resolution, write plan orchestration, and foundation workflows.
 """
 
 from gkc.wikibase.cache import (
