@@ -24,10 +24,12 @@ The current pipeline is:
 1. Data Distillery Wikibase semantics are captured in SpiritSafe cache artifacts.
 2. `gkc.spirit_safe` exports JSON Entity Profiles under `profiles/<QID>.json`.
 3. `gkc.still_charger.build_curation_packet_from_json_profile(...)` builds a packet scaffold.
-4. `gkc.still_charger.charge_curation_packet(...)` and related flows fill packet entity data.
+4. `gkc.still_charger.charge_packet_from_wikidata_items(...)` and related flows fill packet entity data.
 5. Validation/coercion runs on packet values and emits conformance notices.
 6. Bottling transforms packet content to destination-specific payloads.
 7. Shipping sends destination-specific payloads to Commons Partners (Wikidata, etc.).
+
+`charge_curation_packet(...)` remains available as a legacy helper for existing integrations, but new workflows should use `charge_packet_from_wikidata_items(...)`.
 
 ## Identity Model
 
