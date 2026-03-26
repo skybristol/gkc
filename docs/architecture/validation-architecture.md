@@ -29,7 +29,7 @@ At minimum, provenance must capture presentation circumstances: how, when, and b
 
 Validation in GKC is layered around profile-defined constraints:
 
-- Profile definition validation: YAML is parsed into typed profile models.
+- Profile definition validation: JSON Entity Profiles are loaded into typed runtime models.
 - Entity data validation: item and statement content is checked against profile requirements.
 - Hydration input validation: query references and templates are resolved before execution.
 - Packet evaluation validation: packet metadata integrity is verified before data evaluation runs.

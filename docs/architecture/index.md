@@ -4,15 +4,16 @@
 
 The **Global Knowledge Commons (GKC)** is a framework for understanding and working with structured knowledge across multiple open public platforms. The initial design focuses on Wikidata, Wikimedia Commons, Wikipedia templates, and OpenStreetMap.
 
-The project uses a **data distillery** metaphor to describe the pipeline that converts raw, heterogeneous inputs into validated, platform-ready outputs. Mash Bills describe incoming structure, Modulation Profiles guide transformation, GKC Entity Profiles define canonical entity forms, and Barrel Profiles represent downstream platform-specific targets.
+The project uses a **data distillery** metaphor to describe the pipeline that converts heterogeneous inputs into validated, platform-ready outputs. GKC Entity Profiles define canonical entity forms made up of individual statements backed by evidence (references). Distilled data are bottled for outlets - GKC Partners - and shipped via authenticated Application Programming Interfaces (APIs).
 
-The GKC is built on three foundational architectural components that work together to transform declarative entity definitions into actionable curation workflows:
+The GKC is built on four foundational architectural components that work together to transform declarative entity definitions into actionable curation workflows:
 
-1. **GKC Entity Profiles** — Declarative YAML definitions of entity structure and semantics
-2. **GKC Entity JSON Schemas** — Machine-readable, serializable representations of profiles
-3. **GKC Curation Packets** — Actionable bundles of 1+ entities flowing through curation workflows
+1. **GKC Entity Profiles** — Declarative definitions of entity structure and semantics
+2. **GKC Entity Statements** - Individual statements that make up an entity profile
+3. **GKC Entity JSON Schemas** — Machine-readable, serializable representations of profiles
+4. **GKC Curation Packets** — Actionable bundles of one or more entities, all or a subset of statements, flowing through curation workflows
 
-These components enable a consistent pattern: **define once, use everywhere**. A profile written in YAML drives wizard UI generation, validation logic, bulk data operations, API contracts, and cross-platform serialization—all from a single source of truth.
+These components enable a consistent pattern: **define once, use everywhere**. Entity Statements, Entity Profiles, and helper utilities (e.g., Value Lists) are defined and organized within a dedicated Wikibase instance (a meta-wikibase) operated in the [Wikibase.cloud](https://wikibase.cloud/) environment. Configuration logic and rules from the [Data Distillery Wikibase](https://datadistillery.wikibase.cloud/) are written out to the [Spirit Safe](https://github.com/skybristol/SpiritSafe), a GitHub repository used to drive GKC operations.
 
 ---
 
@@ -33,7 +34,7 @@ Multiple platforms contribute to and consume a single GKC Entity:
 
 **Definition:** GKC Entity Profiles are declarative definitions of the canonical structure, semantics, and cross-platform meaning of a real-world entity in the Global Knowledge Commons.
 
-**Implementation:** Profiles exist as YAML files in the SpiritSafe registry (`profiles/<ProfileID>/profile.yaml`) and are loaded into Pydantic models at runtime, serving as the authoritative source of truth for:
+**Implementation:** Profiles are materialized as JSON Entity Profile artifacts in SpiritSafe (`profiles/<QID>.json`) and consumed directly by runtime modules, serving as the authoritative source of truth for:
 
 - **Entity structure** — What statements, qualifiers, and references constitute the entity
 - **Validation rules** — Constraints, datatypes, cardinality, required vs optional fields
@@ -44,7 +45,7 @@ Multiple platforms contribute to and consume a single GKC Entity:
 **Key Characteristics:**
 
 - **Declarative, not imperative** — Profiles describe *what* an entity is, not *how* to build it
-- **Human-readable and machine-executable** — YAML is both documentation and runtime specification
+- **Human-readable and machine-executable** — JSON artifacts provide stable runtime contracts while preserving curator-facing semantics
 - **Version-controlled** — Managed in SpiritSafe repository with CHANGELOG tracking
 - **Profile-driven workflows** — Wizards, validation engines, and serializers consume profiles directly
 
@@ -57,7 +58,7 @@ Multiple platforms contribute to and consume a single GKC Entity:
 
 **Definition:** GKC Entity JSON Schemas are machine-readable, serializable representations of GKC Entity Profiles that provide stable contracts for API routes, external tools, and inter-profile composition.
 
-**Implementation:** Generated programmatically from Pydantic models (which are in turn loaded from YAML profiles), JSON Schemas:
+**Implementation:** Generated programmatically from materialized JSON Entity Profile contracts and related runtime models, JSON Schemas:
 
 - **Define data contracts** — External tools can validate GKC Entity JSON without importing Python code
 - **Enable profile composition** — Profiles reference one another via `entity_profile` statements, forming graphs
@@ -67,9 +68,9 @@ Multiple platforms contribute to and consume a single GKC Entity:
 **Relationship to Profiles:**
 
 ```
-Profile YAML → Pydantic Model → JSON Schema → API Contract
-                      ↓               ↓
-                 Validation      External Tools
+SpiritSafe JSON Profile → Runtime Model → JSON Schema → API Contract
+                         ↓               ↓
+                    Validation      External Tools
 ```
 
 Profiles are the *source of truth*; JSON Schemas are the *machine interface*.
@@ -86,7 +87,7 @@ Profiles are the *source of truth*; JSON Schemas are the *machine interface*.
 - **Primary entity** — The entity being directly curated
 - **Related entities** — Secondary entities linked via profile graph (e.g., offices, organizations)
 - **Packet metadata** — Creation timestamps, curator username, status tracking
-- **Local reference system** — `packet_id` identifiers (e.g., `ent-001-primary`, `ent-002-office`) that resolve to Wikidata QIDs post-shipping
+- **Dual-key identity system** — `name_identifier` is the human-facing key while `id` (URI) remains canonical for joins, provenance, and round-trip mapping
 
 **Packet Lifecycle:**
 
@@ -119,7 +120,7 @@ This enables dependency ordering (ship entities depth-first), audit trails, and 
 
 ### SpiritSafe
 
-**SpiritSafe** is the profile registry and supporting query/cache infrastructure. It stores profile packages (`profile.yaml`, `metadata.yaml`, docs, and `queries/`) and provides a source for GKC runtime loading in local or GitHub-backed modes.
+**SpiritSafe** is the profile registry and supporting query/cache infrastructure. It stores materialized profile artifacts (`profiles/<QID>.json`), query files (`queries/*.sparql`), cache artifacts (`cache/entities`, `cache/queries`, `cache/manifest.json`), and the normalized index (`cache/entity_index.json`) used by runtime loading in local or GitHub-backed modes.
 
 For complete documentation on SpiritSafe, see [SpiritSafe Registry](SpiritSafe.md).
 
@@ -150,14 +151,14 @@ For detailed schema, consumption patterns, and examples, see [SpiritSafe Entity 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
 │                     SpiritSafe Registry                         │
-│  profiles/TribalGovernmentUS/profile.yaml                       │
-│  profiles/OfficeHeldByHeadOfState/profile.yaml                  │
+│  profiles/Q4.json                                               │
+│  profiles/Q39.json                                              │
 └────────────────────┬────────────────────────────────────────────┘
                      │ Load profiles
                      ↓
 ┌─────────────────────────────────────────────────────────────────┐
 │                  GKC Spirit Safe Module                         │
-│  - Parse YAML → Pydantic EntityProfile models                   │
+│  - Load JSON Entity Profiles from SpiritSafe artifacts          │
 │  - Build profile graph (TribalGov → Office linkage)             │
 │  - Hydrate SPARQL allowed-items lists                           │
 └────────────────────┬────────────────────────────────────────────┘
@@ -166,7 +167,7 @@ For detailed schema, consumption patterns, and examples, see [SpiritSafe Entity 
 ┌─────────────────────────────────────────────────────────────────┐
 │                     GKC Wizard                                  │
 │  - Generate 5-step UI from profile metadata                     │
-│  - Create curation packet (ent-001 primary, ent-002 office)     │
+│  - Create curation packet (entity slots keyed by profile/name)  │
 │  - Collect user input with real-time validation                 │
 └────────────────────┬────────────────────────────────────────────┘
                      │ Curation packet (unsaved)
@@ -182,7 +183,7 @@ For detailed schema, consumption patterns, and examples, see [SpiritSafe Entity 
 ┌─────────────────────────────────────────────────────────────────┐
 │                      Shipper                                    │
 │  - Serialize GKC Entity JSON → Wikidata JSON                    │
-│  - Resolve cross-entity references (ent-002 → create office, get QID) │
+│  - Resolve cross-entity references via profile statements        │
 │  - Ship entities depth-first (office before tribal gov)         │
 └────────────────────┬────────────────────────────────────────────┘
                      │ Wikidata API calls
@@ -200,12 +201,12 @@ For detailed schema, consumption patterns, and examples, see [SpiritSafe Entity 
 When wizard loads `TribalGovernmentUS`, it:
 
 1. Scans statements for `entity_profile` types → finds `office_held_by_head_of_state`
-2. Reads `value.profile_name: OfficeHeldByHeadOfState`
-3. Loads `OfficeHeldByHeadOfState` profile recursively
-4. Builds profile graph: `TribalGovernmentUS` → `OfficeHeldByHeadOfState`
+2. Reads profile linkage metadata from statement value definitions
+3. Loads related profile artifacts recursively by profile URI/QID
+4. Builds profile graph from `metadata.profile_graph` edges
 5. Creates packet with placeholders for both entities
 
-Future metadata enhancement will make this explicit via `metadata.yaml` `profile_graph` section (see [Multi-Profile Configuration](../gkc/profiles.md#profile-graphs-cross-references)).
+Profile graph metadata is already carried in profile artifact `metadata.profile_graph` (see [Multi-Profile Configuration](../gkc/profiles.md#profile-graphs-cross-references)).
 
 ---
 
@@ -261,7 +262,7 @@ Following Wikipedia/Wikidata philosophy:
 
 **Stable & Production-Ready:**
 
-- Profile YAML loading and Pydantic model generation
+- JSON Entity Profile loading and runtime model generation
 - SPARQL allowed-items hydration with fallback lists
 - Single-entity curation packets
 - Wikidata JSON serialization
@@ -270,7 +271,7 @@ Following Wikipedia/Wikidata philosophy:
 **In Development (Wizard MVP):**
 
 - Multi-entity packets with cross-entity references
-- Profile graph metadata (`metadata.yaml` enhancements)
+- Expanded profile graph traversal and orchestration policy controls
 - Wizard multi-tab UI for related entities
 - Status tracking lifecycle
 
@@ -319,12 +320,12 @@ This architecture section includes detailed documentation on specific subsystems
 
 | Term | Definition |
 |------|------------|
-| **Profile** | YAML definition of entity structure in SpiritSafe registry |
+| **Profile** | JSON Entity Profile artifact defining entity structure in SpiritSafe |
 | **Packet** | Bundle of 1+ entities being curated together |
 | **Entity** | Single real-world thing represented in GKC (tribal government, office, person) |
 | **Statement** | Single property-value assertion about an entity (analogous to Wikidata claim) |
 | **Profile Graph** | Network of profiles linked via `entity_profile` statements |
-| **packet_id** | Local identifier (e.g., `ent-001`) used within a packet before QID assignment |
+| **packet_id** | UUID packet identifier used to track a specific packet instance |
 | **creation_path** | Breadcrumb showing how entity was created (e.g., `primary.office`) |
 | **Shipper** | Module that serializes packets to platform-specific formats (Wikidata JSON, etc.) |
 | **Allowed Items** | SPARQL-driven choice lists for statement values (e.g., Federal Register issues) |
@@ -343,6 +344,6 @@ These are retained as design intent for follow-on implementation work by the Wiz
 
 ---
 
-**Last Updated:** March 3, 2026  
+**Last Updated:** March 26, 2026  
 **Maintainer:** Profile Architect  
 **Status:** Stable (subject to enhancement as architecture evolves)

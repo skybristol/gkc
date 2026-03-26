@@ -45,7 +45,7 @@ gkc mash qid Q42
 Validate items against profiles, export JSON Entity Profiles from cache entities, generate form schemas, launch the Textual wizard, hydrate SPARQL value lists, and build SpiritSafe artifact manifests.
 
 ```bash
-gkc profile validate --profile /path/to/profile.yaml --qid Q123
+gkc profile package load --profile Q4 --source local --local-root /path/to/SpiritSafe
 ```
 
 ```bash

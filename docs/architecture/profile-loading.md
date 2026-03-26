@@ -6,16 +6,13 @@ This page documents implemented and architecturally committed behavior for profi
 
 ## Resolution Model
 
-GKC resolves a profile reference through `resolve_profile_path()` using the canonical registrant layout:
+GKC resolves a profile reference through `resolve_profile_path()` using the canonical artifact layout:
 
-- `ProfileName` → `profiles/ProfileName/profile.yaml`
-- `ProfileName.yaml` → `profiles/ProfileName/profile.yaml`
-- Explicit paths are preserved as provided.
+- `QID` (for example `Q4`) → `profiles/QID.json`
+- Full entity URI (for example `https://datadistillery.wikibase.cloud/entity/Q4`) → normalized to `profiles/Q4.json`
+- Explicit `.json` profile paths are preserved as provided.
 
-Compatibility fallback supports legacy flat layout during migration:
-
-- `profiles/Foo/profile.yaml` can fall back to `profiles/Foo.yaml`
-- `profiles/Foo.yaml` can fall back to `profiles/Foo/profile.yaml`
+Compatibility behavior for legacy YAML-era layouts remains migration-only and should not be used for new integrations.
 
 ## Source Modes
 
