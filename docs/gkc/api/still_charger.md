@@ -2,9 +2,10 @@
 
 ## Overview
 
-The `gkc.still_charger` module fills curation packet scaffolds with concrete source values before Wikibase write planning and shipper planning.
+The `gkc.still_charger` module assembles curation packet scaffolds from JSON Entity Profiles and fills them with concrete source values before Wikibase write planning.
 
-It supports both local-profile packet assembly (new URI-keyed contract) and specificationless charging for open-ended source data.
+All packets enforce a strict `metadata` / `data` split. The `metadata` section carries the full profile ruleset, unified graph, mint provenance, and an integrity digest. The `data` section contains fillable entity slots keyed by statement `name_identifier`.
+
 Validation and coercion notices are emitted as `ConformanceNotice` objects (see [Fermenter API](fermenter.md)).
 
 ## Quick Start: Build and Charge a Packet
@@ -12,36 +13,23 @@ Validation and coercion notices are emitted as `ConformanceNotice` objects (see 
 ```python
 from pathlib import Path
 from gkc.still_charger import (
-  create_curation_packet,
-    build_curation_packet_from_json_profile,
+    create_curation_packet,
     charge_packet_from_wikidata_items,
 )
-
 from gkc.spirit_safe import set_spirit_safe_source
 
 set_spirit_safe_source(mode="local", local_root="/path/to/SpiritSafe")
 
-# 0. Create scaffold directly from profile id (canonical entrypoint)
-packet = create_curation_packet("Q4", operation_mode="bulk")
-
-# 1. Load a JSON profile from local SpiritSafe
-import json
-profile_path = Path("/path/to/SpiritSafe/profiles/Q4.json")
-json_profile_doc = json.loads(profile_path.read_text())
-
-profile_entity = "https://datadistillery.wikibase.cloud/entity/Q4"
-
-# 2. Assemble the packet scaffold
-packet = build_curation_packet_from_json_profile(
-    profile_entity=profile_entity,
-    json_profile_doc=json_profile_doc,
-    source_root=Path("/path/to/SpiritSafe"),
-)
+# 1. Create uncharged scaffold from profile QID (canonical entrypoint)
+packet = create_curation_packet("Q4", operation_mode="single")
 
 print(packet["packet_id"])
-print(len(packet["data"]["entities"]))
+# Entity slots are keyed by name_identifier in data.entities
+for entity in packet["data"]["entities"]:
+    print(entity["profile"], list(entity["statements"].keys()))
 
-# 3. Charge from Wikidata (e.g., Cherokee Nation Q195562)
+# 2. Charge from Wikidata (Cherokee Nation Q195562)
+# qid_map accepts profile entity URI or name_identifier as keys
 qid_map = {entity["id"]: "Q195562" for entity in packet["data"]["entities"]}
 charged_packet, notices = charge_packet_from_wikidata_items(packet, qid_map)
 
@@ -95,9 +83,50 @@ packet = build_curation_packet_from_json_profile(
 | `json_profile_doc` | `dict` | Parsed JSON Entity Profile document |
 | `source_root` | `Path \| None` | Local SpiritSafe root for value-list route resolution (optional) |
 
-**Returns:** `dict` — The assembled packet with the frozen URI-keyed contract:
+**Returns:** `dict` — The assembled packet with the two-section contract:
 
 ```json
+{
+  "packet_id": "pkt-...",
+  "operation_mode": "new",
+  "metadata": {
+    "primary_profile": {
+      "name_identifier": "tribal_government_us",
+      "id": "https://datadistillery.wikibase.cloud/entity/Q4"
+    },
+    "profiles": [
+      {
+        "id": "https://datadistillery.wikibase.cloud/entity/Q4",
+        "name_identifier": "tribal_government_us",
+        "identification": {},
+        "statements": [],
+        "metadata": {}
+      }
+    ],
+    "graph": {"nodes": {}, "edges": []},
+    "mint": {"minted_at": "...", "generator": "...", "gkc_version": "..."},
+    "integrity": {"metadata_digest": "..."}
+  },
+  "data": {
+    "entities": [
+      {
+        "profile": "tribal_government_us",
+        "id": "https://datadistillery.wikibase.cloud/entity/Q4",
+        "labels": {"mul": {"data-value": ""}},
+        "descriptions": {"mul": {"data-value": ""}},
+        "aliases": {"mul": {"data-value": ""}},
+        "statements": {
+          "instance_of": {
+            "id": "https://datadistillery.wikibase.cloud/entity/Q16",
+            "data-type": "wikibase-item",
+            "data-value": "https://www.wikidata.org/entity/Q7840353"
+          }
+        }
+      }
+    ]
+  }
+}
+```
 {
   "packet_id": "pkt-...",
   "operation_mode": "new",
@@ -108,22 +137,6 @@ packet = build_curation_packet_from_json_profile(
     },
     "profiles": [],
     "graph": {"nodes": [], "edges": []}
-  },
-  "data": {
-    "entities": [
-      {
-        "profile": "Q4",
-        "id": "https://datadistillery.wikibase.cloud/entity/Q4",
-        "labels": {},
-        "descriptions": {},
-        "aliases": {},
-        "statements": {}
-      }
-    ]
-  }
-}
-```
-
 ---
 
 ### `charge_packet_from_wikidata_items()`
@@ -150,33 +163,31 @@ warnings = [n for n in notices if n.severity == "warning"]
 | `qid_map` | `dict[str, str]` | Maps entity IDs or profile entity URIs to Wikidata QIDs |
 | `mash_client` | `Any \| None` | Optional pre-configured mash client; creates a new one if not supplied |
 
-**Returns:** `tuple[dict, list[ConformanceNotice]]`
-
-- `dict`: The charged packet with each entity's `data` populated from Wikidata
-- `list[ConformanceNotice]`: Notices emitted during charging (errors, warnings, info)
-
 **QID resolution order for entity slots:**
 
-1. Intra-packet UUID → exact key match in `qid_map`
-2. Full entity URI → key match in `qid_map`
-3. Profile entity URI tail QID → direct Wikidata lookup
+1. Full profile entity URI — exact key match in `qid_map`
+2. Profile `name_identifier` — key match in `qid_map`
+3. Profile entity URI tail QID — direct Wikidata lookup fallback
+
+**Returns:** `tuple[dict, list[ConformanceNotice]]`
+
+- `dict`: Charged packet with `data-value` fields populated in each entity slot. Statements are partitioned into conformant, non_conformant (with `non_conformant: true` and `notices`), and uncovered (under `entity.uncovered_statements`). Missing-required statements remain with `data-value: null` and attached notices.
+- `list[ConformanceNotice]`: All conformance notices from the charging pass.
 
 ---
 
-### `charge_curation_packet()`
+### `charge_curation_packet()` (Legacy)
 
-Charge a packet directly from a source-values dict. Useful for bulk operations where
-data has already been fetched or transformed before packet assembly.
+Charge a packet directly from a source-values dict. This is a legacy path for bulk operations where data has already been fetched and transformed before packet assembly. New workflows should use `charge_packet_from_wikidata_items()` instead.
 
 ```python
 from gkc.still_charger import charge_curation_packet
 
 source_values = {
-    "ent-001": {
-        "labels": {"en": "Cherokee Nation"},
+    "https://datadistillery.wikibase.cloud/entity/Q4": {
+        "labels": {"mul": {"data-value": "Cherokee Nation"}},
         "statements": {
-            "instance_of": [{"value": "Q7840353"}],
-            "official_website": [{"value": "https://www.cherokee.org"}],
+            "instance_of": [{"data-value": "https://www.wikidata.org/entity/Q7840353"}],
         },
     }
 }

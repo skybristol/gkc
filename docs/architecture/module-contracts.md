@@ -76,10 +76,13 @@ Current anchor surface:
 
 - `create_curation_packet`
 - `build_curation_packet_from_json_profile`
-- `charge_curation_packet`
-- `charge_packet_from_wikidata_items`
+- `charge_packet_from_wikidata_items` (active Wikidata charging path)
 - `ChargeReport`
 - `ChargeIssue`
+
+Legacy surface (preserved for existing integrations; new workflows should use `charge_packet_from_wikidata_items`):
+
+- `charge_curation_packet`
 
 ### Fermenter (`gkc.fermenter`)
 
@@ -100,9 +103,18 @@ Out of scope:
 Current anchor surface:
 
 - `ConformanceNotice`
+- `ConformanceOutcome` (string enum: `CONFORMANT`, `NON_CONFORMANT_MAPPABLE`, `UNCOVERED`, `MISSING_REQUIRED`)
+- `StatementEvaluation`
+- `EntityEvaluation`
 - `ValidationResult`
 - `validate_*` datatype validators
 - `coerce_*` datatype coercers
+- `normalize_claim_value`
+- `evaluate_statement_claim`
+- `evaluate_entity`
+- `check_packet_integrity`
+- `validate_packet_inline`
+- `validate_packet_from_file`
 
 ### Bottler (`gkc.bottler`)
 
@@ -259,12 +271,10 @@ When adding new functionality, assign ownership using this matrix:
 
 ## Current Gaps to Revisit During Critical Analysis
 
-- Still Charger URI-keyed packet assembly and source resolution are still in active migration from profile-name keyed behavior.
-- Fermenter module implementation is pending; current validation/coercion logic remains distributed and not yet unified.
+- Still Charger `charge_packet_from_wikidata_items` does not yet call the fermenter evaluator (`evaluate_entity`) to partition charged statements into conformant/non_conformant/uncovered/missing_required buckets. The fermenter evaluator API is implemented (PR #170); the still_charger integration is the next implementation step.
+- Still Charger does not yet emit `conformance_summary` in packet metadata or per-entity source provenance (`source_qid`, `lastrevid`, `pulled_at`).
 - Boundaries between wikibase write planning and bottler transformation stages still need explicit acceptance criteria per phase.
-- Wikibase orchestration should continue preferring composition over new transport abstractions.
 - Cross-module tests should identify failure source by layer (read, transform, payload-shape, write, orchestration).
-- Curation packet v2 contract migration from profile-name keys to entity-URI keys remains unfinished and is the next high-risk integration step.
 - Packet compatibility metadata, change classification, and forward-migration rules for long-lived offline packets remain to be implemented.
 
 ## Theoretical Design Notes

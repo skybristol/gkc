@@ -29,12 +29,14 @@ The current pipeline is:
 6. Bottling transforms packet content to destination-specific payloads.
 7. Shipping sends destination-specific payloads to Commons Partners (Wikidata, etc.).
 
-## Canonical Identity Rules
+## Identity Model
 
-- Canonical profile and statement identity is URI-first.
-- QIDs are convenience forms derived from URI tails.
-- Labels are display content and are not join keys.
-- Cross-entity references inside packets use packet-local entity IDs until shipping resolves external IDs.
+Curation packets use a dual-key identity model:
+
+- `name_identifier` is the primary human-facing key for all interaction surfaces — statement slots in packet data, graph node identifiers, and the profile reference label on each entity slot.
+- `id` (full entity URI) is the immutable canonical identity used for joining, provenance, and round-trip mapping to the Wikibase instance.
+
+Neither key is optional. QIDs are convenience forms derived from URI tails and are used only where file paths require them. Labels are display content and are never used as join keys.
 
 ## JSON Entity Profile Contract
 
@@ -67,9 +69,14 @@ Within `value`, profiles may include derived-default hints for nested statements
 
 These are consumed by downstream wizard/validation paths and are not UI-only fields.
 
-## Curation Packet Scaffold Contract
+## Curation Packet Structure
 
-The active scaffold contract produced by `build_curation_packet_from_json_profile(...)` is:
+All curation packets enforce a strict two-section top-level structure:
+
+- `metadata` — the ruleset, provenance, and integrity information for this packet. This section is sealed with a SHA-256 digest at mint time and must not be modified after generation.
+- `data` — the fillable data slots for each entity in the packet.
+
+### Top-Level Packet Shape
 
 ```json
 {
@@ -77,13 +84,38 @@ The active scaffold contract produced by `build_curation_packet_from_json_profil
   "operation_mode": "new",
   "metadata": {
     "primary_profile": {
-      "name_identifier": "Q4",
+      "name_identifier": "tribal_government_us",
       "id": "https://datadistillery.wikibase.cloud/entity/Q4"
     },
-    "profiles": [],
+    "profiles": [
+      {
+        "id": "https://datadistillery.wikibase.cloud/entity/Q4",
+        "name_identifier": "tribal_government_us",
+        "identification": {},
+        "statements": [],
+        "metadata": {}
+      }
+    ],
     "graph": {
-      "nodes": [],
+      "nodes": {
+        "tribal_government_us": {
+          "kind": "profile",
+          "name_identifier": "tribal_government_us",
+          "id": "https://datadistillery.wikibase.cloud/entity/Q4",
+          "label": "Tribal Government in the United States"
+        }
+      },
       "edges": []
+    },
+    "mint": {
+      "minted_at": "2026-03-26T00:00:00Z",
+      "generator": "gkc.still_charger.build_curation_packet_from_json_profile",
+      "gkc_version": "0.x.y"
+    },
+    "integrity": {
+      "metadata_canonicalization": "json-sort-keys-v1",
+      "metadata_digest_algorithm": "sha256",
+      "metadata_digest": "<sha256 hex digest of canonical metadata JSON>"
     }
   },
   "data": {
@@ -92,94 +124,166 @@ The active scaffold contract produced by `build_curation_packet_from_json_profil
 }
 ```
 
-### Packet Fields
+### Packet Metadata Fields
 
-| Field | Type | Required | Meaning |
-|---|---|---|---|
-| `packet_id` | string | Yes | Packet-local identifier |
-| `operation_mode` | string | Yes | Current mode (`new` in scaffold builder) |
-| `metadata.primary_profile.id` | string | Yes | Primary profile URI used to mint packet |
-| `metadata.profiles` | array | Yes | Profile metadata and statement definitions in packet scope |
-| `metadata.graph.edges` | array | Yes | URI-aware profile graph edges |
-| `data.entities` | array | Yes | Entity slots in this packet |
-| `minted_from` | object | No (recommended) | Provenance and compatibility metadata |
-| `compatibility_status` | string | No | Re-entry compatibility outcome |
-| `migration_report` | object | No | Migration actions and warnings |
+| Field | Type | Meaning |
+|---|---|---|
+| `packet_id` | string | UUID-based packet identifier |
+| `operation_mode` | string | `new` for uncharged scaffold; `single` or `bulk` for scoped charging |
+| `metadata.primary_profile.name_identifier` | string | Human-facing name identifier for the primary profile |
+| `metadata.primary_profile.id` | string | Canonical URI for the primary profile |
+| `metadata.profiles` | array | Full profile definitions (statements, identification, metadata) for all profiles in scope |
+| `metadata.graph` | object | Unified profile and value-list graph with `nodes` (by name_identifier) and `edges` |
+| `metadata.mint` | object | Mint provenance: `minted_at`, `generator`, `gkc_version` |
+| `metadata.integrity` | object | SHA-256 digest of canonical metadata JSON; used as a fermenter go/no-go gate on re-entry |
 
-### Entity Slot Scaffold Shape
+### Uncharged Entity Slot Shape
 
-Each entry in `data.entities[]` includes:
+Each entry in `data.entities[]` is pre-scaffolded from profile definitions with empty value slots ready to be filled:
 
 ```json
 {
-  "profile": "Q4",
+  "profile": "tribal_government_us",
   "id": "https://datadistillery.wikibase.cloud/entity/Q4",
   "labels": {"mul": {"data-value": ""}},
   "descriptions": {"mul": {"data-value": ""}},
   "aliases": {"mul": {"data-value": ""}},
   "statements": {
-    "Q16": {
+    "instance_of": {
       "id": "https://datadistillery.wikibase.cloud/entity/Q16",
-      "data-type": "item",
-      "data-value": ""
+      "data-type": "wikibase-item",
+      "data-value": "https://www.wikidata.org/entity/Q7840353"
+    },
+    "official_website": {
+      "id": "https://datadistillery.wikibase.cloud/entity/Q19",
+      "data-type": "url",
+      "data-value": null,
+      "value-list": "cache/queries/Q28.json",
+      "references": {
+        "stated_in": [
+          {
+            "id": "https://datadistillery.wikibase.cloud/entity/Q30",
+            "data-type": "wikibase-item",
+            "data-value": null
+          }
+        ],
+        "reference_url": [
+          {
+            "id": "https://datadistillery.wikibase.cloud/entity/Q29",
+            "data-type": "url",
+            "data-value": null
+          }
+        ]
+      }
     }
   }
 }
 ```
 
-| Field | Type | Required | Meaning |
-|---|---|---|---|
-| `profile` | string | Yes | Profile name identifier for this entity slot |
-| `id` | string | Yes | Entity URI for this slot |
-| `labels/descriptions/aliases` | object | Yes | Identification field slots |
-| `statements` | object | Yes | Statement slot map keyed by statement identifier |
+| Field | Type | Meaning |
+|---|---|---|
+| `profile` | string | Profile `name_identifier` for this entity slot |
+| `id` | string | Profile URI — canonical entity identity for this slot |
+| `labels` / `descriptions` / `aliases` | object | Language-keyed slots. Each value is `{"data-value": ""}` — no inner language tag. |
+| `statements` | object | Statement slots keyed by statement `name_identifier` |
 
-## Charged Entity Data Contract
+**Statement slot fields:**
 
-After charging, `entity.data` is populated with normalized content.
+| Field | Type | Meaning |
+|---|---|---|
+| `id` | string | Statement entity URI |
+| `data-type` | string | Wikibase data type (e.g., `wikibase-item`, `url`, `string`, `time`) |
+| `data-value` | any | The value — empty string or `null` when uncharged; pre-filled for fixed/single-option defaults |
+| `value-list` | string | Relative path to the value-list cache file, when applicable |
+| `qualifiers` | object | Present only when the profile specifies qualifiers; same slot shape, keyed by qualifier `name_identifier` |
+| `references` | object | Present only when the profile specifies references; keyed by reference statement `name_identifier`, each an array of slot objects |
 
-Common fields:
+Qualifiers and references are omitted entirely when the profile does not specify them. When a statement is used as a reference or qualifier, it does not carry its own nested `references` or `qualifiers`.
 
-- `labels`
-- `descriptions`
-- `aliases`
-- `statements`
+## Charged Entity Slot Shape
 
-`data.statements` is keyed by statement URI, not by display label.
-
-Example:
+Charging populates each entity slot's `data-value` fields and partitions statements into conformance buckets. The entity slot structure expands from the uncharged shape:
 
 ```json
 {
-  "data": {
-    "labels": {
-      "en": "Cherokee Nation"
+  "profile": "tribal_government_us",
+  "id": "https://datadistillery.wikibase.cloud/entity/Q4",
+  "labels": {"mul": {"data-value": "Cherokee Nation"}},
+  "descriptions": {"mul": {"data-value": "federally recognized Native American tribe"}},
+  "aliases": {"mul": {"data-value": ""}},
+  "statements": {
+    "instance_of": {
+      "id": "https://datadistillery.wikibase.cloud/entity/Q16",
+      "data-type": "wikibase-item",
+      "data-value": "https://www.wikidata.org/entity/Q7840353"
     },
-    "descriptions": {},
-    "aliases": {},
-    "statements": {
-      "https://datadistillery.wikibase.cloud/entity/Q16": [
-        {
-          "value": {"id": "Q7840353"},
-          "qualifiers": {},
-          "references": []
-        }
-      ]
+    "official_website": {
+      "id": "https://datadistillery.wikibase.cloud/entity/Q19",
+      "data-type": "url",
+      "data-value": "https://www.cherokee.org",
+      "value-list": "cache/queries/Q28.json"
+    },
+    "population": {
+      "id": "https://datadistillery.wikibase.cloud/entity/Q21",
+      "data-type": "quantity",
+      "data-value": null,
+      "non_conformant": true,
+      "notices": ["datatype_mismatch"]
     }
+  },
+  "uncovered_statements": {
+    "P18": [
+      {
+        "data-type": null,
+        "data-value": "Cherokee_Nation_Capitol.jpg"
+      }
+    ]
   }
 }
 ```
 
-### Nested Qualifier and Reference Shape
+### Conformance Buckets
 
-Nested qualifiers and references may appear in statement-shaped map form keyed by nested statement URI.
+Charged statements are classified by the fermenter evaluator into four outcomes:
 
-Typical nested shape:
+| Outcome | Meaning | Packet location |
+|---|---|---|
+| `CONFORMANT` | Value matched profile data-type, value-list, and fixed-value constraints | `statements[name_identifier].data-value` populated |
+| `NON_CONFORMANT_MAPPABLE` | Value present but failed a constraint; retained for curator review | `statements[name_identifier]` with `non_conformant: true` and `notices` array |
+| `MISSING_REQUIRED` | Profile expected this statement but source had none | `statements[name_identifier].data-value` remains `null`; notice attached |
+| `UNCOVERED` | Source had this property but the profile does not model it | `entity.uncovered_statements` keyed by Wikidata PID |
 
-- `qualifiers`: object keyed by statement URI with list values.
-- `references`: object keyed by statement URI with list values, or an empty list where no references are provided.
+### Source Provenance (per entity, in metadata)
 
-Validation/coercion layers should normalize accepted nested forms and report shape violations as conformance notices.
+When charging from Wikidata, each entity's source metadata is recorded under `metadata.profiles[i]` alongside the profile definition:
+
+```json
+{
+  "source_qid": "Q195562",
+  "lastrevid": 1234567890,
+  "pulled_at": "2026-03-26T10:00:00Z"
+}
+```
+
+`lastrevid` is used when a charged packet reaches the bottling/shipping stage to detect whether the Wikidata item has changed since the packet was minted.
+
+### Conformance Summary (in packet metadata)
+
+A `conformance_summary` field is added to packet metadata after charging:
+
+```json
+{
+  "conformance_summary": {
+    "conformant": 5,
+    "non_conformant": 1,
+    "uncovered": 2,
+    "missing_required": 0,
+    "notice_codes": ["datatype_mismatch", "statement_uncovered"]
+  }
+}
+```
+
+This allows callers to do a single-field go/no-go check without walking the full notice list.
 
 ## Conformance and Blocking Policy
 
@@ -192,60 +296,15 @@ Current policy direction:
 - `max_count` is an upper-bound target; effective lower bound is zero unless explicit minimum policy is introduced.
 - Derived-value and fixed/list constraints are enforced according to profile directives and resolver context.
 
-## Packet Re-entry, Compatibility, and Migration
+## Packet Re-entry and Integrity
 
-Long-lived packets may return after SpiritSafe/Wikibase state has changed.
+Curation packets carry a SHA-256 digest of their canonical metadata at mint time (`metadata.integrity.metadata_digest`). When a packet is presented back to the fermenter for validation, this digest is recomputed and compared. A digest mismatch is a hard failure — no data validation proceeds until integrity is confirmed. This ensures that the ruleset embedded in the packet has not drifted from the one used during curation.
 
-To support deterministic handling, packets should carry `minted_from` metadata.
+For long-lived packets that return after SpiritSafe or Data Distillery state has changed, the `metadata.mint` provenance fields (`minted_at`, `gkc_version`) provide a basis for drift classification. Formal packet migration tooling — including change classification (`patch_compatible`, `minor_compatible`, `migration_required`, `breaking`) and a migration report — is planned but not yet implemented.
 
-### Recommended `minted_from` Fields
+### Theoretical Design Notes
 
-| Field | Type | Meaning |
-|---|---|---|
-| `packet_contract_version` | string | Version of packet compatibility contract |
-| `spiritsafe_commit` | string | SpiritSafe git commit used at mint time |
-| `dd_revision` | string | Data Distillery revision watermark or snapshot ID |
-| `profiles` | array | Per-profile records used to mint packet |
-| `value_lists` | array | Value-list snapshot records used to mint packet |
-| `minted_at` | string | Mint timestamp (ISO 8601) |
-
-Per-profile metadata should include profile URI/QID and profile/statement digests.
-
-Per-value-list metadata should include value-list ID plus cache digest and refresh timestamp.
-
-### Compatibility Status Values
-
-Suggested runtime values:
-
-- `compatible`
-- `migration_available`
-- `manual_review_required`
-- `incompatible`
-
-### Change Classification
-
-Suggested drift classes:
-
-- `patch_compatible`
-- `minor_compatible`
-- `migration_required`
-- `breaking`
-
-### Re-entry Sequence
-
-1. Validate packet type and shape.
-2. Compare `minted_from` metadata to current SpiritSafe and DD state.
-3. Classify drift.
-4. Apply approved forward migrations when available.
-5. Re-run conformance validation/coercion.
-6. Emit compatibility and migration reporting.
-7. Proceed to shipping only when packet is structurally valid and required migrations succeeded.
-
-## Transition Notes
-
-Some legacy packet/documentation surfaces still reference older fields such as `profile_name`, profile-name keyed statement maps, or YAML-first assumptions.
-
-Current architecture direction is URI-first JSON profile and packet contracts, with compatibility shims preserved only where required during migration.
+**Packet migration tooling** — When a packet created from an older SpiritSafe state is re-presented, a forward migration utility will classify drift and apply approved transforms before re-validation. The `metadata.mint` fields provide the provenance anchor for this. Not yet implemented.
 
 ## Related Documentation
 

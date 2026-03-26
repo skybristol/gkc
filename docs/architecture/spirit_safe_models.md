@@ -1,6 +1,6 @@
 ---
 title: SpiritSafe Integration Architecture
-description: URI-keyed artifact indexing, profile graph traversal, and packet scaffolding
+description: Artifact indexing, profile graph traversal, and packet scaffolding
 ---
 
 # SpiritSafe Integration Architecture
@@ -36,9 +36,12 @@ Implemented and committed:
 
 ## Identity Model
 
-- Canonical identity is full entity URI.
-- QIDs are normalized from URI tails when needed for file resolution and graph keys.
-- Labels are display fields only and are never used as join keys.
+SpiritSafe artifacts and curation packets use a dual-key identity model:
+
+- `name_identifier` — primary human-facing key, derived from the DD Wikibase `name_identifier` property (P214). Used as statement slot keys in packet data, graph node identifiers, and profile reference labels.
+- Full entity URI — immutable canonical identity for joining, provenance, and round-trip mapping to the Wikibase instance. Stored in the `id` field throughout.
+
+QIDs are normalized from URI tails only where file path resolution requires them. Labels are display-only and are never used as join keys.
 
 ## Manifest Model
 
@@ -74,31 +77,37 @@ Normalization rules:
 
 ## Packet Scaffolding Model
 
-`still_charger.create_curation_packet()` outputs:
+`still_charger.create_curation_packet()` and `still_charger.build_curation_packet_from_json_profile()` produce a two-section packet:
 
-- `packet_id`
-- `operation_mode`
-- `created_at`
-- `primary_profile` and `primary_profile_entity`
-- `entities`
-- `cross_references`
-- `cardinality_constraints`
-- `profile_package`
+- `metadata` — the complete profile ruleset, unified graph, mint provenance, and SHA-256 integrity digest.
+- `data` — fillable entity slots.
 
-Entity scaffolds carry:
+Top-level packet fields:
 
-- packet-local ID (`ent-001`)
-- `profile` (QID)
-- `profile_entity` (URI)
-- empty `data`
-- `profile_structure` copied from JSON profile content
+- `packet_id` — UUID-based identifier
+- `operation_mode` — `new`, `single`, or `bulk`
+- `metadata.primary_profile` — `name_identifier` and `id` (URI) for the primary profile
+- `metadata.profiles` — array of full profile definitions (statements, identification, metadata) for all profiles in packet scope
+- `metadata.graph` — unified graph with `nodes` keyed by `name_identifier` and `edges` encoding both profile-to-profile and profile-to-value-list relationships
+- `metadata.mint` — `minted_at`, `generator`, `gkc_version`
+- `metadata.integrity` — SHA-256 digest of canonical metadata JSON; used as fermenter go/no-go gate on re-entry
+- `data.entities` — array of entity slots
 
-Within `profile_structure.statements[*].value`, SpiritSafe JSON can include derived-value hints for nested references/qualifiers:
+Entity slots in `data.entities` carry:
+
+- `profile` — profile `name_identifier`
+- `id` — profile URI (canonical entity identity for this slot)
+- Language-keyed `labels`, `descriptions`, `aliases` slots — each value is `{"data-value": ""}`; no inner language tag
+- `statements` — object keyed by statement `name_identifier`, each slot including `id` (statement URI), `data-type`, `data-value`, and optionally `value-list`, `qualifiers`, and `references`
+
+Qualifiers and references are omitted when the profile does not specify them. When used as a reference or qualifier, a statement does not carry its own nested references or qualifiers.
+
+Derived-value hints from SpiritSafe JSON (P213 semantics) appear within statement `value` objects:
 
 - `value_source: statement_value`
-- `value_source_statement: <statement URI>`
+- `value_source_statement: <parent statement URI>`
 
-These hints are derived from statement-level Wikibase semantics and are intended for downstream wizard/validation consumers.
+These are derived from DD Wikibase statement-level semantics and are intended for downstream wizard/validation consumers.
 
 ## Testing Strategy
 
@@ -112,5 +121,6 @@ These hints are derived from statement-level Wikibase semantics and are intended
 
 ## Theoretical Design Notes
 
-- Shared conformance notice envelopes across charging, barreling, and validation remain planned but are not yet a finalized runtime contract.
-- Wizard-facing packet consumption can move toward stricter URI-first keys and richer value-list routing metadata once downstream integration milestones land.
+**Packet migration tooling** — When a long-lived packet returns after SpiritSafe state has changed, a forward migration utility will classify drift and apply approved transforms before re-validation. The `metadata.mint` fields provide the provenance anchor. Change classification categories (`patch_compatible`, `minor_compatible`, `migration_required`, `breaking`) and a migration report are the planned output. Not yet implemented.
+
+**Fermenter-driven charged packet integration** — The `charge_packet_from_wikidata_items` path in `still_charger` does not yet use the fermenter evaluator (`evaluate_entity`) to partition charged statements into conformant/non_conformant/uncovered/missing_required buckets. This is the next implementation step; the fermenter evaluator API is ready. See [Cross-Module Contracts](module-contracts.md) for current gap notes.
