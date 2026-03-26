@@ -181,13 +181,50 @@ result = validate_with_pattern("invalid", r"^[A-Z]{2}-\d{4}$")
 
 ### `validate_monolingualtext(value)`
 
-Validates a monolingual text dict. Requires both `"language"` and `"text"` string fields.
+Validates and coerces a monolingual text value into the canonical Wikibase `{"language", "text"}` dict.
+
+Coercion handles several input forms:
+
+- A plain string is coerced to `{"language": "mul", "text": value}` (uncertainty flagged)
+- A dict with `"lang"` key is renamed to `"language"`
+- Language codes are normalized via an ISO 639-2 / English-name alias map (e.g. `"eng"` → `"en"`, `"english"` → `"en"`)
+- Language codes are validated against BCP-47 format; Wikibase special codes `mul`, `zxx`, and `und` are accepted
 
 ```python
 from gkc.fermenter import validate_monolingualtext
 
+# Canonical input
 result = validate_monolingualtext({"language": "en", "text": "Cherokee Nation"})
 # result.valid → True
+# result.value → {"language": "en", "text": "Cherokee Nation"}
+# result.uncertainty → 0.0
+
+# Plain string coercion
+result = validate_monolingualtext("Cherokee Nation")
+# result.valid → True
+# result.value → {"language": "mul", "text": "Cherokee Nation"}
+# result.uncertainty → 0.5
+
+# ISO 639-2 three-letter code normalization
+result = validate_monolingualtext({"language": "eng", "text": "Hello"})
+# result.valid → True
+# result.value → {"language": "en", "text": "Hello"}
+# result.uncertainty → 0.2
+
+# English language name normalization
+result = validate_monolingualtext({"language": "french", "text": "Bonjour"})
+# result.valid → True
+# result.value → {"language": "fr", "text": "Bonjour"}
+
+# "lang" key renamed
+result = validate_monolingualtext({"lang": "de", "text": "Hallo"})
+# result.valid → True
+# result.value → {"language": "de", "text": "Hallo"}
+
+# Invalid language code
+result = validate_monolingualtext({"language": "not-a-code!!!", "text": "Hello"})
+# result.valid → False
+# result.errors → ["'not-a-code!!!' is not a valid BCP-47 language code; ..."]
 ```
 
 ---

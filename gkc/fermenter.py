@@ -1418,23 +1418,191 @@ def validate_with_pattern(
     )
 
 
-def validate_monolingualtext(value: Any) -> ValidationResult:
-    """Validate a monolingualtext value.
+# Language code alias map: ISO 639-2/B, ISO 639-2/T, English names -> BCP-47
+_LANGUAGE_ALIASES: dict[str, str] = {
+    # Three-letter ISO 639-2 bibliographic codes
+    "eng": "en",
+    "fra": "fr",
+    "deu": "de",
+    "spa": "es",
+    "zho": "zh",
+    "jpn": "ja",
+    "kor": "ko",
+    "por": "pt",
+    "ita": "it",
+    "rus": "ru",
+    "ara": "ar",
+    "hin": "hi",
+    "nld": "nl",
+    "pol": "pl",
+    "tur": "tr",
+    "swe": "sv",
+    "nor": "no",
+    "dan": "da",
+    "fin": "fi",
+    "ces": "cs",
+    "hun": "hu",
+    "ron": "ro",
+    "bul": "bg",
+    "hrv": "hr",
+    "slk": "sk",
+    "slv": "sl",
+    "ukr": "uk",
+    "heb": "he",
+    "vie": "vi",
+    "tha": "th",
+    "ind": "id",
+    "msa": "ms",
+    "cat": "ca",
+    "eus": "eu",
+    "ell": "el",
+    "lat": "la",
+    "gle": "ga",
+    "cym": "cy",
+    "chr": "chr",
+    # Three-letter ISO 639-2 terminological codes (same as bibliographic for most)
+    "fre": "fr",
+    "ger": "de",
+    "chi": "zh",
+    # English names for common languages
+    "english": "en",
+    "french": "fr",
+    "german": "de",
+    "spanish": "es",
+    "chinese": "zh",
+    "japanese": "ja",
+    "korean": "ko",
+    "portuguese": "pt",
+    "italian": "it",
+    "russian": "ru",
+    "arabic": "ar",
+    "hindi": "hi",
+    "dutch": "nl",
+    "polish": "pl",
+    "turkish": "tr",
+    "swedish": "sv",
+    "norwegian": "no",
+    "danish": "da",
+    "finnish": "fi",
+    "czech": "cs",
+    "hungarian": "hu",
+    "romanian": "ro",
+    "bulgarian": "bg",
+    "croatian": "hr",
+    "slovak": "sk",
+    "slovenian": "sl",
+    "ukrainian": "uk",
+    "hebrew": "he",
+    "vietnamese": "vi",
+    "thai": "th",
+    "indonesian": "id",
+    "malay": "ms",
+    "catalan": "ca",
+    "basque": "eu",
+    "greek": "el",
+    "latin": "la",
+    "irish": "ga",
+    "welsh": "cy",
+    "cherokee": "chr",
+}
 
-    Expected structure:
-        {"language": "en", "text": "English text"}
+# BCP-47 language tag pattern: 2-8 letter primary subtag, optional further subtags
+_LANG_TAG_RE = re.compile(r"^[a-z]{2,8}(-[a-z0-9]{2,8})*$", re.IGNORECASE)
+
+# Language codes explicitly accepted by Wikibase beyond standard BCP-47
+_WIKIBASE_SPECIAL_CODES = frozenset({"mul", "zxx", "und"})
+
+
+def _normalize_language_code(raw: str) -> tuple[str, list[str]]:
+    """Normalize a language code to canonical BCP-47 form.
+
+    Returns ``(normalized_code, warnings)`` where warnings is empty on a clean
+    normalization and carries a message when an alias was applied.
     """
+    lowered = raw.strip().lower()
+    warnings: list[str] = []
+
+    alias = _LANGUAGE_ALIASES.get(lowered)
+    if alias is not None:
+        warnings.append(
+            f"Language code '{raw}' normalized to '{alias}' via alias mapping"
+        )
+        return alias, warnings
+
+    # Already a valid BCP-47 tag (or Wikibase special code) — return as-is,
+    # but lowercase for consistency.
+    canonical = lowered
+    return canonical, warnings
+
+
+def _validate_language_code(code: str) -> list[str]:
+    """Return error strings for an invalid BCP-47 language code, empty if valid."""
+    if code in _WIKIBASE_SPECIAL_CODES:
+        return []
+    if _LANG_TAG_RE.match(code):
+        return []
+    return [
+        f"'{code}' is not a valid BCP-47 language code; "
+        "expected a subtag like 'en', 'zh-hans', or a Wikibase special code like 'mul'"
+    ]
+
+
+def validate_monolingualtext(value: Any) -> ValidationResult:
+    """Validate and coerce a monolingualtext value.
+
+    Accepts multiple input forms and normalizes to the canonical Wikibase
+    ``{language, text}`` dict:
+
+    - A plain string is coerced to ``{"language": "mul", "text": value}``
+      with an uncertainty warning.
+    - A dict with ``"lang"`` instead of ``"language"`` has the key renamed.
+    - Language codes are normalized via ISO 639-2 alias mapping (e.g. ``"eng"``
+      → ``"en"``) and validated against BCP-47.
+    """
+    warnings: list[str] = []
+
     if value is None:
         return ValidationResult(
             valid=False, value=None, errors=["monolingualtext value cannot be null"]
+        )
+
+    # Coerce plain strings to mul-tagged monolingualtext
+    if isinstance(value, str):
+        if not value.strip():
+            return ValidationResult(
+                valid=False,
+                value=value,
+                errors=["monolingualtext text cannot be empty"],
+            )
+        warnings.append(
+            "Plain string coerced to monolingualtext with language 'mul'; "
+            "provide an explicit language code when known"
+        )
+        coerced = {"language": "mul", "text": value.strip()}
+        return ValidationResult(
+            valid=True,
+            value=coerced,
+            warnings=warnings,
+            uncertainty=0.5,
+            uncertainty_reasons=[
+                "language code assumed as 'mul' from plain string input"
+            ],
         )
 
     if not isinstance(value, dict):
         return ValidationResult(
             valid=False,
             value=value,
-            errors=[f"monolingualtext must be a dict, got {type(value).__name__}"],
+            errors=[
+                f"monolingualtext must be a dict or string, got {type(value).__name__}"
+            ],
         )
+
+    # Accept "lang" as an alias for "language"
+    if "lang" in value and "language" not in value:
+        value = dict(value)
+        value["language"] = value.pop("lang")
+        warnings.append("Key 'lang' renamed to 'language'")
 
     if "language" not in value or "text" not in value:
         return ValidationResult(
@@ -1443,14 +1611,52 @@ def validate_monolingualtext(value: Any) -> ValidationResult:
             errors=["monolingualtext must have 'language' and 'text' fields"],
         )
 
-    if not isinstance(value["language"], str) or not isinstance(value["text"], str):
+    lang_raw = value["language"]
+    text_raw = value["text"]
+
+    if not isinstance(lang_raw, str):
         return ValidationResult(
             valid=False,
             value=value,
-            errors=["'language' and 'text' fields must be strings"],
+            errors=[f"'language' must be a string, got {type(lang_raw).__name__}"],
         )
 
-    return ValidationResult(valid=True, value=value)
+    if not isinstance(text_raw, str):
+        return ValidationResult(
+            valid=False,
+            value=value,
+            errors=[f"'text' must be a string, got {type(text_raw).__name__}"],
+        )
+
+    if not text_raw.strip():
+        return ValidationResult(
+            valid=False,
+            value=value,
+            errors=["monolingualtext 'text' cannot be empty"],
+        )
+
+    normalized_lang, alias_warnings = _normalize_language_code(lang_raw)
+    warnings.extend(alias_warnings)
+
+    lang_errors = _validate_language_code(normalized_lang)
+    if lang_errors:
+        return ValidationResult(
+            valid=False, value=value, errors=lang_errors, warnings=warnings
+        )
+
+    normalized = {"language": normalized_lang, "text": text_raw}
+    uncertainty = 0.2 if alias_warnings else 0.0
+    uncertainty_reasons = (
+        [f"language code aliased from '{lang_raw}'"] if alias_warnings else []
+    )
+
+    return ValidationResult(
+        valid=True,
+        value=normalized,
+        warnings=warnings,
+        uncertainty=uncertainty,
+        uncertainty_reasons=uncertainty_reasons,
+    )
 
 
 def validate_url(
