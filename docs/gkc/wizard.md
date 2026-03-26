@@ -23,27 +23,27 @@ GKC Wizards are **profile-driven user interfaces** that transform declarative YA
 
 ```
 ┌──────────────────────────────────────────────────────────┐
-│  SpiritSafe Profile YAML (TribalGovernmentUS)            │
+│  SpiritSafe JSON Entity Profile (Q4 — tribal_government_us) │
 │  - Entity metadata (labels, descriptions, aliases)       │
 │  - Statements with datatypes, constraints, guidance      │
-│  - Profile graph (links to OfficeHeldByHeadOfState)      │
-│  - SPARQL-driven allowed-items lists                     │
+│  - Profile graph (links to related profile types)        │
+│  - Value-list routes to SPARQL-hydrated cache files      │
 └──────────────────┬──────────────────────────────────────-┘
                    │ Load & parse
                    ↓
 ┌──────────────────────────────────────────────────────────┐
 │  GKC Spirit Safe Module                                  │
-│  - Parse YAML → Pydantic EntityProfile model             │
-│  - Discover profile graph (related profiles)             │
-│  - Hydrate SPARQL allowed-items caches                   │
+│  - Load JSON Entity Profile + related profiles           │
+│  - Discover profile graph (linked profile types)         │
+│  - Resolve value-list cache routes                       │
 └──────────────────┬──────────────────────────────────────-┘
                    │ Provide profile + graph
                    ↓
 ┌──────────────────────────────────────────────────────────┐
 │  Wizard Loader                                           │
-│  - Create GKC Curation Packet with placeholders          │
-│  - Primary entity: ent-001-primary                       │
-│  - Related entities: ent-002-office, etc.                │
+│  - Create GKC Curation Packet with uncharged slots       │
+│  - Entity slots keyed by profile name_identifier and ID  │
+│  - Statement slots keyed by statement name_identifier    │
 └──────────────────┬──────────────────────────────────────-┘
                    │ Pass packet + profile to renderer
                    ↓

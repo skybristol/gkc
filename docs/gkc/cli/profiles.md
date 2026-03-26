@@ -134,10 +134,13 @@ gkc packet build --profile Q4 --source github --repo skybristol/SpiritSafe --ref
 The output packet includes:
 
 - `packet_id` — UUID for this packet
-- `operation_mode` — Scaffold mode indicator
-- `metadata.primary_profile` — Full URI and identifier for the source profile
-- `metadata.graph.edges[]` — Linked-profile graph edges for packet traversal
-- `data.entities[]` — Entity slots with statement slots pre-scaffolded
+- `operation_mode` — scaffold mode indicator
+- `metadata.primary_profile` — `name_identifier` and full URI for the source profile
+- `metadata.profiles` — full profile definitions (statements, identification, metadata) for all profiles in scope
+- `metadata.graph` — unified graph combining profile-to-profile and profile-to-value-list relationships, with `name_identifier` as primary node identifier
+- `metadata.mint` — `minted_at`, `generator`, `gkc_version`
+- `metadata.integrity` — SHA-256 digest of canonical metadata JSON
+- `data.entities[]` — entity slots with statement slots pre-scaffolded, keyed by statement `name_identifier`
 
 ### `gkc packet charge`
 
@@ -169,7 +172,15 @@ gkc packet charge \
 | `--mapping-file` | Alternatively to `--qid` | JSON file mapping entity IDs to QIDs |
 | `-o` / `--output` | No | Write charged packet JSON to file instead of stdout |
 
-The output is the charged packet with each entity slot's `data` populated and `notices[]` listing any `ConformanceNotice` items raised during charging.
+The output is the charged packet with each entity slot’s statement slots populated. Charged packets include:
+
+- `data-value` fields filled in for conformant statements
+- Non-conformant statements flagged with `non_conformant: true` and a `notices` array of reason codes
+- `entity.uncovered_statements` for Wikidata properties not modeled in the profile, keyed by Wikidata PID
+- Missing-required statements left with `data-value: null` and attached notices
+- `metadata.conformance_summary` with per-outcome counts (`conformant`, `non_conformant`, `uncovered`, `missing_required`) and observed notice codes
+
+All `ConformanceNotice` items raised during charging are also listed in the top-level `notices[]` array.
 
 ### `gkc packet info`
 
