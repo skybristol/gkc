@@ -59,6 +59,7 @@ from gkc.fermenter import (
     validate_url,
     validate_value_from_list,
     validate_wikibase_item,
+    validate_with_pattern,
 )
 
 # Mash (inbound data retrieval)
@@ -240,6 +241,7 @@ __all__ = [
     "validate_by_datatype",
     "validate_wikibase_item",
     "validate_string",
+    "validate_with_pattern",
     "validate_monolingualtext",
     "validate_url",
     "validate_time",
