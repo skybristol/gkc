@@ -6,7 +6,7 @@
 
 ## Overview
 
-GKC Wizards are **profile-driven user interfaces** that transform declarative YAML entity definitions into guided, step-by-step data entry workflows. Every aspect of the wizard—field labels, validation rules, input widgets, help text, and workflow organization—derives directly from the profile with zero hardcoded entity logic.
+GKC Wizards are **profile-driven user interfaces** that transform declarative JSON Entity Profile definitions into guided, step-by-step data entry workflows. Every aspect of the wizard—field labels, validation rules, input widgets, help text, and workflow organization—derives directly from the profile with zero hardcoded entity logic.
 
 **Key Characteristics:**
 
@@ -197,7 +197,7 @@ Every wizard follows a consistent 5-step progression designed to match curator m
 
 **Statement Rendering Order:**
 
-Wizard renders statements in the exact order specified in profile YAML. Profile designers should order statements logically (e.g., classification statements first, then descriptive, then relationships).
+Wizard renders statements in the exact order specified in the JSON Entity Profile artifact. Profile designers should order statements logically (e.g., classification statements first, then descriptive, then relationships).
 
 **Widget Selection by Datatype:**
 
@@ -398,9 +398,9 @@ When a profile references other profiles via `entity_profile` statements, wizard
 1. Wizard loads `TribalGovernmentUS` profile
 2. Discovers `office_held_by_head_of_state` statement with `entity_profile: OfficeHeldByHeadOfState`
 3. Loads `OfficeHeldByHeadOfState` profile
-4. Creates packet with two entity placeholders:
-   - `ent-001-primary` (TribalGovernmentUS)
-   - `ent-002-office` (OfficeHeldByHeadOfState)
+4. Creates packet with two entity slots:
+  - Primary slot: profile `tribal_government_us`, id `https://datadistillery.wikibase.cloud/entity/Q4`
+  - Related slot: profile `office_held_by_head_of_state`, id `https://datadistillery.wikibase.cloud/entity/Q39`
 
 ### UI Presentation Strategy
 
@@ -443,20 +443,20 @@ Users can click side entities to switch between them at any time. Each entity ma
 
 **Workflow when curator clicks "Create new office":**
 
-1. Wizard creates new entity placeholder in packet (`ent-002-office`)
+1. Wizard creates a new related-entity slot in the packet for the linked profile
 2. Sets `creation_path: primary.office_held_by_head_of_state`
 3. Switches active entity in UI to office
 4. Runs through 5 steps for office (Plan → Identify → Statements → Links → Review)
 5. On office completion:
    - Returns focus to primary entity
-   - Populates `office_held_by_head_of_state` statement value with `"ent-002-office"`
+  - Populates `office_held_by_head_of_state` statement value with the related entity URI/QID reference
    - Shows office as "Related entity (completed)" in sidebar/tabs
 
 **Cardinality Enforcement:**
 
 If statement has `max_count: 1` and office is already created, "Create new office" button is disabled.
 
-If `max_count: null`, curator can create multiple offices; wizard assigns `ent-002-office`, `ent-003-office`, etc.
+If `max_count: null`, curator can create multiple offices; wizard adds additional related entity slots keyed by profile + canonical id.
 
 ### Review Stage for Multi-Entity Packets
 
@@ -499,13 +499,17 @@ Profile `guidance` fields appear as:
 - **Expandable help sections** for longer guidance
 - **Contextual captions** below input fields
 
-**Example from profile:**
+**Example from profile artifact:**
 
-```yaml
-- id: native_name
-  guidance: >
-    Use the tribe's preferred self-designation in their native language(s).
-    Consult tribal language preservation resources or official communications.
+```json
+{
+  "name_identifier": "native_name",
+  "messages": {
+    "guidance": {
+      "mul": "Use the tribe's preferred self-designation in their native language(s). Consult tribal language preservation resources or official communications."
+    }
+  }
+}
 ```
 
 **Rendered in wizard:**
@@ -529,9 +533,16 @@ Default input prompts:
 
 Profile can override:
 
-```yaml
-labels:
-  input_prompt: Use the name the tribe uses in referring to itself
+```json
+{
+  "identification": {
+    "labels": {
+      "mul": {
+        "input_prompt": "Use the name the tribe uses in referring to itself"
+      }
+    }
+  }
+}
 ```
 
 Rendered as placeholder text or caption.
@@ -549,26 +560,35 @@ Rendered as placeholder text or caption.
 
 **UI hint override:**
 
-```yaml
-allowed_items:
-  source: sparql
-  query_ref: queries/federal_register_issues.sparql
-  ui_hint: searchable_select  # Force specific widget
+```json
+{
+  "value": {
+    "allowed_items": {
+      "source": "sparql",
+      "query_ref": "queries/federal_register_issues.sparql",
+      "ui_hint": "searchable_select"
+    }
+  }
+}
 ```
 
 **Fallback behavior:**
 
 If SPARQL query fails or returns empty, wizard uses `fallback_items` from profile:
 
-```yaml
-allowed_items:
-  source: sparql
-  query_ref: queries/languages.sparql
-  fallback_items:
-    - id: Q1860
-      label: English
-    - id: Q1567
-      label: Cherokee
+```json
+{
+  "value": {
+    "allowed_items": {
+      "source": "sparql",
+      "query_ref": "queries/languages.sparql",
+      "fallback_items": [
+        {"id": "Q1860", "label": "English"},
+        {"id": "Q1567", "label": "Cherokee"}
+      ]
+    }
+  }
+}
 ```
 
 ---
@@ -614,11 +634,17 @@ User loads Q5093 (Cherokee Nation) with TribalGovernmentUS profile
 
 **Future:** Configurable depth in metadata:
 
-```yaml
-profile_graph:
-  edges:
-    - target_profile: OfficeHeldByHeadOfState
-      max_depth: 2  # Load office + its related entities
+```json
+{
+  "metadata": {
+    "profile_graph": [
+      {
+        "target_profile": "https://datadistillery.wikibase.cloud/entity/Q39",
+        "max_depth": 2
+      }
+    ]
+  }
+}
 ```
 
 ---
@@ -645,11 +671,18 @@ Profile constraints generate user-friendly error messages:
 
 **Profile constraint:**
 
-```yaml
-constraints:
-  - type: format
-    pattern: "^Q\\d+$"
-    error_message: Must be a valid QID (e.g., Q123456)
+```json
+{
+  "value": {
+    "constraints": [
+      {
+        "type": "format",
+        "pattern": "^Q\\d+$",
+        "error_message": "Must be a valid QID (e.g., Q123456)"
+      }
+    ]
+  }
+}
 ```
 
 **Rendered error:**
@@ -670,5 +703,5 @@ constraints:
 
 ---
 
-**Last Updated:** March 3, 2026  
+**Last Updated:** March 26, 2026  
 **Status:** Stable (Phase 0 documentation; implementation evolving in Wizard MVP)

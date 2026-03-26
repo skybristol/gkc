@@ -12,7 +12,7 @@ The `gkc.wikibase` module provides Data Distillery orchestration for:
 
 ### `load_foundation_profiles(profile_dir)`
 
-Loads foundation ontology definitions from profile YAML files.
+Loads foundation ontology definitions from foundation profile files.
 
 Expected files:
 
@@ -77,7 +77,7 @@ from gkc.wikibase import build_wikibase_write_plan
 result = build_wikibase_write_plan(
     profile_id="TribalGovernmentUS",
     source_values={
-        "ent-001": {
+        "https://datadistillery.wikibase.cloud/entity/Q4": {
             "labels": {"en": "Cherokee Nation"},
             "statements": {
                 "instance_of": [{"value": "Q7840353"}],
@@ -146,7 +146,7 @@ shipper = WikibaseShipper(auth=auth, dry_run_default=True)
 
 result = execute_wikibase_write_plan(
     profile_id="TribalGovernmentUS",
-    source_values={"ent-001": {"labels": {"en": "Cherokee Nation"}}},
+    source_values={"https://datadistillery.wikibase.cloud/entity/Q4": {"labels": {"en": "Cherokee Nation"}}},
     shipper=shipper,
     dry_run=True,
     write_summary="gkc wikibase execute-write",
@@ -168,7 +168,7 @@ Key fields:
 
 ## Exceptions
 
-- `FoundationProfileError`: profile directory or YAML structure is invalid
+- `FoundationProfileError`: profile directory or foundation profile structure is invalid
 - `FoundationAuditError`: audit request/lookup operations failed
 - `FoundationInitError`: init flow failed or required parameters were invalid
 

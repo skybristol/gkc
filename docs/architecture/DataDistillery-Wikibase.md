@@ -6,7 +6,7 @@ Data Distillery Wikibase (`datadistillery.wikibase.cloud`) is the semantic regis
 
 The runtime and collaboration needs are different:
 
-- SpiritSafe YAML is optimized for offline execution and deterministic profile consumption.
+- SpiritSafe JSON profile artifacts are optimized for offline execution and deterministic profile consumption.
 - Wikibase is optimized for semantic relationships, multilingual fields, and query-oriented discovery.
 
 The Data Distillery uses a hybrid model where both sides are maintained in sync.
@@ -15,7 +15,7 @@ The Data Distillery uses a hybrid model where both sides are maintained in sync.
 
 ### Source-of-Truth Position
 
-- Profile YAML remains the actionable artifact consumed by runtime code.
+- JSON Entity Profiles and cache artifacts remain the actionable artifacts consumed by runtime code.
 - Wikibase stores semantic linkage and metadata that improve queryability and collaboration.
 - Transformations between Wikibase and SpiritSafe must be lossless and testable.
 

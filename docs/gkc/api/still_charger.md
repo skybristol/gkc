@@ -56,7 +56,7 @@ packet = create_curation_packet("Q4", operation_mode="single")
 | `profile_id` | `str` | Profile QID or full profile URI |
 | `operation_mode` | `str` | `single` for primary-only scaffold or `bulk` for profile-graph expansion |
 
-**Returns:** `dict` — Packet scaffold in the URI-keyed contract.
+**Returns:** `dict` — Packet scaffold in the dual-key packet contract (`name_identifier` for human-facing keys and `id` URI for canonical identity).
 
 ---
 
@@ -127,17 +127,6 @@ packet = build_curation_packet_from_json_profile(
   }
 }
 ```
-{
-  "packet_id": "pkt-...",
-  "operation_mode": "new",
-  "metadata": {
-    "primary_profile": {
-      "name_identifier": "Q4",
-      "id": "https://datadistillery.wikibase.cloud/entity/Q4"
-    },
-    "profiles": [],
-    "graph": {"nodes": [], "edges": []}
----
 
 ### `charge_packet_from_wikidata_items()`
 
@@ -208,7 +197,7 @@ from gkc.still_charger import ChargeIssue, ChargeReport
 
 issue = ChargeIssue(
     severity="warning",
-    entity_ref="ent-001",
+  entity_ref="https://datadistillery.wikibase.cloud/entity/Q4",
     code="specificationless_charge",
     message="Specificationless charging accepted unknown statements",
 )

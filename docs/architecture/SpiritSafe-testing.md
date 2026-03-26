@@ -10,7 +10,7 @@ GKC's functionality depends deeply on SpiritSafe profiles—for validation, wiza
 
 This document describes:
 
-- Why we need a complete local SpiritSafe replica (not just profile YAMLs)
+- Why we need a complete local SpiritSafe replica (not just profile JSON files)
 - How test profiles are managed in the canonical SpiritSafe repository
 - How the fixture sync process works (manual and automated)
 - Testing patterns and best practices
@@ -23,7 +23,7 @@ This document describes:
 
 GKC's profile registry and curation functionality (and beyond) requires:
 
-- **Profile loading**: Parse YAML + metadata
+- **Profile loading**: Load JSON profile artifacts + metadata
 - **Manifest operations**: Discover profiles, query registry metadata
 - **Profile graphs**: Traverse relationships between profiles
 - **Curation packets**: Create multi-entity work units with cross-references
@@ -36,7 +36,7 @@ Testing these features requires access to:
 2. A valid manifest.json (generated from profiles)
 3. SPARQL query files (for choice lists)
 4. Cached query results (for hydration testing)
-5. Profile metadata.yaml files (for version/authorship info)
+5. Profile metadata objects embedded in profile JSON artifacts (for version/authorship info)
 
 ### The Solution
 
@@ -47,31 +47,15 @@ This is a **complete mirror** of the SpiritSafe repository structure, containing
 ```
 tests/fixtures/spiritsafe/
 ├── profiles/
-│   ├── TribalGovernmentUS/
-│   │   ├── profile.yaml               # Full profile with linkage metadata
-│   │   ├── metadata.yaml              # Version, authors, profile_graph edges
-│   │   ├── README.md                  # (Optional, for documentation tests)
-│   │   ├── CHANGELOG.md               # (Optional, for version history tests)
-│   │   └── queries/                   # Profile-specific SPARQL queries
-│   │       ├── bia_federal_register_issues.sparql
-│   │       └── wikidata_language_items_en.sparql
-│   │
-│   ├── OfficeHeldByHeadOfState/
-│   │   ├── profile.yaml
-│   │   └── metadata.yaml
-│   │
-│   └── EntityProfileExemplar/         # Purpose-built test profile
-│       ├── profile.yaml               # Exercises all datatypes, edge cases
-│       └── metadata.yaml
-│
+│   ├── Q4.json                        # Tribal Government profile artifact
+│   ├── Q39.json                       # Office profile artifact
+│   └── ...
 ├── cache/
-│   ├── manifest.json                  # Generated registry manifest
-│   └── profiles/
-│       └── TribalGovernmentUS/
-│           ├── bia_federal_register_issues.json
-│           └── wikidata_language_items_en.json
-│
-└── queries/                           # Shared queries (if any)
+│   ├── entities/                      # Raw Wikibase cache entities
+│   ├── queries/                       # Hydrated value-list results
+│   ├── manifest.json                  # Generated artifact manifest
+│   └── entity_index.json              # Normalized derived index
+└── queries/                           # SPARQL query files
 ```
 
 **Benefits**:
@@ -255,26 +239,23 @@ def spiritsafe_local_source():
 
 ```python
 def test_profile_linkage_metadata(spiritsafe_local_source):
-    """Verify linkage metadata is parsed from TribalGovernmentUS profile."""
-    from gkc.profiles import ProfileLoader
-    
-    loader = ProfileLoader()
-    profile_path = (
-        spiritsafe_local_source 
-        / "profiles" 
-        / "TribalGovernmentUS" 
-        / "profile.yaml"
+    """Verify linkage metadata is parsed from Q4 profile artifact."""
+    from gkc.spirit_safe import load_profile
+
+    profile = load_profile("Q4")
+
+    office_stmt = next(
+        (
+            statement
+            for statement in profile.get("statements", [])
+            if statement.get("name_identifier") == "office_held_by_head_of_state"
+        ),
+        None,
     )
-    profile = loader.load_from_file(profile_path)
-    
-    # Find office_held_by_head_of_state statement
-    office_stmt = profile.statement_by_id("office_held_by_head_of_state")
     assert office_stmt is not None
-    
-    # Verify linkage metadata parsed
-    assert office_stmt.linkage is not None
-    assert office_stmt.linkage.target_profile == "OfficeHeldByHeadOfState"
-    assert office_stmt.linkage.cardinality.max == 1
+
+    profile_graph = profile.get("metadata", {}).get("profile_graph", [])
+    assert any(edge.get("target_profile") for edge in profile_graph)
 ```
 
 ### Example Test: Manifest Loading
@@ -326,9 +307,9 @@ def test_profile_graph_traversal(spiritsafe_local_source):
 
 With the complete local SpiritSafe replica, tests should cover:
 
-- ✅ Profile YAML parsing (all datatypes, statements, qualifiers, references)
+- ✅ JSON Entity Profile loading (all datatypes, statements, qualifiers, references)
 - ✅ Linkage metadata extraction from statements
-- ✅ Metadata.yaml loading (version, authors, profile_graph)
+- ✅ Profile metadata loading (version, authors, profile_graph)
 - ✅ Manifest loading and integrity validation
 - ✅ Profile graph construction and traversal
 - ✅ Cardinality constraint validation

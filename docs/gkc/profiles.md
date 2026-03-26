@@ -79,19 +79,15 @@ Validation engines and form generators use the entity index to avoid repeated tr
 
 ## Profile Anatomy
 
-### Top-Level Keys (`profile.yaml`)
+### Top-Level Keys (JSON Entity Profile)
 
 | Key | Type | Required | Purpose |
 |-----|------|----------|---------|
-| `name` | string | YES | Human-readable profile name |
-| `description` | string | YES | Profile scope and domain description |
-| `labels` | object | NO | Multilingual label prompt and constraints |
-| `descriptions` | object | NO | Multilingual description prompt and constraints |
-| `aliases` | object | NO | Multilingual alias prompt and constraints |
-| `sitelinks` | object | NO | Sitelink capture and validation guidance |
-| `statements` | array | YES | Statement definitions |
-| `profile_graph` | object | NO | Cross-profile relationship declarations |
-| YAML anchors | any | NO | Reusable patterns for references/constraints |
+| `entity` | string | YES | Canonical profile URI |
+| `name_identifier` | string | YES | Human-facing stable profile key |
+| `identification` | object | YES | Multilingual label/description/alias prompts and constraints |
+| `statements` | array | YES | Statement specifications for packet scaffolding and validation |
+| `metadata` | object | YES | Profile graph, value-list graph, and publication metadata |
 
 ### Statement Keys
 
@@ -117,19 +113,17 @@ Validation engines and form generators use the entity index to avoid repeated tr
 
 ### Canonical Shape
 
-```yaml
-- id: instance_of
-  label: Instance of
-  type: statement
-  io_map:
-    - to: https://www.wikidata.org/entity/P31
-      value_transform: null
-    - to: https://datadistillery.wikibase.cloud/entity/P1
-      value_transform: null
-    - from: resolvable_input_fetcher
-      value_transform: normalize_to_item
-  value:
-    type: item
+```json
+{
+  "name_identifier": "instance_of",
+  "entity": "https://datadistillery.wikibase.cloud/entity/Q16",
+  "io_map": [
+    {"to": "https://www.wikidata.org/entity/P31", "value_transform": null},
+    {"to": "https://datadistillery.wikibase.cloud/entity/P1", "value_transform": null},
+    {"from": "resolvable_input_fetcher", "value_transform": "normalize_to_item"}
+  ],
+  "value": {"type": "item"}
+}
 ```
 
 ### Entry Contract
@@ -196,11 +190,14 @@ Use when all encountered values must satisfy profile constraints before contribu
 
 Canonical shape:
 
-```yaml
-behavior:
-  value: editable         # editable | fixed | derived
-  qualifiers: editable    # editable | fixed | derived
-  references: editable    # editable | fixed | derived
+```json
+{
+  "behavior": {
+    "value": "editable",
+    "qualifiers": "editable",
+    "references": "editable"
+  }
+}
 ```
 
 ## Datatype Reference
@@ -221,24 +218,27 @@ Datatype-specific constraints are declared under `value` and follow explicit sch
 
 ## References and Provenance
 
-Reference definitions are nested under `references` and can be reused with YAML anchors.
+Reference definitions are nested under `references` and reused by explicit statement identifiers.
 
 Example:
 
-```yaml
-standard_reference: &standard_reference
-  min_count: 1
-  allowed:
-    - id: stated_in
-      type: item
-      io_map:
-        - to: https://www.wikidata.org/entity/P248
-          value_transform: null
-    - id: reference_url
-      type: url
-      io_map:
-        - to: https://www.wikidata.org/entity/P854
-          value_transform: null
+```json
+{
+  "references": {
+    "allowed": [
+      {
+        "name_identifier": "stated_in",
+        "type": "item",
+        "io_map": [{"to": "https://www.wikidata.org/entity/P248", "value_transform": null}]
+      },
+      {
+        "name_identifier": "reference_url",
+        "type": "url",
+        "io_map": [{"to": "https://www.wikidata.org/entity/P854", "value_transform": null}]
+      }
+    ]
+  }
+}
 ```
 
 ## Qualifiers
@@ -247,16 +247,18 @@ Qualifier definitions are nested statement-like structures with their own `io_ma
 
 Example:
 
-```yaml
-qualifiers:
-  - id: point_in_time
-    label: Point in time
-    type: qualifier
-    io_map:
-      - to: https://www.wikidata.org/entity/P585
-        value_transform: null
-    value:
-      type: time
+```json
+{
+  "qualifiers": [
+    {
+      "name_identifier": "point_in_time",
+      "label": "Point in time",
+      "type": "qualifier",
+      "io_map": [{"to": "https://www.wikidata.org/entity/P585", "value_transform": null}],
+      "value": {"type": "time"}
+    }
+  ]
+}
 ```
 
 <a id="statement-types-reference"></a>
@@ -299,7 +301,7 @@ Current committed usage:
 
 Future implementations may use graph metadata for packet expansion and cross-profile recommendation logic.
 
-## Profile Metadata Schema (`metadata.yaml`)
+## Profile Metadata Schema (`metadata` object)
 
 Canonical fields:
 
@@ -322,38 +324,37 @@ Canonical fields:
 
 - Keep statements domain-cohesive and curator-readable.
 - Prefer explicit constraints over inferred behavior.
-- Reuse anchors for reference structures.
+- Reuse explicit statement identifiers for shared reference structures.
 - Keep `io_map` routes explicit and unambiguous.
 - Keep transform references declarative; enforce execution policy in code.
 - Keep examples synchronized with active schema decisions.
 
 ## Complete Example (Minimal)
 
-```yaml
-name: Federally Recognized Tribe
-description: Canonical profile for federally recognized tribal entities
-
-statements:
-  - id: instance_of
-    label: Instance of
-    type: statement
-    io_map:
-      - to: https://www.wikidata.org/entity/P31
-        value_transform: null
-      - to: https://datadistillery.wikibase.cloud/entity/P1
-        value_transform: null
-    value:
-      type: item
-      fixed: Q7840353
-
-  - id: official_website
-    label: Official website
-    type: statement
-    io_map:
-      - to: https://www.wikidata.org/entity/P856
-        value_transform: null
-    value:
-      type: url
+```json
+{
+  "entity": "https://datadistillery.wikibase.cloud/entity/Q4",
+  "name_identifier": "tribal_government_us",
+  "statements": [
+    {
+      "name_identifier": "instance_of",
+      "label": "Instance of",
+      "type": "statement",
+      "io_map": [
+        {"to": "https://www.wikidata.org/entity/P31", "value_transform": null},
+        {"to": "https://datadistillery.wikibase.cloud/entity/P1", "value_transform": null}
+      ],
+      "value": {"type": "item", "fixed": "Q7840353"}
+    },
+    {
+      "name_identifier": "official_website",
+      "label": "Official website",
+      "type": "statement",
+      "io_map": [{"to": "https://www.wikidata.org/entity/P856", "value_transform": null}],
+      "value": {"type": "url"}
+    }
+  ]
+}
 ```
 
 ## Step-by-Step Authoring Flow
@@ -362,7 +363,7 @@ statements:
 2. Define statement set and datatypes.
 3. Add constraints and validation policy.
 4. Add `io_map` routes for outbound and inbound systems.
-5. Add references/qualifiers and reusable anchors.
+5. Add references/qualifiers and reusable nested statement definitions.
 6. Add metadata, README, and CHANGELOG.
 7. Validate profile package and run hydration checks.
 

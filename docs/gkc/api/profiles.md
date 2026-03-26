@@ -2,9 +2,9 @@
 
 ## Overview
 
-The profiles module provides YAML-first entity profiles that drive validation, form schema generation, and profile-aware data workflows.
+The profiles module provides entity profile loading and validation surfaces for SpiritSafe-backed runtime workflows.
 
-**Current implementations:** YAML loading, JSON Schema validation, Pydantic model generation, form schema generation, Wikidata validation  
+**Current implementations:** JSON profile loading, JSON Schema validation, runtime model generation, form schema generation, Wikidata validation  
 **Future implementations:** profile registry, code generation, broader datatype support
 
 ## Quick Start
@@ -13,7 +13,7 @@ The profiles module provides YAML-first entity profiles that drive validation, f
 from gkc.profiles import ProfileLoader, ProfileValidator
 
 profile = ProfileLoader().load_from_file(
-    "/path/to/SpiritSafe/profiles/TribalGovernmentUS/profile.yaml"
+    "/path/to/SpiritSafe/profiles/Q4.json"
 )
 validator = ProfileValidator(profile)
 result = validator.validate_item(item_json, policy="lenient")
@@ -58,14 +58,14 @@ result = validator.validate_item(item_json, policy="lenient")
 
 ## Examples
 
-### Load a YAML Profile
+### Load a JSON Entity Profile
 
 ```python
 from gkc.profiles import ProfileLoader
 
 loader = ProfileLoader()
 profile = loader.load_from_file(
-    "/path/to/SpiritSafe/profiles/TribalGovernmentUS/profile.yaml"
+    "/path/to/SpiritSafe/profiles/Q4.json"
 )
 print(profile.name)
 ```
@@ -76,7 +76,7 @@ print(profile.name)
 from gkc.profiles import FormSchemaGenerator, ProfileLoader
 
 profile = ProfileLoader().load_from_file(
-    "/path/to/SpiritSafe/profiles/TribalGovernmentUS/profile.yaml"
+    "/path/to/SpiritSafe/profiles/Q4.json"
 )
 form_schema = FormSchemaGenerator(profile).build_schema()
 print(form_schema["statements"][0]["label"])
@@ -88,7 +88,7 @@ print(form_schema["statements"][0]["label"])
 from gkc.profiles import ProfileLoader, ProfileValidator
 
 profile = ProfileLoader().load_from_file(
-    "/path/to/SpiritSafe/profiles/TribalGovernmentUS/profile.yaml"
+    "/path/to/SpiritSafe/profiles/Q4.json"
 )
 validator = ProfileValidator(profile)
 result = validator.validate_item(item_json, policy="lenient")
@@ -105,7 +105,7 @@ if result.ok:
 from gkc.profiles import ProfileLoader, ProfileValidator
 
 profile = ProfileLoader().load_from_file(
-    "/path/to/SpiritSafe/profiles/TribalGovernmentUS/profile.yaml"
+    "/path/to/SpiritSafe/profiles/Q4.json"
 )
 validator = ProfileValidator(profile)
 result = validator.validate_item(item_json, policy="strict")
@@ -124,7 +124,7 @@ from gkc.profiles import ProfileLoader
 
 loader = ProfileLoader()
 try:
-    loader.load_from_file("bad_profile.yaml")
+    loader.load_from_file("bad_profile.json")
 except ValueError as exc:
     print(f"Schema error: {exc}")
 ```

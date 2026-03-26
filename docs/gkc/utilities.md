@@ -325,22 +325,23 @@ custom_cache = LookupCache(cache_dir="/path/to/cache")
 
 #### Profile Integration Example
 
-```yaml
-# In profiles/YourProfile/profile.yaml (SpiritSafe repo)
-value:
-  type: item
-  allowed_items:
-    source: sparql
-    query: |
-      PREFIX wd: <http://www.wikidata.org/entity/>
-      SELECT ?item ?itemLabel WHERE { ... }
-    refresh: weekly
-    fallback_items:
-      - id: Q123
-        label: Fallback option
+```json
+{
+  "value": {
+    "type": "item",
+    "allowed_items": {
+      "source": "sparql",
+      "query": "PREFIX wd: <http://www.wikidata.org/entity/> SELECT ?item ?itemLabel WHERE { ... }",
+      "refresh": "weekly",
+      "fallback_items": [
+        {"id": "Q123", "label": "Fallback option"}
+      ]
+    }
+  }
+}
 ```
 
-The profile loader currently parses and validates profile YAML only; it does **not** automatically execute SPARQL lookups. Run lookup hydration explicitly (for example, via a dedicated prefetch step or application startup job) to populate cache files.
+The profile loader validates profile artifact structure only; it does **not** automatically execute SPARQL lookups. Run lookup hydration explicitly (for example, via a dedicated prefetch step or application startup job) to populate cache files.
 
 ### See Also
 
