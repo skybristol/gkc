@@ -6,6 +6,12 @@ This document defines the current architectural contract between `mash`, `spirit
 
 It is written as a practical anti-reinvention guide for contributors and custom agents.
 
+Infrastructure perspective for these module boundaries:
+
+- Data Distillery Wikibase defines semantic foundation (profiles, statements, value-list semantics).
+- SpiritSafe materializes those semantics as deterministic artifacts.
+- `gkc` modules execute packet assembly, validation/coercion, planning, and shipping from those artifacts.
+
 ## Boundary Summary
 
 ### Mash (`gkc.mash`)

@@ -6,14 +6,68 @@ The **Global Knowledge Commons (GKC)** is a framework for understanding and work
 
 The project uses a **data distillery** metaphor to describe the pipeline that converts heterogeneous inputs into validated, platform-ready outputs. GKC Entity Profiles define canonical entity forms made up of individual statements backed by evidence (references). Distilled data are bottled for outlets - GKC Partners - and shipped via authenticated Application Programming Interfaces (APIs).
 
-The GKC is built on four foundational architectural components that work together to transform declarative entity definitions into actionable curation workflows:
+GKC architecture is best understood through two coordinated lenses:
 
-1. **GKC Entity Profiles** — Declarative definitions of entity structure and semantics
-2. **GKC Entity Statements** - Individual statements that make up an entity profile
-3. **GKC Entity JSON Schemas** — Machine-readable, serializable representations of profiles
-4. **GKC Curation Packets** — Actionable bundles of one or more entities, all or a subset of statements, flowing through curation workflows
+1. **Infrastructure components** — where semantic definitions are authored, materialized, and executed.
+2. **Architectural components** — the core semantic/data units that flow through curation and shipping.
 
-These components enable a consistent pattern: **define once, use everywhere**. Entity Statements, Entity Profiles, and helper utilities (e.g., Value Lists) are defined and organized within a dedicated Wikibase instance (a meta-wikibase) operated in the [Wikibase.cloud](https://wikibase.cloud/) environment. Configuration logic and rules from the [Data Distillery Wikibase](https://datadistillery.wikibase.cloud/) are written out to the [Spirit Safe](https://github.com/skybristol/SpiritSafe), a GitHub repository used to drive GKC operations.
+Infrastructure components:
+
+1. **Data Distillery Wikibase** — semantic authoring system of record for profiles, statements, value lists, and linkage semantics.
+2. **SpiritSafe repository** — materialized artifact registry (JSON profiles, query files, hydrated caches, manifest, entity index).
+3. **GKC Python package** — runtime engine that consumes SpiritSafe artifacts to build packets, validate/coerce, plan writes, and ship.
+
+Architectural components:
+
+1. **GKC Entity Profiles** — declarative definitions of entity structure and context.
+2. **GKC Entity Statements** — reusable statement primitives used as claims, qualifiers, and references.
+3. **GKC Value Lists** — curated allowed-item domains used to guide and constrain selection.
+4. **GKC Curation Packets** — actionable packet structures combining metadata rulesets and fillable data slots.
+
+This pairing enables a consistent pattern: **define in DD Wikibase, materialize in SpiritSafe, execute in gkc**.
+
+The JSON Schema layer remains important as a machine-facing contract derived from these components, but it is a representation layer rather than a top-level architectural component.
+
+Entity Statements, Entity Profiles, and Value List semantics are defined and organized within the [Data Distillery Wikibase](https://datadistillery.wikibase.cloud/). These semantics are exported into [SpiritSafe](https://github.com/skybristol/SpiritSafe), which is then consumed by the GKC runtime package.
+
+---
+
+## Infrastructure Components
+
+### Data Distillery Wikibase
+
+Data Distillery Wikibase is the semantic source of truth. It is where profile, statement, value-list, and linkage semantics are authored and curated.
+
+DD Wikibase defines the **foundation form** of architectural components:
+
+- Profile composition directives.
+- Reusable statement defaults and scoped overrides.
+- Value-list membership and refresh semantics.
+- Prompt/guidance/error messaging and multilingual metadata.
+
+### SpiritSafe Repository
+
+SpiritSafe is the artifact registry. It stores the **materialized/actionable form** of DD semantics as deterministic files and indexes.
+
+SpiritSafe publishes:
+
+- `profiles/<QID>.json` JSON Entity Profile artifacts.
+- `queries/<QID>.sparql` value-list query definitions.
+- `cache/entities/*.json` raw semantic cache snapshots.
+- `cache/queries/<QID>.json` hydrated value-list artifacts.
+- `cache/manifest.json` artifact inventory index.
+- `cache/entity_index.json` normalized runtime lookup index.
+
+### GKC Python Package
+
+The `gkc` Python package is the runtime execution layer. It consumes SpiritSafe artifacts and runs curation workflows end-to-end.
+
+At runtime, `gkc`:
+
+- Loads JSON profiles and profile graph metadata.
+- Builds uncharged and charged curation packets.
+- Validates/coerces values and emits conformance notices.
+- Plans destination writes and executes shipping workflows.
 
 ---
 
@@ -53,6 +107,20 @@ Multiple platforms contribute to and consume a single GKC Entity:
 
 - [Entity Profiles: Construction and Reference](../gkc/profiles.md)
 - [SpiritSafe Registry](SpiritSafe.md)
+
+### GKC Value List
+
+**Definition:** GKC Value Lists are curated allowed-item domains used by statement value contracts to guide and constrain selection behavior in packet and wizard workflows.
+
+**Foundation in DD Wikibase:** Value List semantics, scope, and refresh policy are curated as first-class entities.
+
+**Materialized form in SpiritSafe:**
+
+- Query definitions in `queries/<QID>.sparql`.
+- Hydrated results in `cache/queries/<QID>.json`.
+- Linkage metadata in profile `metadata.value_list_graph` and `cache/entity_index.json`.
+
+**Runtime role in gkc:** Value Lists provide deterministic allowed-item sets for validation, UX guidance, and offline operation.
 
 ### GKC Entity JSON Schemas
 
@@ -208,6 +276,15 @@ When wizard loads `TribalGovernmentUS`, it:
 
 Profile graph metadata is already carried in profile artifact `metadata.profile_graph` (see [Multi-Profile Configuration](../gkc/profiles.md#profile-graphs-cross-references)).
 
+### Foundation vs Materialized Forms
+
+For each architectural component, GKC uses a two-form lifecycle:
+
+1. **Foundation form (DD Wikibase)** — authoritative semantic definitions and linkage directives.
+2. **Materialized/actionable form (SpiritSafe)** — deterministic JSON/cache artifacts consumed by runtime.
+
+`gkc` runtime workflows operate on the materialized form while preserving canonical linkage back to the DD foundation semantics.
+
 ---
 
 ## Design Principles
@@ -321,6 +398,7 @@ This architecture section includes detailed documentation on specific subsystems
 | Term | Definition |
 |------|------------|
 | **Profile** | JSON Entity Profile artifact defining entity structure in SpiritSafe |
+| **Value List** | Curated allowed-item domain materialized as query + hydrated cache artifacts |
 | **Packet** | Bundle of 1+ entities being curated together |
 | **Entity** | Single real-world thing represented in GKC (tribal government, office, person) |
 | **Statement** | Single property-value assertion about an entity (analogous to Wikidata claim) |

@@ -13,6 +13,12 @@ A profile package defines:
 
 Profiles are curator-facing documents and machine-readable contracts. Runtime components (`still_charger`, `wikibase`, `shipper`, and validation layers) consume profile structure directly.
 
+Operational framing:
+
+- Data Distillery Wikibase defines profile, statement, and value-list semantics in foundation form.
+- SpiritSafe materializes those semantics into deterministic JSON/cache artifacts.
+- `gkc` executes packet and shipping workflows from SpiritSafe materializations.
+
 ## Implementation Status
 
 Implemented and architecturally committed:
