@@ -3,6 +3,7 @@
 import json
 
 import pytest
+import requests
 
 import gkc
 from gkc.mash import (
@@ -20,6 +21,7 @@ from gkc.mash import (
     extract_sparql_blocks,
     fetch_mediawiki_page_wikitext,
     fetch_recent_entity_changes,
+    fetch_url_resource,
     get_latest_cache_timestamp,
     refresh_entity_cache_from_recentchanges,
     strip_entity_identifiers,
@@ -476,6 +478,50 @@ def test_fetch_mediawiki_page_wikitext_from_revision_slots():
 
     text = fetch_mediawiki_page_wikitext(client, "Item_talk:Q4")
     assert "SELECT * WHERE" in text
+
+
+def test_fetch_url_resource_head_success():
+    """URL resource fetch supports HEARTBEAT HEAD checks."""
+
+    class FakeResponse:
+        ok = True
+        status_code = 200
+        url = "https://www.wikidata.org"
+        headers = {"Content-Type": "text/html"}
+        content = b""
+
+    class FakeSession:
+        def request(self, method, url, **kwargs):
+            assert method == "head"
+            assert url == "https://www.wikidata.org"
+            return FakeResponse()
+
+    result = fetch_url_resource(
+        "https://www.wikidata.org",
+        mode="head",
+        session=FakeSession(),
+    )
+
+    assert result.ok is True
+    assert result.status_code == 200
+    assert result.content_type == "text/html"
+
+
+def test_fetch_url_resource_get_failure():
+    """URL resource fetch returns deterministic errors on request failures."""
+
+    class FakeSession:
+        def request(self, method, url, **kwargs):
+            raise requests.RequestException("network unavailable")
+
+    result = fetch_url_resource(
+        "https://www.wikidata.org",
+        mode="get",
+        session=FakeSession(),
+    )
+
+    assert result.ok is False
+    assert result.error
 
 
 def test_wikidata_loader_snak_to_value_entity():

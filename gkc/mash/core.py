@@ -160,6 +160,197 @@ class WikibaseCacheRefreshResult:
     missing_ids: list[str] = field(default_factory=list)
 
 
+@dataclass(frozen=True)
+class URLFetchResult:
+    """Result envelope for generic URL retrieval checks."""
+
+    url: str
+    ok: bool
+    status_code: Optional[int] = None
+    final_url: Optional[str] = None
+    content_type: Optional[str] = None
+    response_size: Optional[int] = None
+    error: Optional[str] = None
+
+
+@dataclass(frozen=True)
+class CommonsFileInfoResult:
+    """Result envelope for Wikimedia Commons file existence and metadata checks.
+
+    Parallels URLFetchResult for consistent result handling in validation workflows.
+
+    Attributes:
+        filename: Canonical Commons filename with ``File:`` prefix.
+        ok: Whether the API request completed without error.
+        exists: Whether the file exists on Wikimedia Commons.
+        page_url: URL of the file description page on Commons.
+        resource_url: Direct URL of the media resource itself.
+        mime_type: MIME type reported by Commons (e.g., ``image/jpeg``).
+        size: File size in bytes.
+        width: Image width in pixels (images only).
+        height: Image height in pixels (images only).
+        sha1: SHA-1 hash of the file content.
+        error: Error message if the fetch failed or the file was not found.
+    """
+
+    filename: str
+    ok: bool
+    exists: bool = False
+    page_url: Optional[str] = None
+    resource_url: Optional[str] = None
+    mime_type: Optional[str] = None
+    size: Optional[int] = None
+    width: Optional[int] = None
+    height: Optional[int] = None
+    sha1: Optional[str] = None
+    error: Optional[str] = None
+
+
+def fetch_commons_file_info(
+    api_client: WikibaseApiClient,
+    filename: str,
+    *,
+    mode: str = "heartbeat",
+) -> CommonsFileInfoResult:
+    """Fetch file existence and metadata from the Wikimedia Commons MediaWiki API.
+
+    Accepts a Commons filename with or without the ``File:`` prefix.  The canonical
+    form (with prefix) is always stored in the result.
+
+    Args:
+        api_client: Configured client pointing at the Commons API endpoint.
+            Typically ``WikibaseApiClient(api_url="https://commons.wikimedia.org/w/api.php")``.
+        filename: Commons filename, e.g. ``File:Example.jpg`` or ``Example.jpg``.
+        mode: ``"heartbeat"`` checks file existence only; ``"actionable"`` retrieves
+            full imageinfo (URL, MIME type, size, SHA-1).
+
+    Returns:
+        CommonsFileInfoResult with existence flag and, for ACTIONABLE mode, full
+        file metadata.
+    """
+    canonical = filename if filename.startswith("File:") else f"File:{filename}"
+
+    iiprop = "url|mime|size|sha1" if mode == "actionable" else "url"
+    params: dict[str, Any] = {
+        "action": "query",
+        "format": "json",
+        "formatversion": 2,
+        "prop": "imageinfo",
+        "iiprop": iiprop,
+        "titles": canonical,
+    }
+
+    try:
+        payload = api_client.request(params)
+    except RuntimeError as exc:
+        return CommonsFileInfoResult(filename=canonical, ok=False, error=str(exc))
+
+    pages = payload.get("query", {}).get("pages", [])
+    if not isinstance(pages, list) or not pages:
+        return CommonsFileInfoResult(
+            filename=canonical,
+            ok=True,
+            exists=False,
+            error=f"File not found on Commons: {canonical}",
+        )
+
+    page = pages[0]
+    if not isinstance(page, dict) or page.get("missing"):
+        return CommonsFileInfoResult(
+            filename=canonical,
+            ok=True,
+            exists=False,
+            error=f"File not found on Commons: {canonical}",
+        )
+
+    imageinfo_list = page.get("imageinfo", [])
+    if not isinstance(imageinfo_list, list) or not imageinfo_list:
+        return CommonsFileInfoResult(filename=canonical, ok=True, exists=True)
+
+    info = imageinfo_list[0] if isinstance(imageinfo_list[0], dict) else {}
+    return CommonsFileInfoResult(
+        filename=canonical,
+        ok=True,
+        exists=True,
+        page_url=f"https://commons.wikimedia.org/wiki/{canonical.replace(' ', '_')}",
+        resource_url=info.get("url"),
+        mime_type=info.get("mime") if mode == "actionable" else None,
+        size=info.get("size") if mode == "actionable" else None,
+        width=info.get("width") if mode == "actionable" else None,
+        height=info.get("height") if mode == "actionable" else None,
+        sha1=info.get("sha1") if mode == "actionable" else None,
+    )
+
+
+def fetch_url_resource(
+    url: str,
+    *,
+    mode: str = "head",
+    timeout: int = 10,
+    allow_redirects: bool = True,
+    accept: Optional[str] = None,
+    session: Optional[requests.Session] = None,
+) -> URLFetchResult:
+    """Fetch URL metadata or content for policy-driven online validation workflows.
+
+    Args:
+        url: Absolute URL to retrieve.
+        mode: ``head`` for HEARTBEAT checks or ``get`` for ACTIONABLE checks.
+        timeout: Request timeout in seconds.
+        allow_redirects: Whether redirects should be followed.
+        accept: Optional Accept header for content negotiation.
+        session: Optional requests session. New session is created when omitted.
+
+    Returns:
+        URLFetchResult with status, content type, and retrieval metadata.
+    """
+    request_mode = mode.lower().strip()
+    if request_mode not in {"head", "get"}:
+        return URLFetchResult(
+            url=url,
+            ok=False,
+            error=f"Unsupported fetch mode: {mode}",
+        )
+
+    client = session or requests.Session()
+    headers: dict[str, str] = {}
+    if accept:
+        headers["Accept"] = accept
+
+    try:
+        response = client.request(
+            request_mode,
+            url,
+            timeout=timeout,
+            allow_redirects=allow_redirects,
+            headers=headers or None,
+        )
+    except requests.RequestException as exc:
+        return URLFetchResult(
+            url=url,
+            ok=False,
+            error=str(exc),
+        )
+
+    content_type = response.headers.get("Content-Type")
+    body_size: Optional[int] = None
+    if request_mode == "get":
+        try:
+            body_size = len(response.content)
+        except Exception:
+            body_size = None
+
+    return URLFetchResult(
+        url=url,
+        ok=response.ok,
+        status_code=response.status_code,
+        final_url=str(response.url) if response.url else None,
+        content_type=content_type,
+        response_size=body_size,
+        error=None if response.ok else f"HTTP {response.status_code}",
+    )
+
+
 _ENTITY_ID_PATTERN = re.compile(r"\b([QP]\d+)\b")
 _SPARQL_BLOCK_PATTERN = re.compile(
     r"<\s*sparql(?:\s+[^>]*)?>(.*?)</\s*sparql\s*>",

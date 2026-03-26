@@ -29,6 +29,13 @@ The Data Distillery Wikibase architecture is organized around three primary item
 
 These components are designed to work together as a layered model where profiles compose reusable statements and statements can bind to curated value lists.
 
+Profiles and statements are equal-priority architectural components:
+
+- Profiles provide context, composition, and modulation.
+- Statements provide reusable semantic units that can span many profiles.
+
+Validation and packet design should treat both as first-class runtime entities.
+
 ### Component: GKC Entity Profile
 
 Purpose:
@@ -165,6 +172,20 @@ Architectural role:
 - Carries statement-level directives such as value, qualifier, and reference expectations.
 - Supports scoping qualifiers for profile-specific or parent-statement-specific behavior.
 
+#### Statement Minimum Shape
+
+For curation and validation architecture, a statement is treated as a compound data object with a minimum shape of:
+
+- value
+- reference
+- provenance
+
+Reference is itself statement-like and follows statement semantics.
+
+Provenance must capture presentation circumstances at minimum, including how, when, and by whom the statement was stated.
+
+Additional provenance depth may be included by profile context, but packet and fermenter workflows should assume this minimum shape as the baseline contract.
+
 ### Statement-Level Directive Semantics
 
 The following properties are used as directives on GKC Entity Statement items:
@@ -263,6 +284,17 @@ Core principles:
 - Statement-level defaults should remain reusable and broadly applicable.
 - Profile-level directives should capture entity-context specialization.
 - Resolution behavior must be deterministic and auditable.
+
+### Curation Packet as Composition Vehicle
+
+The Curation Packet is where profile rules, statement rules, source data capabilities, and evaluation artifacts are assembled into one runtime structure.
+
+This model must support both broad and thin packet shapes:
+
+- profile-broad packets that include full profile-composed statement sets
+- statement-thin packets that slice a single statement across all applicable entities or all occurrences in scope
+
+Both packet modes should use the same statement and profile contracts so validation, coercion, and notice semantics remain consistent.
 
 ### Conformance Semantics
 
@@ -372,6 +404,7 @@ The following items reflect active architectural exploration and are not yet fin
 - Profile-local statement-instance directives may become the primary effective configuration surface, with statement-level rules serving as reusable defaults.
 - A dedicated suppression/removal semantic may be introduced for qualifier/reference collisions instead of relying on absence semantics.
 - Additional explicit conflict-reporting structures may be emitted in profile generation reports to improve curation diagnostics at scale.
+- URL interpretation and domain-rule semantics are expected to be modeled in Data Distillery so wizard and fermenter URL handling can use a shared ontology-backed rule registry.
 
 ## Environment Variables
 

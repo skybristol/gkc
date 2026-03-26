@@ -5,7 +5,9 @@ This package provides source-loading templates and loaders used by GKC.
 
 from gkc.mash.core import (
     ClaimSummary,
+    CommonsFileInfoResult,
     DataTemplate,
+    URLFetchResult,
     WikibaseApiClient,
     WikibaseCacheRefreshResult,
     WikibaseEntitySchemaTemplate,
@@ -21,12 +23,14 @@ from gkc.mash.core import (
     apply_template_language_filter,
     extract_first_sparql_block,
     extract_sparql_blocks,
+    fetch_commons_file_info,
     fetch_entity_rdf,
     fetch_entity_schema_json,
     fetch_entity_schema_specification,
     fetch_mediawiki_page_wikitext,
     fetch_property_labels,
     fetch_recent_entity_changes,
+    fetch_url_resource,
     get_latest_cache_timestamp,
     refresh_entity_cache_from_recentchanges,
     strip_entity_identifiers,
@@ -35,7 +39,9 @@ from gkc.mash.protocols import MashSourceAdapter
 
 __all__ = [
     "ClaimSummary",
+    "CommonsFileInfoResult",
     "DataTemplate",
+    "URLFetchResult",
     "WikibaseCacheRefreshResult",
     "MashSourceAdapter",
     "WikibaseMashSourceAdapter",
@@ -56,6 +62,8 @@ __all__ = [
     "fetch_mediawiki_page_wikitext",
     "fetch_entity_schema_json",
     "fetch_entity_schema_specification",
+    "fetch_commons_file_info",
+    "fetch_url_resource",
     "fetch_property_labels",
     "fetch_recent_entity_changes",
     "get_latest_cache_timestamp",
