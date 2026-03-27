@@ -5,12 +5,21 @@ This module provides utilities for validating Wikipedia and other Wikimedia
 project sitelinks before attempting to create them on Wikidata items.
 """
 
+import json
+from datetime import datetime, timezone
+from pathlib import Path
 from time import sleep
-from typing import Optional
+from typing import Any, Optional
+from urllib.parse import urlparse
 
 import requests
 
 from gkc.runtime_config import DEFAULT_USER_AGENT
+
+DEFAULT_WIKIMEDIA_SITEMATRIX_URL = (
+    "https://meta.wikimedia.org/w/api.php?action=sitematrix&format=json&smstate=all"
+)
+WIKIMEDIA_SITES_SCHEMA_VERSION = "1.0"
 
 
 class SitelinkValidator:
@@ -273,3 +282,205 @@ def validate_sitelink_dict(sitelinks: dict[str, dict]) -> dict[str, dict]:
     """
     validator = SitelinkValidator()
     return validator.filter_valid_sitelinks(sitelinks, verbose=False)
+
+
+def _normalize_domain_from_url(site_url: str) -> str:
+    """Derive lowercase host/domain from a Wikimedia site URL."""
+    parsed = urlparse(site_url)
+    host = parsed.netloc.lower().strip()
+    if host.startswith("www."):
+        host = host[4:]
+    return host
+
+
+def _coerce_closed_flag(site: dict[str, Any]) -> bool:
+    """Normalize MediaWiki closed marker to a boolean value."""
+    if "closed" not in site:
+        return False
+
+    closed_value = site.get("closed")
+    if isinstance(closed_value, bool):
+        return closed_value
+    if isinstance(closed_value, str):
+        stripped = closed_value.strip().lower()
+        if stripped in {"0", "false", "no", "open"}:
+            return False
+        # In sitematrix, closed is often emitted as an empty marker value.
+        return True
+
+    # Presence of marker keys in sitematrix is enough to treat as closed.
+    return True
+
+
+def _project_from_dbname(dbname: str) -> str:
+    """Infer Wikimedia project family from site dbname suffix."""
+    known_suffixes = [
+        "wiktionary",
+        "wikisource",
+        "wikiversity",
+        "wikivoyage",
+        "wikinews",
+        "wikiquote",
+        "wikibooks",
+        "wikidata",
+        "wikimedia",
+        "wiki",
+    ]
+    for suffix in known_suffixes:
+        if dbname.endswith(suffix):
+            return suffix
+    return ""
+
+
+def build_wikimedia_sites_artifact_from_sitematrix(
+    sitematrix_payload: dict[str, Any],
+    *,
+    source_url: str = DEFAULT_WIKIMEDIA_SITEMATRIX_URL,
+    fetched_at: Optional[str] = None,
+) -> dict[str, Any]:
+    """Build a deterministic Wikimedia sites artifact from sitematrix payload."""
+    sitematrix = sitematrix_payload.get("sitematrix")
+    if not isinstance(sitematrix, dict):
+        raise ValueError("Invalid sitematrix payload: missing 'sitematrix' object")
+
+    sites: list[dict[str, Any]] = []
+
+    def _append_sites(
+        site_list: Any, *, lang_code: Optional[str], lang_name: Optional[str]
+    ) -> None:
+        if not isinstance(site_list, list):
+            return
+        for site in site_list:
+            if not isinstance(site, dict):
+                continue
+            dbname = site.get("dbname")
+            site_url = site.get("url")
+            if not isinstance(dbname, str) or not dbname:
+                continue
+            if not isinstance(site_url, str) or not site_url:
+                continue
+
+            normalized_site = {
+                "dbname": dbname,
+                "url": site_url,
+                "domain": _normalize_domain_from_url(site_url),
+                "code": site.get("code") if isinstance(site.get("code"), str) else "",
+                "lang": lang_name or "",
+                "sitename": (
+                    site.get("sitename")
+                    if isinstance(site.get("sitename"), str)
+                    else ""
+                ),
+                "project": _project_from_dbname(dbname),
+                "closed": _coerce_closed_flag(site),
+            }
+            # Keep both explicit language code and site code for runtime filters.
+            normalized_site["language_code"] = lang_code or ""
+            sites.append(normalized_site)
+
+    for key, value in sitematrix.items():
+        if isinstance(value, dict) and isinstance(value.get("site"), list):
+            lang_code = (
+                value.get("code") if isinstance(value.get("code"), str) else None
+            )
+            lang_name = (
+                value.get("name") if isinstance(value.get("name"), str) else None
+            )
+            _append_sites(value.get("site"), lang_code=lang_code, lang_name=lang_name)
+            continue
+
+        if key == "specials" and isinstance(value, list):
+            _append_sites(value, lang_code=None, lang_name=None)
+
+    deduped_by_dbname: dict[str, dict[str, Any]] = {}
+    for site in sites:
+        dbname = str(site["dbname"])
+        existing = deduped_by_dbname.get(dbname)
+        if existing is None:
+            deduped_by_dbname[dbname] = site
+            continue
+        if existing != site:
+            raise ValueError(f"Conflicting sitematrix entries for dbname: {dbname}")
+
+    sorted_sites = sorted(
+        deduped_by_dbname.values(),
+        key=lambda site: (str(site.get("dbname", "")), str(site.get("domain", ""))),
+    )
+
+    by_dbname = {site["dbname"]: site for site in sorted_sites}
+    domains: dict[str, set[str]] = {}
+    for site in sorted_sites:
+        domain = str(site.get("domain", ""))
+        dbname = str(site.get("dbname", ""))
+        if not domain or not dbname:
+            continue
+        domains.setdefault(domain, set()).add(dbname)
+
+    by_domain = {
+        domain: sorted(dbnames)
+        for domain, dbnames in sorted(domains.items(), key=lambda item: item[0])
+    }
+
+    fetched_at_value = fetched_at or datetime.now(timezone.utc).isoformat().replace(
+        "+00:00", "Z"
+    )
+    closed_count = sum(1 for site in sorted_sites if bool(site.get("closed")))
+
+    return {
+        "metadata": {
+            "source_url": source_url,
+            "fetched_at": fetched_at_value,
+            "schema_version": WIKIMEDIA_SITES_SCHEMA_VERSION,
+            "total_sites": len(sorted_sites),
+            "active_sites": len(sorted_sites) - closed_count,
+            "closed_sites": closed_count,
+        },
+        "sites": sorted_sites,
+        "index": {
+            "by_dbname": by_dbname,
+            "by_domain": by_domain,
+        },
+    }
+
+
+def fetch_wikimedia_sitematrix(
+    *,
+    source_url: str = DEFAULT_WIKIMEDIA_SITEMATRIX_URL,
+    timeout: int = 30,
+    user_agent: str = DEFAULT_USER_AGENT,
+) -> dict[str, Any]:
+    """Fetch raw Wikimedia sitematrix JSON payload."""
+    response = requests.get(
+        source_url,
+        headers={"User-Agent": user_agent},
+        timeout=timeout,
+    )
+    response.raise_for_status()
+    payload = response.json()
+    if not isinstance(payload, dict):
+        raise ValueError("Invalid sitematrix response: expected JSON object")
+    return payload
+
+
+def export_wikimedia_sites_artifact(
+    output_path: str,
+    *,
+    source_url: str = DEFAULT_WIKIMEDIA_SITEMATRIX_URL,
+    timeout: int = 30,
+    user_agent: str = DEFAULT_USER_AGENT,
+) -> dict[str, Any]:
+    """Fetch, normalize, and write Wikimedia sites artifact JSON to disk."""
+    payload = fetch_wikimedia_sitematrix(
+        source_url=source_url,
+        timeout=timeout,
+        user_agent=user_agent,
+    )
+    artifact = build_wikimedia_sites_artifact_from_sitematrix(
+        payload,
+        source_url=source_url,
+    )
+
+    target_path = Path(output_path).expanduser().resolve()
+    target_path.parent.mkdir(parents=True, exist_ok=True)
+    target_path.write_text(json.dumps(artifact, indent=2), encoding="utf-8")
+    return artifact

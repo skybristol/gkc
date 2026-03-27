@@ -92,8 +92,12 @@ from gkc.shex import ShexValidationError, ShexValidator
 
 # Sitelinks (cross-reference validation)
 from gkc.sitelinks import (
+    DEFAULT_WIKIMEDIA_SITEMATRIX_URL,
     SitelinkValidator,
+    build_wikimedia_sites_artifact_from_sitematrix,
     check_wikipedia_page,
+    export_wikimedia_sites_artifact,
+    fetch_wikimedia_sitematrix,
     validate_sitelink_dict,
 )
 
@@ -267,8 +271,12 @@ __all__ = [
     "ValidationIssue",
     "ValidationResult",
     # Sitelinks
+    "DEFAULT_WIKIMEDIA_SITEMATRIX_URL",
     "SitelinkValidator",
+    "build_wikimedia_sites_artifact_from_sitematrix",
     "check_wikipedia_page",
+    "export_wikimedia_sites_artifact",
+    "fetch_wikimedia_sitematrix",
     "validate_sitelink_dict",
     # SPARQL
     "SPARQLError",
