@@ -1,7 +1,6 @@
 """CLI tests for SpiritSafe sitelinks artifact sync command."""
 
 import json
-from pathlib import Path
 
 from gkc import cli
 
