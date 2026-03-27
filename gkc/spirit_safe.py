@@ -1209,6 +1209,7 @@ def hydrate_value_list_query_caches(
                 max_results=max_results,
             )
             items = _normalize_value_list_items(rows)
+            columns = sorted({key for item in items for key in item.keys()})
             payload = {
                 "metadata": {
                     "entity": f"{base_uri}/entity/{entity_id}",
@@ -1218,6 +1219,7 @@ def hydrate_value_list_query_caches(
                     .isoformat()
                     .replace("+00:00", "Z"),
                     "count": len(items),
+                    "columns": columns,
                 },
                 "items": items,
             }
@@ -1332,8 +1334,35 @@ def _normalize_value_list_items(rows: list[dict[str, str]]) -> list[dict[str, st
         item_label = row.get("itemLabel")
         if not item or not item_label:
             continue
-        if item not in deduped_by_item:
-            deduped_by_item[item] = {"item": item, "itemLabel": item_label}
+
+        normalized_row: dict[str, str] = {"item": item, "itemLabel": item_label}
+        for key, value in row.items():
+            if key in {"item", "itemLabel"}:
+                continue
+            if isinstance(value, str) and value:
+                normalized_row[key] = value
+
+        existing = deduped_by_item.get(item)
+        if existing is None:
+            deduped_by_item[item] = normalized_row
+            continue
+
+        # Duplicate rows are allowed only if non-core fields are identical.
+        existing_extra = {
+            key: value
+            for key, value in existing.items()
+            if key not in {"item", "itemLabel"}
+        }
+        candidate_extra = {
+            key: value
+            for key, value in normalized_row.items()
+            if key not in {"item", "itemLabel"}
+        }
+        if existing_extra != candidate_extra:
+            raise ValueError(
+                "Duplicate value-list row conflict for item "
+                f"{item}: non-core fields differ between rows"
+            )
 
     return sorted(
         deduped_by_item.values(),
