@@ -26,8 +26,12 @@ from gkc.mash import (
     refresh_entity_cache_from_recentchanges,
 )
 from gkc.profiles import FormSchemaGenerator, ProfileLoader, ProfileValidator
-from gkc.runtime_config import get_wikibase_runtime_config
+from gkc.runtime_config import DEFAULT_USER_AGENT, get_wikibase_runtime_config
 from gkc.shipper import WikibaseShipper
+from gkc.sitelinks import (
+    DEFAULT_WIKIMEDIA_SITEMATRIX_URL,
+    export_wikimedia_sites_artifact,
+)
 from gkc.sparql import fetch_entity_labels
 from gkc.spirit_safe import (
     build_entity_profile_json_documents,
@@ -786,6 +790,47 @@ def _build_parser() -> argparse.ArgumentParser:
     spiritsafe_manifest_build.set_defaults(
         handler=_handle_spiritsafe_manifest_build,
         command_path="spiritsafe.manifest.build",
+    )
+
+    spiritsafe_sitelinks = spiritsafe_subparsers.add_parser(
+        "sitelinks", help="Build SpiritSafe sitelink source artifacts"
+    )
+    spiritsafe_sitelinks_subparsers = spiritsafe_sitelinks.add_subparsers(
+        dest="spiritsafe_sitelinks_command"
+    )
+
+    spiritsafe_sitelinks_sync = spiritsafe_sitelinks_subparsers.add_parser(
+        "sync-wikimedia-sites",
+        help="Fetch Wikimedia sitematrix and write sitelink source cache artifact",
+    )
+    spiritsafe_sitelinks_sync.add_argument(
+        "--source-url",
+        default=DEFAULT_WIKIMEDIA_SITEMATRIX_URL,
+        help="Wikimedia sitematrix URL (default: API endpoint with smstate=all)",
+    )
+    spiritsafe_sitelinks_sync.add_argument(
+        "--timeout",
+        type=int,
+        default=30,
+        help="HTTP timeout in seconds for sitematrix fetch (default: 30)",
+    )
+    spiritsafe_sitelinks_sync.add_argument(
+        "--user-agent",
+        default=DEFAULT_USER_AGENT,
+        help="User-Agent header for sitematrix fetch",
+    )
+    spiritsafe_sitelinks_sync.add_argument(
+        "-o",
+        "--output",
+        help=(
+            "Optional output path for artifact JSON "
+            "(default: <local_root>/cache/config/wikimedia_sites.json)"
+        ),
+    )
+    _add_profile_source_args(spiritsafe_sitelinks_sync)
+    spiritsafe_sitelinks_sync.set_defaults(
+        handler=_handle_spiritsafe_sitelinks_sync_wikimedia_sites,
+        command_path="spiritsafe.sitelinks.sync-wikimedia-sites",
     )
 
     # Packet commands
@@ -2592,6 +2637,54 @@ def _handle_spiritsafe_manifest_build(args: argparse.Namespace) -> dict[str, Any
                 f"Built SpiritSafe manifest at {output_path} "
                 f"and entity index at {index_output_path}"
             ),
+            "details": details,
+        }
+    except Exception as exc:
+        raise CLIError(str(exc)) from exc
+
+
+def _handle_spiritsafe_sitelinks_sync_wikimedia_sites(
+    args: argparse.Namespace,
+) -> dict[str, Any]:
+    """Sync the Wikimedia sites cache artifact from sitematrix."""
+
+    if args.source != "local" or not args.local_root:
+        raise CLIError(
+            "spiritsafe sitelinks sync-wikimedia-sites requires --source local --local-root /path/to/SpiritSafe"
+        )
+
+    try:
+        local_root = Path(args.local_root).expanduser().resolve()
+        output_path = (
+            Path(args.output).expanduser().resolve()
+            if args.output
+            else local_root / "cache" / "config" / "wikimedia_sites.json"
+        )
+
+        artifact = export_wikimedia_sites_artifact(
+            str(output_path),
+            source_url=args.source_url,
+            timeout=args.timeout,
+            user_agent=args.user_agent,
+        )
+
+        metadata = artifact.get("metadata", {})
+        details = {
+            "output_path": str(output_path),
+            "source_url": metadata.get("source_url"),
+            "schema_version": metadata.get("schema_version"),
+            "fetched_at": metadata.get("fetched_at"),
+            "total_sites": metadata.get("total_sites", 0),
+            "active_sites": metadata.get("active_sites", 0),
+            "closed_sites": metadata.get("closed_sites", 0),
+            "by_dbname_count": len(artifact.get("index", {}).get("by_dbname", {})),
+            "by_domain_count": len(artifact.get("index", {}).get("by_domain", {})),
+        }
+
+        return {
+            "command": args.command_path,
+            "ok": True,
+            "message": f"Synced Wikimedia sites artifact to {output_path}",
             "details": details,
         }
     except Exception as exc:
