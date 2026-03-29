@@ -47,7 +47,18 @@ poetry install
 
 ## Quick Start
 
+
 For detailed usage instructions, see the [full documentation](https://skybristol.github.io/gkc).
+
+### Launching the Interactive Wizard
+
+To curate entities using a guided workflow, launch the wizard with:
+
+```bash
+gkc wizard --profile Q4 --local-root /path/to/SpiritSafe
+```
+
+Replace `Q4` with your target profile and adjust the path as needed.
 
 ### Authentication
 

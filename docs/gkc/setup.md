@@ -88,6 +88,21 @@ export DD_WB_USERNAME="your_dd_username"
 export DD_WB_PASSWORD="your_dd_password"
 ```
 
+
+---
+
+## 6. Launch the Interactive Wizard
+
+To curate entities using a guided workflow, launch the wizard with:
+
+```bash
+gkc wizard --profile Q4 --local-root /path/to/SpiritSafe
+```
+
+Replace `Q4` with your target profile and adjust the path as needed.
+
+---
+
 Then verify command availability and connectivity:
 
 ```bash

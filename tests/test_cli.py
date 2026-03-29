@@ -1301,46 +1301,20 @@ def test_profile_form_schema_resolves_profile_name_local_source(capsys):
             output_path.unlink()
 
 
-def test_profile_form_launches_streamlit_app(monkeypatch):
-    """Profile form command loads JSON profile and runs Streamlit app."""
+def test_wizard_cli_launches_streamlit(monkeypatch):
+    """gkc wizard launches Streamlit wizard app with correct args."""
     local_root = Path(__file__).parent / "fixtures" / "spiritsafe"
 
-    args = argparse.Namespace(
-        profile="Q4",
-        qid="Q123",
-        packet=None,
-        source="local",
-        local_root=str(local_root),
-        repo=None,
-        github_ref=None,
-        depth=1,
-        command_path="profile.form",
-    )
-
     class FakeResult:
         returncode = 0
 
-    def fake_run(*args, **kwargs):
-        return FakeResult()
-
-    monkeypatch.setattr("subprocess.run", fake_run)
-
-    result = cli._handle_profile_form(args)
-    assert result["ok"] is True
-    assert result["details"]["qid"] == "Q123"
-
-
-def test_profile_form_from_profile_name_with_local_source(monkeypatch):
-    """Profile form command resolves QID references via local SpiritSafe source override.
-
-    This test verifies profile resolution with local source while mocking Streamlit launch.
-    """
-    fixtures_root = Path(__file__).parent / "fixtures" / "spiritsafe"
-
-    class FakeResult:
-        returncode = 0
-
-    def fake_run(*args, **kwargs):
+    def fake_run(cmd, env=None, **kwargs):
+        assert cmd[1:3] == ["-m", "streamlit"]
+        assert "run" in cmd
+        assert any("streamlit_app.py" in str(arg) for arg in cmd)
+        assert env["GKC_WIZARD_PROFILE"].endswith("/Q4")
+        assert env["GKC_SPIRIT_SAFE_SOURCE_MODE"] == "local"
+        assert env["GKC_SPIRIT_SAFE_LOCAL_ROOT"] == str(local_root)
         return FakeResult()
 
     monkeypatch.setattr("subprocess.run", fake_run)
@@ -1348,17 +1322,15 @@ def test_profile_form_from_profile_name_with_local_source(monkeypatch):
     exit_code = cli.main(
         [
             "--json",
-            "profile",
-            "form",
+            "wizard",
             "--profile",
             "Q4",
             "--source",
             "local",
             "--local-root",
-            str(fixtures_root),
+            str(local_root),
         ]
     )
-
     assert exit_code == 0
 
 
