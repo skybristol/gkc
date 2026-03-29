@@ -388,7 +388,7 @@ def _build_parser() -> argparse.ArgumentParser:
         command_path="shex.validate",
     )
 
-    # Profile commands
+    # Profile commands (minus removed 'form' entry)
     profile_parser = subparsers.add_parser("profile", help="Profile utilities")
     profile_subparsers = profile_parser.add_subparsers(dest="profile_command")
 
@@ -478,32 +478,33 @@ def _build_parser() -> argparse.ArgumentParser:
         command_path="profile.export_json",
     )
 
-    profile_run_form = profile_subparsers.add_parser(
-        "form", help="Launch an interactive Streamlit wizard for a JSON profile"
+    # New top-level 'wizard' command
+    wizard_parser = subparsers.add_parser(
+        "wizard", help="Launch the interactive GKC curation wizard (Streamlit UI)"
     )
-    profile_run_form.add_argument(
+    wizard_parser.add_argument(
         "--profile",
         required=True,
         help="Profile reference (QID or full profile entity URI)",
     )
-    profile_run_form.add_argument(
+    wizard_parser.add_argument(
         "--qid",
         help="Optional Wikidata item ID for editing an existing item",
     )
-    profile_run_form.add_argument(
+    wizard_parser.add_argument(
         "--packet",
         help="Path to curation packet JSON file for multi-entity workflow",
     )
-    profile_run_form.add_argument(
+    wizard_parser.add_argument(
         "--depth",
         type=int,
         default=1,
         help="Related profile depth when creating packet on-the-fly (default: 1)",
     )
-    _add_profile_source_args(profile_run_form)
-    profile_run_form.set_defaults(
-        handler=_handle_profile_form,
-        command_path="profile.form",
+    _add_profile_source_args(wizard_parser)
+    wizard_parser.set_defaults(
+        handler=_handle_wizard,
+        command_path="wizard",
     )
 
     profile_lookups = profile_subparsers.add_parser(
@@ -2104,8 +2105,9 @@ def _handle_profile_form_schema(args: argparse.Namespace) -> dict[str, Any]:
         _restore_source_override(previous_source, source_overridden)
 
 
-def _handle_profile_form(args: argparse.Namespace) -> dict[str, Any]:
-    """Launch an interactive Streamlit wizard from a JSON profile or packet.
+# New handler for 'wizard' CLI entry
+def _handle_wizard(args: argparse.Namespace) -> dict[str, Any]:
+    """Launch the interactive GKC curation wizard (Streamlit UI).
 
     Note: Starts a local Streamlit server at http://localhost:8501
     """
@@ -2130,8 +2132,7 @@ def _handle_profile_form(args: argparse.Namespace) -> dict[str, Any]:
             from gkc.profiles.forms import streamlit_app
         except ImportError as exc:
             raise CLIError(
-                "Streamlit UI dependencies are unavailable. Install `streamlit` to use "
-                "`gkc profile form`."
+                "Streamlit UI dependencies are unavailable. Install `streamlit` to use `gkc wizard`."
             ) from exc
 
         # Get path to streamlit_app.py module

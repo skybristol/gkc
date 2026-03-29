@@ -89,10 +89,11 @@ Get raw Wikidata JSON output for scripting:
 gkc --json mash qid Q42 --output json
 ```
 
-Launch the profile wizard shell:
+
+Launch the interactive profile wizard:
 
 ```bash
-gkc packet create --profile Q4 --mode bulk --depth 1 --source local --local-root /path/to/SpiritSafe
+gkc wizard --profile Q4 --local-root /path/to/SpiritSafe
 ```
 
 ## Getting Help

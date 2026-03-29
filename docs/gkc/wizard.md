@@ -4,6 +4,19 @@
 
 ---
 
+
+## Launching the Wizard
+
+To start the interactive profile wizard, use the dedicated CLI command:
+
+```bash
+gkc wizard --profile Q4 --local-root /path/to/SpiritSafe
+```
+
+Replace `Q4` with the desired profile QID and adjust the path as needed. This launches the Streamlit-based wizard for guided entity curation.
+
+---
+
 ## Overview
 
 GKC Wizards are **profile-driven user interfaces** that transform declarative JSON Entity Profile definitions into guided, step-by-step data entry workflows. Every aspect of the wizard—field labels, validation rules, input widgets, help text, and workflow organization—derives directly from the profile with zero hardcoded entity logic.
