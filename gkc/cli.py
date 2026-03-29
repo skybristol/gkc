@@ -918,8 +918,16 @@ def _build_parser() -> argparse.ArgumentParser:
     )
     packet_charge.add_argument(
         "--packet-file",
-        required=True,
         help="Path to curation packet JSON file",
+    )
+    packet_charge.add_argument(
+        "--profile",
+        help="Profile QID or URI to create and charge in one call",
+    )
+    packet_charge.add_argument(
+        "--include-linked-profiles",
+        action="store_true",
+        help="Include directly linked profiles during packet creation",
     )
     packet_charge.add_argument(
         "--source",
@@ -933,12 +941,23 @@ def _build_parser() -> argparse.ArgumentParser:
     )
     packet_charge.add_argument(
         "--mapping-file",
-        help="JSON file mapping entity IDs to QIDs (optional)",
+        help="JSON file mapping entity IDs/profile keys to QIDs (optional)",
     )
     packet_charge.add_argument(
         "-o",
         "--output",
         help="Write charged packet to file (JSON) instead of stdout",
+    )
+    _add_profile_source_args(
+        packet_charge,
+        source_flag="--profile-source",
+        source_dest="profile_source",
+        local_root_flag="--profile-local-root",
+        local_root_dest="profile_local_root",
+        repo_flag="--profile-repo",
+        repo_dest="profile_repo",
+        ref_flag="--profile-ref",
+        ref_dest="profile_github_ref",
     )
     packet_charge.set_defaults(
         handler=_handle_packet_charge,
@@ -1256,43 +1275,68 @@ def _add_osm_args(parser: argparse.ArgumentParser) -> None:
     )
 
 
-def _add_profile_source_args(parser: argparse.ArgumentParser) -> None:
+def _add_profile_source_args(
+    parser: argparse.ArgumentParser,
+    *,
+    source_flag: str = "--source",
+    source_dest: str = "source",
+    local_root_flag: str = "--local-root",
+    local_root_dest: str = "local_root",
+    repo_flag: str = "--repo",
+    repo_dest: str = "repo",
+    ref_flag: str = "--ref",
+    ref_dest: str = "github_ref",
+) -> None:
     """Add SpiritSafe source override args for profile-loading commands."""
     parser.add_argument(
-        "--source",
+        source_flag,
+        dest=source_dest,
         choices=["github", "local"],
         help="Override SpiritSafe source mode for this command",
     )
     parser.add_argument(
-        "--local-root",
+        local_root_flag,
+        dest=local_root_dest,
         help="Local SpiritSafe root (required with --source local)",
     )
     parser.add_argument(
-        "--repo",
+        repo_flag,
+        dest=repo_dest,
         help="GitHub repo slug when --source github (e.g., owner/SpiritSafe)",
     )
     parser.add_argument(
-        "--ref",
-        dest="github_ref",
+        ref_flag,
+        dest=ref_dest,
         help="Git reference when --source github (default: main)",
     )
 
 
-def _apply_source_override(args: argparse.Namespace) -> tuple[Any, bool]:
+def _apply_source_override(
+    args: argparse.Namespace,
+    *,
+    source_attr: str = "source",
+    local_root_attr: str = "local_root",
+    repo_attr: str = "repo",
+    ref_attr: str = "github_ref",
+) -> tuple[Any, bool]:
     """Apply temporary SpiritSafe source override from CLI args."""
     previous_source = gkc.get_spirit_safe_source()
-    source_overridden = getattr(args, "source", None) is not None
+    source_value = getattr(args, source_attr, None)
+    source_overridden = source_value is not None
 
     if source_overridden:
-        if args.source == "local":
-            if not args.local_root:
+        if source_value == "local":
+            local_root = getattr(args, local_root_attr, None)
+            if not local_root:
                 raise CLIError("--local-root is required when --source local")
-            gkc.set_spirit_safe_source(mode="local", local_root=args.local_root)
+            gkc.set_spirit_safe_source(mode="local", local_root=local_root)
         else:
+            repo_value = getattr(args, repo_attr, None)
+            ref_value = getattr(args, ref_attr, None)
             gkc.set_spirit_safe_source(
                 mode="github",
-                github_repo=args.repo or previous_source.github_repo,
-                github_ref=args.github_ref or previous_source.github_ref,
+                github_repo=repo_value or previous_source.github_repo,
+                github_ref=ref_value or previous_source.github_ref,
             )
 
     return previous_source, source_overridden
@@ -1980,7 +2024,13 @@ def _handle_profile_validate(args: argparse.Namespace) -> dict[str, Any]:
     if args.qid and args.item_json:
         raise CLIError("Use only one of --qid or --item-json")
 
-    previous_source, source_overridden = _apply_source_override(args)
+    previous_source, source_overridden = _apply_source_override(
+        args,
+        source_attr="profile_source",
+        local_root_attr="profile_local_root",
+        repo_attr="profile_repo",
+        ref_attr="profile_github_ref",
+    )
 
     try:
         loader = ProfileLoader()
@@ -3034,48 +3084,79 @@ def _handle_packet_charge(args: argparse.Namespace) -> dict[str, Any]:
     """Charge a curation packet with Wikidata item data."""
     from pathlib import Path
 
-    from gkc.still_charger import charge_packet_from_wikidata_items
+    from gkc.still_charger import (
+        charge_packet_from_wikidata_items,
+        create_and_charge_curation_packet,
+    )
+
+    previous_source, source_overridden = _apply_source_override(args)
 
     try:
-        # Load the packet
-        packet_path = Path(args.packet_file)
-        if not packet_path.exists():
-            raise CLIError(f"Packet file not found: {packet_path}")
+        if not args.packet_file and not args.profile:
+            raise CLIError("Provide either --packet-file or --profile")
+        if args.packet_file and args.profile:
+            raise CLIError("Use either --packet-file or --profile, not both")
 
-        try:
-            packet = json.loads(packet_path.read_text(encoding="utf-8"))
-        except json.JSONDecodeError as exc:
-            raise CLIError(f"Invalid JSON in packet file: {exc}") from exc
-
-        # Build QID mapping
-        qid_map = {}
-
+        qid_map: dict[str, str] = {}
         if args.source == "wikidata":
-            if args.qid:
-                # Map all entities to the single QID
-                for entity in packet.get("entities", []):
-                    entity_id = entity.get("id")
-                    profile_entity = entity.get("profile_entity")
-                    if entity_id:
-                        qid_map[entity_id] = args.qid
-                    if profile_entity:
-                        qid_map[profile_entity] = args.qid
-            elif args.mapping_file:
-                # Load mapping from file
+            if args.mapping_file:
                 mapping_path = Path(args.mapping_file)
                 if not mapping_path.exists():
                     raise CLIError(f"Mapping file not found: {mapping_path}")
                 try:
-                    qid_map = json.loads(mapping_path.read_text(encoding="utf-8"))
+                    loaded_map = json.loads(mapping_path.read_text(encoding="utf-8"))
                 except json.JSONDecodeError as exc:
                     raise CLIError(f"Invalid JSON in mapping file: {exc}") from exc
-            else:
+                if not isinstance(loaded_map, dict):
+                    raise CLIError("Mapping file must contain a JSON object")
+                qid_map = {str(k): str(v) for k, v in loaded_map.items()}
+
+        if args.profile:
+            if args.source != "wikidata":
+                raise CLIError("--profile charging currently supports source=wikidata")
+            if not args.qid and not qid_map:
                 raise CLIError(
-                    "Either --qid or --mapping-file required for source=wikidata"
+                    "Provide --qid or --mapping-file for profile-based charge"
                 )
 
-        # Charge the packet
-        charged_packet, notices = charge_packet_from_wikidata_items(packet, qid_map)
+            charged_packet, notices = create_and_charge_curation_packet(
+                args.profile,
+                qid=args.qid,
+                qid_map=qid_map or None,
+                include_linked_profiles=bool(args.include_linked_profiles),
+            )
+        else:
+            packet_path = Path(args.packet_file)
+            if not packet_path.exists():
+                raise CLIError(f"Packet file not found: {packet_path}")
+
+            try:
+                packet = json.loads(packet_path.read_text(encoding="utf-8"))
+            except json.JSONDecodeError as exc:
+                raise CLIError(f"Invalid JSON in packet file: {exc}") from exc
+
+            if args.source == "wikidata":
+                if args.qid:
+                    entities = packet.get("data", {}).get("entities", [])
+                    if not isinstance(entities, list):
+                        entities = packet.get("entities", [])
+
+                    for entity in entities:
+                        if not isinstance(entity, dict):
+                            continue
+                        entity_id = entity.get("id")
+                        profile_name = entity.get("profile")
+                        if isinstance(entity_id, str) and entity_id:
+                            qid_map[entity_id] = args.qid
+                        if isinstance(profile_name, str) and profile_name:
+                            qid_map[profile_name] = args.qid
+
+                if not qid_map:
+                    raise CLIError(
+                        "Either --qid or --mapping-file required for source=wikidata"
+                    )
+
+            charged_packet, notices = charge_packet_from_wikidata_items(packet, qid_map)
 
         # Count notice severities
         error_count = sum(1 for n in notices if n.severity == "error")
@@ -3092,14 +3173,13 @@ def _handle_packet_charge(args: argparse.Namespace) -> dict[str, Any]:
 
         details = {
             "packet_id": charged_packet.get("packet_id"),
-            "entities_charged": sum(
-                1
-                for e in charged_packet.get("entities", [])
-                if e.get("data", {}).get("statements")
-            ),
+            "entities_charged": len(charged_packet.get("data", {}).get("entities", [])),
             "notices_error": error_count,
             "notices_warning": warning_count,
             "notices_info": info_count,
+            "conformance_summary": charged_packet.get("metadata", {}).get(
+                "conformance_summary"
+            ),
             "output_file": args.output,
         }
 
@@ -3113,6 +3193,8 @@ def _handle_packet_charge(args: argparse.Namespace) -> dict[str, Any]:
         if isinstance(exc, CLIError):
             raise
         raise CLIError(str(exc)) from exc
+    finally:
+        _restore_source_override(previous_source, source_overridden)
 
 
 def _handle_wikibase_plan_write(args: argparse.Namespace) -> dict[str, Any]:

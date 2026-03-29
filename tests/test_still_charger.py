@@ -7,7 +7,12 @@ from gkc.still_charger import (
     build_curation_packet_from_json_profile,
     charge_curation_packet,
     charge_packet_from_wikidata_items,
+    create_and_charge_curation_packet,
     create_curation_packet,
+    packet_entities,
+    packet_entity_by_ref,
+    packet_outgoing_links,
+    packet_primary_profile_id,
 )
 
 
@@ -353,6 +358,8 @@ def test_charge_wikidata_supports_data_entities_packet_schema():
     class _FakeTemplate:
         def to_dict(self):
             return {
+                "id": "Q195562",
+                "lastrevid": 123456,
                 "labels": {"en": {"language": "en", "value": "Cherokee Nation"}},
                 "descriptions": {
                     "en": {
@@ -376,7 +383,77 @@ def test_charge_wikidata_supports_data_entities_packet_schema():
         mash_client=_FakeMashClient(),
     )
 
-    entity_data = charged["data"]["entities"][0]["data"]
+    entity_data = charged["data"]["entities"][0]
     assert "labels" in entity_data
-    assert entity_data["labels"]["en"]["value"] == "Cherokee Nation"
+    assert entity_data["labels"]["en"]["data-value"] == "Cherokee Nation"
+    assert entity_data["aliases"]["en"]["data-value"] == ["Cherokee"]
+    assert "conformance_summary" in charged["metadata"]
+    assert charged["metadata"]["conformance_summary"]["missing"] >= 1
+    assert "metadata_digest" in charged["metadata"]["integrity"]
     assert any(n.code == "statement_missing" for n in notices)
+
+
+def test_create_and_charge_packet_single_call_api():
+    class _FakeTemplate:
+        def to_dict(self):
+            return {
+                "id": "Q195562",
+                "lastrevid": 123456,
+                "labels": {"en": {"language": "en", "value": "Cherokee Nation"}},
+                "descriptions": {},
+                "aliases": {},
+                "claims": {},
+            }
+
+    class _FakeMashClient:
+        def load_item(self, qid: str):
+            _ = qid
+            return _FakeTemplate()
+
+    charged, notices = create_and_charge_curation_packet(
+        "Q4",
+        qid="Q195562",
+        mash_client=_FakeMashClient(),
+    )
+
+    assert charged["operation_mode"] == "single"
+    assert len(charged["data"]["entities"]) == 1
+    assert charged["data"]["entities"][0]["labels"]["en"]["data-value"] == (
+        "Cherokee Nation"
+    )
+    assert any(n.code == "statement_missing" for n in notices)
+
+
+def test_packet_helpers_resolve_entities_and_primary_profile() -> None:
+    packet = create_curation_packet("Q4", operation_mode="bulk")
+
+    entities = packet_entities(packet)
+    assert len(entities) == 2
+
+    primary_id = packet_primary_profile_id(packet)
+    assert primary_id == "https://datadistillery.wikibase.cloud/entity/Q4"
+
+    by_profile = packet_entity_by_ref(packet, "Q4")
+    assert by_profile is not None
+    assert by_profile["id"] == "https://datadistillery.wikibase.cloud/entity/Q4"
+
+    by_id = packet_entity_by_ref(
+        packet,
+        "https://datadistillery.wikibase.cloud/entity/Q39",
+    )
+    assert by_id is not None
+    assert by_id["profile"] == "Q39"
+
+
+def test_packet_outgoing_links_attach_target_entities() -> None:
+    packet = create_curation_packet("Q4", operation_mode="bulk")
+
+    links = packet_outgoing_links(packet, "Q4")
+
+    assert len(links) == 1
+    link = links[0]
+    assert link["from"] == "Q4"
+    assert link["to"] == "Q39"
+    assert link["relationship_type"] == "P161"
+    assert isinstance(link["target_entity"], dict)
+    assert link["target_entity"]["profile"] == "Q39"

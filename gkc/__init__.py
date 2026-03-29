@@ -152,7 +152,12 @@ from gkc.still_charger import (
     build_curation_packet_from_json_profile,
     charge_curation_packet,
     charge_packet_from_wikidata_items,
+    create_and_charge_curation_packet,
     create_curation_packet,
+    packet_entities,
+    packet_entity_by_ref,
+    packet_outgoing_links,
+    packet_primary_profile_id,
 )
 
 # Utilities (common helpers)
@@ -240,6 +245,11 @@ __all__ = [
     "charge_curation_packet",
     "build_curation_packet_from_json_profile",
     "charge_packet_from_wikidata_items",
+    "create_and_charge_curation_packet",
+    "packet_entities",
+    "packet_entity_by_ref",
+    "packet_outgoing_links",
+    "packet_primary_profile_id",
     # Fermenter validation
     "ConformanceNotice",
     "validate_by_datatype",
