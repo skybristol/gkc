@@ -1,25 +1,12 @@
-# Core architectural principles/components
-- The **Global Knowledge Commons** (GKC) is an abstract concept for an envisioned improved linkage between Wikidata, Wikimedia Commons, Wikipedia Templates, and OpenStreetMap
-- Our project uses the whiskey distillery metaphor for naming and organizing parts of a complex architecture
-- gkc is the engine (python package) that does the work
-- **SpiritSafe** is a declarative registry hosted in the dedicated `skybristol/SpiritSafe` repository; it contains
-  - `profiles/` with YAML Entity Profiles
-  - `queries/` with SPARQL files for allowed‑items list hydration
-  - `cache/` with the resulting hydrated JSON lists and indexes
-- **GKC Entities** are abstract representations of real‑world entities that we want to model and link across platforms
-  - GKC Entity Profiles are YAML documents that define entity structure, constraints, references, and SPARQL‑driven allowed‑item lists
-  - Entity Profiles are fundamentally based on the Wikibase/Wikidata model but incorporate linkages to other parts of the Global Knowledge Commons; the vision is to get Wikidata right and then share that content out with other platforms
-  - Entity Profiles drive both data validation and the presentation of input forms for users
-
 # High‑level rules for reasoning
 - Never hallucinate Wikidata JSON structures; always follow the profile.
-- Treat YAML profiles as the single source of truth for form generation and validation.
 - Keep code modular, atomic, and testable.
 - Maintain strict separation between profile definition, modulation, and serialization.
-- Never mix UI logic with profile logic.
-- Never modify SpiritSafe artifacts without explicit instruction to do so.
+- Never modify SpiritSafe artifacts directly. These are built with `gkc` code and GitHub CI.
 - Do not build code for backwards compatibility unless explicitly instructed to do so; we are in a greenfield development phase and can iterate quickly without maintaining legacy support.
 - Do not edit or create code in Python notebooks unless explicitly instructed to do so; notebooks are for experimentation and prototyping, not for production code.
+- Always document your reasoning and design decisions in GitHub issues and PRs to maintain a clear record of the development process and facilitate future contributions.
+- When we head down a major refactor path that is going to impact things throughout the codebase, do a thorough review to identify all those areas and document in the GitHub issue(s) we are working on so that we can keep track of the scope and ensure we are updating all relevant parts of the codebase. We might clean up immediately or in the next PR, but we want to make sure we have a clear record of all the areas that are impacted by the refactor and that we are not leaving any loose ends behind.
 
 # Curation philosophy (Wikidata-first, enablement-first)
 - We are fundamentally aligned with Wikidata modality and the Freebase-inspired model: curators use judgment in modeling choices while the system provides strong guidance.
@@ -27,23 +14,35 @@
 - Wizard UX exists to reduce friction versus open-ended manual item/claim creation across multiple interfaces; it should accelerate high-quality curation without hiding model expressiveness.
 - Focused lookup lists and pre-hydrated allowed-item sets are guidance tools for speed and consistency, not hard-coded conceptual limits unless explicitly required by profile semantics.
 
-# Agent awareness and handoffs
-- Custom agents are at work in this workspace with guideline files at `.github/agents`
-  - Profile Architect - direct responsibility for the SpiritSafe registry structure, profile schema, documentation, and related functionality in the spirit_safe module
-  - Validation Agent - direct responsibility for the validation engine that consumes profiles and performs entity profile validation, entity validation, serialized data validation for shipping, and other related tasks
-  - Wizard Engineer - direct responsibility for the user interface components that consume profiles to generate forms, provide user guidance, and perform client‑side validation from the Entity Profiles
-- Always be aware of which agent (human or AI) is responsible for the next step in the workflow. When you reach a point where another agent's role begins, produce a concise Handoff Summary that captures only the information that agent needs to proceed. Do not attempt to perform tasks outside your scope. Instead, clearly indicate which agent should take the next step and what inputs they require.
+# Communication Style and Output Density
+- Default to concise responses. Target brief, decision-oriented summaries unless the user explicitly asks for deep detail.
+- Use this response pattern by default:
+1. Outcome in one to three lines.
+2. Key points in up to five bullets.
+3. Optional next actions in up to three numbered items.
+- Avoid long narrative explanations, repeated context, and broad restatements of prior decisions.
+- If a response exceeds roughly 12 lines, include a one-line summary first.
+- Ask before expanding: if additional design depth would materially help, ask whether to provide a deep dive instead of sending it automatically.
+- Prefer concrete deltas over full rewrites of plans.
+- When discussing architecture or process, separate now versus later:
+  - Now: what is actionable this sprint.
+  - Later: park as a short backlog note.
+
+# Module Contracts
+- Pay close attention to and regularly update the module contracts in the documentation. These are the source of truth for how different parts of the system interact and what assumptions they can make about each other. If you find yourself needing to know internal details of another module to do your work, that's a sign that the contract needs to be updated to expose the necessary information or functionality.
+- When updating module contracts, consider the impact on all modules that interact with it and ensure that the new contract still allows for modularity and separation of concerns. Avoid creating tight coupling between modules through the contract; instead, aim for clear interfaces that allow for independent development and testing.
+- This is a complicated codebase with a lot of moving parts, so the module boundaries should be clear and apply to both public code and internal utilities so that future contributors know where to go to deal with an issue or introduce a new feature. If you find that the module boundaries are not clear or that there is a lot of cross-module interaction that is not well-documented, that's a sign that the module structure may need to be re-evaluated.
 
 # Interaction expectations
 - Prefer small, composable functions.
 - Prefer declarative over imperative logic.
 - Prefer explicit over inferred behavior.
-- Follow the YAML schema strictly. When it doesn't accomplish what's being asked, describe the necessary change and wait for instructions to proceed.
 
 # Documentation guidelines
 - Write Markdown for MkDocs (Python-Markdown strict mode), not GitHub-flavored Markdown: always include a blank line before and after bullet/numbered lists, and ensure nested list indentation is consistent.
 - Run a final pass to normalize list formatting so all lists render correctly in mkdocs serve.
 - When writing official documentation during development work, do not reference things like "Phase 1" or other internal process terms that are not relevant to the end user. Instead, write documentation as if the final product is already complete and these internal phases never existed.
+- We're at a point in documentation where things are pretty good and comprehensive, so we need to be vigilant about keeping this up to date as we introduce new functionality or change things so we don't drift off course. If you find that the documentation is not clear or is missing important information, that's a sign that it needs to be updated to reflect the current state of the codebase and the intended usage of the system.
 
 # Test guidelines
 - Always run Python tests from the repo root with poetry run ... so they execute in the project .venv (not the system Python).
