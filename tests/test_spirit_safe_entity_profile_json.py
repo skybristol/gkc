@@ -283,6 +283,106 @@ def test_value_list_graph_includes_reference_and_qualifier_routes(tmp_path):
     ]
 
 
+def test_linkage_index_maps_statement_property_and_target_profile(tmp_path):
+    """Metadata linkage index should include statement -> property -> profile map."""
+
+    cache_entities_dir = tmp_path / "cache" / "entities"
+    cache_entities_dir.mkdir(parents=True, exist_ok=True)
+
+    profile_payload = {
+        "entity_id": "Q4",
+        "entity": {
+            "labels": {"mul": {"value": "Tribal Government in the United States"}},
+            "descriptions": {"mul": {"value": "Example profile"}},
+            "aliases": {},
+            "claims": {
+                "P1": [_build_entity_claim_entity_id("Q3")],
+                "P188": [_build_entity_claim_monolingual("Enter label")],
+                "P189": [_build_entity_claim_monolingual("Enter description")],
+                "P190": [_build_entity_claim_monolingual("Enter aliases")],
+                "P157": [
+                    {
+                        "mainsnak": {
+                            "datavalue": {
+                                "value": {"id": "Q40"},
+                            }
+                        }
+                    }
+                ],
+            },
+        },
+    }
+    (cache_entities_dir / "Q4.json").write_text(
+        json.dumps(profile_payload), encoding="utf-8"
+    )
+
+    statement_payloads = {
+        "Q40": {
+            "entity_id": "Q40",
+            "entity": {
+                "labels": {"mul": {"value": "office held by head of government"}},
+                "claims": {
+                    "P5": [
+                        _build_entity_claim_string(
+                            "http://www.wikidata.org/entity/P1313"
+                        )
+                    ],
+                    "P194": [_build_entity_claim_entity_id("Q52")],
+                    "P161": [_build_entity_claim_entity_id("Q39")],
+                    "P171": [_build_entity_claim_monolingual("Statement prompt")],
+                },
+            },
+        },
+        "Q39": {
+            "entity_id": "Q39",
+            "entity": {
+                "labels": {"mul": {"value": "Office Held by Head of Government"}},
+                "claims": {
+                    "P1": [_build_entity_claim_entity_id("Q3")],
+                    "P188": [_build_entity_claim_monolingual("Target label prompt")],
+                    "P189": [
+                        _build_entity_claim_monolingual("Target description prompt")
+                    ],
+                    "P190": [_build_entity_claim_monolingual("Target aliases prompt")],
+                },
+            },
+        },
+        "Q52": {
+            "entity_id": "Q52",
+            "entity": {
+                "labels": {"mul": {"value": "Wikidata Entity"}},
+                "claims": {},
+            },
+        },
+    }
+
+    for entity_id, payload in statement_payloads.items():
+        (cache_entities_dir / f"{entity_id}.json").write_text(
+            json.dumps(payload), encoding="utf-8"
+        )
+
+    docs = build_entity_profile_json_documents(cache_entities_dir)
+
+    linkage_index = docs[0]["metadata"]["linkage_index"]
+    assert linkage_index == {
+        "outbound_by_statement": {
+            "https://datadistillery.wikibase.cloud/entity/Q40": {
+                "wikidata_properties": ["P1313"],
+                "target_profiles": ["https://datadistillery.wikibase.cloud/entity/Q39"],
+            }
+        },
+        "inbound_by_wikidata_property": {
+            "P1313": [
+                {
+                    "source_profile": "https://datadistillery.wikibase.cloud/entity/Q4",
+                    "source_statement": "https://datadistillery.wikibase.cloud/entity/Q40",
+                    "target_profile": "https://datadistillery.wikibase.cloud/entity/Q39",
+                }
+            ]
+        },
+    }
+
+
 def test_profile_statement_has_value_link_to_wikidata_entity_emits_fixed_value_list(
     tmp_path,
 ):

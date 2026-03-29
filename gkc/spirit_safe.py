@@ -1689,6 +1689,7 @@ class EntityProfileJsonBuilder:
         statements: list[dict[str, Any]],
         entity_uri: str,
     ) -> dict[str, Any]:
+        profile_graph = self._build_profile_graph(wikibase_item)
         metadata = {
             "labels": self._localized_text_map(wikibase_item, "labels"),
             "descriptions": self._localized_text_map(wikibase_item, "descriptions"),
@@ -1698,8 +1699,13 @@ class EntityProfileJsonBuilder:
             .replace("+00:00", "Z"),
             "languages": [],
             "statement_count": len(statements),
-            "profile_graph": self._build_profile_graph(wikibase_item),
+            "profile_graph": profile_graph,
             "value_list_graph": self._build_value_list_graph(statements),
+            "linkage_index": self._build_linkage_index(
+                statements,
+                source_profile_uri=entity_uri,
+                profile_graph=profile_graph,
+            ),
             "exported_from": entity_uri,
         }
 
@@ -1715,6 +1721,139 @@ class EntityProfileJsonBuilder:
             }
         )
         return metadata
+
+    def _build_linkage_index(
+        self,
+        statements: list[dict[str, Any]],
+        *,
+        source_profile_uri: str,
+        profile_graph: list[dict[str, Any]],
+    ) -> dict[str, Any]:
+        """Build deterministic linkage index for statement/property/profile routing."""
+        outbound_by_statement: dict[str, dict[str, list[str]]] = {}
+        targets_by_statement: dict[str, set[str]] = {}
+
+        for edge in profile_graph:
+            if not isinstance(edge, dict):
+                continue
+            via_statement = edge.get("via_statement")
+            target_profile = edge.get("entity") or edge.get("id")
+            if not isinstance(via_statement, str) or not via_statement:
+                continue
+            if not isinstance(target_profile, str) or not target_profile:
+                continue
+            targets_by_statement.setdefault(via_statement, set()).add(target_profile)
+
+        for statement in self._iter_statement_nodes(statements):
+            if not isinstance(statement, dict):
+                continue
+
+            statement_uri = statement.get("entity")
+            if not isinstance(statement_uri, str) or not statement_uri:
+                continue
+
+            property_ids = self._statement_wikidata_property_ids(statement)
+            target_profiles = self._statement_target_profile_uris(statement)
+            if statement_uri in targets_by_statement:
+                target_profiles = sorted(
+                    set(target_profiles).union(targets_by_statement[statement_uri])
+                )
+
+            if not property_ids and not target_profiles:
+                continue
+
+            outbound_by_statement[statement_uri] = {
+                "wikidata_properties": property_ids,
+                "target_profiles": target_profiles,
+            }
+
+        inbound_by_wikidata_property: dict[str, list[dict[str, str]]] = {}
+        for statement_uri in sorted(outbound_by_statement.keys()):
+            outbound = outbound_by_statement[statement_uri]
+            property_ids = outbound.get("wikidata_properties", [])
+            target_profiles = outbound.get("target_profiles", [])
+
+            for property_id in property_ids:
+                records = inbound_by_wikidata_property.setdefault(property_id, [])
+                if target_profiles:
+                    for target_profile in target_profiles:
+                        records.append(
+                            {
+                                "source_profile": source_profile_uri,
+                                "source_statement": statement_uri,
+                                "target_profile": target_profile,
+                            }
+                        )
+                else:
+                    records.append(
+                        {
+                            "source_profile": source_profile_uri,
+                            "source_statement": statement_uri,
+                        }
+                    )
+
+        for records in inbound_by_wikidata_property.values():
+            records.sort(
+                key=lambda record: (
+                    str(record.get("source_profile", "")),
+                    str(record.get("source_statement", "")),
+                    str(record.get("target_profile", "")),
+                )
+            )
+
+        return {
+            "outbound_by_statement": {
+                statement_uri: outbound_by_statement[statement_uri]
+                for statement_uri in sorted(outbound_by_statement.keys())
+            },
+            "inbound_by_wikidata_property": {
+                property_id: inbound_by_wikidata_property[property_id]
+                for property_id in sorted(inbound_by_wikidata_property.keys())
+            },
+        }
+
+    def _statement_wikidata_property_ids(self, statement: dict[str, Any]) -> list[str]:
+        io_map = statement.get("io_map")
+        if not isinstance(io_map, list):
+            return []
+
+        property_ids: list[str] = []
+        for route in io_map:
+            if not isinstance(route, dict):
+                continue
+            target = route.get("to")
+            if not isinstance(target, str) or not target:
+                continue
+            property_id = self._extract_wikidata_property_id(target)
+            if property_id:
+                property_ids.append(property_id)
+
+        return self._dedupe_preserve_order(property_ids)
+
+    def _statement_target_profile_uris(self, statement: dict[str, Any]) -> list[str]:
+        value_payload = statement.get("value")
+        if not isinstance(value_payload, dict):
+            return []
+
+        profile_payload = value_payload.get("profile")
+        if not isinstance(profile_payload, dict):
+            return []
+
+        target = profile_payload.get("entity")
+        if isinstance(target, str) and target:
+            return [target]
+
+        return []
+
+    def _extract_wikidata_property_id(self, target: str) -> Optional[str]:
+        if target.startswith("P") and target[1:].isdigit():
+            return target
+
+        candidate = target.rstrip("/").split("/")[-1]
+        if candidate.startswith("P") and candidate[1:].isdigit():
+            return candidate
+
+        return None
 
     def _build_profile_graph(
         self, wikibase_item: dict[str, Any]
