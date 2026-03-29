@@ -16,7 +16,7 @@ from pathlib import Path
 from typing import Any, Optional
 
 import gkc
-from gkc.fermenter import ConformanceNotice
+from gkc.fermenter import ConformanceNotice, evaluate_entity
 
 
 @dataclass
@@ -79,6 +79,115 @@ def _target_profile_uri_from_edge(edge: dict[str, Any]) -> Optional[str]:
         return None
     target_uri, _ = _normalize_entity_uri(target_ref)
     return target_uri
+
+
+def packet_entities(packet: dict[str, Any]) -> list[dict[str, Any]]:
+    """Return packet data entities in deterministic list form.
+
+    Wizard-facing packet operations should consume only the canonical
+    ``data.entities`` surface.
+    """
+    data = packet.get("data")
+    if not isinstance(data, dict):
+        return []
+    entities = data.get("entities")
+    if not isinstance(entities, list):
+        return []
+    return [entity for entity in entities if isinstance(entity, dict)]
+
+
+def packet_primary_profile_id(packet: dict[str, Any]) -> Optional[str]:
+    """Return primary profile URI from packet metadata when available."""
+    metadata = packet.get("metadata")
+    if not isinstance(metadata, dict):
+        return None
+    primary = metadata.get("primary_profile")
+    if not isinstance(primary, dict):
+        return None
+    primary_id = primary.get("id")
+    if isinstance(primary_id, str) and primary_id:
+        return primary_id
+    return None
+
+
+def packet_entity_by_ref(
+    packet: dict[str, Any], entity_ref: str
+) -> Optional[dict[str, Any]]:
+    """Resolve one packet entity by profile name_identifier or profile URI."""
+    if not isinstance(entity_ref, str) or not entity_ref:
+        return None
+
+    for entity in packet_entities(packet):
+        profile_name = entity.get("profile")
+        profile_id = entity.get("id")
+        if entity_ref == profile_name or entity_ref == profile_id:
+            return entity
+    return None
+
+
+def packet_outgoing_links(
+    packet: dict[str, Any], entity_ref: str
+) -> list[dict[str, Any]]:
+    """Return outgoing linked-entity edges for one packet entity.
+
+    Results are sorted and each edge includes the resolved target entity slot
+    under ``target_entity`` when present in ``data.entities``.
+    """
+    source_entity = packet_entity_by_ref(packet, entity_ref)
+    if not isinstance(source_entity, dict):
+        return []
+
+    source_profile = source_entity.get("profile")
+    if not isinstance(source_profile, str) or not source_profile:
+        return []
+
+    target_by_profile = {
+        entity.get("profile"): entity
+        for entity in packet_entities(packet)
+        if isinstance(entity.get("profile"), str)
+    }
+
+    metadata = packet.get("metadata")
+    graph = metadata.get("graph") if isinstance(metadata, dict) else None
+    edges = graph.get("edges") if isinstance(graph, dict) else None
+    if not isinstance(edges, list):
+        return []
+
+    resolved: list[dict[str, Any]] = []
+    for edge in edges:
+        if not isinstance(edge, dict):
+            continue
+        if edge.get("from") != source_profile:
+            continue
+
+        target_profile = edge.get("to")
+        target_entity = (
+            target_by_profile.get(target_profile)
+            if isinstance(target_profile, str)
+            else None
+        )
+
+        resolved.append(
+            {
+                "from": source_profile,
+                "to": target_profile,
+                "from_id": edge.get("from_id"),
+                "to_id": edge.get("to_id"),
+                "via_statement": edge.get("via_statement"),
+                "relationship_type": edge.get("relationship_type"),
+                "label": edge.get("label"),
+                "target_entity": target_entity,
+            }
+        )
+
+    resolved.sort(
+        key=lambda edge: (
+            str(edge.get("to", "")),
+            str(edge.get("via_statement", "")),
+            str(edge.get("relationship_type", "")),
+        )
+    )
+    return resolved
 
 
 def _profile_uri_from_doc(profile_doc: dict[str, Any], fallback_uri: str) -> str:
@@ -228,6 +337,88 @@ def _canonical_json_digest(payload: dict[str, Any]) -> str:
     return hashlib.sha256(canonical.encode("utf-8")).hexdigest()
 
 
+def _reseal_packet_metadata(packet: dict[str, Any]) -> None:
+    """Recompute metadata digest after packet metadata changes."""
+    metadata = packet.get("metadata")
+    if not isinstance(metadata, dict):
+        return
+
+    canonical_metadata = deepcopy(metadata)
+    canonical_metadata.pop("integrity", None)
+    metadata_digest = _canonical_json_digest(canonical_metadata)
+    metadata["integrity"] = {
+        "metadata_canonicalization": "json-sort-keys-v1",
+        "metadata_digest_algorithm": "sha256",
+        "metadata_digest": metadata_digest,
+    }
+
+
+def _copy_language_values(
+    slot: dict[str, Any],
+    source: Any,
+    *,
+    aliases: bool = False,
+) -> None:
+    """Copy Wikibase language-keyed values into packet slot shape."""
+    if not isinstance(source, dict):
+        return
+
+    for language, payload in source.items():
+        if not isinstance(language, str) or not language:
+            continue
+
+        if aliases:
+            values: list[str] = []
+            if isinstance(payload, list):
+                for alias_entry in payload:
+                    if isinstance(alias_entry, dict):
+                        alias_value = alias_entry.get("value")
+                        if isinstance(alias_value, str):
+                            values.append(alias_value)
+            elif isinstance(payload, dict):
+                alias_value = payload.get("value")
+                if isinstance(alias_value, str):
+                    values.append(alias_value)
+
+            if values:
+                slot[language] = {"data-value": values}
+            continue
+
+        if isinstance(payload, dict):
+            value = payload.get("value")
+            if isinstance(value, str):
+                slot[language] = {"data-value": value}
+
+
+def _claims_to_values(raw_claims: list[dict[str, Any]]) -> list[Any]:
+    values: list[Any] = []
+    for claim in raw_claims:
+        if not isinstance(claim, dict):
+            continue
+        mainsnak = claim.get("mainsnak")
+        if not isinstance(mainsnak, dict):
+            continue
+        datavalue = mainsnak.get("datavalue")
+        if not isinstance(datavalue, dict):
+            continue
+        if "value" in datavalue:
+            values.append(datavalue.get("value"))
+    return values
+
+
+def _notice_payloads(notices: list[ConformanceNotice]) -> list[dict[str, Any]]:
+    return [
+        {
+            "severity": notice.severity,
+            "code": notice.code,
+            "message": notice.message,
+            "statement_ref": notice.statement_ref,
+            "normalized_value": notice.normalized_value,
+        }
+        for notice in notices
+    ]
+
+
 def _build_unified_graph(
     profile_docs: dict[str, dict[str, Any]],
     name_by_uri: dict[str, str],
@@ -280,49 +471,38 @@ def _load_related_profile_documents(
     root_profile_uri: str,
     root_profile_doc: dict[str, Any],
 ) -> dict[str, dict[str, Any]]:
-    """Load root and related profile documents reachable via profile_graph edges."""
+    """Load root and directly linked profile documents from profile_graph edges."""
     from gkc.spirit_safe import load_profile
 
     profile_docs: dict[str, dict[str, Any]] = {root_profile_uri: root_profile_doc}
-    visited: set[str] = set()
+    profile_graph = root_profile_doc.get("metadata", {}).get("profile_graph", [])
+    if not isinstance(profile_graph, list):
+        return profile_docs
 
-    def _visit(profile_uri: str, profile_doc: dict[str, Any]) -> None:
-        if profile_uri in visited:
-            return
-        visited.add(profile_uri)
+    for edge in profile_graph:
+        if not isinstance(edge, dict):
+            continue
+        target_uri = _target_profile_uri_from_edge(edge)
+        if not target_uri or target_uri in profile_docs:
+            continue
 
-        profile_graph = profile_doc.get("metadata", {}).get("profile_graph", [])
-        if not isinstance(profile_graph, list):
-            return
+        target_qid = target_uri.split("/")[-1]
+        try:
+            loaded = load_profile(target_qid)
+        except Exception:
+            continue
 
-        for edge in profile_graph:
-            if not isinstance(edge, dict):
-                continue
-            target_uri = _target_profile_uri_from_edge(edge)
-            if not target_uri:
-                continue
-            target_qid = target_uri.split("/")[-1]
+        loaded_uri = (
+            loaded.get("id")
+            if isinstance(loaded.get("id"), str)
+            else (
+                loaded.get("entity")
+                if isinstance(loaded.get("entity"), str)
+                else target_uri
+            )
+        )
+        profile_docs[loaded_uri] = loaded
 
-            if target_uri not in profile_docs:
-                try:
-                    loaded = load_profile(target_qid)
-                except Exception:
-                    continue
-                loaded_uri = (
-                    loaded.get("id")
-                    if isinstance(loaded.get("id"), str)
-                    else (
-                        loaded.get("entity")
-                        if isinstance(loaded.get("entity"), str)
-                        else target_uri
-                    )
-                )
-                profile_docs[loaded_uri] = loaded
-                _visit(loaded_uri, loaded)
-            else:
-                _visit(target_uri, profile_docs[target_uri])
-
-    _visit(root_profile_uri, root_profile_doc)
     return profile_docs
 
 
@@ -634,6 +814,49 @@ def create_curation_packet(
     return packet
 
 
+def create_and_charge_curation_packet(
+    profile_id: str,
+    *,
+    qid: Optional[str] = None,
+    qid_map: Optional[dict[str, str]] = None,
+    include_linked_profiles: bool = False,
+    mash_client: Optional[Any] = None,
+) -> tuple[dict[str, Any], list[ConformanceNotice]]:
+    """Create and charge a packet in one call.
+
+    The default packet scope is the primary profile only. Set
+    ``include_linked_profiles=True`` to include directly linked profiles.
+    """
+    operation_mode = "bulk" if include_linked_profiles else "single"
+    packet = create_curation_packet(profile_id, operation_mode=operation_mode)
+
+    resolved_qid_map: dict[str, str] = {}
+    if isinstance(qid_map, dict):
+        resolved_qid_map.update(qid_map)
+
+    if qid:
+        entities = packet.get("data", {}).get("entities", [])
+        if isinstance(entities, list):
+            for entity in entities:
+                if not isinstance(entity, dict):
+                    continue
+                entity_id = entity.get("id")
+                profile_name = entity.get("profile")
+                if isinstance(entity_id, str) and entity_id:
+                    resolved_qid_map[entity_id] = qid
+                if isinstance(profile_name, str) and profile_name:
+                    resolved_qid_map[profile_name] = qid
+
+    if not resolved_qid_map:
+        raise ValueError("Either qid or qid_map must be provided")
+
+    return charge_packet_from_wikidata_items(
+        packet,
+        resolved_qid_map,
+        mash_client=mash_client,
+    )
+
+
 def charge_packet_from_wikidata_items(
     packet: dict[str, Any],
     qid_map: dict[str, str],
@@ -668,7 +891,7 @@ def charge_packet_from_wikidata_items(
         )
 
     charged = deepcopy(packet)
-    notices = []
+    notices: list[ConformanceNotice] = []
 
     if mash_client is None:
         mash_client = WikibaseLoader()
@@ -695,6 +918,25 @@ def charge_packet_from_wikidata_items(
         if isinstance(name_identifier, str) and name_identifier:
             profile_statements_by_key[name_identifier] = statements
 
+    metadata = charged.setdefault("metadata", {})
+    if not isinstance(metadata, dict):
+        metadata = {}
+        charged["metadata"] = metadata
+
+    metadata_entity_provenance = metadata.setdefault("entity_provenance", {})
+    if not isinstance(metadata_entity_provenance, dict):
+        metadata_entity_provenance = {}
+        metadata["entity_provenance"] = metadata_entity_provenance
+
+    outcome_counts = {
+        "conformant": 0,
+        "non_conformant_mappable": 0,
+        "to_be_defined": 0,
+        "missing": 0,
+    }
+    observed_notice_codes: set[str] = set()
+    pulled_at = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
+
     for entity in entities:
         entity_id = entity.get("id")
         profile_entity = entity.get("profile_entity")
@@ -707,11 +949,19 @@ def charge_packet_from_wikidata_items(
         entity_profile_name = entity.get("profile")
 
         # Resolve the QID for this entity
-        target_qid = (
-            qid_map.get(entity_id)
-            or qid_map.get(profile_entity)
-            or (profile_entity.split("/")[-1] if profile_entity else None)
-        )
+        target_qid = None
+        if isinstance(entity_id, str) and entity_id:
+            target_qid = qid_map.get(entity_id)
+        if not target_qid and isinstance(profile_entity, str) and profile_entity:
+            target_qid = qid_map.get(profile_entity)
+        if (
+            not target_qid
+            and isinstance(entity_profile_name, str)
+            and entity_profile_name
+        ):
+            target_qid = qid_map.get(entity_profile_name)
+        if not target_qid and profile_entity:
+            target_qid = profile_entity.split("/")[-1]
 
         if not target_qid:
             notices.append(
@@ -742,107 +992,190 @@ def charge_packet_from_wikidata_items(
             )
             continue
 
-        # Extract standard fields
-        entity.setdefault("data", {})
-        entity_data = entity["data"]
+        # Copy identification values into packet slot structure
+        labels_slot = entity.setdefault("labels", {})
+        descriptions_slot = entity.setdefault("descriptions", {})
+        aliases_slot = entity.setdefault("aliases", {})
+        if isinstance(labels_slot, dict):
+            _copy_language_values(labels_slot, wikidata_item.get("labels", {}))
+        if isinstance(descriptions_slot, dict):
+            _copy_language_values(
+                descriptions_slot,
+                wikidata_item.get("descriptions", {}),
+            )
+        if isinstance(aliases_slot, dict):
+            _copy_language_values(
+                aliases_slot,
+                wikidata_item.get("aliases", {}),
+                aliases=True,
+            )
 
-        # Get labels, descriptions, aliases
-        if "labels" in wikidata_item:
-            entity_data["labels"] = wikidata_item["labels"]
-        if "descriptions" in wikidata_item:
-            entity_data["descriptions"] = wikidata_item["descriptions"]
-        if "aliases" in wikidata_item:
-            entity_data["aliases"] = wikidata_item["aliases"]
-
-        # Build a mapping from Wikidata property ID to packet statements
-        statements = entity.get("statements", [])
-        if isinstance(statements, dict):
-            if (
-                isinstance(profile_entity, str)
-                and profile_entity in profile_statements_by_key
-            ):
-                statements = profile_statements_by_key[profile_entity]
-            elif (
-                isinstance(entity_profile_name, str)
-                and entity_profile_name in profile_statements_by_key
-            ):
-                statements = profile_statements_by_key[entity_profile_name]
-            else:
-                statements = []
+        # Resolve profile statements for this entity
+        statements = []
+        if (
+            isinstance(profile_entity, str)
+            and profile_entity in profile_statements_by_key
+        ):
+            statements = profile_statements_by_key[profile_entity]
+        elif (
+            isinstance(entity_profile_name, str)
+            and entity_profile_name in profile_statements_by_key
+        ):
+            statements = profile_statements_by_key[entity_profile_name]
 
         if not isinstance(statements, list):
             statements = []
 
-        io_map_by_property_id = {}
+        io_map_index: dict[str, dict[str, Any]] = {}
+        statement_key_by_property: dict[str, str] = {}
+        statement_key_by_id: dict[str, str] = {}
+        statement_key_by_name: dict[str, str] = {}
+
+        statement_slots = entity.setdefault("statements", {})
+        if not isinstance(statement_slots, dict):
+            statement_slots = {}
+            entity["statements"] = statement_slots
+
+        for slot_key, slot in statement_slots.items():
+            if not isinstance(slot_key, str) or not isinstance(slot, dict):
+                continue
+            statement_key_by_name[slot_key] = slot_key
+            slot_id = slot.get("id")
+            if isinstance(slot_id, str) and slot_id:
+                statement_key_by_id[slot_id] = slot_key
+
         for stmt in statements:
-            if isinstance(stmt, dict):
-                io_map = stmt.get("io_map", [])
-                for mapping in io_map:
-                    if isinstance(mapping, dict):
-                        to_uri = mapping.get("to", "")
-                        prop_id = to_uri.split("/")[-1] if to_uri else None
-                        if prop_id:
-                            io_map_by_property_id[prop_id] = stmt
+            if not isinstance(stmt, dict):
+                continue
+            statement_id = stmt.get("id") or stmt.get("entity")
+            statement_name = stmt.get("name_identifier")
+            resolved_slot_key = None
+            if (
+                isinstance(statement_name, str)
+                and statement_name in statement_key_by_name
+            ):
+                resolved_slot_key = statement_name
+            elif isinstance(statement_id, str) and statement_id in statement_key_by_id:
+                resolved_slot_key = statement_key_by_id[statement_id]
 
-        # Extract and validate claims from Wikidata item
-        entity_data.setdefault("statements", {})
-        wikidata_claims = wikidata_item.get("claims", {})
-        processed_props = set()
-
-        for prop_id, claims in wikidata_claims.items():
-            processed_props.add(prop_id)
-
-            if prop_id not in io_map_by_property_id:
-                # Statement in Wikidata but not in profile
-                notices.append(
-                    ConformanceNotice(
-                        severity="info",
-                        entity_ref=entity_id or profile_entity or "unknown",
-                        statement_ref=None,
-                        code="statement_unrecognized",
-                        message=f"Wikidata property {prop_id} not defined in profile",
-                    )
-                )
+            io_map = stmt.get("io_map", [])
+            if not isinstance(io_map, list):
                 continue
 
-            stmt_def = io_map_by_property_id[prop_id]
-            stmt_uri = stmt_def.get("entity")
+            for mapping in io_map:
+                if not isinstance(mapping, dict):
+                    continue
+                to_uri = mapping.get("to")
+                if not isinstance(to_uri, str) or not to_uri:
+                    continue
+                prop_id = to_uri.split("/")[-1]
+                if not prop_id:
+                    continue
+                io_map_index[prop_id] = stmt
+                if isinstance(resolved_slot_key, str):
+                    statement_key_by_property[prop_id] = resolved_slot_key
 
-            # Extract values from claims (simplified: just take the values)
-            values = []
-            for claim in claims:
-                mainsnak = claim.get("mainsnak", {})
-                datavalue = mainsnak.get("datavalue", {})
-                value = datavalue.get("value")
-                if value:
-                    values.append(value)
+        entity_eval = evaluate_entity(
+            statements,
+            wikidata_item,
+            io_map_index=io_map_index,
+            entity_ref=str(
+                entity_id or profile_entity or entity_profile_name or target_qid
+            ),
+        )
 
-            if values:
-                entity_data["statements"][stmt_uri] = values
+        for notice in entity_eval.all_notices:
+            notices.append(notice)
+            if isinstance(notice.code, str) and notice.code:
+                observed_notice_codes.add(notice.code)
 
-        # Check for statements in profile but missing in Wikidata
-        for stmt in statements:
-            if isinstance(stmt, dict):
-                io_map = stmt.get("io_map", [])
-                for mapping in io_map:
-                    if isinstance(mapping, dict):
-                        to_uri = mapping.get("to", "")
-                        prop_id = to_uri.split("/")[-1] if to_uri else None
-                        if prop_id and prop_id not in processed_props:
-                            stmt_uri = stmt.get("entity")
-                            # Check if this is required (max_count != 0 implies required)
-                            required = stmt.get("max_count") != 0
-                            severity = "error" if required else "warning"
+        outcome_counts["conformant"] += len(entity_eval.conformant)
+        outcome_counts["non_conformant_mappable"] += len(
+            entity_eval.non_conformant_mappable
+        )
+        outcome_counts["to_be_defined"] += len(entity_eval.to_be_defined)
+        outcome_counts["missing"] += len(entity_eval.missing)
 
-                            notices.append(
-                                ConformanceNotice(
-                                    severity=severity,
-                                    entity_ref=entity_id or profile_entity or "unknown",
-                                    statement_ref=stmt_uri,
-                                    code="statement_missing",
-                                    message=f"Property {prop_id} not found in Wikidata item",
-                                )
-                            )
+        def _slot_key_for(
+            statement_ref: Optional[str], property_ref: Optional[str]
+        ) -> Optional[str]:
+            if isinstance(statement_ref, str) and statement_ref:
+                if statement_ref in statement_key_by_name:
+                    return statement_key_by_name[statement_ref]
+                if statement_ref in statement_key_by_id:
+                    return statement_key_by_id[statement_ref]
+            if isinstance(property_ref, str) and property_ref:
+                return statement_key_by_property.get(property_ref)
+            return None
+
+        for bucket_name, bucket in (
+            ("conformant", entity_eval.conformant),
+            ("non_conformant_mappable", entity_eval.non_conformant_mappable),
+            ("missing", entity_eval.missing),
+        ):
+            for statement_eval in bucket:
+                slot_key = _slot_key_for(
+                    statement_eval.statement_ref,
+                    statement_eval.property_ref,
+                )
+                if not slot_key or slot_key not in statement_slots:
+                    continue
+
+                slot_payload = statement_slots.get(slot_key)
+                if not isinstance(slot_payload, dict):
+                    continue
+
+                if bucket_name == "missing":
+                    slot_payload["data-value"] = None
+                elif statement_eval.normalized_value is not None:
+                    slot_payload["data-value"] = statement_eval.normalized_value
+
+                if bucket_name == "non_conformant_mappable":
+                    slot_payload["non_conformant"] = True
+                    slot_payload["notices"] = _notice_payloads(statement_eval.notices)
+                elif bucket_name == "missing":
+                    slot_payload["notices"] = _notice_payloads(statement_eval.notices)
+                else:
+                    slot_payload.pop("non_conformant", None)
+                    slot_payload.pop("notices", None)
+
+        uncovered_statements = entity.setdefault("uncovered_statements", {})
+        if not isinstance(uncovered_statements, dict):
+            uncovered_statements = {}
+            entity["uncovered_statements"] = uncovered_statements
+
+        for statement_eval in entity_eval.to_be_defined:
+            property_ref = statement_eval.property_ref
+            if not isinstance(property_ref, str) or not property_ref:
+                continue
+            uncovered_statements[property_ref] = {
+                "property": property_ref,
+                "data-values": _claims_to_values(statement_eval.raw_claims),
+                "raw_claims": statement_eval.raw_claims,
+                "notices": _notice_payloads(statement_eval.notices),
+            }
+
+        provenance_key = (
+            str(entity_profile_name)
+            if isinstance(entity_profile_name, str) and entity_profile_name
+            else str(entity_id or target_qid)
+        )
+        metadata_entity_provenance[provenance_key] = {
+            "entity_id": entity_id,
+            "profile": entity_profile_name,
+            "source_qid": target_qid,
+            "lastrevid": wikidata_item.get("lastrevid"),
+            "pulled_at": pulled_at,
+        }
+
+    metadata["conformance_summary"] = {
+        "conformant": outcome_counts["conformant"],
+        "non_conformant_mappable": outcome_counts["non_conformant_mappable"],
+        "to_be_defined": outcome_counts["to_be_defined"],
+        "missing": outcome_counts["missing"],
+        "notice_codes": sorted(observed_notice_codes),
+    }
+    _reseal_packet_metadata(charged)
 
     return charged, notices
 
