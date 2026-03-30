@@ -16,7 +16,11 @@ from pathlib import Path
 from typing import Any, Optional
 
 import gkc
-from gkc.fermenter import ConformanceNotice
+from gkc.fermenter import (
+    ConformanceNotice,
+    evaluate_statement_instance,
+    statement_evaluation_to_record,
+)
 
 
 @dataclass
@@ -214,6 +218,32 @@ def _profile_statement_map(
             statement_by_property.setdefault(property_id, statement_uri)
 
     return statement_by_property, allowed_properties
+
+
+def _statement_uri_to_name_identifier_map(
+    profile_meta: dict[str, Any],
+) -> dict[str, str]:
+    """Return statement_uri -> name_identifier map for conformance reporting.
+
+    Enables human-readable statement identifiers in conformance output alongside URIs.
+    """
+    uri_to_name: dict[str, str] = {}
+
+    statements = profile_meta.get("statements", [])
+    if not isinstance(statements, list):
+        return uri_to_name
+
+    for stmt in statements:
+        if not isinstance(stmt, dict):
+            continue
+        statement_uri = stmt.get("entity")
+        if not isinstance(statement_uri, str) or not statement_uri:
+            continue
+        name_id = _statement_name_identifier(stmt)
+        if name_id:
+            uri_to_name[statement_uri] = name_id
+
+    return uri_to_name
 
 
 def packet_entities(packet: dict[str, Any]) -> list[dict[str, Any]]:
@@ -541,19 +571,6 @@ def _claims_to_values(raw_claims: list[dict[str, Any]]) -> list[Any]:
     return values
 
 
-def _notice_payloads(notices: list[ConformanceNotice]) -> list[dict[str, Any]]:
-    return [
-        {
-            "severity": notice.severity,
-            "code": notice.code,
-            "message": notice.message,
-            "statement_ref": notice.statement_ref,
-            "normalized_value": notice.normalized_value,
-        }
-        for notice in notices
-    ]
-
-
 def _build_unified_graph(
     profile_docs: dict[str, dict[str, Any]],
     name_by_uri: dict[str, str],
@@ -763,6 +780,7 @@ def build_curation_packet_from_json_profile(
     json_profile_doc: dict,
     *,
     source_root: Optional[Path] = None,
+    source_config: Optional[dict[str, Any]] = None,
 ) -> dict:
     """Build a curation packet from a JSON Entity Profile document.
 
@@ -886,6 +904,7 @@ def build_curation_packet_from_json_profile(
             "generator": "gkc.still_charger.build_curation_packet_from_json_profile",
             "gkc_version": gkc.__version__,
         },
+        "source": source_config or {},
     }
 
     metadata_digest = _canonical_json_digest(metadata)
@@ -940,10 +959,17 @@ def create_curation_packet(
         profile_doc.setdefault("metadata", {})["profile_graph"] = []
 
     source = get_spirit_safe_source()
+    source_config: dict[str, Any] = {"mode": source.mode}
+    if source.mode == "local" and source.local_root is not None:
+        source_config["local_root"] = str(source.local_root)
+    else:
+        source_config["github_repo"] = source.github_repo
+        source_config["github_ref"] = source.github_ref
     packet = build_curation_packet_from_json_profile(
         profile_entity=profile_uri,
         json_profile_doc=profile_doc,
         source_root=source.local_root if source.mode == "local" else None,
+        source_config=source_config,
     )
     packet["operation_mode"] = operation_mode
     return packet
@@ -1174,6 +1200,14 @@ def _load_and_evaluate_linked_entities(
     all_entities = {primary_qid: primary_entity}
     all_entities.update(linked_entities_by_qid)
 
+    # Resolve value_list_root from packet source metadata
+    source_meta = packet.get("metadata", {}).get("source", {})
+    value_list_root: Optional[Path] = None
+    if isinstance(source_meta, dict) and source_meta.get("mode") == "local":
+        local_root_str = source_meta.get("local_root")
+        if isinstance(local_root_str, str) and local_root_str:
+            value_list_root = Path(local_root_str)
+
     for entity_qid, entity_json in all_entities.items():
         profile_uri = entity_profile_map.get(entity_qid)
         if not isinstance(profile_uri, str):
@@ -1187,7 +1221,20 @@ def _load_and_evaluate_linked_entities(
         if not isinstance(profile_statements, list):
             continue
 
-        statement_by_property, profile_props = _profile_statement_map(profile_meta)
+        statement_by_property, _ = _profile_statement_map(profile_meta)
+        uri_to_name_identifier = _statement_uri_to_name_identifier_map(profile_meta)
+
+        # Build property_id -> full profile statement dict for fermenter evaluation
+        stmt_by_prop: dict[str, dict[str, Any]] = {}
+        for stmt in profile_statements:
+            if not isinstance(stmt, dict):
+                continue
+            for mapping in stmt.get("io_map", []):
+                if not isinstance(mapping, dict):
+                    continue
+                prop_id = _extract_wikidata_property_id(mapping.get("to"))
+                if prop_id:
+                    stmt_by_prop.setdefault(prop_id, stmt)
 
         # Evaluate each claim in entity against profile
         entity_claims = entity_json.get("claims", {})
@@ -1195,29 +1242,44 @@ def _load_and_evaluate_linked_entities(
             if not isinstance(claims_list, list):
                 continue
 
+            matching_stmt_uri = statement_by_property.get(prop_key)
+            profile_stmt = stmt_by_prop.get(prop_key)
+
             for claim_idx, claim in enumerate(claims_list):
                 if not isinstance(claim, dict):
                     continue
 
-                # Build JSON path for this claim
                 json_path = f"$.entity.claims.{prop_key}[{claim_idx}]"
 
-                # Check if this property is in the profile
-                is_conformant = prop_key in profile_props
+                if profile_stmt is None:
+                    # Property not covered by any profile statement
+                    statement_evaluations.append(
+                        {
+                            "entity_id": entity_qid,
+                            "json_path": json_path,
+                            "statement_uri": f"unknown/{prop_key}",
+                            "status": "uncovered",
+                        }
+                    )
+                    continue
 
-                matching_stmt_uri = statement_by_property.get(prop_key)
+                stmt_eval = evaluate_statement_instance(
+                    profile_stmt,
+                    claim,
+                    entity_ref=entity_qid,
+                    value_list_root=value_list_root,
+                )
+                evaluation = statement_evaluation_to_record(
+                    stmt_eval,
+                    profile_stmt,
+                    entity_id=entity_qid,
+                    json_path=json_path,
+                )
 
-                status = "conformant" if is_conformant else "nonconformant"
-
-                evaluation = {
-                    "entity_id": entity_qid,
-                    "json_path": json_path,
-                    "statement_uri": matching_stmt_uri or f"unknown/{prop_key}",
-                    "status": status,
-                }
-
-                if not is_conformant:
-                    evaluation["issues"] = ["statement not in profile"]
+                if matching_stmt_uri:
+                    stmt_id = uri_to_name_identifier.get(matching_stmt_uri)
+                    if stmt_id:
+                        evaluation["statement_id"] = stmt_id
 
                 statement_evaluations.append(evaluation)
 
