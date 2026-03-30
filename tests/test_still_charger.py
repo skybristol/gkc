@@ -355,8 +355,9 @@ def test_build_packet_includes_nested_children_for_q58_modifier_qualifier():
 def test_charge_wikidata_supports_data_entities_packet_schema():
     packet = create_curation_packet("Q4", operation_mode="single")
 
-    class _FakeTemplate:
-        def to_dict(self):
+    class _FakeMashClient:
+        def load_entity_data(self, qid: str) -> dict:
+            _ = qid
             return {
                 "id": "Q195562",
                 "lastrevid": 123456,
@@ -371,11 +372,6 @@ def test_charge_wikidata_supports_data_entities_packet_schema():
                 "claims": {},
             }
 
-    class _FakeMashClient:
-        def load_item(self, qid: str):
-            _ = qid
-            return _FakeTemplate()
-
     qid_map = {entity["id"]: "Q195562" for entity in packet["data"]["entities"]}
     charged, notices = charge_packet_from_wikidata_items(
         packet,
@@ -384,18 +380,19 @@ def test_charge_wikidata_supports_data_entities_packet_schema():
     )
 
     entity_data = charged["data"]["entities"][0]
-    assert "labels" in entity_data
-    assert entity_data["labels"]["en"]["data-value"] == "Cherokee Nation"
-    assert entity_data["aliases"]["en"]["data-value"] == ["Cherokee"]
-    assert "conformance_summary" in charged["metadata"]
-    assert charged["metadata"]["conformance_summary"]["missing"] >= 1
+    assert "entity" in entity_data
+    assert entity_data["entity"]["labels"]["en"]["value"] == "Cherokee Nation"
+    assert entity_data["entity"]["aliases"]["en"][0]["value"] == "Cherokee"
     assert "metadata_digest" in charged["metadata"]["integrity"]
-    assert any(n.code == "statement_missing" for n in notices)
+    assert "conformance" in charged
+    assert "entity_profile_map" in charged["conformance"]
+    assert "statement_evaluations" in charged["conformance"]
 
 
 def test_create_and_charge_packet_single_call_api():
-    class _FakeTemplate:
-        def to_dict(self):
+    class _FakeMashClient:
+        def load_entity_data(self, qid: str) -> dict:
+            _ = qid
             return {
                 "id": "Q195562",
                 "lastrevid": 123456,
@@ -405,11 +402,6 @@ def test_create_and_charge_packet_single_call_api():
                 "claims": {},
             }
 
-    class _FakeMashClient:
-        def load_item(self, qid: str):
-            _ = qid
-            return _FakeTemplate()
-
     charged, notices = create_and_charge_curation_packet(
         "Q4",
         qid="Q195562",
@@ -418,10 +410,11 @@ def test_create_and_charge_packet_single_call_api():
 
     assert charged["operation_mode"] == "single"
     assert len(charged["data"]["entities"]) == 1
-    assert charged["data"]["entities"][0]["labels"]["en"]["data-value"] == (
+    assert charged["data"]["entities"][0]["entity"]["labels"]["en"]["value"] == (
         "Cherokee Nation"
     )
-    assert any(n.code == "statement_missing" for n in notices)
+    assert "conformance" in charged
+    assert "entity_profile_map" in charged["conformance"]
 
 
 def test_packet_helpers_resolve_entities_and_primary_profile() -> None:
@@ -457,3 +450,160 @@ def test_packet_outgoing_links_attach_target_entities() -> None:
     assert link["relationship_type"] == "P161"
     assert isinstance(link["target_entity"], dict)
     assert link["target_entity"]["profile"] == "Q39"
+
+
+def test_charge_wikidata_uses_linkage_index_for_linked_profiles() -> None:
+    packet = {
+        "packet_id": "pkt-test",
+        "operation_mode": "single",
+        "metadata": {
+            "primary_profile": {
+                "id": "https://datadistillery.wikibase.cloud/entity/Q4",
+                "name_identifier": "Q4",
+            },
+            "profiles": [
+                {
+                    "id": "https://datadistillery.wikibase.cloud/entity/Q4",
+                    "name_identifier": "Q4",
+                    "statements": [
+                        {
+                            "entity": "https://datadistillery.wikibase.cloud/entity/Q40",
+                            "io_map": [{"to": "http://www.wikidata.org/entity/P1313"}],
+                            "value": {
+                                "type": "wikibase-item",
+                                "profile": {
+                                    "entity": "https://datadistillery.wikibase.cloud/entity/Q39"
+                                },
+                            },
+                        }
+                    ],
+                    "metadata": {
+                        "linkage_index": {
+                            "outbound_by_statement": {
+                                "https://datadistillery.wikibase.cloud/entity/Q40": {
+                                    "wikidata_properties": ["P1313"],
+                                    "target_profiles": [
+                                        "https://datadistillery.wikibase.cloud/entity/Q39"
+                                    ],
+                                }
+                            },
+                            "inbound_by_wikidata_property": {
+                                "P1313": [
+                                    {
+                                        "source_profile": "https://datadistillery.wikibase.cloud/entity/Q4",
+                                        "source_statement": "https://datadistillery.wikibase.cloud/entity/Q40",
+                                        "target_profile": "https://datadistillery.wikibase.cloud/entity/Q39",
+                                    }
+                                ]
+                            },
+                        }
+                    },
+                },
+                {
+                    "id": "https://datadistillery.wikibase.cloud/entity/Q39",
+                    "name_identifier": "Q39",
+                    "statements": [
+                        {
+                            "entity": "https://datadistillery.wikibase.cloud/entity/Q50",
+                            "io_map": [{"to": "http://www.wikidata.org/entity/P279"}],
+                            "value": {"type": "wikibase-item"},
+                        }
+                    ],
+                    "metadata": {
+                        "linkage_index": {
+                            "outbound_by_statement": {
+                                "https://datadistillery.wikibase.cloud/entity/Q50": {
+                                    "wikidata_properties": ["P279"],
+                                    "target_profiles": [],
+                                }
+                            },
+                            "inbound_by_wikidata_property": {
+                                "P279": [
+                                    {
+                                        "source_profile": "https://datadistillery.wikibase.cloud/entity/Q39",
+                                        "source_statement": "https://datadistillery.wikibase.cloud/entity/Q50",
+                                    }
+                                ]
+                            },
+                        }
+                    },
+                },
+            ],
+            "graph": {"nodes": [], "edges": []},
+            "mint": {},
+            "integrity": {},
+        },
+        "data": {"entities": []},
+    }
+
+    class _FakeMashClient:
+        def load_entity_data(self, qid: str) -> dict:
+            if qid == "Q14708404":
+                return {
+                    "id": "Q14708404",
+                    "labels": {"en": {"value": "Cherokee Nation"}},
+                    "descriptions": {},
+                    "aliases": {},
+                    "claims": {
+                        "P1313": [
+                            {
+                                "mainsnak": {
+                                    "datavalue": {
+                                        "value": {
+                                            "id": "Q999001",
+                                            "entity-type": "item",
+                                        }
+                                    }
+                                }
+                            }
+                        ]
+                    },
+                }
+            if qid == "Q999001":
+                return {
+                    "id": "Q999001",
+                    "labels": {"en": {"value": "Principal Chief"}},
+                    "descriptions": {},
+                    "aliases": {},
+                    "claims": {
+                        "P279": [
+                            {
+                                "mainsnak": {
+                                    "datavalue": {
+                                        "value": {
+                                            "id": "Q123",
+                                            "entity-type": "item",
+                                        }
+                                    }
+                                }
+                            }
+                        ]
+                    },
+                }
+            raise AssertionError(f"Unexpected entity lookup: {qid}")
+
+    charged, notices = charge_packet_from_wikidata_items(
+        packet,
+        {"https://datadistillery.wikibase.cloud/entity/Q4": "Q14708404"},
+        mash_client=_FakeMashClient(),
+    )
+
+    assert notices == []
+    assert [entity["id"] for entity in charged["data"]["entities"]] == [
+        "Q14708404",
+        "Q999001",
+    ]
+    assert charged["conformance"]["entity_profile_map"]["Q999001"] == (
+        "https://datadistillery.wikibase.cloud/entity/Q39"
+    )
+
+    p1313_eval = next(
+        evaluation
+        for evaluation in charged["conformance"]["statement_evaluations"]
+        if evaluation["entity_id"] == "Q14708404"
+        and evaluation["json_path"] == "$.entity.claims.P1313[0]"
+    )
+    assert p1313_eval["status"] == "conformant"
+    assert p1313_eval["statement_uri"] == (
+        "https://datadistillery.wikibase.cloud/entity/Q40"
+    )

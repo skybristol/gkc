@@ -89,6 +89,7 @@ nav:
       - Authentication: gkc/cli/auth.md
       - Mash: gkc/cli/mash.md
       - Profiles: gkc/cli/profiles.md
+      - Wizard: gkc/cli/wizard.md
       - Wikibase: gkc/cli/wikibase.md
       - ShEx: gkc/cli/shex.md
     - Utilities and Tools:

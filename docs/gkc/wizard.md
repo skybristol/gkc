@@ -78,6 +78,25 @@ GKC Wizards are **profile-driven user interfaces** that transform declarative JS
 
 ---
 
+## Charged Packet Contract
+
+When the wizard loads an existing Wikidata item via `--qid`, it calls `charge_packet_from_wikidata_items()` to populate the packet with live Wikidata data. The charged packet provides a stable contract that wizard rendering can rely on.
+
+**What the wizard can consume from a charged packet:**
+
+- `data.entities[*].statements` — statement slots with `data-value` populated from Wikidata; use these to pre-fill form fields.
+- `data.entities[*].labels / descriptions / aliases` — filled from Wikidata entity labels; use for Step 2 pre-population.
+- `conformance.entity_profile_map` — maps each loaded entity QID (and its profile `name_identifier` and URI) to the governing profile URI. Use to determine which profile governs each entity tab in multi-entity workflows.
+- `conformance.statement_evaluations` — per-claim conformance records with `status: conformant` or `nonconformant`. Use to pre-highlight non-conformant statements in the review step without re-running validation inline.
+
+**What the wizard should NOT derive from the charged packet:**
+
+- Do not re-infer which profile governs a linked entity. Always read from `conformance.entity_profile_map`.
+- Do not interpret `nonconformant` records as hard blockers. They are informational notices for curator review; the wizard should surface them with guidance, not prevent saving.
+- Richer conformance signals (`uncovered`, `missing_required`, coercion notices) will arrive via fermenter integration in a future step. When available they will appear alongside `statement_evaluations` under `conformance`.
+
+---
+
 ## The 5-Step Wizard Structure
 
 Every wizard follows a consistent 5-step progression designed to match curator mental models:

@@ -277,8 +277,8 @@ When adding new functionality, assign ownership using this matrix:
 
 ## Current Gaps to Revisit During Critical Analysis
 
-- Still Charger `charge_packet_from_wikidata_items` does not yet call the fermenter evaluator (`evaluate_entity`) to partition charged statements into conformant/non_conformant/uncovered/missing_required buckets. The fermenter evaluator API is implemented (PR #170); the still_charger integration is the next implementation step.
-- Still Charger does not yet emit `conformance_summary` in packet metadata or per-entity source provenance (`source_qid`, `lastrevid`, `pulled_at`).
+- Still Charger now emits `charged_packet["conformance"]["statement_evaluations"]` with basic `conformant`/`nonconformant` status per claim, using profile `linkage_index` to resolve linked entity traversal. Full fermenter `evaluate_entity` integration for richer buckets (`uncovered`, `missing_required`, coercion notices per claim) is the next step under issue #164.
+- Still Charger does not yet emit per-entity source provenance (`source_qid`, `lastrevid`, `pulled_at`) in the packet.
 - Boundaries between wikibase write planning and bottler transformation stages still need explicit acceptance criteria per phase.
 - Cross-module tests should identify failure source by layer (read, transform, payload-shape, write, orchestration).
 - Packet compatibility metadata, change classification, and forward-migration rules for long-lived offline packets remain to be implemented.

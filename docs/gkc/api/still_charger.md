@@ -149,19 +149,66 @@ warnings = [n for n in notices if n.severity == "warning"]
 | Argument | Type | Description |
 |---|---|---|
 | `packet` | `dict` | Assembled packet from `build_curation_packet_from_json_profile()` |
-| `qid_map` | `dict[str, str]` | Maps entity IDs or profile entity URIs to Wikidata QIDs |
+| `qid_map` | `dict[str, str]` | Maps profile entity URIs or profile `name_identifier` values to Wikidata QIDs |
 | `mash_client` | `Any \| None` | Optional pre-configured mash client; creates a new one if not supplied |
 
 **QID resolution order for entity slots:**
 
 1. Full profile entity URI — exact key match in `qid_map`
 2. Profile `name_identifier` — key match in `qid_map`
-3. Profile entity URI tail QID — direct Wikidata lookup fallback
+
+The charger does not infer primary entity mappings from DD Wikibase QID tails. Pass an explicit profile URI or `name_identifier` key to avoid namespace ambiguity across Wikibase instances.
 
 **Returns:** `tuple[dict, list[ConformanceNotice]]`
 
-- `dict`: Charged packet with `data-value` fields populated in each entity slot. Statements are partitioned into conformant, non_conformant (with `non_conformant: true` and `notices`), and uncovered (under `entity.uncovered_statements`). Missing-required statements remain with `data-value: null` and attached notices.
+- `dict`: Charged packet with `data-value` fields populated in each entity slot and a `conformance` section added at the top level.
 - `list[ConformanceNotice]`: All conformance notices from the charging pass.
+
+**Charged packet `conformance` section:**
+
+```json
+{
+  "conformance": {
+    "entity_profile_map": {
+      "Q195562": "https://datadistillery.wikibase.cloud/entity/Q4",
+      "tribal_government_us": "https://datadistillery.wikibase.cloud/entity/Q4",
+      "https://datadistillery.wikibase.cloud/entity/Q4": "https://datadistillery.wikibase.cloud/entity/Q4",
+      "Q7245055": "https://datadistillery.wikibase.cloud/entity/Q39"
+    },
+    "statement_evaluations": [
+      {
+        "entity_id": "Q195562",
+        "json_path": "$.entity.claims.P1313[0]",
+        "statement_uri": "https://datadistillery.wikibase.cloud/entity/Q40",
+        "status": "conformant"
+      },
+      {
+        "entity_id": "Q195562",
+        "json_path": "$.entity.claims.P31[0]",
+        "statement_uri": "unknown/P31",
+        "status": "nonconformant",
+        "issues": ["statement not in profile"]
+      }
+    ]
+  }
+}
+```
+
+**`entity_profile_map` keys:** Each loaded entity is indexed three ways — by Wikidata QID, by profile `name_identifier`, and by full profile URI — all mapping to the profile URI that governs that entity's conformance.
+
+**`statement_evaluations` fields:**
+
+| Field | Type | Description |
+|---|---|---|
+| `entity_id` | `str` | Wikidata QID of the evaluated entity |
+| `json_path` | `str` | JSONPath to the evaluated claim (e.g. `$.entity.claims.P31[0]`) |
+| `statement_uri` | `str` | DD Wikibase statement URI if matched; `unknown/<prop>` if unrecognized |
+| `status` | `str` | `conformant` if the property is declared in the profile; `nonconformant` otherwise |
+| `issues` | `list[str]` | Present only on `nonconformant` records; describes the reason |
+
+**Linked entity loading:** When the primary entity has claims matching a profile-declared linkage (via `metadata.linkage_index`), the linked entity is automatically fetched from Wikidata and evaluated against its target profile. Both primary and linked entities appear in `data.entities` and `conformance.entity_profile_map`.
+
+**Note:** Full fermenter integration for richer conformance buckets (`uncovered`, `missing_required`, coercion notices) is the next planned step. See [Fermenter API](fermenter.md).
 
 ---
 

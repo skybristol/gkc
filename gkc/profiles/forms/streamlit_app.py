@@ -15,7 +15,10 @@ from gkc.profiles.forms.draft_manager import DraftManager
 from gkc.profiles.forms.validation_bridge import validate_entity_packet_data
 from gkc.profiles.forms.wizard import IdentificationStep, SitelinksStep, StatementsStep
 from gkc.spirit_safe import load_profile
-from gkc.still_charger import build_curation_packet_from_json_profile
+from gkc.still_charger import (
+    build_curation_packet_from_json_profile,
+    charge_packet_from_wikidata_items,
+)
 
 STEPS = [
     {"id": "plan", "title": "Plan", "icon": "📋"},
@@ -177,8 +180,8 @@ def _build_initial_packet(
     )
 
     profile_docs: dict[str, dict[str, Any]] = {}
-    for entity_slot in packet.get("entities", []):
-        slot_uri = entity_slot.get("profile_entity")
+    for entity_slot in packet.get("data", {}).get("entities", []):
+        slot_uri = entity_slot.get("id")
         if not isinstance(slot_uri, str) or not slot_uri:
             continue
         try:
@@ -189,37 +192,255 @@ def _build_initial_packet(
     # Ensure primary profile doc is always present.
     profile_docs.setdefault(profile_entity, primary_doc)
 
-    # Ensure packet metadata exists for draft persistence.
-    packet.setdefault(
-        "metadata",
-        {
-            "created_at": _utc_now_iso(),
-            "last_modified": _utc_now_iso(),
-            "curator": os.environ.get("WIKIVERSE_USERNAME", "unknown"),
-            "profile_entity": profile_entity,
-        },
-    )
+    packet.setdefault("metadata", {})
 
     return packet, profile_docs
 
 
-def _entity_sort_key(entity_slot: dict[str, Any]) -> tuple[int, str]:
+def _packet_entities(packet: dict[str, Any]) -> list[dict[str, Any]]:
+    entities = packet.get("entities")
+    if isinstance(entities, list) and entities:
+        return entities
+    data_entities = packet.get("data", {}).get("entities")
+    if isinstance(data_entities, list):
+        return data_entities
+    return []
+
+
+def _profile_statements_for_entity(
+    *,
+    packet: dict[str, Any],
+    entity_slot: dict[str, Any],
+) -> list[dict[str, Any]]:
+    metadata_profiles = packet.get("metadata", {}).get("profiles", [])
+    if not isinstance(metadata_profiles, list):
+        metadata_profiles = []
+
+    profile_id = entity_slot.get("profile_entity") or entity_slot.get("id")
+    profile_name = entity_slot.get("profile")
+
+    for profile_meta in metadata_profiles:
+        if not isinstance(profile_meta, dict):
+            continue
+        statements = profile_meta.get("statements", [])
+        if not isinstance(statements, list):
+            continue
+
+        if profile_id and profile_meta.get("id") == profile_id:
+            return statements
+        if profile_name and profile_meta.get("name_identifier") == profile_name:
+            return statements
+
+    return []
+
+
+def _language_value_from_slot(raw: Any, *, aliases: bool = False) -> Any:
+    value = raw.get("data-value") if isinstance(raw, dict) else raw
+
+    if aliases:
+        if isinstance(value, list):
+            return [str(item) for item in value if isinstance(item, str)]
+        if isinstance(value, str) and value:
+            return [value]
+        return []
+
+    if isinstance(value, str):
+        return value
+    return ""
+
+
+def _statement_entry_from_slot(slot_payload: dict[str, Any]) -> dict[str, Any]:
+    def _nested_entries(raw_nested: Any) -> dict[str, list[dict[str, Any]]]:
+        if not isinstance(raw_nested, dict):
+            return {}
+
+        normalized: dict[str, list[dict[str, Any]]] = {}
+        for nested_key, nested_list in raw_nested.items():
+            if not isinstance(nested_key, str) or not isinstance(nested_list, list):
+                continue
+
+            entries: list[dict[str, Any]] = []
+            for nested_slot in nested_list:
+                if not isinstance(nested_slot, dict):
+                    continue
+                entries.append(_statement_entry_from_slot(nested_slot))
+
+            if entries:
+                normalized[nested_key] = entries
+
+        return normalized
+
+    return {
+        "value": slot_payload.get("data-value"),
+        "qualifiers": _nested_entries(slot_payload.get("qualifiers")),
+        "references": _nested_entries(slot_payload.get("references")),
+    }
+
+
+def _statement_data_from_slots(
+    *,
+    statement_defs: list[dict[str, Any]],
+    statement_slots: dict[str, Any],
+) -> dict[str, list[dict[str, Any]]]:
+    data_statements: dict[str, list[dict[str, Any]]] = {}
+
+    for statement_def in statement_defs:
+        if not isinstance(statement_def, dict):
+            continue
+
+        statement_uri = statement_def.get("entity")
+        if not isinstance(statement_uri, str) or not statement_uri:
+            continue
+
+        candidates: list[str] = []
+        name_identifier = statement_def.get("name_identifier")
+        if isinstance(name_identifier, str) and name_identifier:
+            candidates.append(name_identifier)
+
+        statement_qid = _entity_id_from_uri(statement_uri)
+        if statement_qid:
+            candidates.append(statement_qid)
+
+        candidates.append(statement_uri)
+
+        slot_payload: Any = None
+        for candidate in candidates:
+            if candidate in statement_slots:
+                slot_payload = statement_slots.get(candidate)
+                break
+
+        if isinstance(slot_payload, dict):
+            data_value = slot_payload.get("data-value")
+            if data_value in (None, "", [], {}):
+                data_statements[statement_uri] = []
+            else:
+                data_statements[statement_uri] = [
+                    _statement_entry_from_slot(slot_payload)
+                ]
+        else:
+            data_statements[statement_uri] = []
+
+    return data_statements
+
+
+def _adapt_packet_to_wizard_view(packet: dict[str, Any]) -> dict[str, Any]:
+    """Build wizard-facing entity slots from packet-native data entities."""
+    if isinstance(packet.get("entities"), list) and packet.get("entities"):
+        return packet
+
+    data_entities = packet.get("data", {}).get("entities", [])
+    if not isinstance(data_entities, list):
+        data_entities = []
+
+    adapted_entities: list[dict[str, Any]] = []
+    for data_entity in data_entities:
+        if not isinstance(data_entity, dict):
+            continue
+
+        statement_defs = _profile_statements_for_entity(
+            packet=packet, entity_slot=data_entity
+        )
+
+        labels_slot = data_entity.get("labels", {})
+        descriptions_slot = data_entity.get("descriptions", {})
+        aliases_slot = data_entity.get("aliases", {})
+        statement_slots = data_entity.get("statements", {})
+
+        labels = {}
+        if isinstance(labels_slot, dict):
+            labels = {
+                lang: _language_value_from_slot(payload)
+                for lang, payload in labels_slot.items()
+                if isinstance(lang, str)
+            }
+
+        descriptions = {}
+        if isinstance(descriptions_slot, dict):
+            descriptions = {
+                lang: _language_value_from_slot(payload)
+                for lang, payload in descriptions_slot.items()
+                if isinstance(lang, str)
+            }
+
+        aliases = {}
+        if isinstance(aliases_slot, dict):
+            aliases = {
+                lang: _language_value_from_slot(payload, aliases=True)
+                for lang, payload in aliases_slot.items()
+                if isinstance(lang, str)
+            }
+
+        if not isinstance(statement_slots, dict):
+            statement_slots = {}
+
+        adapted_entities.append(
+            {
+                "id": data_entity.get("id"),
+                "profile": data_entity.get("profile"),
+                "profile_entity": data_entity.get("id"),
+                "statements": statement_defs,
+                "data": {
+                    "labels": labels,
+                    "descriptions": descriptions,
+                    "aliases": aliases,
+                    "statements": _statement_data_from_slots(
+                        statement_defs=statement_defs,
+                        statement_slots=statement_slots,
+                    ),
+                    "sitelinks": {},
+                },
+            }
+        )
+
+    packet["entities"] = adapted_entities
+    return packet
+
+
+def _qid_map_for_primary_entity(packet: dict[str, Any], qid: str) -> dict[str, str]:
+    qid_map: dict[str, str] = {}
+
+    primary_profile = packet.get("metadata", {}).get("primary_profile", {})
+    if isinstance(primary_profile, dict):
+        primary_id = primary_profile.get("id")
+        primary_name = primary_profile.get("name_identifier")
+        if isinstance(primary_id, str) and primary_id:
+            qid_map[primary_id] = qid
+        if isinstance(primary_name, str) and primary_name:
+            qid_map[primary_name] = qid
+
+    entities = packet.get("data", {}).get("entities", [])
+    if isinstance(entities, list) and entities:
+        first = entities[0]
+        if isinstance(first, dict):
+            entity_id = first.get("id")
+            profile_name = first.get("profile")
+            if isinstance(entity_id, str) and entity_id:
+                qid_map[entity_id] = qid
+            if isinstance(profile_name, str) and profile_name:
+                qid_map[profile_name] = qid
+
+    return qid_map
+
+
+def _entity_sort_key(
+    entity_slot: dict[str, Any], primary_profile_entity: Optional[str] = None
+) -> tuple[int, str]:
     entity_id = str(entity_slot.get("id", ""))
-    # Primary packet slot tends to be ent-001; keep deterministic order.
-    is_primary = 0 if entity_id == "ent-001" else 1
-    return (is_primary, entity_id)
+    entity_profile = str(entity_slot.get("profile_entity") or "")
+    is_primary_profile = (
+        0 if primary_profile_entity and entity_profile == primary_profile_entity else 1
+    )
+    return (is_primary_profile, entity_id)
 
 
 def _entity_label(entity_slot: dict[str, Any], profile_doc: dict[str, Any]) -> str:
-    entity_uri = entity_slot.get("profile_entity", "")
-    entity_id = entity_slot.get("id", "unknown")
     profile_name = _profile_display_name(profile_doc)
     data = entity_slot.get("data", {})
     labels = data.get("labels", {}) if isinstance(data, dict) else {}
     chosen = labels.get("mul") or labels.get("en")
     if chosen:
-        return f"{entity_id} - {chosen} ({profile_name})"
-    return f"{entity_id} - New {profile_name} ({_entity_id_from_uri(entity_uri)})"
+        return str(chosen)
+    return f"New {profile_name}"
 
 
 def init_session_state() -> None:
@@ -247,7 +468,7 @@ def init_session_state() -> None:
 
 def _find_active_entity_slot() -> Optional[dict[str, Any]]:
     packet = st.session_state.packet or {}
-    entities = packet.get("entities", [])
+    entities = _packet_entities(packet)
     if not entities:
         return None
 
@@ -321,7 +542,7 @@ def _run_packet_validation() -> list[Any]:
         source_root = None
 
     notices = []
-    for entity_slot in packet.get("entities", []):
+    for entity_slot in _packet_entities(packet):
         notices.extend(
             validate_entity_packet_data(
                 entity_slot=entity_slot,
@@ -402,13 +623,16 @@ def _render_grouped_review_sections(
 
 def render_entity_sidebar() -> None:
     packet = st.session_state.packet or {}
-    entities = packet.get("entities", [])
+    entities = _packet_entities(packet)
     if not entities:
         return
 
     st.sidebar.subheader("Entities")
 
-    entities_sorted = sorted(entities, key=_entity_sort_key)
+    entities_sorted = sorted(
+        entities,
+        key=lambda slot: _entity_sort_key(slot, st.session_state.root_profile_entity),
+    )
     options = []
     labels = []
     for entity_slot in entities_sorted:
@@ -421,11 +645,12 @@ def render_entity_sidebar() -> None:
     label_by_id = dict(zip(options, labels))
     active = st.session_state.active_entity_id or options[0]
 
-    selected = st.sidebar.selectbox(
-        "Active entity",
+    selected = st.sidebar.radio(
+        "Select entity",
         options,
         format_func=lambda x: label_by_id.get(x, x),
         index=options.index(active) if active in options else 0,
+        label_visibility="collapsed",
     )
 
     if selected != st.session_state.active_entity_id:
@@ -667,8 +892,8 @@ def _load_packet_from_env_or_profile() -> None:
             st.stop()
 
         profile_docs: dict[str, dict[str, Any]] = {}
-        for entity_slot in packet.get("entities", []):
-            profile_uri = entity_slot.get("profile_entity")
+        for entity_slot in packet.get("data", {}).get("entities", []):
+            profile_uri = entity_slot.get("id")
             if not profile_uri:
                 continue
             try:
@@ -676,17 +901,24 @@ def _load_packet_from_env_or_profile() -> None:
             except Exception:
                 pass
 
+        packet = _adapt_packet_to_wizard_view(packet)
+
         st.session_state.packet = packet
         st.session_state.profile_docs = profile_docs
-        st.session_state.root_profile_entity = packet.get("profile_entity")
+        primary_profile = packet.get("metadata", {}).get("primary_profile", {})
+        if isinstance(primary_profile, dict):
+            st.session_state.root_profile_entity = primary_profile.get("id")
+        else:
+            st.session_state.root_profile_entity = packet.get("profile_entity")
         source = gkc.get_spirit_safe_source()
         st.session_state.source_root = (
             str(source.local_root)
             if source.mode == "local" and source.local_root is not None
             else None
         )
-        if packet.get("entities"):
-            st.session_state.active_entity_id = packet["entities"][0].get("id")
+        entities = _packet_entities(packet)
+        if entities:
+            st.session_state.active_entity_id = entities[0].get("id")
 
         st.sidebar.success(f"Loaded packet: {packet_path.name}")
         return
@@ -705,19 +937,41 @@ def _load_packet_from_env_or_profile() -> None:
         st.sidebar.error(f"Failed to build packet: {exc}")
         st.stop()
 
+    env_qid = os.environ.get("GKC_WIZARD_QID")
+    if isinstance(env_qid, str) and env_qid.strip():
+        qid = env_qid.strip()
+        try:
+            packet, _notices = charge_packet_from_wikidata_items(
+                packet,
+                _qid_map_for_primary_entity(packet, qid),
+            )
+            st.sidebar.success(f"Charged packet from {qid}")
+        except Exception as exc:
+            st.sidebar.warning(f"Could not charge packet from {qid}: {exc}")
+
+    packet = _adapt_packet_to_wizard_view(packet)
+
     st.session_state.packet = packet
     st.session_state.profile_docs = profile_docs
-    st.session_state.root_profile_entity = packet.get("profile_entity")
+    primary_profile = packet.get("metadata", {}).get("primary_profile", {})
+    if isinstance(primary_profile, dict):
+        st.session_state.root_profile_entity = primary_profile.get("id")
+    else:
+        st.session_state.root_profile_entity = packet.get("profile_entity")
     source = gkc.get_spirit_safe_source()
     st.session_state.source_root = (
         str(source.local_root)
         if source.mode == "local" and source.local_root is not None
         else None
     )
-    if packet.get("entities"):
-        st.session_state.active_entity_id = packet["entities"][0].get("id")
+    entities = _packet_entities(packet)
+    if entities:
+        st.session_state.active_entity_id = entities[0].get("id")
 
-    root_qid = _entity_id_from_uri(packet.get("profile_entity", env_profile))
+    if isinstance(primary_profile, dict) and isinstance(primary_profile.get("id"), str):
+        root_qid = _entity_id_from_uri(primary_profile["id"])
+    else:
+        root_qid = _entity_id_from_uri(packet.get("profile_entity", env_profile))
     st.sidebar.success(f"Built uncharged packet from {root_qid}")
 
 
@@ -731,20 +985,21 @@ def main() -> None:
 
     init_session_state()
 
-    st.sidebar.title("Configuration")
-
     if st.session_state.packet is None:
         _load_packet_from_env_or_profile()
 
-    packet = st.session_state.packet or {}
-    st.sidebar.caption(f"Packet: {packet.get('packet_id', 'unknown')}")
-    st.sidebar.caption(
-        f"Root: {_entity_id_from_uri(packet.get('profile_entity', 'unknown'))}"
-    )
-    st.sidebar.divider()
-
     render_entity_sidebar()
     render_step_sidebar()
+
+    packet = st.session_state.packet or {}
+    primary_profile = packet.get("metadata", {}).get("primary_profile", {})
+    root_profile_uri = packet.get("profile_entity", "unknown")
+    if isinstance(primary_profile, dict) and isinstance(primary_profile.get("id"), str):
+        root_profile_uri = primary_profile["id"]
+    st.sidebar.divider()
+    st.sidebar.subheader("Configuration")
+    st.sidebar.caption(f"Packet: {packet.get('packet_id', 'unknown')}")
+    st.sidebar.caption(f"Root: {_entity_id_from_uri(root_profile_uri)}")
 
     render_step_content()
 
