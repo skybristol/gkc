@@ -244,16 +244,57 @@ Charging populates each entity slot's `data-value` fields and partitions stateme
 }
 ```
 
-### Conformance Buckets
+### Statement Evaluation Records
 
-Charged statements are classified by the fermenter evaluator into four outcomes:
+Charged packet conformance is emitted as atomic statement evaluation records under:
 
-| Outcome | Meaning | Packet location |
-|---|---|---|
-| `CONFORMANT` | Value matched profile data-type, value-list, and fixed-value constraints | `statements[name_identifier].data-value` populated |
-| `NON_CONFORMANT_MAPPABLE` | Value present but failed a constraint; retained for curator review | `statements[name_identifier]` with `non_conformant: true` and `notices` array |
-| `MISSING_REQUIRED` | Profile expected this statement but source had none | `statements[name_identifier].data-value` remains `null`; notice attached |
-| `UNCOVERED` | Source had this property but the profile does not model it | `entity.uncovered_statements` keyed by Wikidata PID |
+- `conformance.statement_evaluations`
+
+Each record is produced by fermenter statement primitives and includes the DD Wikibase statement reference block.
+
+```json
+{
+  "entity_id": "Q14708404",
+  "gkc_entity_statement": {
+    "id": "official_website",
+    "uri": "https://datadistillery.wikibase.cloud/entity/Q19"
+  },
+  "json_path": "$.entity.claims.P856[0]",
+  "statement_uri": "https://datadistillery.wikibase.cloud/entity/Q19",
+  "statement_id": "official_website",
+  "status": "conformant",
+  "outcome": "conformant",
+  "references": [
+    {
+      "entity_id": "Q14708404",
+      "gkc_entity_statement": {
+        "id": "reference_url",
+        "uri": "https://datadistillery.wikibase.cloud/entity/Q29"
+      },
+      "json_path": "$.entity.claims.P856[0].references.P854",
+      "statement_uri": "https://datadistillery.wikibase.cloud/entity/Q29",
+      "statement_id": "reference_url",
+      "status": "conformant",
+      "outcome": "conformant"
+    }
+  ]
+}
+```
+
+Outcome values (current):
+
+- `conformant`
+- `non_conformant_mappable`
+- `missing`
+- `to_be_defined`
+
+Status values used in packet records (current):
+
+- `conformant`
+- `nonconformant`
+- `uncovered`
+
+Nested qualifiers and references are serialized recursively with the same record shape.
 
 ### Source Provenance (per entity, in metadata)
 
@@ -269,23 +310,14 @@ When charging from Wikidata, each entity's source metadata is recorded under `me
 
 `lastrevid` is used when a charged packet reaches the bottling/shipping stage to detect whether the Wikidata item has changed since the packet was minted.
 
-### Conformance Summary (in packet metadata)
+### Conformance Summary
 
-A `conformance_summary` field is added to packet metadata after charging:
+No separate `metadata.conformance_summary` field is currently guaranteed by the packet contract.
 
-```json
-{
-  "conformance_summary": {
-    "conformant": 5,
-    "non_conformant": 1,
-    "uncovered": 2,
-    "missing_required": 0,
-    "notice_codes": ["datatype_mismatch", "statement_uncovered"]
-  }
-}
-```
+Callers should derive summary metrics from:
 
-This allows callers to do a single-field go/no-go check without walking the full notice list.
+- `conformance.statement_evaluations`
+- `conformance.entity_profile_map`
 
 ## Conformance and Blocking Policy
 

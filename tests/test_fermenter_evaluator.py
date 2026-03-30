@@ -7,6 +7,7 @@ from gkc.fermenter import (
     EntityEvaluation,
     evaluate_entity,
     evaluate_statement_claim,
+    evaluate_statement_instance,
     validate_packet_from_file,
     validate_packet_inline,
 )
@@ -152,6 +153,226 @@ def test_evaluate_statement_claim_non_conformant_mappable_value_list(tmp_path: P
 
     assert evaluation.outcome == ConformanceOutcome.NON_CONFORMANT_MAPPABLE
     assert any(notice.code == "value_list_miss" for notice in evaluation.notices)
+
+
+def test_evaluate_statement_claim_conformant_with_single_item_inline_value_list():
+    statement = {
+        "id": "https://datadistillery.wikibase.cloud/entity/Q16",
+        "max_count": 1,
+        "value": {
+            "type": "wikibase-item",
+            "value_list": [{"item": "Q5", "itemLabel": "human"}],
+        },
+        "io_map": [{"to": "http://www.wikidata.org/entity/P31"}],
+    }
+    claim = _claim({"entity-type": "item", "numeric-id": 5, "id": "Q5"})
+
+    evaluation = evaluate_statement_claim(statement, [claim], entity_ref="Q195562")
+
+    assert evaluation.outcome == ConformanceOutcome.CONFORMANT
+    assert not any(
+        notice.code == "fixed_value_violation" for notice in evaluation.notices
+    )
+
+
+def test_evaluate_statement_instance_reference_group_conformant_with_one_present():
+    statement = {
+        "entity": "https://datadistillery.wikibase.cloud/entity/Q19",
+        "name_identifier": "official_website",
+        "value": {"type": "url"},
+        "io_map": [{"to": "http://www.wikidata.org/entity/P856"}],
+        "references": [
+            {
+                "entity": "https://datadistillery.wikibase.cloud/entity/Q29",
+                "name_identifier": "reference_url",
+                "value": {"type": "url"},
+                "io_map": [{"to": "http://www.wikidata.org/entity/P854"}],
+            },
+            {
+                "entity": "https://datadistillery.wikibase.cloud/entity/Q44",
+                "name_identifier": "stated_in",
+                "value": {"type": "wikibase-item"},
+                "io_map": [{"to": "http://www.wikidata.org/entity/P248"}],
+            },
+        ],
+    }
+    claim = {
+        "mainsnak": {
+            "snaktype": "value",
+            "datavalue": {"value": "https://example.org"},
+        },
+        "references": [
+            {
+                "snaks": {
+                    "P854": [
+                        {
+                            "snaktype": "value",
+                            "datavalue": {"value": "https://example.org/source"},
+                        }
+                    ]
+                }
+            }
+        ],
+    }
+
+    evaluation = evaluate_statement_instance(statement, claim, entity_ref="Q195562")
+
+    assert evaluation.outcome == ConformanceOutcome.CONFORMANT
+    assert len(evaluation.reference_evaluations) == 2
+    reference_by_ref = {
+        child.statement_ref: child for child in evaluation.reference_evaluations
+    }
+    assert (
+        reference_by_ref["https://datadistillery.wikibase.cloud/entity/Q29"].outcome
+        == ConformanceOutcome.CONFORMANT
+    )
+    assert (
+        reference_by_ref["https://datadistillery.wikibase.cloud/entity/Q44"].outcome
+        == ConformanceOutcome.MISSING
+    )
+
+
+def test_evaluate_statement_instance_reference_group_missing_when_none_present():
+    statement = {
+        "entity": "https://datadistillery.wikibase.cloud/entity/Q19",
+        "name_identifier": "official_website",
+        "value": {"type": "url"},
+        "io_map": [{"to": "http://www.wikidata.org/entity/P856"}],
+        "references": [
+            {
+                "entity": "https://datadistillery.wikibase.cloud/entity/Q29",
+                "name_identifier": "reference_url",
+                "value": {"type": "url"},
+                "io_map": [{"to": "http://www.wikidata.org/entity/P854"}],
+            },
+            {
+                "entity": "https://datadistillery.wikibase.cloud/entity/Q44",
+                "name_identifier": "stated_in",
+                "value": {"type": "wikibase-item"},
+                "io_map": [{"to": "http://www.wikidata.org/entity/P248"}],
+            },
+        ],
+    }
+    claim = {
+        "mainsnak": {
+            "snaktype": "value",
+            "datavalue": {"value": "https://example.org"},
+        },
+        "references": [],
+    }
+
+    evaluation = evaluate_statement_instance(statement, claim, entity_ref="Q195562")
+
+    assert evaluation.outcome == ConformanceOutcome.NON_CONFORMANT_MAPPABLE
+    assert any(
+        notice.code == "reference_group_missing" for notice in evaluation.notices
+    )
+    assert all(
+        child.outcome == ConformanceOutcome.MISSING
+        for child in evaluation.reference_evaluations
+    )
+
+
+def test_evaluate_statement_instance_reference_group_allows_valid_or_invalid_mix():
+    statement = {
+        "entity": "https://datadistillery.wikibase.cloud/entity/Q19",
+        "name_identifier": "official_website",
+        "value": {"type": "url"},
+        "io_map": [{"to": "http://www.wikidata.org/entity/P856"}],
+        "references": [
+            {
+                "entity": "https://datadistillery.wikibase.cloud/entity/Q29",
+                "name_identifier": "reference_url",
+                "value": {"type": "url"},
+                "io_map": [{"to": "http://www.wikidata.org/entity/P854"}],
+            },
+            {
+                "entity": "https://datadistillery.wikibase.cloud/entity/Q44",
+                "name_identifier": "stated_in",
+                "value": {"type": "wikibase-item"},
+                "io_map": [{"to": "http://www.wikidata.org/entity/P248"}],
+            },
+        ],
+    }
+    claim = {
+        "mainsnak": {
+            "snaktype": "value",
+            "datavalue": {"value": "https://example.org"},
+        },
+        "references": [
+            {
+                "snaks": {
+                    "P854": [
+                        {
+                            "snaktype": "value",
+                            "datavalue": {"value": "https://example.org/source"},
+                        }
+                    ],
+                    "P248": [
+                        {
+                            "snaktype": "value",
+                            "datavalue": {"value": "not-a-qid"},
+                        }
+                    ],
+                }
+            }
+        ],
+    }
+
+    evaluation = evaluate_statement_instance(statement, claim, entity_ref="Q195562")
+
+    assert evaluation.outcome == ConformanceOutcome.CONFORMANT
+    reference_by_ref = {
+        child.statement_ref: child for child in evaluation.reference_evaluations
+    }
+    assert (
+        reference_by_ref["https://datadistillery.wikibase.cloud/entity/Q29"].outcome
+        == ConformanceOutcome.CONFORMANT
+    )
+    assert (
+        reference_by_ref["https://datadistillery.wikibase.cloud/entity/Q44"].outcome
+        == ConformanceOutcome.NON_CONFORMANT_MAPPABLE
+    )
+
+
+def test_evaluate_statement_instance_qualifier_validation_fails_parent_when_invalid():
+    statement = {
+        "entity": "https://datadistillery.wikibase.cloud/entity/Q19",
+        "name_identifier": "official_website",
+        "value": {"type": "url"},
+        "io_map": [{"to": "http://www.wikidata.org/entity/P856"}],
+        "qualifiers": [
+            {
+                "entity": "https://datadistillery.wikibase.cloud/entity/Q27",
+                "name_identifier": "language_of_work_or_name",
+                "value": {"type": "wikibase-item"},
+                "io_map": [{"to": "http://www.wikidata.org/entity/P407"}],
+            }
+        ],
+    }
+    claim = {
+        "mainsnak": {
+            "snaktype": "value",
+            "datavalue": {"value": "https://example.org"},
+        },
+        "qualifiers": {
+            "P407": [
+                {
+                    "snaktype": "value",
+                    "datavalue": {"value": "not-a-qid"},
+                }
+            ]
+        },
+    }
+
+    evaluation = evaluate_statement_instance(statement, claim, entity_ref="Q195562")
+
+    assert evaluation.outcome == ConformanceOutcome.NON_CONFORMANT_MAPPABLE
+    assert len(evaluation.qualifier_evaluations) == 1
+    assert (
+        evaluation.qualifier_evaluations[0].outcome
+        == ConformanceOutcome.NON_CONFORMANT_MAPPABLE
+    )
 
 
 def test_evaluate_entity_classifies_all_buckets():

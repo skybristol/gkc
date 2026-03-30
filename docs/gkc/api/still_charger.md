@@ -178,16 +178,25 @@ The charger does not infer primary entity mappings from DD Wikibase QID tails. P
     "statement_evaluations": [
       {
         "entity_id": "Q195562",
+        "gkc_entity_statement": {
+          "id": "office_held_by_head_of_government",
+          "uri": "https://datadistillery.wikibase.cloud/entity/Q40"
+        },
         "json_path": "$.entity.claims.P1313[0]",
         "statement_uri": "https://datadistillery.wikibase.cloud/entity/Q40",
-        "status": "conformant"
+        "statement_id": "office_held_by_head_of_government",
+        "status": "conformant",
+        "outcome": "conformant"
       },
       {
         "entity_id": "Q195562",
+        "gkc_entity_statement": {
+          "id": "P31",
+          "uri": "unknown/P31"
+        },
         "json_path": "$.entity.claims.P31[0]",
         "statement_uri": "unknown/P31",
-        "status": "nonconformant",
-        "issues": ["statement not in profile"]
+        "status": "uncovered"
       }
     ]
   }
@@ -201,14 +210,19 @@ The charger does not infer primary entity mappings from DD Wikibase QID tails. P
 | Field | Type | Description |
 |---|---|---|
 | `entity_id` | `str` | Wikidata QID of the evaluated entity |
+| `gkc_entity_statement` | `dict` | DD Wikibase statement reference with keys `id` and `uri`; placed immediately below `entity_id` |
 | `json_path` | `str` | JSONPath to the evaluated claim (e.g. `$.entity.claims.P31[0]`) |
 | `statement_uri` | `str` | DD Wikibase statement URI if matched; `unknown/<prop>` if unrecognized |
-| `status` | `str` | `conformant` if the property is declared in the profile; `nonconformant` otherwise |
-| `issues` | `list[str]` | Present only on `nonconformant` records; describes the reason |
+| `statement_id` | `str` | Profile `name_identifier` for the statement when available |
+| `status` | `str` | `conformant`, `nonconformant`, or `uncovered` |
+| `outcome` | `str` | Fermenter conformance outcome (`conformant`, `non_conformant_mappable`, `missing`, `to_be_defined`) |
+| `notices` | `list[dict]` | Serialized fermenter notices for the statement |
+| `qualifiers` | `list[dict]` | Nested qualifier statement evaluation records (same shape recursively) |
+| `references` | `list[dict]` | Nested reference statement evaluation records (same shape recursively) |
 
 **Linked entity loading:** When the primary entity has claims matching a profile-declared linkage (via `metadata.linkage_index`), the linked entity is automatically fetched from Wikidata and evaluated against its target profile. Both primary and linked entities appear in `data.entities` and `conformance.entity_profile_map`.
 
-**Note:** Full fermenter integration for richer conformance buckets (`uncovered`, `missing_required`, coercion notices) is the next planned step. See [Fermenter API](fermenter.md).
+`still_charger` delegates statement-level conformance evaluation and serialization to fermenter primitives (`evaluate_statement_instance` and `statement_evaluation_to_record`). Charger owns packet orchestration and entity loading; fermenter owns conformance interpretation.
 
 ---
 

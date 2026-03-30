@@ -96,10 +96,11 @@ Responsibility:
 
 - Validate and coerce inbound values using profile-defined directives.
 - Provide atomic datatype validators and coercion primitives.
-- Enforce fixed values, value-list constraints, and reference-level constraints.
+- Enforce fixed values, value-list constraints, and full statement-shape constraints (value + qualifiers + references).
 - Enforce derived-value constraints (for example, reference/qualifier values sourced from parent statement values).
 - Validate packet-level compatibility and lifecycle conformance for long-lived curation packets.
 - Emit shared `ConformanceNotice` records with actionable feedback.
+- Serialize packet-facing statement conformance records from atomic statement evaluations.
 
 Out of scope:
 
@@ -117,7 +118,10 @@ Current anchor surface:
 - `coerce_*` datatype coercers
 - `normalize_claim_value`
 - `evaluate_statement_claim`
+- `evaluate_statement_instance`
 - `evaluate_entity`
+- `statement_evaluation_to_record`
+- `conformance_notice_payloads`
 - `check_packet_integrity`
 - `validate_packet_inline`
 - `validate_packet_from_file`
@@ -206,7 +210,7 @@ Current anchor surface:
 
 1. `spirit_safe` loads and exports JSON Entity Profiles and value-list cache artifacts.
 2. `still_charger` assembles curation packets from profile JSON and charges packet entities with source values.
-3. `fermenter` validates and coerces charged values, emitting shared conformance notices.
+3. `fermenter` evaluates atomic statement instances (including qualifiers/references), coerces values, and serializes packet-facing conformance records.
 4. `wikibase` orchestration transforms charged packet data into `WikibaseShipper.plan_batch` operations.
 5. `wikibase` orchestration coordinates this flow for Data Distillery-specific workflows.
 6. `shipper` computes create/update/no-op diff plans and executes writes when enabled.
@@ -277,7 +281,7 @@ When adding new functionality, assign ownership using this matrix:
 
 ## Current Gaps to Revisit During Critical Analysis
 
-- Still Charger now emits `charged_packet["conformance"]["statement_evaluations"]` with basic `conformant`/`nonconformant` status per claim, using profile `linkage_index` to resolve linked entity traversal. Full fermenter `evaluate_entity` integration for richer buckets (`uncovered`, `missing_required`, coercion notices per claim) is the next step under issue #164.
+- `gkc.profiles.forms.validation_bridge` still contains overlapping nested qualifier/reference validation semantics. It should converge on fermenter statement-instance primitives to avoid policy drift.
 - Still Charger does not yet emit per-entity source provenance (`source_qid`, `lastrevid`, `pulled_at`) in the packet.
 - Boundaries between wikibase write planning and bottler transformation stages still need explicit acceptance criteria per phase.
 - Cross-module tests should identify failure source by layer (read, transform, payload-shape, write, orchestration).

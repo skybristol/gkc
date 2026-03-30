@@ -527,6 +527,8 @@ Atomic statement evaluation envelope:
 | `normalized_value` | `Any` | Normalized/coerced value payload |
 | `raw_claims` | `list[dict]` | Original inbound claim objects used for evaluation |
 | `notices` | `list[ConformanceNotice]` | Statement-scoped notices emitted during evaluation |
+| `qualifier_evaluations` | `list[StatementEvaluation]` | Nested evaluations for profile-defined qualifiers on the same source claim |
+| `reference_evaluations` | `list[StatementEvaluation]` | Nested evaluations for profile-defined references on the same source claim |
 
 ### `EntityEvaluation`
 
@@ -608,6 +610,82 @@ claims = [{
 evaluation = evaluate_statement_claim(statement, claims, entity_ref="Q195562")
 print(evaluation.outcome.value)  # "conformant"
 ```
+
+### `evaluate_statement_instance(profile_statement, raw_claim, *, entity_ref="", value_list_root=None)`
+
+Atomic full-shape statement primitive used by packet charging and scenario testing.
+
+This evaluates one raw Wikibase claim against one profile statement including:
+
+- main statement value constraints
+- qualifier statement constraints
+- reference statement constraints
+
+Reference-group behavior for profile statements with multiple defined references:
+
+- parent statement is conformant when at least one defined reference is conformant
+- missing alternate defined references are still reported in nested `reference_evaluations`
+- if no defined reference is conformant, parent statement receives `reference_group_missing`
+
+```python
+from gkc.fermenter import evaluate_statement_instance
+
+statement = {
+    "entity": "https://datadistillery.wikibase.cloud/entity/Q19",
+    "name_identifier": "official_website",
+    "value": {"type": "url"},
+    "io_map": [{"to": "http://www.wikidata.org/entity/P856"}],
+    "references": [
+        {
+            "entity": "https://datadistillery.wikibase.cloud/entity/Q29",
+            "name_identifier": "reference_url",
+            "value": {"type": "url"},
+            "io_map": [{"to": "http://www.wikidata.org/entity/P854"}],
+        },
+        {
+            "entity": "https://datadistillery.wikibase.cloud/entity/Q44",
+            "name_identifier": "stated_in",
+            "value": {"type": "wikibase-item"},
+            "io_map": [{"to": "http://www.wikidata.org/entity/P248"}],
+        },
+    ],
+}
+
+claim = {
+    "mainsnak": {"snaktype": "value", "datavalue": {"value": "https://example.org"}},
+    "references": [
+        {
+            "snaks": {
+                "P854": [
+                    {"snaktype": "value", "datavalue": {"value": "https://example.org/source"}}
+                ]
+            }
+        }
+    ],
+}
+
+evaluation = evaluate_statement_instance(statement, claim, entity_ref="Q14708404")
+print(evaluation.outcome.value)
+print([child.outcome.value for child in evaluation.reference_evaluations])
+```
+
+### `statement_evaluation_to_record(evaluation, profile_statement, *, entity_id, json_path)`
+
+Serialize a `StatementEvaluation` into packet conformance record shape.
+
+The serialized record includes a DD Wikibase statement reference block:
+
+```json
+{
+  "entity_id": "Q14708404",
+  "gkc_entity_statement": {
+    "id": "official_website",
+    "uri": "https://datadistillery.wikibase.cloud/entity/Q19"
+  }
+}
+```
+
+Nested qualifier and reference evaluations are serialized recursively using the same shape.
 
 ### `evaluate_entity(profile_statements, wikidata_item, *, io_map_index, entity_ref="", value_list_root=None)`
 

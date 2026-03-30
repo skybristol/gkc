@@ -646,6 +646,133 @@ class StatementEvaluation:
     normalized_value: Any
     raw_claims: list[dict[str, Any]]
     notices: list[ConformanceNotice] = field(default_factory=list)
+    qualifier_evaluations: list["StatementEvaluation"] = field(default_factory=list)
+    reference_evaluations: list["StatementEvaluation"] = field(default_factory=list)
+
+
+def conformance_notice_payloads(
+    notices: list[ConformanceNotice],
+) -> list[dict[str, Any]]:
+    """Serialize fermenter notices for packet/UI consumers."""
+    return [
+        {
+            "severity": notice.severity,
+            "code": notice.code,
+            "message": notice.message,
+            "statement_ref": notice.statement_ref,
+            "normalized_value": notice.normalized_value,
+        }
+        for notice in notices
+    ]
+
+
+def statement_evaluation_to_record(
+    evaluation: StatementEvaluation,
+    profile_statement: dict[str, Any],
+    *,
+    entity_id: str,
+    json_path: str,
+) -> dict[str, Any]:
+    """Serialize one atomic statement evaluation to the packet conformance shape."""
+    status = (
+        "conformant"
+        if evaluation.outcome == ConformanceOutcome.CONFORMANT
+        else "nonconformant"
+    )
+    statement_uri = _statement_ref_from_profile_statement(profile_statement)
+    statement_id = profile_statement.get("name_identifier")
+    if not isinstance(statement_id, str) or not statement_id:
+        statement_id = (
+            statement_uri.rstrip("/").split("/")[-1]
+            if isinstance(statement_uri, str) and statement_uri
+            else None
+        )
+
+    record: dict[str, Any] = {
+        "entity_id": entity_id,
+        "gkc_entity_statement": {
+            "id": statement_id,
+            "uri": statement_uri or f"unknown/{evaluation.property_ref or 'statement'}",
+        },
+        "json_path": json_path,
+        "statement_uri": statement_uri
+        or f"unknown/{evaluation.property_ref or 'statement'}",
+        "status": status,
+        "outcome": evaluation.outcome.value,
+    }
+
+    if isinstance(statement_id, str) and statement_id:
+        record["statement_id"] = statement_id
+
+    if evaluation.normalized_value is not None:
+        record["normalized_value"] = evaluation.normalized_value
+
+    if evaluation.notices:
+        record["notices"] = conformance_notice_payloads(evaluation.notices)
+
+    qualifier_records: list[dict[str, Any]] = []
+    qualifier_defs = profile_statement.get("qualifiers", [])
+    if isinstance(qualifier_defs, list):
+        qualifier_def_by_ref = {
+            _statement_ref_from_profile_statement(q): q
+            for q in qualifier_defs
+            if isinstance(q, dict)
+            and isinstance(_statement_ref_from_profile_statement(q), str)
+        }
+        for child_eval in evaluation.qualifier_evaluations:
+            child_profile = qualifier_def_by_ref.get(child_eval.statement_ref)
+            if not isinstance(child_profile, dict):
+                child_profile = {
+                    "entity": child_eval.statement_ref,
+                    "name_identifier": child_eval.statement_ref,
+                }
+            child_property_ref = (
+                _statement_property_ref(child_profile) or child_eval.property_ref
+            )
+            child_path = f"{json_path}.qualifiers.{child_property_ref or 'unknown'}"
+            qualifier_records.append(
+                statement_evaluation_to_record(
+                    child_eval,
+                    child_profile,
+                    entity_id=entity_id,
+                    json_path=child_path,
+                )
+            )
+    if qualifier_records:
+        record["qualifiers"] = qualifier_records
+
+    reference_records: list[dict[str, Any]] = []
+    reference_defs = profile_statement.get("references", [])
+    if isinstance(reference_defs, list):
+        reference_def_by_ref = {
+            _statement_ref_from_profile_statement(r): r
+            for r in reference_defs
+            if isinstance(r, dict)
+            and isinstance(_statement_ref_from_profile_statement(r), str)
+        }
+        for child_eval in evaluation.reference_evaluations:
+            child_profile = reference_def_by_ref.get(child_eval.statement_ref)
+            if not isinstance(child_profile, dict):
+                child_profile = {
+                    "entity": child_eval.statement_ref,
+                    "name_identifier": child_eval.statement_ref,
+                }
+            child_property_ref = (
+                _statement_property_ref(child_profile) or child_eval.property_ref
+            )
+            child_path = f"{json_path}.references.{child_property_ref or 'unknown'}"
+            reference_records.append(
+                statement_evaluation_to_record(
+                    child_eval,
+                    child_profile,
+                    entity_id=entity_id,
+                    json_path=child_path,
+                )
+            )
+    if reference_records:
+        record["references"] = reference_records
+
+    return record
 
 
 @dataclass
@@ -776,6 +903,259 @@ def _resolve_statement_value_list_path(
     if reference_path.is_absolute():
         return reference_path
     return value_list_root / reference_path
+
+
+def _snak_to_claim(snak: Any) -> Optional[dict[str, Any]]:
+    if not isinstance(snak, dict):
+        return None
+    return {"mainsnak": snak}
+
+
+def _claim_qualifiers_by_property(
+    raw_claim: dict[str, Any],
+) -> dict[str, list[dict[str, Any]]]:
+    qualifiers = raw_claim.get("qualifiers", {})
+    if not isinstance(qualifiers, dict):
+        return {}
+
+    normalized: dict[str, list[dict[str, Any]]] = {}
+    for property_id, snaks in qualifiers.items():
+        if not isinstance(property_id, str) or not property_id:
+            continue
+        if not isinstance(snaks, list):
+            continue
+        normalized[property_id] = [
+            wrapped
+            for snak in snaks
+            if isinstance((wrapped := _snak_to_claim(snak)), dict)
+        ]
+    return normalized
+
+
+def _claim_references_by_property(
+    raw_claim: dict[str, Any],
+) -> dict[str, list[dict[str, Any]]]:
+    references = raw_claim.get("references", [])
+    if not isinstance(references, list):
+        return {}
+
+    normalized: dict[str, list[dict[str, Any]]] = {}
+    for reference_block in references:
+        if not isinstance(reference_block, dict):
+            continue
+        snaks = reference_block.get("snaks", {})
+        if not isinstance(snaks, dict):
+            continue
+        for property_id, property_snaks in snaks.items():
+            if not isinstance(property_id, str) or not property_id:
+                continue
+            if not isinstance(property_snaks, list):
+                continue
+            normalized.setdefault(property_id, []).extend(
+                wrapped
+                for snak in property_snaks
+                if isinstance((wrapped := _snak_to_claim(snak)), dict)
+            )
+    return normalized
+
+
+def _missing_nested_statement_evaluation(
+    profile_statement: dict[str, Any],
+    *,
+    entity_ref: str,
+    code: str,
+    message: str,
+) -> StatementEvaluation:
+    statement_ref = _statement_ref_from_profile_statement(profile_statement)
+    property_ref = _statement_property_ref(profile_statement)
+    return StatementEvaluation(
+        outcome=ConformanceOutcome.MISSING,
+        statement_ref=statement_ref,
+        property_ref=property_ref,
+        normalized_value=None,
+        raw_claims=[],
+        notices=[
+            ConformanceNotice(
+                severity="warning",
+                entity_ref=entity_ref,
+                statement_ref=statement_ref,
+                code=code,
+                message=message,
+            )
+        ],
+    )
+
+
+def evaluate_statement_instance(
+    profile_statement: dict[str, Any],
+    raw_claim: dict[str, Any],
+    *,
+    entity_ref: str = "",
+    value_list_root: Optional[Path] = None,
+) -> StatementEvaluation:
+    """Evaluate one raw Wikidata statement claim against the full profile shape.
+
+    This is the atomic fermenter surface used by packet conformance reporting.
+    It validates the statement value itself plus any profile-defined qualifiers and
+    references present on the raw claim.
+    """
+    base_evaluation = evaluate_statement_claim(
+        profile_statement,
+        [raw_claim],
+        entity_ref=entity_ref,
+        value_list_root=value_list_root,
+    )
+    if not isinstance(raw_claim, dict):
+        return base_evaluation
+
+    qualifier_evaluations: list[StatementEvaluation] = []
+    reference_evaluations: list[StatementEvaluation] = []
+    qualifiers_by_property = _claim_qualifiers_by_property(raw_claim)
+    references_by_property = _claim_references_by_property(raw_claim)
+
+    qualifier_defs = profile_statement.get("qualifiers", [])
+    qualifier_property_ids: set[str] = set()
+    if isinstance(qualifier_defs, list):
+        for qualifier_def in qualifier_defs:
+            if not isinstance(qualifier_def, dict):
+                continue
+            qualifier_property = _statement_property_ref(qualifier_def)
+            if not qualifier_property:
+                continue
+            qualifier_property_ids.add(qualifier_property)
+            qualifier_claims = qualifiers_by_property.get(qualifier_property, [])
+            if qualifier_claims:
+                child_eval = evaluate_statement_claim(
+                    qualifier_def,
+                    qualifier_claims,
+                    entity_ref=entity_ref,
+                    value_list_root=value_list_root,
+                )
+            else:
+                child_eval = _missing_nested_statement_evaluation(
+                    qualifier_def,
+                    entity_ref=entity_ref,
+                    code="qualifier_missing",
+                    message="Expected qualifier is missing from this statement value.",
+                )
+            qualifier_evaluations.append(child_eval)
+
+    for property_id, qualifier_claims in qualifiers_by_property.items():
+        if property_id in qualifier_property_ids:
+            continue
+        qualifier_evaluations.append(
+            StatementEvaluation(
+                outcome=ConformanceOutcome.TO_BE_DEFINED,
+                statement_ref=f"unknown/{property_id}",
+                property_ref=property_id,
+                normalized_value=None,
+                raw_claims=qualifier_claims,
+                notices=[
+                    ConformanceNotice(
+                        severity="warning",
+                        entity_ref=entity_ref,
+                        statement_ref=f"unknown/{property_id}",
+                        code="qualifier_unexpected",
+                        message=(
+                            f"Qualifier {property_id} is not defined in profile statement."
+                        ),
+                    )
+                ],
+            )
+        )
+
+    reference_defs = profile_statement.get("references", [])
+    reference_property_ids: set[str] = set()
+    defined_reference_evaluations: list[StatementEvaluation] = []
+    if isinstance(reference_defs, list):
+        for reference_def in reference_defs:
+            if not isinstance(reference_def, dict):
+                continue
+            reference_property = _statement_property_ref(reference_def)
+            if not reference_property:
+                continue
+            reference_property_ids.add(reference_property)
+            reference_claims = references_by_property.get(reference_property, [])
+            if reference_claims:
+                child_eval = evaluate_statement_claim(
+                    reference_def,
+                    reference_claims,
+                    entity_ref=entity_ref,
+                    value_list_root=value_list_root,
+                )
+            else:
+                child_eval = _missing_nested_statement_evaluation(
+                    reference_def,
+                    entity_ref=entity_ref,
+                    code="reference_missing",
+                    message="Expected reference not provided.",
+                )
+            reference_evaluations.append(child_eval)
+            defined_reference_evaluations.append(child_eval)
+
+    for property_id, reference_claims in references_by_property.items():
+        if property_id in reference_property_ids:
+            continue
+        reference_evaluations.append(
+            StatementEvaluation(
+                outcome=ConformanceOutcome.TO_BE_DEFINED,
+                statement_ref=f"unknown/{property_id}",
+                property_ref=property_id,
+                normalized_value=None,
+                raw_claims=reference_claims,
+                notices=[
+                    ConformanceNotice(
+                        severity="warning",
+                        entity_ref=entity_ref,
+                        statement_ref=f"unknown/{property_id}",
+                        code="reference_unexpected",
+                        message=(
+                            f"Reference {property_id} is not defined in profile statement."
+                        ),
+                    )
+                ],
+            )
+        )
+
+    base_evaluation.qualifier_evaluations = qualifier_evaluations
+    base_evaluation.reference_evaluations = reference_evaluations
+
+    qualifier_failure = any(
+        child_eval.outcome != ConformanceOutcome.CONFORMANT
+        for child_eval in qualifier_evaluations
+    )
+
+    reference_group_failure = False
+    if defined_reference_evaluations:
+        has_conformant_reference = any(
+            child_eval.outcome == ConformanceOutcome.CONFORMANT
+            for child_eval in defined_reference_evaluations
+        )
+        reference_group_failure = not has_conformant_reference
+        if reference_group_failure:
+            base_evaluation.notices.append(
+                ConformanceNotice(
+                    severity="error",
+                    entity_ref=entity_ref,
+                    statement_ref=base_evaluation.statement_ref,
+                    code="reference_group_missing",
+                    message=(
+                        "At least one profile-defined reference is required for this statement."
+                    ),
+                )
+            )
+
+    unexpected_nested_failure = any(
+        child_eval.outcome == ConformanceOutcome.TO_BE_DEFINED
+        for child_eval in qualifier_evaluations + reference_evaluations
+    )
+
+    if base_evaluation.outcome == ConformanceOutcome.CONFORMANT and (
+        qualifier_failure or reference_group_failure or unexpected_nested_failure
+    ):
+        base_evaluation.outcome = ConformanceOutcome.NON_CONFORMANT_MAPPABLE
+
+    return base_evaluation
 
 
 def normalize_claim_value(
@@ -2184,6 +2564,14 @@ def _values_equal(val1: Any, val2: Any) -> bool:
     """Check equality between two values, handling Wikibase structures."""
     if val1 == val2:
         return True
+
+    # Normalize Wikibase item-like values to canonical URI when possible.
+    # This aligns profile-side wizard item dicts ({"item": ...}) with
+    # Wikidata claim-side snakvalue dicts ({"id": ...}) and QID/URI strings.
+    uri1 = _normalize_item_to_uri(val1)
+    uri2 = _normalize_item_to_uri(val2)
+    if uri1 is not None and uri2 is not None:
+        return uri1 == uri2
 
     # Special handling for wikibase-item dicts
     if isinstance(val1, dict) and isinstance(val2, dict):

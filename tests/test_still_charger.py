@@ -81,6 +81,10 @@ def test_create_curation_packet_single_mode_is_primary_only():
     assert len(packet["data"]["entities"]) == 1
     graph_edges = packet["metadata"]["graph"]["edges"]
     assert all(edge.get("relationship_type") != "P161" for edge in graph_edges)
+    assert packet["metadata"]["source"]["mode"] == "local"
+    assert packet["metadata"]["source"]["local_root"].endswith(
+        "tests/fixtures/spiritsafe"
+    )
 
 
 def test_create_curation_packet_bulk_mode_expands_profile_graph():
@@ -415,6 +419,232 @@ def test_create_and_charge_packet_single_call_api():
     )
     assert "conformance" in charged
     assert "entity_profile_map" in charged["conformance"]
+
+
+def test_charge_wikidata_evaluates_claim_values_per_claim_with_fermenter() -> None:
+    packet = {
+        "packet_id": "pkt-eval-test",
+        "operation_mode": "single",
+        "metadata": {
+            "primary_profile": {
+                "id": "https://datadistillery.wikibase.cloud/entity/Q4",
+                "name_identifier": "Q4",
+            },
+            "profiles": [
+                {
+                    "id": "https://datadistillery.wikibase.cloud/entity/Q4",
+                    "name_identifier": "Q4",
+                    "statements": [
+                        {
+                            "entity": "https://datadistillery.wikibase.cloud/entity/Q16",
+                            "name_identifier": "instance_of",
+                            "io_map": [{"to": "http://www.wikidata.org/entity/P31"}],
+                            "value": {
+                                "type": "wikibase-item",
+                                "value_list": [{"item": "Q7840353"}],
+                            },
+                        }
+                    ],
+                    "metadata": {},
+                }
+            ],
+            "graph": {"nodes": [], "edges": []},
+            "mint": {},
+            "source": {
+                "mode": "local",
+                "local_root": str(
+                    Path(__file__).resolve().parent / "fixtures" / "spiritsafe"
+                ),
+            },
+            "integrity": {},
+        },
+        "data": {"entities": []},
+    }
+
+    class _FakeMashClient:
+        def load_entity_data(self, qid: str) -> dict:
+            _ = qid
+            return {
+                "id": "Q14708404",
+                "labels": {},
+                "descriptions": {},
+                "aliases": {},
+                "claims": {
+                    "P31": [
+                        {
+                            "mainsnak": {
+                                "datavalue": {
+                                    "value": {
+                                        "id": "Q5982983",
+                                        "entity-type": "item",
+                                    }
+                                }
+                            }
+                        },
+                        {
+                            "mainsnak": {
+                                "datavalue": {
+                                    "value": {
+                                        "id": "Q7840353",
+                                        "entity-type": "item",
+                                    }
+                                }
+                            }
+                        },
+                    ]
+                },
+            }
+
+    charged, notices = charge_packet_from_wikidata_items(
+        packet,
+        {"https://datadistillery.wikibase.cloud/entity/Q4": "Q14708404"},
+        mash_client=_FakeMashClient(),
+    )
+
+    assert notices == []
+
+    p31_evaluations = [
+        evaluation
+        for evaluation in charged["conformance"]["statement_evaluations"]
+        if evaluation["entity_id"] == "Q14708404"
+        and evaluation["statement_uri"]
+        == "https://datadistillery.wikibase.cloud/entity/Q16"
+    ]
+    assert len(p31_evaluations) == 2
+
+    first_eval = next(
+        evaluation
+        for evaluation in p31_evaluations
+        if evaluation["json_path"] == "$.entity.claims.P31[0]"
+    )
+    assert first_eval["status"] == "nonconformant"
+    assert first_eval["gkc_entity_statement"] == {
+        "id": "instance_of",
+        "uri": "https://datadistillery.wikibase.cloud/entity/Q16",
+    }
+    assert first_eval["statement_id"] == "instance_of"
+
+    second_eval = next(
+        evaluation
+        for evaluation in p31_evaluations
+        if evaluation["json_path"] == "$.entity.claims.P31[1]"
+    )
+    assert second_eval["status"] == "conformant"
+    assert second_eval["statement_id"] == "instance_of"
+
+
+def test_charge_wikidata_includes_nested_reference_conformance_records() -> None:
+    packet = {
+        "packet_id": "pkt-ref-test",
+        "operation_mode": "single",
+        "metadata": {
+            "primary_profile": {
+                "id": "https://datadistillery.wikibase.cloud/entity/Q4",
+                "name_identifier": "Q4",
+            },
+            "profiles": [
+                {
+                    "id": "https://datadistillery.wikibase.cloud/entity/Q4",
+                    "name_identifier": "Q4",
+                    "statements": [
+                        {
+                            "entity": "https://datadistillery.wikibase.cloud/entity/Q19",
+                            "name_identifier": "official_website",
+                            "io_map": [{"to": "http://www.wikidata.org/entity/P856"}],
+                            "value": {"type": "url"},
+                            "references": [
+                                {
+                                    "entity": "https://datadistillery.wikibase.cloud/entity/Q29",
+                                    "name_identifier": "reference_url",
+                                    "io_map": [
+                                        {"to": "http://www.wikidata.org/entity/P854"}
+                                    ],
+                                    "value": {"type": "url"},
+                                },
+                                {
+                                    "entity": "https://datadistillery.wikibase.cloud/entity/Q44",
+                                    "name_identifier": "stated_in",
+                                    "io_map": [
+                                        {"to": "http://www.wikidata.org/entity/P248"}
+                                    ],
+                                    "value": {"type": "wikibase-item"},
+                                },
+                            ],
+                        }
+                    ],
+                    "metadata": {},
+                }
+            ],
+            "graph": {"nodes": [], "edges": []},
+            "mint": {},
+            "source": {},
+            "integrity": {},
+        },
+        "data": {"entities": []},
+    }
+
+    class _FakeMashClient:
+        def load_entity_data(self, qid: str) -> dict:
+            _ = qid
+            return {
+                "id": "Q14708404",
+                "labels": {},
+                "descriptions": {},
+                "aliases": {},
+                "claims": {
+                    "P856": [
+                        {
+                            "mainsnak": {
+                                "snaktype": "value",
+                                "datavalue": {"value": "https://example.org"},
+                            },
+                            "references": [
+                                {
+                                    "snaks": {
+                                        "P854": [
+                                            {
+                                                "snaktype": "value",
+                                                "datavalue": {
+                                                    "value": "https://example.org/source"
+                                                },
+                                            }
+                                        ]
+                                    }
+                                }
+                            ],
+                        }
+                    ]
+                },
+            }
+
+    charged, notices = charge_packet_from_wikidata_items(
+        packet,
+        {"https://datadistillery.wikibase.cloud/entity/Q4": "Q14708404"},
+        mash_client=_FakeMashClient(),
+    )
+
+    assert notices == []
+
+    website_eval = next(
+        evaluation
+        for evaluation in charged["conformance"]["statement_evaluations"]
+        if evaluation["statement_uri"]
+        == "https://datadistillery.wikibase.cloud/entity/Q19"
+    )
+    assert website_eval["status"] == "conformant"
+    assert website_eval["gkc_entity_statement"] == {
+        "id": "official_website",
+        "uri": "https://datadistillery.wikibase.cloud/entity/Q19",
+    }
+    assert website_eval["statement_id"] == "official_website"
+    assert len(website_eval["references"]) == 2
+
+    refs_by_id = {
+        reference["statement_id"]: reference for reference in website_eval["references"]
+    }
+    assert refs_by_id["reference_url"]["status"] == "conformant"
+    assert refs_by_id["stated_in"]["status"] == "nonconformant"
+    assert refs_by_id["stated_in"]["outcome"] == "missing"
 
 
 def test_packet_helpers_resolve_entities_and_primary_profile() -> None:
