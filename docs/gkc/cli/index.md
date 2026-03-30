@@ -42,7 +42,7 @@ gkc mash qid Q42
 
 ### [Profiles](profiles.md)
 
-Validate items against profiles, export JSON Entity Profiles from cache entities, generate form schemas, launch the Textual wizard, hydrate SPARQL value lists, and build SpiritSafe artifact manifests.
+Validate items against profiles, export JSON Entity Profiles from cache entities, generate form schemas, hydrate SPARQL value lists, and build SpiritSafe artifact manifests.
 
 ```bash
 gkc profile package load --profile Q4 --source local --local-root /path/to/SpiritSafe
@@ -60,6 +60,14 @@ gkc profile export-json --cache-entities-dir /path/to/SpiritSafe/cache/entities 
 gkc profile value-lists hydrate --source local --local-root /path/to/SpiritSafe
 
 gkc --json spiritsafe manifest build --source local --local-root /path/to/SpiritSafe
+```
+
+### [Wizard](wizard.md)
+
+Launch the interactive Streamlit curation wizard from a profile reference.
+
+```bash
+gkc wizard --profile Q4 --source local --local-root /path/to/SpiritSafe
 ```
 
 ### [Wikibase](wikibase.md)
