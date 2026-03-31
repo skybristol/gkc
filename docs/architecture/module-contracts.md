@@ -130,20 +130,28 @@ Current anchor surface:
 
 Responsibility:
 
-- Transform values and mapping recipes into Wikibase claim/snak/reference payload structures.
-- Build transport-ready content objects (`datavalue`, `snak`, `claim`) from validated inputs.
+- Provide canonical Wikibase JSON construction primitives for all claim/statement building.
+- Transform values and mapping recipes into Wikibase payload structures (datavalues, snaks, claims).
+- Build deterministic, multilingual label/description/alias blocks from profile metadata.
+- Build Wikibase entity shells from profile metadata for profile-only packet generation.
+- All consuming code must use bottler primitives rather than building JSON inline.
 
 Out of scope:
 
 - Remote API transport and authentication session management.
 - Registry synchronization and semantic drift management.
+- Validation and coercion logic (handled by fermenter).
 
 Current anchor surface:
 
-- `DataTypeTransformer`
-- `SnakBuilder`
-- `ClaimBuilder`
-- `Distillate`
+- `DataTypeTransformer` (static methods for datatype conversion)
+- `SnakBuilder` (atomic snak construction with datatypes)
+- `ClaimBuilder` (complete statement building with qualifiers/references)
+- `LanguageBuilder` (multilingual label/description/alias block building)
+- `EntityShellBuilder` (Wikibase entity shell building from profile metadata)
+- `normalize_claim_datavalue` (value-to-datatype mapping utility)
+- `build_claim_from_property_and_value` (convenience statement builder)
+- `Distillate` (end-to-end mapping configuration container)
 
 ### Shipper (`gkc.shipper`)
 
@@ -209,11 +217,22 @@ Current anchor surface:
 ### Flow 2.5: Shared Profile-to-Write Planning Pipeline (Active)
 
 1. `spirit_safe` loads and exports JSON Entity Profiles and value-list cache artifacts.
-2. `still_charger` assembles curation packets from profile JSON and charges packet entities with source values.
+2. `still_charger` assembles curation packets from profile JSON using bottler's EntityShellBuilder to build canonical Wikibase JSON entity shells for profile-only packets.
 3. `fermenter` evaluates atomic statement instances (including qualifiers/references), coerces values, and serializes packet-facing conformance records.
-4. `wikibase` orchestration transforms charged packet data into `WikibaseShipper.plan_batch` operations.
+4. `wikibase` orchestration transforms charged packet data into `WikibaseShipper.plan_batch` operations using bottler primitives for claim/statement construction.
 5. `wikibase` orchestration coordinates this flow for Data Distillery-specific workflows.
 6. `shipper` computes create/update/no-op diff plans and executes writes when enabled.
+
+### Flow 2.5a: Profile-Only Packet Wikibase JSON Shell Generation (New)
+
+1. `still_charger` calls bottler's `EntityShellBuilder` during `build_curation_packet_from_json_profile`.
+2. For each profile in the packet, bottler extracts identification metadata (labels/descriptions/aliases) and statement property IDs.
+3. Bottler builds canonical Wikibase entity shells with:
+   - Language-keyed labels, descriptions, aliases blocks
+   - Empty claims dictionary with deterministically sorted property IDs
+4. Shells are embedded in `data.entities[*].entity` for deterministic, shape-consistent packet generation.
+5. Profile-only packets require no charging and can proceed directly to fermenter validation.
+6. Charged packets (with Wikidata values) merge this shell with charged statement instances.
 
 ### Flow 2.6: SpiritSafe JSON Profile Materialization (Active)
 

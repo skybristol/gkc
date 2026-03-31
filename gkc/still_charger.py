@@ -16,6 +16,7 @@ from pathlib import Path
 from typing import Any, Optional
 
 import gkc
+from gkc.bottler import EntityShellBuilder
 from gkc.fermenter import (
     ConformanceNotice,
     evaluate_statement_instance,
@@ -775,6 +776,62 @@ def _build_value_list_routes(
     }
 
 
+def _build_entity_wikibase_json_from_profile(
+    profile_doc: dict[str, Any],
+    profile_uri: str,
+) -> dict[str, Any]:
+    """Build a Wikibase JSON entity shell from profile metadata.
+
+    This produces a canonical Wikibase entity structure with labels, descriptions,
+    aliases, and empty claims scaffolding indexed by deterministic property order.
+
+    Args:
+        profile_doc: The profile JSON document containing identification and statements
+        profile_uri: The full profile entity URI
+
+    Returns:
+        A Wikibase entity structure suitable for use in packet data.entities[*].entity
+    """
+    identification = profile_doc.get("identification", {})
+    if not isinstance(identification, dict):
+        identification = {}
+
+    # Extract labels, descriptions, aliases from identification
+    labels_dict = identification.get("labels", {})
+    descriptions_dict = identification.get("descriptions", {})
+    aliases_dict = identification.get("aliases", {})
+
+    # Extract property IDs from statements
+    statements = profile_doc.get("statements", [])
+    if not isinstance(statements, list):
+        statements = []
+
+    property_ids: list[str] = []
+    for statement in statements:
+        if not isinstance(statement, dict):
+            continue
+
+        io_map = statement.get("io_map", [])
+        if isinstance(io_map, list):
+            for mapping in io_map:
+                if not isinstance(mapping, dict):
+                    continue
+                property_id = _extract_wikidata_property_id(mapping.get("to"))
+                if property_id and property_id not in property_ids:
+                    property_ids.append(property_id)
+
+    # Build entity shell using bottler primitive
+    entity_shell_builder = EntityShellBuilder()
+    entity_metadata = {
+        "labels": labels_dict,
+        "descriptions": descriptions_dict,
+        "aliases": aliases_dict,
+        "statement_pids": property_ids,
+    }
+
+    return entity_shell_builder.build_entity_shell(entity_metadata)
+
+
 def build_curation_packet_from_json_profile(
     profile_entity: str,
     json_profile_doc: dict,
@@ -870,6 +927,11 @@ def build_curation_packet_from_json_profile(
             }
         )
 
+        # Build Wikibase JSON entity shell for profile-only packets
+        wikibase_entity_shell = _build_entity_wikibase_json_from_profile(
+            profile_doc, profile_uri
+        )
+
         data_entities.append(
             {
                 "profile": profile_name,
@@ -878,6 +940,7 @@ def build_curation_packet_from_json_profile(
                 "descriptions": descriptions_slot,
                 "aliases": aliases_slot,
                 "statements": statement_slots,
+                "entity": wikibase_entity_shell,
             }
         )
 

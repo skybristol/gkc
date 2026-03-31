@@ -12,6 +12,8 @@ Plain meaning: Convert transformed data into Wikidata item structure.
 import math
 from typing import Any, Optional, Union
 
+from gkc.utilities import validate_entity_reference
+
 
 class DataTypeTransformer:
     """Transforms source data values to Wikidata datavalue structures."""
@@ -252,6 +254,217 @@ class ClaimBuilder:
                 )
 
         return claim
+
+
+class LanguageBuilder:
+    """Builds Wikibase language-keyed structures for labels, descriptions, and aliases."""
+
+    @staticmethod
+    def build_label_block(language_dict: dict[str, str]) -> dict[str, dict[str, str]]:
+        """Build a Wikibase labels block from language-to-value mapping.
+
+        Args:
+            language_dict: Dictionary mapping language codes to label text
+                          (e.g., {"en": "Example", "mul": "Beispiel"})
+
+        Returns:
+            Wikibase labels structure: {lang: {value: text, language: lang}}
+        """
+        if not isinstance(language_dict, dict):
+            return {}
+
+        labels: dict[str, dict[str, str]] = {}
+        for lang, value in sorted(language_dict.items()):
+            if isinstance(lang, str) and lang and isinstance(value, str) and value:
+                labels[lang] = {"value": value, "language": lang}
+        return labels
+
+    @staticmethod
+    def build_description_block(
+        language_dict: dict[str, str],
+    ) -> dict[str, dict[str, str]]:
+        """Build a Wikibase descriptions block from language-to-value mapping.
+
+        Args:
+            language_dict: Dictionary mapping language codes to description text
+
+        Returns:
+            Wikibase descriptions structure: {lang: {value: text, language: lang}}
+        """
+        if not isinstance(language_dict, dict):
+            return {}
+
+        descriptions: dict[str, dict[str, str]] = {}
+        for lang, value in sorted(language_dict.items()):
+            if isinstance(lang, str) and lang and isinstance(value, str) and value:
+                descriptions[lang] = {"value": value, "language": lang}
+        return descriptions
+
+    @staticmethod
+    def build_alias_block(
+        language_dict: dict[str, Union[str, list[str]]],
+    ) -> dict[str, list[dict[str, str]]]:
+        """Build a Wikibase aliases block from language-to-values mapping.
+
+        Args:
+            language_dict: Dictionary mapping language codes to alias text(s)
+                          (e.g., {"en": ["Alias1", "Alias2"]})
+
+        Returns:
+            Wikibase aliases structure: {lang: [{value: text, language: lang}, ...]}
+        """
+        if not isinstance(language_dict, dict):
+            return {}
+
+        aliases: dict[str, list[dict[str, str]]] = {}
+        for lang, values in sorted(language_dict.items()):
+            if not isinstance(lang, str) or not lang:
+                continue
+
+            alias_list: list[str] = []
+            if isinstance(values, str) and values:
+                alias_list = [values]
+            elif isinstance(values, list):
+                alias_list = [v for v in values if isinstance(v, str) and v]
+
+            if alias_list:
+                aliases[lang] = [{"value": v, "language": lang} for v in alias_list]
+
+        return aliases
+
+
+class EntityShellBuilder:
+    """Builds Wikibase entity shells from profile metadata."""
+
+    def __init__(self, language_builder: Optional[LanguageBuilder] = None):
+        self.language_builder = language_builder or LanguageBuilder()
+
+    def build_entity_shell(
+        self,
+        entity_metadata: dict[str, Any],
+    ) -> dict[str, Any]:
+        """Build a blank Wikibase entity shell from profile entity metadata.
+
+        Args:
+            entity_metadata: Dictionary containing:
+                - labels: {lang: value}
+                - descriptions: {lang: value}
+                - aliases: {lang: [values]}
+                - statement_pids: [list of property IDs to pre-stage]
+
+        Returns:
+            Wikibase entity structure with labels/descriptions/aliases + empty claims
+        """
+        labels = self.language_builder.build_label_block(
+            entity_metadata.get("labels", {})
+        )
+        descriptions = self.language_builder.build_description_block(
+            entity_metadata.get("descriptions", {})
+        )
+        aliases = self.language_builder.build_alias_block(
+            entity_metadata.get("aliases", {})
+        )
+
+        # Build empty claims structure with deterministic property ordering
+        statement_pids = entity_metadata.get("statement_pids", [])
+        claims: dict[str, list] = {}
+
+        if isinstance(statement_pids, list):
+            for pid in sorted(statement_pids):
+                if isinstance(pid, str) and pid:
+                    claims[pid] = []
+
+        entity: dict[str, Any] = {}
+        if labels:
+            entity["labels"] = labels
+        if descriptions:
+            entity["descriptions"] = descriptions
+        if aliases:
+            entity["aliases"] = aliases
+        if claims:
+            entity["claims"] = claims
+
+        return entity
+
+
+def normalize_claim_datavalue(value: Any) -> Optional[tuple[str, Any]]:
+    """Determine the appropriate Wikibase datatype and formatted value from raw input.
+
+    Returns a tuple of (datatype, value) suitable for use in a datavalue block,
+    or None if the value cannot be transformed.
+
+    Supports:
+    - Entity references (Q###, P###)
+    - Strings
+    - Booleans
+    - Numbers (int, float)
+    - Dictionaries with id/value fields
+    """
+    if isinstance(value, str) and validate_entity_reference(value):
+        entity_id = value.upper()
+        entity_type = "item" if entity_id.startswith("Q") else "property"
+        return (
+            "wikibase-entityid",
+            {
+                "entity-type": entity_type,
+                "id": entity_id,
+                "numeric-id": int(entity_id[1:]),
+            },
+        )
+
+    if isinstance(value, str):
+        return ("string", value)
+
+    if isinstance(value, bool):
+        return ("boolean", value)
+
+    if isinstance(value, int):
+        return ("quantity", {"amount": str(value), "unit": "1"})
+
+    if isinstance(value, float):
+        return ("quantity", {"amount": str(value), "unit": "1"})
+
+    if isinstance(value, dict):
+        if isinstance(value.get("id"), str) and validate_entity_reference(value["id"]):
+            return normalize_claim_datavalue(value["id"])
+        if "value" in value:
+            return normalize_claim_datavalue(value["value"])
+
+    return None
+
+
+def build_claim_from_property_and_value(
+    property_id: str, raw_value: Any
+) -> Optional[dict[str, Any]]:
+    """Build a Wikibase statement structure from a property ID and raw value.
+
+    This is a convenience function that uses normalize_claim_datavalue to convert
+    the raw value and builds a complete statement structure.
+
+    Args:
+        property_id: Wikidata property ID (e.g., "P31")
+        raw_value: The value to build into a claim
+
+    Returns:
+        A Wikibase statement structure or None if the value cannot be transformed
+    """
+    datavalue_info = normalize_claim_datavalue(raw_value)
+    if datavalue_info is None:
+        return None
+
+    data_type, data_value = datavalue_info
+    return {
+        "mainsnak": {
+            "snaktype": "value",
+            "property": property_id,
+            "datavalue": {
+                "type": data_type,
+                "value": data_value,
+            },
+        },
+        "type": "statement",
+        "rank": "normal",
+    }
 
 
 class Distillate:
