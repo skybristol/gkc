@@ -4,6 +4,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Optional
 
+from gkc.bottler import build_claim_from_property_and_value, normalize_claim_datavalue
 from gkc.shipper import WriteResult
 from gkc.spirit_safe import Manifest
 from gkc.still_charger import (
@@ -128,56 +129,13 @@ def _statement_pid_map(entity: dict[str, Any]) -> dict[str, str]:
 
 
 def _claim_datavalue(value: Any) -> Optional[tuple[str, Any]]:
-    if isinstance(value, str) and validate_entity_reference(value):
-        entity_id = value.upper()
-        entity_type = "item" if entity_id.startswith("Q") else "property"
-        return (
-            "wikibase-entityid",
-            {
-                "entity-type": entity_type,
-                "id": entity_id,
-                "numeric-id": int(entity_id[1:]),
-            },
-        )
-
-    if isinstance(value, str):
-        return ("string", value)
-
-    if isinstance(value, bool):
-        return ("boolean", value)
-
-    if isinstance(value, int):
-        return ("quantity", {"amount": str(value), "unit": "1"})
-
-    if isinstance(value, float):
-        return ("quantity", {"amount": str(value), "unit": "1"})
-
-    if isinstance(value, dict):
-        if isinstance(value.get("id"), str) and validate_entity_reference(value["id"]):
-            return _claim_datavalue(value["id"])
-        if "value" in value:
-            return _claim_datavalue(value["value"])
-
-    return None
+    """Deprecated: use bottler.normalize_claim_datavalue instead."""
+    return normalize_claim_datavalue(value)
 
 
 def _claim_statement(property_id: str, raw_value: Any) -> Optional[dict[str, Any]]:
-    datavalue = _claim_datavalue(raw_value)
-    if datavalue is None:
-        return None
-    data_type, data_value = datavalue
-    return {
-        "mainsnak": {
-            "snaktype": "value",
-            "property": property_id,
-            "datavalue": {
-                "type": data_type,
-                "value": data_value,
-            },
-        },
-        "type": "statement",
-        "rank": "normal",
-    }
+    """Deprecated: use bottler.build_claim_from_property_and_value instead."""
+    return build_claim_from_property_and_value(property_id, raw_value)
 
 
 def _resolve_property_id(
