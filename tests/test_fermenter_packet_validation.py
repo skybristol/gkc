@@ -1,8 +1,8 @@
-"""Tests for packet wizard validation bridge (Phase B)."""
+"""Tests for fermenter packet validation entrypoints used by wizard."""
 
 from pathlib import Path
 
-from gkc.profiles.forms.validation_bridge import (
+from gkc.fermenter import (
     validate_entity_packet_data,
     validate_inline_value,
 )

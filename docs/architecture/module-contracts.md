@@ -334,7 +334,6 @@ When adding new functionality, assign ownership using this matrix:
 
 ## Current Gaps to Revisit During Critical Analysis
 
-- `gkc.profiles.forms.validation_bridge` still contains overlapping nested qualifier/reference validation semantics. This logic should be moved into fermenter-owned packet-facing APIs and deleted from the profiles namespace.
 - Still Charger does not yet emit per-entity source provenance (`source_qid`, `lastrevid`, `pulled_at`) in the packet.
 - Boundaries between wikibase write planning and bottler transformation stages still need explicit acceptance criteria per phase.
 - Cross-module tests should identify failure source by layer (read, transform, payload-shape, write, orchestration).
