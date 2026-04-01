@@ -24,7 +24,6 @@ from typing import Any, Literal, Optional, Union
 from urllib.parse import urlparse
 
 import requests
-import yaml
 
 from gkc.mash import (
     WikibaseApiClient,

@@ -49,11 +49,11 @@ from gkc.entity_profile import GKCEntityProfile
 from gkc.fermenter import (
     ConformanceNotice,
     enforce_fixed_value,
-    validate_entity_packet_data,
-    validate_inline_value,
     validate_by_datatype,
     validate_commons_media,
+    validate_entity_packet_data,
     validate_globe_coordinate,
+    validate_inline_value,
     validate_monolingualtext,
     validate_quantity,
     validate_string,
@@ -261,14 +261,6 @@ __all__ = [
     "fetch_schema_specification",
     # Entity Profiles
     "GKCEntityProfile",
-    # YAML-first profiles
-    "FormSchemaGenerator",
-    "ProfileDefinition",
-    "ProfileLoader",
-    "ProfilePydanticGenerator",
-    "ProfileValidator",
-    "ValidationIssue",
-    "ValidationResult",
     # Sitelinks
     "DEFAULT_WIKIMEDIA_SITEMATRIX_URL",
     "SitelinkValidator",

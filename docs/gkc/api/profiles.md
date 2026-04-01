@@ -15,7 +15,7 @@ Those workflows are owned by:
 
 ## Contract Direction
 
-The YAML-era `gkc.profiles` loader/generator/validator path is superseded and targeted for removal unless an explicit retained consumer is approved.
+The YAML-era `gkc.profiles` loader/generator/validator path has been removed from runtime and CLI surfaces.
 
 This includes:
 
