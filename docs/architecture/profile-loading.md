@@ -4,6 +4,11 @@
 
 This page documents implemented and architecturally committed behavior for profile loading in GKC and SpiritSafe-backed sources.
 
+Contract note:
+
+- The active runtime profile contract is JSON Entity Profiles materialized from DD Wikibase semantics into SpiritSafe artifacts.
+- YAML-era profile loading compatibility is legacy-only migration support and is not a forward architecture target.
+
 ## Resolution Model
 
 GKC resolves a profile reference through `resolve_profile_path()` using the canonical artifact layout:
@@ -43,6 +48,11 @@ then as:
 - Missing profile files raise path resolution errors after fallback attempts.
 - Missing query files raise `FileNotFoundError` with attempted paths.
 - Hydration can either collect failures or fail fast based on `fail_on_query_error`.
+
+## Explicit Non-Goals
+
+- Introducing new runtime dependencies on YAML profile loaders, YAML profile validators, or YAML form schema generators.
+- Preserving legacy module boundaries as compatibility shims when moving wizard runtime code into `gkc.wizard`.
 
 ## Theoretical Design Notes
 

@@ -232,12 +232,13 @@ Query Wikidata and other SPARQL endpoints.
 
 ### [Profiles](profiles.md)
 
-Profile loading surfaces for validation and form schema generation.
+Legacy module notice and contract direction for superseded YAML-era profile surfaces.
 
-**Key classes:**
-- `ProfileLoader` - Load profile artifacts
-- `ProfileValidator` - Validate Wikidata items
-- `FormSchemaGenerator` - Build form schemas
+**Current runtime owners:**
+- `spirit_safe` - JSON profile artifacts and loading
+- `still_charger` - packet assembly/charging
+- `fermenter` - validation/coercion/conformance
+- `wizard` - interactive runtime
 
 ---
 

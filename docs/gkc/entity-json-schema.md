@@ -14,8 +14,13 @@ This page documents the active packet/profile contract used by:
 
 - `gkc.spirit_safe` for loading JSON Entity Profiles.
 - `gkc.still_charger` for packet scaffold assembly and charging.
-- `gkc.fermenter` and wizard validation bridge for value conformance.
+- `gkc.fermenter` for value validation/coercion and conformance notices.
 - `gkc.wikibase` and `gkc.shipper` for downstream write planning and execution.
+
+Contract clarification:
+
+- Wizard runtime consumes fermenter conformance outputs; it does not own validation semantics.
+- Any transitional wizard-side validation helpers are implementation details pending full fermenter consolidation and are not part of the long-term module contract.
 
 ## Pipeline Overview
 
