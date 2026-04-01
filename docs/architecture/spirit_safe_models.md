@@ -31,7 +31,6 @@ Implemented and committed:
 
 - `load_profile()` resolves QID/URI and loads JSON profile documents.
 - `load_profile_package()` loads primary plus related profiles by traversing embedded `metadata.profile_graph` edges.
-- `get_profile_graph()` loads manifest and builds a graph for registry tooling.
 - `still_charger.create_curation_packet()` builds packet scaffolds from profile documents loaded via SpiritSafe.
 
 ## Identity Model
