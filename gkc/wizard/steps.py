@@ -11,7 +11,7 @@ from typing import Any
 import streamlit as st
 
 import gkc
-from gkc.profiles.forms.validation_bridge import validate_inline_value
+from gkc.fermenter import validate_inline_value
 from gkc.wizard.step_base import Step
 from gkc.wizard.widgets import WidgetFactory
 

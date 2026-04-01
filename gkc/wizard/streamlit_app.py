@@ -11,7 +11,7 @@ from typing import Any, Optional
 import streamlit as st
 
 import gkc
-from gkc.profiles.forms.validation_bridge import validate_entity_packet_data
+from gkc.fermenter import validate_entity_packet_data
 from gkc.spirit_safe import load_profile
 from gkc.still_charger import (
     build_curation_packet_from_json_profile,

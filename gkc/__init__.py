@@ -49,6 +49,8 @@ from gkc.entity_profile import GKCEntityProfile
 from gkc.fermenter import (
     ConformanceNotice,
     enforce_fixed_value,
+    validate_entity_packet_data,
+    validate_inline_value,
     validate_by_datatype,
     validate_commons_media,
     validate_globe_coordinate,
@@ -252,6 +254,8 @@ __all__ = [
     "packet_primary_profile_id",
     # Fermenter validation
     "ConformanceNotice",
+    "validate_inline_value",
+    "validate_entity_packet_data",
     "validate_by_datatype",
     "validate_wikibase_item",
     "validate_string",
