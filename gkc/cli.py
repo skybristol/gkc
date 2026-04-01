@@ -12,8 +12,6 @@ import sys
 from pathlib import Path
 from typing import Any, Optional
 
-import requests
-
 import gkc
 from gkc.auth import AuthenticationError, OpenStreetMapAuth, WikiverseAuth
 from gkc.mash import (
@@ -1840,93 +1838,6 @@ def _extract_validation_error_summary(results: Any) -> str:
             return first_line
 
     return "Validation failed (see --verbose for details)"
-
-
-def _handle_profile_validate(args: argparse.Namespace) -> dict[str, Any]:
-    """Validate a Wikidata item against a YAML profile."""
-    if not args.qid and not args.item_json:
-        raise CLIError("Provide either --qid or --item-json")
-    if args.qid and args.item_json:
-        raise CLIError("Use only one of --qid or --item-json")
-
-    previous_source, source_overridden = _apply_source_override(
-        args,
-        source_attr="profile_source",
-        local_root_attr="profile_local_root",
-        repo_attr="profile_repo",
-        ref_attr="profile_github_ref",
-    )
-
-    try:
-        loader = ProfileLoader()
-        profile, resolved_profile = _load_profile_from_reference(loader, args.profile)
-
-        if args.qid:
-            item = WikibaseLoader().load_item(args.qid)
-            entity_data = item.to_dict()
-            source = args.qid
-        else:
-            with open(args.item_json, "r") as f:
-                entity_data = json.load(f)
-            source = args.item_json
-
-        validator = ProfileValidator(profile)
-        result = validator.validate_item(entity_data, policy=args.policy)
-
-        details = {
-            "profile": profile.name,
-            "profile_ref": resolved_profile,
-            "policy": args.policy,
-            "source": source,
-            "errors": [issue.model_dump() for issue in result.errors],
-            "warnings": [issue.model_dump() for issue in result.warnings],
-        }
-
-        if result.ok:
-            message = "✓ Profile validation passed"
-        else:
-            message = "✗ Profile validation failed"
-
-        return {
-            "command": args.command_path,
-            "ok": result.ok,
-            "message": message,
-            "details": details,
-        }
-    finally:
-        _restore_source_override(previous_source, source_overridden)
-
-
-def _handle_profile_form_schema(args: argparse.Namespace) -> dict[str, Any]:
-    """Generate form schema from a YAML profile."""
-    previous_source, source_overridden = _apply_source_override(args)
-
-    try:
-        loader = ProfileLoader()
-        profile, resolved_profile = _load_profile_from_reference(loader, args.profile)
-
-        schema = FormSchemaGenerator(profile).build_schema()
-
-        if args.output:
-            with open(args.output, "w") as f:
-                json.dump(schema, f, indent=2)
-            message = f"Wrote form schema to {args.output}"
-        else:
-            print(json.dumps(schema))
-            message = "Form schema generated"
-
-        return {
-            "command": args.command_path,
-            "ok": True,
-            "message": message,
-            "details": {
-                "profile": profile.name,
-                "profile_ref": resolved_profile,
-                "output": args.output or "stdout",
-            },
-        }
-    finally:
-        _restore_source_override(previous_source, source_overridden)
 
 
 # New handler for 'wizard' CLI entry

@@ -286,21 +286,13 @@ def test_manifest_loading(spiritsafe_local_source):
 ```python
 def test_profile_graph_traversal(spiritsafe_local_source):
     """Test profile graph construction and traversal."""
-    from gkc.profiles.graph import ProfileGraph
-    
-    graph = ProfileGraph.load_from_manifest()
-    
-    # Get neighbors of TribalGovernmentUS
-    neighbors = graph.get_neighbors("TribalGovernmentUS")
-    assert "OfficeHeldByHeadOfState" in neighbors
-    
-    # Verify bidirectional edge
-    reverse_neighbors = graph.get_neighbors("OfficeHeldByHeadOfState")
-    assert "TribalGovernmentUS" in reverse_neighbors
-    
-    # Check cardinality constraint
-    cardinality = graph.get_cardinality("TribalGovernmentUS", "OfficeHeldByHeadOfState")
-    assert cardinality["max"] == 1
+    from gkc.spirit_safe import load_profile_package
+
+    package = load_profile_package("TribalGovernmentUS", depth=1)
+
+    # Confirm linked profile traversal from embedded metadata.profile_graph
+    assert "TribalGovernmentUS" in package["profiles"]
+    assert "OfficeHeldByHeadOfState" in package["profiles"]
 ```
 
 ### Test Coverage Goals

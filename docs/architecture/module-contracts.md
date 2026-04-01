@@ -154,9 +154,9 @@ Current anchor surface:
 - Top-level CLI entry `gkc wizard` (public contract).
 - Streamlit app runtime and wizard step orchestration modules.
 
-Transition note:
+Implementation note:
 
-- Wizard runtime code currently still located under `gkc.profiles.forms` is in active migration to `gkc.wizard` and should not be treated as a stable module boundary.
+- Wizard runtime is implemented under `gkc.wizard`.
 
 ### Bottler (`gkc.bottler`)
 

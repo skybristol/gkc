@@ -62,6 +62,7 @@ def test_filter_value_list_candidates_matches_label_qid_and_uri() -> None:
         len(_filter_value_list_candidates(candidates, "wikidata.org/entity/q42")) == 1
     )
 
+
 def test_validate_inline_value_keeps_item_metadata() -> None:
     value = {
         "id": "Q42",
