@@ -412,7 +412,7 @@ def test_create_and_charge_packet_single_call_api():
         mash_client=_FakeMashClient(),
     )
 
-    assert charged["operation_mode"] == "single"
+    assert charged["operation_mode"] == "edit"
     assert len(charged["data"]["entities"]) == 1
     assert charged["data"]["entities"][0]["entity"]["labels"]["en"]["value"] == (
         "Cherokee Nation"

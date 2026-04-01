@@ -114,6 +114,84 @@ def _collect_review_consequences(entity_slot: dict[str, Any]) -> dict[str, str]:
     return consequences
 
 
+def _looks_like_qid(value: Any) -> bool:
+    return isinstance(value, str) and value.startswith("Q") and value[1:].isdigit()
+
+
+def _profile_statement_refs(entity_slot: dict[str, Any]) -> set[str]:
+    refs: set[str] = set()
+    for statement_def in entity_slot.get("statements", []):
+        if not isinstance(statement_def, dict):
+            continue
+        statement_ref = statement_def.get("entity")
+        if isinstance(statement_ref, str) and statement_ref:
+            refs.add(statement_ref)
+    return refs
+
+
+def _conformance_evaluations_for_entity(
+    *,
+    packet: dict[str, Any],
+    entity_slot: dict[str, Any],
+) -> list[dict[str, Any]]:
+    conformance = packet.get("conformance", {})
+    if not isinstance(conformance, dict):
+        return []
+
+    evaluations = conformance.get("statement_evaluations", [])
+    if not isinstance(evaluations, list):
+        return []
+
+    entity_profile_map = conformance.get("entity_profile_map", {})
+    if not isinstance(entity_profile_map, dict):
+        entity_profile_map = {}
+
+    profile_uri = entity_slot.get("profile_entity") or entity_slot.get("id")
+    entity_id = entity_slot.get("id")
+
+    candidate_entity_ids: set[str] = set()
+    if _looks_like_qid(entity_id):
+        candidate_entity_ids.add(entity_id)
+
+    if isinstance(profile_uri, str) and profile_uri:
+        for key, mapped_profile in entity_profile_map.items():
+            if mapped_profile == profile_uri and _looks_like_qid(key):
+                candidate_entity_ids.add(key)
+
+    if not candidate_entity_ids:
+        return []
+
+    filtered: list[dict[str, Any]] = []
+    for evaluation in evaluations:
+        if not isinstance(evaluation, dict):
+            continue
+        evaluation_entity_id = evaluation.get("entity_id")
+        if isinstance(evaluation_entity_id, str) and (
+            evaluation_entity_id in candidate_entity_ids
+        ):
+            filtered.append(evaluation)
+    return filtered
+
+
+def _partition_conformance_evaluations(
+    *,
+    entity_slot: dict[str, Any],
+    evaluations: list[dict[str, Any]],
+) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
+    profile_refs = _profile_statement_refs(entity_slot)
+    profile_aligned: list[dict[str, Any]] = []
+    additional: list[dict[str, Any]] = []
+
+    for evaluation in evaluations:
+        statement_uri = evaluation.get("statement_uri")
+        if isinstance(statement_uri, str) and statement_uri in profile_refs:
+            profile_aligned.append(evaluation)
+        else:
+            additional.append(evaluation)
+
+    return profile_aligned, additional
+
+
 def _group_review_items(
     *,
     entity_slot: dict[str, Any],
@@ -621,6 +699,89 @@ def _render_grouped_review_sections(
             _render_conformance_notices(ungrouped_notices)
 
 
+def _render_conformance_statement_sections(
+    *,
+    entity_slot: dict[str, Any],
+    packet: dict[str, Any],
+) -> None:
+    evaluations = _conformance_evaluations_for_entity(
+        packet=packet,
+        entity_slot=entity_slot,
+    )
+    if not evaluations:
+        st.info("No conformance statement evaluations available for this entity yet.")
+        return
+
+    profile_aligned, additional = _partition_conformance_evaluations(
+        entity_slot=entity_slot,
+        evaluations=evaluations,
+    )
+
+    st.write("#### Profile-Aligned Statements")
+    if not profile_aligned:
+        st.caption("No profile-aligned statement evaluations were found.")
+    else:
+        for evaluation in profile_aligned:
+            statement_info = evaluation.get("gkc_entity_statement", {})
+            statement_id = (
+                statement_info.get("id")
+                if isinstance(statement_info, dict)
+                else evaluation.get("statement_id")
+            )
+            status = evaluation.get("status") or "unknown"
+            outcome = evaluation.get("outcome") or "unknown"
+            json_path = evaluation.get("json_path") or ""
+            label = str(statement_id or evaluation.get("statement_uri") or "statement")
+
+            with st.expander(
+                f"{label} | status={status} | outcome={outcome}",
+                expanded=False,
+            ):
+                if json_path:
+                    st.caption(f"path: {json_path}")
+                notices = evaluation.get("notices")
+                if isinstance(notices, list) and notices:
+                    for notice in notices:
+                        if not isinstance(notice, dict):
+                            continue
+                        severity = notice.get("severity", "info")
+                        message = (
+                            f"[{notice.get('code', 'notice')}] "
+                            f"{notice.get('message', '')}"
+                        )
+                        if severity == "error":
+                            st.error(message)
+                        elif severity == "warning":
+                            st.warning(message)
+                        else:
+                            st.info(message)
+
+    st.write("#### Additional Wikibase Statements (Outside Profile)")
+    if not additional:
+        st.caption("No additional outside-profile statements detected.")
+    else:
+        for evaluation in additional:
+            statement_uri = evaluation.get("statement_uri")
+            status = evaluation.get("status") or "unknown"
+            outcome = evaluation.get("outcome") or "unknown"
+            statement_label = str(statement_uri or "unknown statement")
+            with st.expander(
+                f"{_entity_id_from_uri(statement_label)} | status={status} | outcome={outcome}",
+                expanded=False,
+            ):
+                st.caption(f"statement_uri: {statement_label}")
+                json_path = evaluation.get("json_path") or ""
+                if json_path:
+                    st.caption(f"path: {json_path}")
+                notices = evaluation.get("notices")
+                if isinstance(notices, list) and notices:
+                    for notice in notices:
+                        if isinstance(notice, dict):
+                            st.info(
+                                f"[{notice.get('code', 'notice')}] {notice.get('message', '')}"
+                            )
+
+
 def render_entity_sidebar() -> None:
     packet = st.session_state.packet or {}
     entities = _packet_entities(packet)
@@ -823,6 +984,10 @@ def render_review_step() -> None:
             notices=notices,
         )
     _render_grouped_review_sections(sections, ungrouped_notices)
+
+    if entity_slot:
+        st.write("### Conformance Evaluation")
+        _render_conformance_statement_sections(entity_slot=entity_slot, packet=packet)
 
     blocking_errors = [n for n in notices if n.severity == "error"]
     if blocking_errors:
