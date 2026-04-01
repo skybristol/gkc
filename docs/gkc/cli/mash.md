@@ -13,8 +13,65 @@ The name "mash" comes from the distillery metaphor—like grain that's been mill
 - Wikidata properties (PID)
 - Wikidata EntitySchemas (EID)
 - Wikipedia templates
+- Data Distillery Wikibase revision checking and cache refresh
 
 **Future implementations:** CSV files, JSON APIs, dataframes
+
+---
+
+## Check Wikibase Revisions
+
+```bash
+gkc mash check-wikibase-revisions [options]
+```
+
+Check MediaWiki recentchanges for Data Distillery Wikibase entity updates without mutating cache files.
+
+### Common options
+
+- `--since <ISO8601>`: Explicit watermark timestamp
+- `--cache-dir <path>`: Optional source for deriving watermark when `--since` is omitted
+- `--overlap-seconds <int>`: Safety overlap window (default: `60`)
+- `--ignore-id <QID/PID>`: Repeatable ID ignore filter
+- `--output <path>`: Write JSON summary artifact
+
+### Example
+
+```bash
+gkc mash check-wikibase-revisions \
+  --since 2026-03-13T16:00:00Z \
+  --ignore-id Q1 \
+  --ignore-id P1
+```
+
+## Cache Wikibase Revisions
+
+```bash
+gkc mash cache-wikibase-revisions --cache-dir <path> [options]
+```
+
+Refresh SpiritSafe entity cache files from recentchanges-derived entity IDs.
+
+### Common options
+
+- `--cache-dir <path>`: Required cache directory (for example `cache/entities`)
+- `--since <ISO8601>`: Explicit watermark timestamp
+- `--api-url <url>`: Override Data Distillery API URL
+- `--source-endpoint <url>`: Optional metadata label for cache records
+- `--overlap-seconds <int>`: Safety overlap window (default: `60`)
+- `--ignore-id <QID/PID>`: Repeatable ID ignore filter
+- `--output <path>`: Write JSON summary artifact
+
+### Example
+
+```bash
+gkc mash cache-wikibase-revisions \
+  --cache-dir /path/to/SpiritSafe/cache/entities \
+  --ignore-id Q1 \
+  --ignore-id P1 \
+  --ignore-id P2 \
+  --output /path/to/SpiritSafe/cache/refresh/last_run_summary.json
+```
 
 ---
 

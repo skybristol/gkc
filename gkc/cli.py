@@ -6,7 +6,6 @@ Plain meaning: Run GKC tasks from the terminal.
 from __future__ import annotations
 
 import argparse
-import getpass
 import json
 import sys
 from pathlib import Path
@@ -20,11 +19,11 @@ from gkc.mash import (
     WikipediaLoader,
     apply_item_property_filters,
     apply_template_language_filter,
+    fetch_recent_entity_changes,
     get_latest_cache_timestamp,
     refresh_entity_cache_from_recentchanges,
 )
 from gkc.runtime_config import DEFAULT_USER_AGENT, get_wikibase_runtime_config
-from gkc.shipper import WikibaseShipper
 from gkc.sitelinks import (
     DEFAULT_WIKIMEDIA_SITEMATRIX_URL,
     export_wikimedia_sites_artifact,
@@ -42,12 +41,6 @@ from gkc.spirit_safe import (
     validate_packet_structure,
 )
 from gkc.still_charger import create_curation_packet
-from gkc.wikibase import (
-    build_wikibase_cache,
-    build_wikibase_write_plan,
-    execute_wikibase_write_plan,
-    export_profile_graph_to_entity_cache,
-)
 
 
 class CLIError(Exception):
@@ -61,7 +54,7 @@ def _normalize_global_flag_positions(argv: list[str]) -> list[str]:
     """Allow global flags to be passed after nested subcommands.
 
     Moves known global flags to the front while preserving relative order,
-    so invocations like ``gkc wikibase init --verbose`` are accepted.
+    so invocations like ``gkc mash qid Q42 --verbose`` are accepted.
     """
 
     global_flags = {"--json", "--verbose"}
@@ -346,6 +339,85 @@ def _build_parser() -> argparse.ArgumentParser:
     mash_wp_template.set_defaults(
         handler=_handle_mash_wp_template,
         command_path="mash.wp_template",
+    )
+
+    mash_check_wikibase_revisions = mash_subparsers.add_parser(
+        "check-wikibase-revisions",
+        help="Check recent MediaWiki revisions affecting Wikibase entities",
+    )
+    mash_check_wikibase_revisions.add_argument(
+        "--api-url",
+        help="Override the Data Distillery API URL (default: DD_WB_API_URL env var)",
+    )
+    mash_check_wikibase_revisions.add_argument(
+        "--since",
+        help="Explicit recentchanges watermark timestamp (ISO 8601)",
+    )
+    mash_check_wikibase_revisions.add_argument(
+        "--cache-dir",
+        help="Optional cache directory used to infer watermark when --since is omitted",
+    )
+    mash_check_wikibase_revisions.add_argument(
+        "--overlap-seconds",
+        type=int,
+        default=60,
+        help="Safety overlap window applied to watermark polling (default: 60)",
+    )
+    mash_check_wikibase_revisions.add_argument(
+        "--ignore-id",
+        action="append",
+        dest="ignore_ids",
+        help="Entity ID to ignore during change discovery (repeatable)",
+    )
+    mash_check_wikibase_revisions.add_argument(
+        "--output",
+        help="Optional output path for revision-check summary JSON",
+    )
+    mash_check_wikibase_revisions.set_defaults(
+        handler=_handle_mash_check_wikibase_revisions,
+        command_path="mash.check-wikibase-revisions",
+    )
+
+    mash_cache_wikibase_revisions = mash_subparsers.add_parser(
+        "cache-wikibase-revisions",
+        help="Refresh Wikibase entity cache from MediaWiki recentchanges",
+    )
+    mash_cache_wikibase_revisions.add_argument(
+        "--cache-dir",
+        required=True,
+        help="Directory containing per-entity cache files",
+    )
+    mash_cache_wikibase_revisions.add_argument(
+        "--api-url",
+        help="Override the Data Distillery API URL (default: DD_WB_API_URL env var)",
+    )
+    mash_cache_wikibase_revisions.add_argument(
+        "--source-endpoint",
+        help="Optional source endpoint label recorded in refreshed cache metadata",
+    )
+    mash_cache_wikibase_revisions.add_argument(
+        "--since",
+        help="Explicit recentchanges watermark timestamp (ISO 8601)",
+    )
+    mash_cache_wikibase_revisions.add_argument(
+        "--overlap-seconds",
+        type=int,
+        default=60,
+        help="Safety overlap window applied to watermark polling (default: 60)",
+    )
+    mash_cache_wikibase_revisions.add_argument(
+        "--ignore-id",
+        action="append",
+        dest="ignore_ids",
+        help="Entity ID to ignore during change refresh (repeatable)",
+    )
+    mash_cache_wikibase_revisions.add_argument(
+        "--output",
+        help="Optional output path for refresh summary JSON",
+    )
+    mash_cache_wikibase_revisions.set_defaults(
+        handler=_handle_mash_cache_wikibase_revisions,
+        command_path="mash.cache-wikibase-revisions",
     )
 
     # ShEx validation commands
@@ -814,294 +886,6 @@ def _build_parser() -> argparse.ArgumentParser:
     packet_charge.set_defaults(
         handler=_handle_packet_charge,
         command_path="packet.charge",
-    )
-
-    # Wikibase commands
-    wikibase_parser = subparsers.add_parser(
-        "wikibase", help="Data Distillery Wikibase operations"
-    )
-    wikibase_subparsers = wikibase_parser.add_subparsers(dest="wikibase_command")
-
-    wikibase_plan_write = wikibase_subparsers.add_parser(
-        "plan-write",
-        help="Build and inspect packet->charge->barrel write plan",
-    )
-    wikibase_plan_write.add_argument(
-        "--profile",
-        required=True,
-        help="Primary profile ID for packet generation",
-    )
-    wikibase_plan_write.add_argument(
-        "--source-values-file",
-        required=True,
-        help="Path to JSON mapping of entity/profile IDs to values for charging",
-    )
-    wikibase_plan_write.add_argument(
-        "--property-map-file",
-        help="Optional path to JSON mapping statement IDs to property IDs",
-    )
-    wikibase_plan_write.add_argument(
-        "--mode",
-        choices=["single", "bulk"],
-        default="single",
-        help="Packet operation mode (default: single)",
-    )
-    wikibase_plan_write.add_argument(
-        "--depth",
-        type=int,
-        default=1,
-        help="Related profile depth when mode=bulk (default: 1)",
-    )
-    wikibase_plan_write.add_argument(
-        "--strict-charging",
-        action="store_true",
-        help="Disable specificationless charging (unknown statements become errors)",
-    )
-    wikibase_plan_write.add_argument(
-        "--with-shipper-plan",
-        action="store_true",
-        help="Also run shipper.plan_batch and include diff summary",
-    )
-    wikibase_plan_write.add_argument(
-        "--api-url",
-        help="Override the Data Distillery API URL (default: DD_WB_API_URL env var)",
-    )
-    wikibase_plan_write.add_argument(
-        "--interactive",
-        action="store_true",
-        help="Prompt for Data Distillery credentials if not found",
-    )
-    wikibase_plan_write.add_argument(
-        "--require-auth",
-        action="store_true",
-        help="Fail if authenticated shipper planning cannot be established",
-    )
-    wikibase_plan_write.add_argument(
-        "--output",
-        help="Optional path to write full plan JSON",
-    )
-    _add_profile_source_args(wikibase_plan_write)
-    wikibase_plan_write.set_defaults(
-        handler=_handle_wikibase_plan_write,
-        command_path="wikibase.plan-write",
-    )
-
-    wikibase_execute_write = wikibase_subparsers.add_parser(
-        "execute-write",
-        help="Replay packet->charge->barrel operations through shipper writes",
-    )
-    wikibase_execute_write.add_argument(
-        "--profile",
-        required=True,
-        help="Primary profile ID for packet generation",
-    )
-    wikibase_execute_write.add_argument(
-        "--source-values-file",
-        required=True,
-        help="Path to JSON mapping of entity/profile IDs to values for charging",
-    )
-    wikibase_execute_write.add_argument(
-        "--property-map-file",
-        help="Optional path to JSON mapping statement IDs to property IDs",
-    )
-    wikibase_execute_write.add_argument(
-        "--mode",
-        choices=["single", "bulk"],
-        default="single",
-        help="Packet operation mode (default: single)",
-    )
-    wikibase_execute_write.add_argument(
-        "--depth",
-        type=int,
-        default=1,
-        help="Related profile depth when mode=bulk (default: 1)",
-    )
-    wikibase_execute_write.add_argument(
-        "--strict-charging",
-        action="store_true",
-        help="Disable specificationless charging (unknown statements become errors)",
-    )
-    wikibase_execute_write.add_argument(
-        "--api-url",
-        help="Override the Data Distillery API URL (default: DD_WB_API_URL env var)",
-    )
-    wikibase_execute_write.add_argument(
-        "--interactive",
-        action="store_true",
-        help="Prompt for Data Distillery credentials if not found",
-    )
-    wikibase_execute_write.add_argument(
-        "--dry-run",
-        action="store_true",
-        default=True,
-        help="Preview write submissions without posting changes (default: true)",
-    )
-    wikibase_execute_write.add_argument(
-        "--execute",
-        action="store_true",
-        help="Submit writes to Wikibase (overrides dry-run default)",
-    )
-    wikibase_execute_write.add_argument(
-        "--bot",
-        action="store_true",
-        help="Mark writes as bot edits",
-    )
-    wikibase_execute_write.add_argument(
-        "--summary",
-        default="gkc wikibase execute-write",
-        help="Edit summary prefix used for each write operation",
-    )
-    wikibase_execute_write.add_argument(
-        "--output",
-        help="Optional path to write full execute JSON",
-    )
-    _add_profile_source_args(wikibase_execute_write)
-    wikibase_execute_write.set_defaults(
-        handler=_handle_wikibase_execute_write,
-        command_path="wikibase.execute-write",
-    )
-
-    wikibase_profile_to_cache = wikibase_subparsers.add_parser(
-        "profile-to-cache",
-        help="Fetch profile-linked Wikibase entities and write per-entity cache files",
-    )
-    wikibase_profile_to_cache.add_argument(
-        "--profile-id",
-        action="append",
-        dest="profile_ids",
-        required=True,
-        help="Root profile QID (repeatable)",
-    )
-    wikibase_profile_to_cache.add_argument(
-        "--cache-dir",
-        required=True,
-        help="Output directory for per-entity cache files",
-    )
-    wikibase_profile_to_cache.add_argument(
-        "--api-url",
-        help="Override the Data Distillery API URL (default: DD_WB_API_URL env var)",
-    )
-    wikibase_profile_to_cache.add_argument(
-        "--source-endpoint",
-        help="Optional source endpoint label recorded in cache metadata",
-    )
-    wikibase_profile_to_cache.add_argument(
-        "--default-language",
-        default="mul",
-        help="Default language used for traversal diagnostics (default: mul)",
-    )
-    wikibase_profile_to_cache.add_argument(
-        "--max-hops",
-        type=int,
-        default=5,
-        help="Maximum traversal depth from profile roots (default: 5)",
-    )
-    wikibase_profile_to_cache.add_argument(
-        "--workflow-mode",
-        default="profile-entry",
-        help="Workflow mode label stored in cache metadata",
-    )
-    wikibase_profile_to_cache.add_argument(
-        "--output",
-        help="Optional output path for export summary JSON",
-    )
-    wikibase_profile_to_cache.set_defaults(
-        handler=_handle_wikibase_profile_to_cache,
-        command_path="wikibase.profile-to-cache",
-    )
-
-    wikibase_cache_builder = wikibase_subparsers.add_parser(
-        "cache-builder",
-        help=(
-            "Build and reconcile per-entity cache files from SPARQL-derived "
-            "profile-linked identifiers"
-        ),
-    )
-    wikibase_cache_builder.add_argument(
-        "--cache-dir",
-        required=True,
-        help="Directory containing per-entity cache files",
-    )
-    wikibase_cache_builder.add_argument(
-        "--api-url",
-        help="Override the Data Distillery API URL (default: DD_WB_API_URL env var)",
-    )
-    wikibase_cache_builder.add_argument(
-        "--sparql-endpoint",
-        default=runtime_config.sparql_endpoint,
-        help=(
-            "SPARQL endpoint URL "
-            "(default: DD_WB_SPARQL_ENDPOINT env var or Wikidata Query Service)"
-        ),
-    )
-    wikibase_cache_builder.add_argument(
-        "--wikibase-base-uri",
-        default="https://datadistillery.wikibase.cloud",
-        help="Wikibase base URI used to identify local Q/P IDs",
-    )
-    wikibase_cache_builder.add_argument(
-        "--profile-class-id",
-        default="Q3",
-        help="Profile class item ID used as SPARQL root classifier (default: Q3)",
-    )
-    wikibase_cache_builder.add_argument(
-        "--source-endpoint",
-        help="Optional source endpoint label recorded in cache metadata",
-    )
-    wikibase_cache_builder.add_argument(
-        "--workflow-mode",
-        default="cache-builder",
-        help="Workflow mode label stored in cache metadata",
-    )
-    wikibase_cache_builder.add_argument(
-        "--output",
-        help="Optional output path for cache build summary JSON",
-    )
-    wikibase_cache_builder.set_defaults(
-        handler=_handle_wikibase_cache_builder,
-        command_path="wikibase.cache-builder",
-    )
-
-    wikibase_check_for_revisions = wikibase_subparsers.add_parser(
-        "check-for-revisions",
-        help="Poll recentchanges and refresh per-entity cache files",
-    )
-    wikibase_check_for_revisions.add_argument(
-        "--cache-dir",
-        required=True,
-        help="Directory containing per-entity cache files",
-    )
-    wikibase_check_for_revisions.add_argument(
-        "--api-url",
-        help="Override the Data Distillery API URL (default: DD_WB_API_URL env var)",
-    )
-    wikibase_check_for_revisions.add_argument(
-        "--source-endpoint",
-        help="Optional source endpoint label recorded in refreshed cache metadata",
-    )
-    wikibase_check_for_revisions.add_argument(
-        "--since",
-        help="Explicit recentchanges watermark timestamp (ISO 8601)",
-    )
-    wikibase_check_for_revisions.add_argument(
-        "--overlap-seconds",
-        type=int,
-        default=60,
-        help="Safety overlap window applied to watermark polling (default: 60)",
-    )
-    wikibase_check_for_revisions.add_argument(
-        "--ignore-id",
-        action="append",
-        dest="ignore_ids",
-        help="Entity ID to ignore during change refresh (repeatable)",
-    )
-    wikibase_check_for_revisions.add_argument(
-        "--output",
-        help="Optional output path for refresh summary JSON",
-    )
-    wikibase_check_for_revisions.set_defaults(
-        handler=_handle_wikibase_check_for_revisions,
-        command_path="wikibase.check-for-revisions",
     )
 
     return parser
@@ -2811,475 +2595,61 @@ def _handle_packet_charge(args: argparse.Namespace) -> dict[str, Any]:
         _restore_source_override(previous_source, source_overridden)
 
 
-def _handle_wikibase_plan_write(args: argparse.Namespace) -> dict[str, Any]:
-    """Build packet->charge->barrel write plan and show logical path."""
-    previous_source, source_overridden = _apply_source_override(args)
-
-    try:
-        source_values_path = Path(args.source_values_file)
-        if not source_values_path.exists():
-            raise CLIError(f"Source values file not found: {source_values_path}")
-
-        try:
-            source_values = json.loads(source_values_path.read_text(encoding="utf-8"))
-        except json.JSONDecodeError as exc:
-            raise CLIError(f"Invalid JSON in source values file: {exc}") from exc
-
-        if not isinstance(source_values, dict):
-            raise CLIError("Source values JSON must be an object mapping IDs to values")
-
-        property_id_map = None
-        if args.property_map_file:
-            property_map_path = Path(args.property_map_file)
-            if not property_map_path.exists():
-                raise CLIError(f"Property map file not found: {property_map_path}")
-            try:
-                raw_property_map = json.loads(
-                    property_map_path.read_text(encoding="utf-8")
-                )
-            except json.JSONDecodeError as exc:
-                raise CLIError(f"Invalid JSON in property map file: {exc}") from exc
-
-            if not isinstance(raw_property_map, dict):
-                raise CLIError("Property map JSON must be an object")
-
-            property_id_map = {
-                str(key).casefold(): str(value).upper()
-                for key, value in raw_property_map.items()
-            }
-
-        shipper = None
-        auth_mode = "anonymous"
-        auth_warning: Optional[str] = None
-        api_url = None
-
-        if args.with_shipper_plan:
-            runtime_config = get_wikibase_runtime_config()
-            api_url = args.api_url or runtime_config.api_url
-
-            auth = WikiverseAuth(
-                username=runtime_config.username,
-                password=runtime_config.password,
-                interactive=args.interactive,
-                api_url=api_url,
-            )
-            if auth.is_authenticated():
-                try:
-                    auth.login()
-                    auth_mode = "authenticated"
-                except AuthenticationError as exc:
-                    if args.require_auth:
-                        raise CLIError(str(exc)) from exc
-                    auth_warning = (
-                        "Authentication failed; shipper planning ran anonymously: "
-                        f"{exc}"
-                    )
-            elif args.require_auth:
-                raise CLIError(
-                    "Authenticated shipper planning requested but no credentials "
-                    "were provided (set DD_WB_USERNAME/DD_WB_PASSWORD or use --interactive)."
-                )
-
-            shipper = WikibaseShipper(auth=auth, api_url=api_url, dry_run_default=True)
-
-        result = build_wikibase_write_plan(
-            profile_id=args.profile,
-            source_values=source_values,
-            operation_mode=args.mode,
-            depth=args.depth,
-            specificationless=not args.strict_charging,
-            property_id_map=property_id_map,
-            shipper=shipper,
-        )
-
-        logical_path = [
-            "still_charger.create_curation_packet",
-            (
-                "still_charger.charge_curation_packet"
-                + (" [specificationless]" if not args.strict_charging else " [strict]")
-            ),
-            "wikibase.orchestration.barrel_curation_packet_to_wikibase_plan",
-        ]
-
-        if args.with_shipper_plan:
-            logical_path.append("shipper.plan_batch")
-        else:
-            logical_path.append(
-                "shipper.plan_batch (optional; not executed in this command)"
-            )
-
-        summary = {
-            "packet_id": result.packet.get("packet_id"),
-            "profile": args.profile,
-            "operation_mode": args.mode,
-            "depth": args.depth,
-            "entities_in_packet": len(result.packet.get("entities", [])),
-            "entities_charged": result.charge_report.entities_charged,
-            "entities_skipped": result.charge_report.entities_skipped,
-            "charge_issues": len(result.charge_report.issues),
-            "operations_created": result.barrel_report.operations_created,
-            "barrel_issues": len(result.barrel_report.issues),
-        }
-
-        operations_preview = result.operations[:10]
-        output_payload = {
-            "logical_path": logical_path,
-            "summary": summary,
-            "operations": result.operations,
-            "charge_report": {
-                "entities_charged": result.charge_report.entities_charged,
-                "entities_skipped": result.charge_report.entities_skipped,
-                "issues": [
-                    {
-                        "severity": issue.severity,
-                        "entity_id": issue.entity_id,
-                        "field": issue.field,
-                        "message": issue.message,
-                    }
-                    for issue in result.charge_report.issues
-                ],
-            },
-            "barrel_report": {
-                "operations_created": result.barrel_report.operations_created,
-                "entities_skipped": result.barrel_report.entities_skipped,
-                "issues": [
-                    {
-                        "severity": issue.severity,
-                        "entity_id": issue.entity_id,
-                        "field": issue.field,
-                        "message": issue.message,
-                    }
-                    for issue in result.barrel_report.issues
-                ],
-            },
-        }
-
-        if result.diff_plan is not None:
-            output_payload["shipper_plan"] = result.diff_plan.to_dict()
-
-        if args.output:
-            output_path = Path(args.output)
-            output_path.parent.mkdir(parents=True, exist_ok=True)
-            output_path.write_text(
-                json.dumps(output_payload, indent=2), encoding="utf-8"
-            )
-
-        message = (
-            "✓ Built write plan via shared pipeline "
-            f"({summary['operations_created']} operation(s))"
-        )
-
-        details: dict[str, Any] = {
-            "logical_path": logical_path,
-            **summary,
-            "operations_preview": operations_preview,
-        }
-        if result.diff_plan is not None:
-            details["shipper_plan_summary"] = dict(result.diff_plan.summary)
-            details["shipper_plan_preview"] = [
-                operation.to_dict() for operation in result.diff_plan.operations[:10]
-            ]
-            details["auth_mode"] = auth_mode
-            if api_url:
-                details["api_url"] = api_url
-            if auth_warning:
-                details["warning"] = auth_warning
-        if args.output:
-            details["output_file"] = str(Path(args.output).resolve())
-
-        return {
-            "command": args.command_path,
-            "ok": True,
-            "message": message,
-            "details": details,
-        }
-    except Exception as exc:
-        raise CLIError(str(exc)) from exc
-    finally:
-        _restore_source_override(previous_source, source_overridden)
-
-
-def _handle_wikibase_execute_write(args: argparse.Namespace) -> dict[str, Any]:
-    """Replay write operations from shared planning pipeline through shipper."""
-    previous_source, source_overridden = _apply_source_override(args)
-
-    try:
-        source_values_path = Path(args.source_values_file)
-        if not source_values_path.exists():
-            raise CLIError(f"Source values file not found: {source_values_path}")
-
-        try:
-            source_values = json.loads(source_values_path.read_text(encoding="utf-8"))
-        except json.JSONDecodeError as exc:
-            raise CLIError(f"Invalid JSON in source values file: {exc}") from exc
-
-        if not isinstance(source_values, dict):
-            raise CLIError("Source values JSON must be an object mapping IDs to values")
-
-        property_id_map = None
-        if args.property_map_file:
-            property_map_path = Path(args.property_map_file)
-            if not property_map_path.exists():
-                raise CLIError(f"Property map file not found: {property_map_path}")
-
-            try:
-                raw_property_map = json.loads(
-                    property_map_path.read_text(encoding="utf-8")
-                )
-            except json.JSONDecodeError as exc:
-                raise CLIError(f"Invalid JSON in property map file: {exc}") from exc
-
-            if not isinstance(raw_property_map, dict):
-                raise CLIError("Property map JSON must be an object")
-
-            property_id_map = {
-                str(key).casefold(): str(value).upper()
-                for key, value in raw_property_map.items()
-            }
-
-        runtime_config = get_wikibase_runtime_config()
-        api_url = args.api_url or runtime_config.api_url
-
-        auth = WikiverseAuth(
-            username=runtime_config.username,
-            password=runtime_config.password,
-            interactive=args.interactive,
-            api_url=api_url,
-        )
-
-        # Execute-write is an authenticated promotion step by design.
-        try:
-            if auth.is_authenticated():
-                auth.login()
-            elif args.interactive:
-                username = input(
-                    "Enter Data Distillery username (format: Username@BotName): "
-                ).strip()
-                password = getpass.getpass("Enter Data Distillery password: ").strip()
-                auth = WikiverseAuth(
-                    username=username,
-                    password=password,
-                    interactive=False,
-                    api_url=api_url,
-                )
-                auth.login()
-            else:
-                raise CLIError(
-                    "Wikibase execute-write requires authentication; set DD_WB_USERNAME and DD_WB_PASSWORD or use --interactive"
-                )
-        except AuthenticationError as exc:
-            if args.interactive:
-                print("Authentication failed. Please enter new credentials.")
-                username = input(
-                    "Enter Data Distillery username (format: Username@BotName): "
-                ).strip()
-                password = getpass.getpass("Enter Data Distillery password: ").strip()
-                auth = WikiverseAuth(
-                    username=username,
-                    password=password,
-                    interactive=False,
-                    api_url=api_url,
-                )
-                auth.login()
-            else:
-                raise CLIError(str(exc)) from exc
-
-        shipper = WikibaseShipper(auth=auth, api_url=api_url, dry_run_default=True)
-        dry_run = not args.execute
-
-        result = execute_wikibase_write_plan(
-            profile_id=args.profile,
-            source_values=source_values,
-            shipper=shipper,
-            operation_mode=args.mode,
-            depth=args.depth,
-            specificationless=not args.strict_charging,
-            property_id_map=property_id_map,
-            write_summary=args.summary,
-            dry_run=dry_run,
-            bot=args.bot,
-        )
-
-        logical_path = [
-            "still_charger.create_curation_packet",
-            (
-                "still_charger.charge_curation_packet"
-                + (" [specificationless]" if not args.strict_charging else " [strict]")
-            ),
-            "wikibase.orchestration.barrel_curation_packet_to_wikibase_plan",
-            "shipper.write_item/write_property",
-        ]
-
-        write_results_preview = [
-            write_result.to_dict() for write_result in result.write_results[:10]
-        ]
-
-        summary = {
-            "packet_id": result.plan.packet.get("packet_id"),
-            "profile": args.profile,
-            "operation_mode": args.mode,
-            "depth": args.depth,
-            "entities_in_packet": len(result.plan.packet.get("entities", [])),
-            "entities_charged": result.plan.charge_report.entities_charged,
-            "entities_skipped": result.plan.charge_report.entities_skipped,
-            "charge_issues": len(result.plan.charge_report.issues),
-            "operations_created": result.plan.barrel_report.operations_created,
-            "barrel_issues": len(result.plan.barrel_report.issues),
-            "write_summary": dict(result.write_summary),
-            "dry_run": dry_run,
-            "auth_mode": "authenticated",
-            "api_url": api_url,
-            "bot": bool(args.bot),
-            "summary": args.summary,
-        }
-
-        output_payload = {
-            "logical_path": logical_path,
-            "summary": summary,
-            "operations": result.plan.operations,
-            "write_results": [
-                write_result.to_dict() for write_result in result.write_results
-            ],
-            "charge_report": {
-                "entities_charged": result.plan.charge_report.entities_charged,
-                "entities_skipped": result.plan.charge_report.entities_skipped,
-                "issues": [
-                    {
-                        "severity": issue.severity,
-                        "entity_id": issue.entity_id,
-                        "field": issue.field,
-                        "message": issue.message,
-                    }
-                    for issue in result.plan.charge_report.issues
-                ],
-            },
-            "barrel_report": {
-                "operations_created": result.plan.barrel_report.operations_created,
-                "entities_skipped": result.plan.barrel_report.entities_skipped,
-                "issues": [
-                    {
-                        "severity": issue.severity,
-                        "entity_id": issue.entity_id,
-                        "field": issue.field,
-                        "message": issue.message,
-                    }
-                    for issue in result.plan.barrel_report.issues
-                ],
-            },
-        }
-
-        if result.plan.diff_plan is not None:
-            output_payload["shipper_plan"] = result.plan.diff_plan.to_dict()
-
-        if args.output:
-            output_path = Path(args.output)
-            output_path.parent.mkdir(parents=True, exist_ok=True)
-            output_path.write_text(
-                json.dumps(output_payload, indent=2), encoding="utf-8"
-            )
-
-        if dry_run:
-            message = (
-                "✓ Replayed write operations in DRY RUN mode "
-                f"({result.write_summary['dry_run']} operation(s))"
-            )
-        else:
-            message = (
-                "✓ Submitted write operations "
-                f"({result.write_summary['submitted']} submitted, "
-                f"{result.write_summary['error']} error, "
-                f"{result.write_summary['blocked']} blocked)"
-            )
-
-        details: dict[str, Any] = {
-            "logical_path": logical_path,
-            **summary,
-            "operations_preview": result.plan.operations[:10],
-            "write_results_preview": write_results_preview,
-        }
-
-        if result.plan.diff_plan is not None:
-            details["shipper_plan_summary"] = dict(result.plan.diff_plan.summary)
-            details["shipper_plan_preview"] = [
-                operation.to_dict()
-                for operation in result.plan.diff_plan.operations[:10]
-            ]
-
-        if args.output:
-            details["output_file"] = str(Path(args.output).resolve())
-
-        ok = result.write_summary["error"] == 0 and result.write_summary["blocked"] == 0
-
-        return {
-            "command": args.command_path,
-            "ok": ok,
-            "message": message,
-            "details": details,
-        }
-    except Exception as exc:
-        raise CLIError(str(exc)) from exc
-    finally:
-        _restore_source_override(previous_source, source_overridden)
-
-
-def _handle_wikibase_profile_to_cache(args: argparse.Namespace) -> dict[str, Any]:
-    """Export profile-linked Wikibase entities into per-entity cache files."""
+def _handle_mash_check_wikibase_revisions(args: argparse.Namespace) -> dict[str, Any]:
+    """Check recent MediaWiki revisions affecting Wikibase entity pages."""
     runtime_config = get_wikibase_runtime_config()
     api_url = args.api_url or runtime_config.api_url
 
     try:
         api_client = WikibaseApiClient(api_url=api_url)
-        export_result = export_profile_graph_to_entity_cache(
-            profile_ids=list(args.profile_ids),
+        resolved_since = args.since
+        if not resolved_since and args.cache_dir:
+            resolved_since = get_latest_cache_timestamp(args.cache_dir)
+        if not resolved_since:
+            raise CLIError(
+                "No watermark available; provide --since or --cache-dir with existing cache metadata"
+            )
+
+        recent_result = fetch_recent_entity_changes(
             api_client=api_client,
-            cache_dir=args.cache_dir,
-            default_language=args.default_language,
-            max_hops=args.max_hops,
-            source_endpoint=args.source_endpoint,
-            workflow_mode=args.workflow_mode,
+            since=resolved_since,
+            overlap_seconds=args.overlap_seconds,
+            ignore_ids=set(args.ignore_ids or []),
         )
 
         output_payload = {
             "metadata": {
                 "api_url": api_url,
-                "cache_dir": export_result.cache_dir,
-                "profile_ids": list(args.profile_ids),
-                "workflow_mode": args.workflow_mode,
-                "default_language": args.default_language,
-                "max_hops": args.max_hops,
+                "since": recent_result.since,
+                "next_since": recent_result.next_since,
+                "overlap_seconds": args.overlap_seconds,
             },
             "summary": {
-                "written_count": len(export_result.written_ids),
-                "skipped_count": len(export_result.skipped_ids),
-                "fetched_count": len(export_result.graph.raw_items),
-                "traversal_log_count": len(export_result.graph.traversal_log),
+                "changed_count": len(recent_result.changed_ids),
+                "ignored_count": len(recent_result.ignored_ids),
+                "recentchanges_count": len(recent_result.recentchanges),
             },
-            "written_ids": export_result.written_ids,
-            "skipped_ids": export_result.skipped_ids,
-            "traversal_log": export_result.graph.traversal_log,
+            "changed_ids": recent_result.changed_ids,
+            "ignored_ids": recent_result.ignored_ids,
         }
 
         if args.output:
             output_path = Path(args.output)
             output_path.parent.mkdir(parents=True, exist_ok=True)
             output_path.write_text(
-                json.dumps(output_payload, indent=2),
-                encoding="utf-8",
+                json.dumps(output_payload, indent=2), encoding="utf-8"
             )
 
         details: dict[str, Any] = {
             "api_url": api_url,
-            "cache_dir": export_result.cache_dir,
-            "profile_ids": list(args.profile_ids),
-            "workflow_mode": args.workflow_mode,
-            "default_language": args.default_language,
-            "max_hops": args.max_hops,
-            "written_count": len(export_result.written_ids),
-            "skipped_count": len(export_result.skipped_ids),
-            "fetched_count": len(export_result.graph.raw_items),
-            "written_ids_preview": export_result.written_ids[:20],
-            "skipped_ids_preview": export_result.skipped_ids[:20],
-            "traversal_log_preview": export_result.graph.traversal_log[:20],
+            "since": recent_result.since,
+            "next_since": recent_result.next_since,
+            "overlap_seconds": args.overlap_seconds,
+            "changed_count": len(recent_result.changed_ids),
+            "ignored_count": len(recent_result.ignored_ids),
+            "recentchanges_count": len(recent_result.recentchanges),
+            "changed_ids_preview": recent_result.changed_ids[:20],
+            "ignored_ids_preview": recent_result.ignored_ids[:20],
         }
 
         if args.output:
@@ -3289,103 +2659,20 @@ def _handle_wikibase_profile_to_cache(args: argparse.Namespace) -> dict[str, Any
             "command": args.command_path,
             "ok": True,
             "message": (
-                "✓ Profile-to-cache export complete: "
-                f"{len(export_result.written_ids)} cached, "
-                f"{len(export_result.skipped_ids)} skipped"
+                "✓ Recentchanges revision check complete: "
+                f"{len(recent_result.changed_ids)} changed, "
+                f"{len(recent_result.ignored_ids)} ignored"
             ),
             "details": details,
         }
+    except CLIError:
+        raise
     except Exception as exc:
         raise CLIError(str(exc)) from exc
 
 
-def _handle_wikibase_cache_builder(args: argparse.Namespace) -> dict[str, Any]:
-    """Run SPARQL-driven full cache build and reconciliation."""
-    runtime_config = get_wikibase_runtime_config()
-    api_url = args.api_url or runtime_config.api_url
-
-    summary_output = args.output
-    if not summary_output:
-        summary_output = str(
-            Path(args.cache_dir).parent / "refresh" / "last_run_summary.json"
-        )
-
-    auth: Optional[WikiverseAuth] = None
-    auth_mode = "anonymous"
-    auth_warning: Optional[str] = None
-
-    runtime_has_creds = bool(runtime_config.username and runtime_config.password)
-    if runtime_has_creds:
-        candidate = WikiverseAuth(
-            username=runtime_config.username,
-            password=runtime_config.password,
-            interactive=False,
-            api_url=api_url,
-        )
-        if candidate.is_authenticated():
-            try:
-                candidate.login()
-                auth = candidate
-                auth_mode = "authenticated"
-            except AuthenticationError as exc:
-                auth_warning = (
-                    "Authentication failed; continuing anonymously for cache build: "
-                    f"{exc}"
-                )
-
-    try:
-        build_result = build_wikibase_cache(
-            sparql_endpoint=args.sparql_endpoint,
-            api_url=api_url,
-            cache_dir=args.cache_dir,
-            wikibase_base_uri=args.wikibase_base_uri,
-            profile_class_id=args.profile_class_id,
-            source_endpoint=args.source_endpoint,
-            workflow_mode=args.workflow_mode,
-            summary_output=summary_output,
-            auth=auth,
-        )
-
-        details: dict[str, Any] = {
-            "api_url": api_url,
-            "sparql_endpoint": args.sparql_endpoint,
-            "wikibase_base_uri": args.wikibase_base_uri,
-            "profile_class_id": args.profile_class_id,
-            "cache_dir": build_result.cache_dir,
-            "summary_path": build_result.summary_path,
-            "auth_mode": auth_mode,
-            "queried_count": len(build_result.queried_ids),
-            "fetched_count": len(build_result.fetched_ids),
-            "written_count": len(build_result.written_ids),
-            "new_count": len(build_result.new_ids),
-            "changed_count": len(build_result.changed_ids),
-            "unchanged_count": len(build_result.unchanged_ids),
-            "deleted_count": len(build_result.deleted_ids),
-            "missing_count": len(build_result.missing_ids),
-            "new_ids_preview": build_result.new_ids[:20],
-            "changed_ids_preview": build_result.changed_ids[:20],
-            "deleted_ids_preview": build_result.deleted_ids[:20],
-            "missing_ids_preview": build_result.missing_ids[:20],
-        }
-        if auth_warning:
-            details["auth_warning"] = auth_warning
-
-        return {
-            "command": args.command_path,
-            "ok": True,
-            "message": (
-                "✓ Wikibase cache build complete: "
-                f"{len(build_result.written_ids)} written, "
-                f"{len(build_result.deleted_ids)} deleted"
-            ),
-            "details": details,
-        }
-    except Exception as exc:
-        raise CLIError(str(exc)) from exc
-
-
-def _handle_wikibase_check_for_revisions(args: argparse.Namespace) -> dict[str, Any]:
-    """Refresh entity cache files from MediaWiki recentchanges."""
+def _handle_mash_cache_wikibase_revisions(args: argparse.Namespace) -> dict[str, Any]:
+    """Refresh Wikibase entity cache files from MediaWiki recentchanges."""
     runtime_config = get_wikibase_runtime_config()
     api_url = args.api_url or runtime_config.api_url
 

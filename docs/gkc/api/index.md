@@ -20,12 +20,12 @@ GKC modules are grouped by their role in the distillery pipeline:
 | **Validation / Registry** | [spirit_safe](spirit_safe.md) | SpiritSafe source config, registry discovery, query hydration, and caching |
 | **Transform** | [bottler](bottler.md) | Transform data into Wikidata format |
 | **Deliver** | [shipper](shipper.md) | Submit data to Wikibase-compatible APIs |
-| **Registry / Orchestration** | [wikibase](wikibase.md) | Foundation audit/init and profile-driven write planning orchestration |
+| **Registry / Orchestration** | [spirit_safe](spirit_safe.md) | SpiritSafe registry and profile artifact orchestration |
 | **Utilities** | auth | Authentication for Wikidata and OSM |
 | | sitelinks | Manage Wikipedia sitelinks |
 | | [sparql](sparql.md) | Query Wikidata with SPARQL |
 | **Profiles** | [profiles](profiles.md) | Profile loading and validation |
-| **Ontology** | [ontology](ontology.md) | Two-layer ontology extraction from Data Distillery Wikibase |
+| **Ontology** | [spirit_safe](spirit_safe.md) | Data Distillery semantics materialized through SpiritSafe artifacts |
 
 ---
 
@@ -162,38 +162,15 @@ Submit data to Wikibase via the API.
 - `CommonsShipper` - Wikimedia Commons submission (planned)
 - `OpenStreetMapShipper` - OSM submission (planned)
 
-### [Wikibase](wikibase.md)
+### [Spirit Safe](spirit_safe.md)
 
-Coordinate foundation workflows and convert charged packets into shippable write operations.
-
-**Key classes/functions:**
-
-- `build_wikibase_write_plan()` - Build packet -> charge -> operation planning results
-- `execute_wikibase_write_plan()` - Replay planned operations through shipper writes
-- `barrel_curation_packet_to_wikibase_plan()` - Convert charged packets into plan operations
-- `BarrelPlanReport` and `BarrelIssue` - Structured write-planning diagnostics
-
-### [Wikibase](wikibase.md)
-
-Audit and initialize foundation ontology definitions for Data Distillery, and orchestrate packet-to-write planning.
+Own profile/materialization orchestration for Data Distillery semantics in runtime artifacts.
 
 **Key functions:**
 
-- `load_foundation_profiles()`
-- `audit_wikibase_foundation()`
-- `init_wikibase_foundation()`
-- `build_wikibase_write_plan()`
-
-### [Ontology](ontology.md)
-
-Extract ontology index and full profile graph data from Data Distillery Wikibase.
-
-**Key functions:**
-
-- `fetch_ontology_index()`
-- `fetch_profile_ids()`
-- `fetch_profile_graph()`
-- `resolve_statement_guidance()`
+- `export_entity_profile_json_documents()`
+- `export_spiritsafe_manifest()`
+- `hydrate_value_lists_from_cache()`
 
 ---
 

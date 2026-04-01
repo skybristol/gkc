@@ -107,10 +107,10 @@ Then verify command availability and connectivity:
 
 ```bash
 # Show command help
-gkc wikibase --help
+gkc mash --help
 
-# Read-only conformance check against foundation profiles
-gkc wikibase audit --require-auth
+# Read-only revision check against Data Distillery Wikibase
+gkc mash check-wikibase-revisions --since 2026-03-13T16:00:00Z
 ```
 
 ---
@@ -134,11 +134,10 @@ Most users begin with one of these paths:
 - Mash Tun -> Fermentation -> Distillation
 - Stop before output; focus on data cleaning and linking
 
-### Path D: Data Distillery foundation maintenance
+### Path D: Data Distillery cache synchronization
 
-- Run `gkc wikibase audit` to check foundation ontology conformance.
-- Run `gkc wikibase init` to preview missing entities/properties.
-- Run `gkc wikibase init --execute` only when you are ready to write.
+- Run `gkc mash check-wikibase-revisions` to inspect recent entity changes.
+- Run `gkc mash cache-wikibase-revisions --cache-dir <path>` to refresh SpiritSafe cache entities.
 
 ---
 

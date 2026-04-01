@@ -70,14 +70,13 @@ Launch the interactive Streamlit curation wizard from a profile reference.
 gkc wizard --profile Q4 --source local --local-root /path/to/SpiritSafe
 ```
 
-### [Wikibase](wikibase.md)
+### [Mash](mash.md) revision cache operations
 
-Audit and initialize Data Distillery foundation ontology terms from profile definitions, and build profile-driven write plans.
+Check Data Distillery Wikibase recentchanges and refresh SpiritSafe entity cache artifacts.
 
 ```bash
-gkc wikibase audit --require-auth
-gkc wikibase init --execute
-gkc wikibase plan-write --profile TribalGovernmentUS --source-values-file /tmp/gkc_plan_source_values.json
+gkc mash check-wikibase-revisions --since 2026-03-13T16:00:00Z
+gkc mash cache-wikibase-revisions --cache-dir /path/to/SpiritSafe/cache/entities
 ```
 
 ## Quick Start Examples

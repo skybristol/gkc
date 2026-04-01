@@ -115,34 +115,25 @@ except AuthenticationError as exc:
     print(f"Login failed: {exc}")
 ```
 
-### CLI Usage (`gkc wikibase audit`)
+### CLI Usage (`gkc mash cache-wikibase-revisions`)
 
-`gkc wikibase audit` reads Data Distillery settings from `DD_WB_*` variables.
+`gkc mash cache-wikibase-revisions` reads Data Distillery settings from `DD_WB_*` variables.
 
 - `DD_WB_API_URL`
 - `DD_WB_USERNAME`
 - `DD_WB_PASSWORD`
 - `DD_WB_SPARQL_ENDPOINT` (for SPARQL-based operations)
 
-Authentication in audit mode is optional by default:
-
-- If credentials work, audit runs authenticated.
-- If login fails, audit continues anonymously and reports a warning.
-- Use `--require-auth` to fail fast on login errors.
-
-`gkc wikibase init` is stricter than `audit` and requires successful authentication (environment credentials or `--interactive`).
+Authentication for revision-check/cache operations is optional by default.
 
 ### Validate Authentication and Session Behavior
 
 ```bash
-# Data Distillery foundation audit (anonymous allowed unless --require-auth)
-gkc wikibase audit --require-auth
+# Data Distillery recentchanges check
+gkc mash check-wikibase-revisions --since 2026-03-13T16:00:00Z
 
-# Data Distillery foundation init preview (dry-run default)
-gkc wikibase init
-
-# Execute writes explicitly
-gkc wikibase init --execute
+# Data Distillery cache refresh
+gkc mash cache-wikibase-revisions --cache-dir /path/to/SpiritSafe/cache/entities
 ```
 
 ## Making Authenticated API Requests
@@ -229,7 +220,7 @@ You can set the following environment variables for automatic authentication:
 - `DD_WB_PASSWORD` - Data Distillery account password
 - `DD_WB_SPARQL_ENDPOINT` - SPARQL endpoint for Data Distillery profile lookup hydration and related query operations
 
-`DD_WB_*` variables are used for Data Distillery flows (for example `gkc wikibase audit`) and are intentionally separate from `WIKIVERSE_*`.
+`DD_WB_*` variables are used for Data Distillery flows (for example `gkc mash cache-wikibase-revisions`) and are intentionally separate from `WIKIVERSE_*`.
 
 If you do not set `DD_WB_API_URL`, GKC defaults to Data Distillery (`https://datadistillery.wikibase.cloud/w/api.php`).
 
@@ -238,7 +229,7 @@ If you do not set `DD_WB_SPARQL_ENDPOINT`, GKC currently falls back to `https://
 ### Data Distillery Authentication Troubleshooting
 
 - **Login fails with valid-looking credentials**: verify you are using a Data Distillery account, not Wikimedia SUL bot-password credentials.
-- **`gkc wikibase init` exits with auth requirement message**: export both `DD_WB_USERNAME` and `DD_WB_PASSWORD`, or run with `--interactive`.
+- **Data Distillery cache commands fail with auth/session errors**: verify `DD_WB_API_URL` and credential values if you intend to run authenticated requests.
 - **Write succeeds in manual UI but fails via API**: confirm account permissions/group membership on Data Distillery include edit rights.
 
 ### OpenStreetMap
