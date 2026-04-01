@@ -97,6 +97,10 @@ def _extract_wikidata_property_id(target: Any) -> Optional[str]:
     return None
 
 
+def _looks_like_qid(value: Any) -> bool:
+    return isinstance(value, str) and value.startswith("Q") and value[1:].isdigit()
+
+
 def _profile_statement_routes(profile_meta: dict[str, Any]) -> list[dict[str, Any]]:
     """Return statement/property/profile routes for one profile.
 
@@ -1417,11 +1421,122 @@ def charge_packet_from_wikidata_items(
         packet, entity_profile_map, primary_entity, primary_qid, mash_client
     )
 
-    # Build charged packet with new structure
+    # Build charged packet while preserving packet-native scaffold slots.
     charged = deepcopy(packet)
 
-    # Populate data section with raw Wikibase JSON
-    charged["data"] = {"entities": data_entities}
+    raw_entity_by_qid: dict[str, dict[str, Any]] = {
+        entry.get("id"): entry.get("entity")
+        for entry in data_entities
+        if isinstance(entry, dict)
+        and isinstance(entry.get("id"), str)
+        and isinstance(entry.get("entity"), dict)
+    }
+
+    scaffold_entities = packet_entities(charged)
+    if not scaffold_entities:
+        charged["data"] = {"entities": data_entities}
+        charged["conformance"] = {
+            "entity_profile_map": entity_profile_map,
+            "statement_evaluations": statement_evaluations,
+        }
+        charged["operation_mode"] = "edit"
+        notices: list[ConformanceNotice] = []
+        return charged, notices
+
+    profiles_meta = charged.get("metadata", {}).get("profiles", [])
+    if not isinstance(profiles_meta, list):
+        profiles_meta = []
+
+    def _profile_meta_for_entity(
+        entity_slot: dict[str, Any],
+    ) -> Optional[dict[str, Any]]:
+        profile_uri = entity_slot.get("id")
+        profile_name = entity_slot.get("profile")
+        for profile_meta in profiles_meta:
+            if not isinstance(profile_meta, dict):
+                continue
+            if profile_uri and profile_meta.get("id") == profile_uri:
+                return profile_meta
+            if profile_name and profile_meta.get("name_identifier") == profile_name:
+                return profile_meta
+        return None
+
+    for entity_slot in scaffold_entities:
+        profile_uri = entity_slot.get("id")
+        profile_name = entity_slot.get("profile")
+
+        entity_qid = None
+        if isinstance(profile_uri, str):
+            entity_qid = qid_map.get(profile_uri)
+        if not entity_qid and isinstance(profile_name, str):
+            entity_qid = qid_map.get(profile_name)
+        if not entity_qid and isinstance(profile_uri, str):
+            for map_key, mapped_profile in entity_profile_map.items():
+                if mapped_profile == profile_uri and _looks_like_qid(map_key):
+                    entity_qid = map_key
+                    break
+
+        if not entity_qid:
+            continue
+
+        raw_entity = raw_entity_by_qid.get(entity_qid)
+        if not isinstance(raw_entity, dict):
+            continue
+
+        entity_slot["entity"] = raw_entity
+        entity_slot["wikibase_entity"] = raw_entity
+
+        labels_slot = entity_slot.get("labels")
+        if isinstance(labels_slot, dict):
+            _copy_language_values(labels_slot, raw_entity.get("labels"))
+
+        descriptions_slot = entity_slot.get("descriptions")
+        if isinstance(descriptions_slot, dict):
+            _copy_language_values(descriptions_slot, raw_entity.get("descriptions"))
+
+        aliases_slot = entity_slot.get("aliases")
+        if isinstance(aliases_slot, dict):
+            _copy_language_values(aliases_slot, raw_entity.get("aliases"), aliases=True)
+
+        profile_meta = _profile_meta_for_entity(entity_slot)
+        statements_slot = entity_slot.get("statements")
+        claims = (
+            raw_entity.get("claims")
+            if isinstance(raw_entity.get("claims"), dict)
+            else {}
+        )
+        if not isinstance(profile_meta, dict) or not isinstance(statements_slot, dict):
+            continue
+
+        statement_by_property, _ = _profile_statement_map(profile_meta)
+        uri_to_name = _statement_uri_to_name_identifier_map(profile_meta)
+
+        for property_id, statement_uri in statement_by_property.items():
+            property_claims = claims.get(property_id)
+            if not isinstance(property_claims, list):
+                continue
+
+            values = _claims_to_values(property_claims)
+            if not values:
+                continue
+
+            candidates: list[str] = []
+            statement_name = uri_to_name.get(statement_uri)
+            if isinstance(statement_name, str) and statement_name:
+                candidates.append(statement_name)
+            if isinstance(statement_uri, str) and statement_uri:
+                candidates.append(statement_uri.rstrip("/").split("/")[-1])
+                candidates.append(statement_uri)
+
+            slot_payload = None
+            for candidate in candidates:
+                payload = statements_slot.get(candidate)
+                if isinstance(payload, dict):
+                    slot_payload = payload
+                    break
+
+            if isinstance(slot_payload, dict):
+                slot_payload["data-value"] = values[0]
 
     # Populate conformance section
     conformance = {
@@ -1429,6 +1544,7 @@ def charge_packet_from_wikidata_items(
         "statement_evaluations": statement_evaluations,
     }
     charged["conformance"] = conformance
+    charged["operation_mode"] = "edit"
 
     # For now, return empty notices (will be populated by fermenter integration)
     notices: list[ConformanceNotice] = []

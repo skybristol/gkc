@@ -3,7 +3,9 @@
 from gkc.fermenter import ConformanceNotice
 from gkc.profiles.forms.streamlit_app import (
     _collect_review_consequences,
+    _conformance_evaluations_for_entity,
     _group_review_items,
+    _partition_conformance_evaluations,
 )
 
 
@@ -108,3 +110,82 @@ def test_group_review_items_groups_consequences_and_notices() -> None:
     assert section["notices"][0].code == "datatype_invalid"
     assert len(ungrouped) == 1
     assert ungrouped[0].entity_ref == "ent-999"
+
+
+def test_conformance_evaluations_for_entity_matches_qid_via_profile_map() -> None:
+    entity_slot = {
+        "id": "https://datadistillery.wikibase.cloud/entity/Q4",
+        "profile_entity": "https://datadistillery.wikibase.cloud/entity/Q4",
+        "statements": [],
+        "data": {"statements": {}},
+    }
+    packet = {
+        "conformance": {
+            "entity_profile_map": {
+                "Q195562": "https://datadistillery.wikibase.cloud/entity/Q4",
+                "Q14708404": "https://datadistillery.wikibase.cloud/entity/Q99",
+            },
+            "statement_evaluations": [
+                {
+                    "entity_id": "Q195562",
+                    "statement_uri": "https://datadistillery.wikibase.cloud/entity/Q19",
+                    "status": "conformant",
+                    "outcome": "conformant",
+                },
+                {
+                    "entity_id": "Q14708404",
+                    "statement_uri": "https://datadistillery.wikibase.cloud/entity/Q19",
+                    "status": "nonconformant",
+                    "outcome": "to_be_defined",
+                },
+            ],
+        }
+    }
+
+    evaluations = _conformance_evaluations_for_entity(
+        packet=packet, entity_slot=entity_slot
+    )
+
+    assert len(evaluations) == 1
+    assert evaluations[0]["entity_id"] == "Q195562"
+
+
+def test_partition_conformance_evaluations_splits_profile_and_additional() -> None:
+    profile_statement = "https://datadistillery.wikibase.cloud/entity/Q19"
+    uncovered_statement = "unknown/P856"
+
+    entity_slot = {
+        "id": "https://datadistillery.wikibase.cloud/entity/Q4",
+        "profile_entity": "https://datadistillery.wikibase.cloud/entity/Q4",
+        "statements": [
+            {
+                "entity": profile_statement,
+                "label": "official website",
+            }
+        ],
+    }
+
+    evaluations = [
+        {
+            "entity_id": "Q195562",
+            "statement_uri": profile_statement,
+            "status": "conformant",
+            "outcome": "conformant",
+        },
+        {
+            "entity_id": "Q195562",
+            "statement_uri": uncovered_statement,
+            "status": "nonconformant",
+            "outcome": "to_be_defined",
+        },
+    ]
+
+    profile_aligned, additional = _partition_conformance_evaluations(
+        entity_slot=entity_slot,
+        evaluations=evaluations,
+    )
+
+    assert len(profile_aligned) == 1
+    assert profile_aligned[0]["statement_uri"] == profile_statement
+    assert len(additional) == 1
+    assert additional[0]["statement_uri"] == uncovered_statement
