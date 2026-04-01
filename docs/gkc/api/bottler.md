@@ -274,4 +274,4 @@ This ensures profile-only packets have shape-consistent, deterministic Wikibase 
 
 - [Still Charger API](still_charger.md) — Packet assembly and charging
 - [Fermenter API](fermenter.md) — Validation and coercion
-- [Architecture Overview](../architecture/modules.md) — Module boundaries and contracts
+- [Cross-Module Contracts](../../architecture/module-contracts.md) — Module boundaries and contracts

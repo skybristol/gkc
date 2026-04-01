@@ -2,7 +2,7 @@
 
 ## Purpose
 
-This document defines the current architectural contract between `mash`, `spirit_safe`, `still_charger`, `fermenter`, `bottler`, `shipper`, and `wikibase` for Data Distillery and broader GKC workflows.
+This document defines the current architectural contract between `mash`, `spirit_safe`, `still_charger`, `fermenter`, `wizard`, `bottler`, `shipper`, and `wikibase` for Data Distillery and broader GKC workflows.
 
 It is written as a practical anti-reinvention guide for contributors and custom agents.
 
@@ -11,6 +11,14 @@ Infrastructure perspective for these module boundaries:
 - Data Distillery Wikibase defines semantic foundation (profiles, statements, value-list semantics).
 - SpiritSafe materializes those semantics as deterministic artifacts.
 - `gkc` modules execute packet assembly, validation/coercion, planning, and shipping from those artifacts.
+
+Contract clarification (active direction):
+
+- JSON Entity Profiles materialized from DD Wikibase semantics are the only active profile runtime contract.
+- YAML-era profile loading/validation/generation is superseded and retained only as temporary legacy surface pending removal.
+- Runtime validation/coercion ownership is centralized in `fermenter`.
+- Wizard runtime ownership is centralized in `wizard`.
+- No compatibility aliasing should be introduced between `gkc.profiles.forms.*` and `gkc.wizard.*`.
 
 ## Boundary Summary
 
@@ -125,6 +133,30 @@ Current anchor surface:
 - `check_packet_integrity`
 - `validate_packet_inline`
 - `validate_packet_from_file`
+
+### Wizard (`gkc.wizard`)
+
+Responsibility:
+
+- Own interactive wizard runtime and UI orchestration.
+- Render profile-driven curation flows from packet/profile artifacts.
+- Consume `still_charger` packet assembly/charging outputs and `fermenter` conformance outputs.
+- Manage wizard-only state and UX helpers (for example draft persistence and packet-to-view adapters).
+
+Out of scope:
+
+- Runtime validation/coercion rule ownership.
+- Packet scaffold assembly ownership.
+- SpiritSafe artifact translation/materialization ownership.
+
+Current anchor surface:
+
+- Top-level CLI entry `gkc wizard` (public contract).
+- Streamlit app runtime and wizard step orchestration modules.
+
+Transition note:
+
+- Wizard runtime code currently still located under `gkc.profiles.forms` is in active migration to `gkc.wizard` and should not be treated as a stable module boundary.
 
 ### Bottler (`gkc.bottler`)
 
@@ -283,6 +315,8 @@ Current anchor surface:
 - Preserve offline-first behavior: network-backed enhancement must not break cache-only operation.
 - Preserve JSON profile export determinism (stable ordering and artifact path shape).
 - Treat packet type/shape conformance as the primary hard blocker; other conformance failures should default to actionable notices unless policy explicitly escalates them.
+- Do not add bridge/shim module aliases that preserve `gkc.profiles.forms.*` as a shadow wizard API.
+- Do not add new runtime validation/coercion logic under `gkc.profiles.*`.
 
 ## Decision Matrix for New Work
 
@@ -300,11 +334,17 @@ When adding new functionality, assign ownership using this matrix:
 
 ## Current Gaps to Revisit During Critical Analysis
 
-- `gkc.profiles.forms.validation_bridge` still contains overlapping nested qualifier/reference validation semantics. It should converge on fermenter statement-instance primitives to avoid policy drift.
+- `gkc.profiles.forms.validation_bridge` still contains overlapping nested qualifier/reference validation semantics. This logic should be moved into fermenter-owned packet-facing APIs and deleted from the profiles namespace.
 - Still Charger does not yet emit per-entity source provenance (`source_qid`, `lastrevid`, `pulled_at`) in the packet.
 - Boundaries between wikibase write planning and bottler transformation stages still need explicit acceptance criteria per phase.
 - Cross-module tests should identify failure source by layer (read, transform, payload-shape, write, orchestration).
 - Packet compatibility metadata, change classification, and forward-migration rules for long-lived offline packets remain to be implemented.
+
+Additional active boundary cleanup:
+
+- The old YAML-era `gkc.profiles` runtime path (`loaders`, `generators`, `validation`, and related CLI surfaces) is superseded and should be removed unless a concrete retained consumer is explicitly approved.
+- `GKCEntityProfile` should be integrated with fermenter-owned validation/coercion pathways (including Pydantic-backed validation surfaces where applicable).
+- Core architecture classes should remain explicit and aligned with top-level components: `GKCEntityProfile`, `GKCEntityStatement`, `GKCValueList`, and `GKCCurationPacket`.
 
 ## Theoretical Design Notes
 

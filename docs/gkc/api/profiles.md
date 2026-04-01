@@ -1,136 +1,44 @@
 # Profiles API
 
-## Overview
+## Status
 
-The profiles module provides entity profile loading and validation surfaces for SpiritSafe-backed runtime workflows.
+The historical `gkc.profiles` package is a legacy surface.
 
-**Current implementations:** JSON profile loading, JSON Schema validation, runtime model generation, form schema generation, Wikidata validation  
-**Future implementations:** profile registry, code generation, broader datatype support
+For current runtime workflows, JSON Entity Profiles materialized from DD Wikibase semantics are the canonical contract.
 
-## Quick Start
+Those workflows are owned by:
 
-```python
-from gkc.profiles import ProfileLoader, ProfileValidator
+- `gkc.spirit_safe` for profile artifact loading/materialization.
+- `gkc.still_charger` for packet scaffold assembly and charging.
+- `gkc.fermenter` for validation/coercion/conformance.
+- `gkc.wizard` for interactive wizard runtime.
 
-profile = ProfileLoader().load_from_file(
-    "/path/to/SpiritSafe/profiles/Q4.json"
-)
-validator = ProfileValidator(profile)
-result = validator.validate_item(item_json, policy="lenient")
-```
+## Contract Direction
 
-## Classes
+The YAML-era `gkc.profiles` loader/generator/validator path is superseded and targeted for removal unless an explicit retained consumer is approved.
 
-### ProfileLoader
+This includes:
 
-::: gkc.profiles.loaders.yaml_loader.ProfileLoader
-    options:
-      show_root_heading: false
-      heading_level: 4
+- YAML profile loaders.
+- YAML form schema generators.
+- YAML-first validation pathways.
 
-### ProfileDefinition
+Do not build new runtime integrations on top of these legacy surfaces.
 
-::: gkc.profiles.models.ProfileDefinition
-    options:
-      show_root_heading: false
-      heading_level: 4
+## Future Scope for a Reimagined Profiles Module
 
-### ProfileValidator
+If a future `profiles` module is reintroduced, it should focus on reverse-engineering and profile design support, not runtime validation ownership.
 
-::: gkc.profiles.validation.validator.ProfileValidator
-    options:
-      show_root_heading: false
-      heading_level: 4
+Example future scope:
 
-### ValidationResult
-
-::: gkc.profiles.validation.validator.ValidationResult
-    options:
-      show_root_heading: false
-      heading_level: 4
-
-### FormSchemaGenerator
-
-::: gkc.profiles.generators.form_generator.FormSchemaGenerator
-    options:
-      show_root_heading: false
-      heading_level: 4
-
-## Examples
-
-### Load a JSON Entity Profile
-
-```python
-from gkc.profiles import ProfileLoader
-
-loader = ProfileLoader()
-profile = loader.load_from_file(
-    "/path/to/SpiritSafe/profiles/Q4.json"
-)
-print(profile.name)
-```
-
-### Generate a Form Schema
-
-```python
-from gkc.profiles import FormSchemaGenerator, ProfileLoader
-
-profile = ProfileLoader().load_from_file(
-    "/path/to/SpiritSafe/profiles/Q4.json"
-)
-form_schema = FormSchemaGenerator(profile).build_schema()
-print(form_schema["statements"][0]["label"])
-```
-
-### Validate a Wikidata Item (Lenient)
-
-```python
-from gkc.profiles import ProfileLoader, ProfileValidator
-
-profile = ProfileLoader().load_from_file(
-    "/path/to/SpiritSafe/profiles/Q4.json"
-)
-validator = ProfileValidator(profile)
-result = validator.validate_item(item_json, policy="lenient")
-
-if result.ok:
-    print("Valid (lenient)")
-    for warning in result.warnings:
-        print(warning.message)
-```
-
-### Validate a Wikidata Item (Strict)
-
-```python
-from gkc.profiles import ProfileLoader, ProfileValidator
-
-profile = ProfileLoader().load_from_file(
-    "/path/to/SpiritSafe/profiles/Q4.json"
-)
-validator = ProfileValidator(profile)
-result = validator.validate_item(item_json, policy="strict")
-
-if not result.ok:
-    for error in result.errors:
-        print(error.message)
-```
-
-## Error Handling
-
-### Profile Schema Validation Errors
-
-```python
-from gkc.profiles import ProfileLoader
-
-loader = ProfileLoader()
-try:
-    loader.load_from_file("bad_profile.json")
-except ValueError as exc:
-    print(f"Schema error: {exc}")
-```
+- Analyze uncovered statements from fermenter outputs.
+- Suggest profile extensions toward `GKCEntityProfile` and `GKCEntityStatement` JSON contracts.
+- Assist DD Wikibase profile authoring workflows.
 
 ## See Also
 
-- [Mash](mash.md) - Load Wikidata items for validation
-- [ShEx](shex.md) - Schema validation against EntitySchemas
-- [CLI Profiles](../cli/profiles.md) - Profile commands
+- [Spirit Safe API](spirit_safe.md)
+- [Still Charger API](still_charger.md)
+- [Fermenter API](fermenter.md)
+- [Wizard Commands](../cli/wizard.md)
+- [Module Contracts](../../architecture/module-contracts.md)
