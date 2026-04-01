@@ -313,5 +313,5 @@ shipper = WikibaseShipper(auth=auth)
 ## See Also
 
 - [Mash API](mash.md)
-- [Wikibase API](wikibase.md)
 - [Authentication API](auth.md)
+- [SpiritSafe API](spirit_safe.md)

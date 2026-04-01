@@ -154,13 +154,6 @@ from gkc.utilities import (
     search_exact_label,
     validate_entity_reference,
 )
-from gkc.wikibase import (
-    BarrelIssue,
-    BarrelPlanReport,
-    WikibaseWritePlanResult,
-    barrel_curation_packet_to_wikibase_plan,
-    build_wikibase_write_plan,
-)
 
 # Language Configuration
 # Package-level language settings for multilingual data handling
@@ -214,18 +207,11 @@ __all__ = [
     "DataTypeTransformer",
     "Distillate",
     "SnakBuilder",
-    # Wikibase write planning
-    "BarrelIssue",
-    "BarrelPlanReport",
-    "barrel_curation_packet_to_wikibase_plan",
     # Utilities
     "get_entity_uri",
     "search_exact_label",
     "resolve_name_to_identifier",
     "validate_entity_reference",
-    # Wikibase orchestration
-    "WikibaseWritePlanResult",
-    "build_wikibase_write_plan",
     # Still Charger
     "ChargeIssue",
     "ChargeReport",

@@ -309,5 +309,5 @@ print(report.entities_charged, report.issues[0].severity)
 
 ## See Also
 
-- [Wikibase API](wikibase.md)
 - [Shipper API](shipper.md)
+- [SpiritSafe API](spirit_safe.md)

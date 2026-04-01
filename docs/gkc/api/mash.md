@@ -388,5 +388,5 @@ print(template.to_dict().keys())
 ## See Also
 
 - [Shipper API](shipper.md)
-- [Wikibase API](wikibase.md)
+- [SpiritSafe API](spirit_safe.md)
 - [SPARQL API](sparql.md)

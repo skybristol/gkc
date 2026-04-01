@@ -197,7 +197,7 @@ Responsibility:
 Out of scope:
 
 - Generic read-model ownership (belongs to mash).
-- Semantic modeling and profile ontology design ownership (belongs to wikibase + profile assets).
+- Semantic modeling and profile ontology design ownership (belongs to DD Wikibase ontology assets and SpiritSafe profile artifacts).
 
 Current anchor surface:
 
@@ -206,13 +206,13 @@ Current anchor surface:
 - `OpenStreetMapShipper` (placeholder)
 - `DiffPlan`, `DiffOperation`, `WriteResult`
 
-### Wikibase (`gkc.wikibase`)
+### Data Distillery Wikibase Semantics (Architecture Layer)
 
 Responsibility:
 
-- Data Distillery semantic backbone orchestration.
-- Foundation ontology audit/init orchestration using mash reads and shipper writes.
-- Data Distillery-specific planning, conformance checks, and orchestration state/reporting.
+- Data Distillery semantic backbone and ontology governance.
+- Authoritative semantic definitions consumed by cache/materialization pipelines.
+- Architectural source of truth for profile semantics.
 
 Out of scope:
 
@@ -221,22 +221,18 @@ Out of scope:
 
 Current anchor surface:
 
-- `barrel_curation_packet_to_wikibase_plan`
-- `BarrelPlanReport`
-- `BarrelIssue`
-- `load_foundation_profiles`
-- `audit_wikibase_foundation`
-- `init_wikibase_foundation`
+- SpiritSafe cache entities and generated profile artifacts
+- Mash recentchanges polling and cache refresh commands
+- Shipper write execution paths when programmatic writes are required
 
 ## Handoff Flows
 
-### Flow 1: Foundation Audit and Init
+### Flow 1: Semantic Cache Synchronization
 
-1. `wikibase` loads foundation profile definitions.
-2. `mash` retrieves current entity/property state from target Wikibase.
-3. `wikibase` computes conformance and action plan.
-4. `shipper` applies write operations when execution is enabled.
-5. `wikibase` publishes structured audit/init reports.
+1. `mash` polls MediaWiki recentchanges for Wikibase entity updates.
+2. `mash` refreshes per-entity cache artifacts in SpiritSafe format.
+3. `spirit_safe` materializes JSON profile artifacts from cache entities.
+4. Downstream packet and validation flows consume those artifacts.
 
 ### Flow 2: Ontology Dogfooding (Next-Wave Entity Types)
 
@@ -251,9 +247,7 @@ Current anchor surface:
 1. `spirit_safe` loads and exports JSON Entity Profiles and value-list cache artifacts.
 2. `still_charger` assembles curation packets from profile JSON using bottler's EntityShellBuilder to build canonical Wikibase JSON entity shells for profile-only packets.
 3. `fermenter` evaluates atomic statement instances (including qualifiers/references), coerces values, and serializes packet-facing conformance records.
-4. `wikibase` orchestration transforms charged packet data into `WikibaseShipper.plan_batch` operations using bottler primitives for claim/statement construction.
-5. `wikibase` orchestration coordinates this flow for Data Distillery-specific workflows.
-6. `shipper` computes create/update/no-op diff plans and executes writes when enabled.
+4. `shipper` computes create/update/no-op diff plans and executes writes when enabled.
 
 ### Flow 2.5a: Profile-Only Packet Wikibase JSON Shell Generation (New)
 
@@ -268,7 +262,7 @@ Current anchor surface:
 
 ### Flow 2.6: SpiritSafe JSON Profile Materialization (Active)
 
-1. `wikibase` cache routes refresh and reconcile per-entity cache files.
+1. `mash` refreshes and reconciles per-entity cache files.
 2. `spirit_safe` builds JSON Entity Profiles from `cache/entities` artifacts.
 3. `spirit_safe` exports per-profile JSON files (for example `profiles/Q4.json`).
 4. Downstream packet/hydration stages consume exported profile artifacts.
@@ -286,7 +280,7 @@ Current anchor surface:
 1. `still_charger` or another caller loads a previously minted curation packet.
 2. `fermenter` validates packet type/shape first; structural/type failures are hard blockers.
 3. `spirit_safe` provides current profile/value-list artifact metadata for compatibility comparison.
-4. `wikibase` may provide current semantic revision context when network-backed comparison is available.
+4. Network-backed semantic revision context may be added in the future when needed.
 5. `fermenter` classifies drift (`patch_compatible`, `minor_compatible`, `migration_required`, `breaking`) and applies approved migration transforms when available.
 6. `fermenter` re-validates the packet after migration and emits compatibility notices plus migration report data.
 7. Downstream write-planning and shipping proceed only if the packet remains structurally valid and any required migration succeeded.
@@ -294,22 +288,22 @@ Current anchor surface:
 ### Flow 3: Semantic Projection for Runtime Artifacts
 
 1. `mash` retrieves semantic entities and related metadata.
-2. `wikibase` orchestration applies current write-planning transformations.
+2. Runtime orchestration applies current write-planning transformations.
 3. `bottler` shapes final claim/snak structures where transport payload format is required.
 4. Artifacts are validated against SpiritSafe/runtime schema contracts.
-5. `wikibase` tracks projection provenance and drift metadata.
+5. Runtime manifests track projection provenance and drift metadata.
 
 ### Flow 4: Sync and Drift Management
 
 1. `mash` reads revision/update baselines.
 2. `shipper.plan_batch` computes deterministic write-operation diffs.
-3. `wikibase` applies sync policy and conflict strategy.
+3. Runtime sync policy applies conflict strategy.
 4. `shipper` executes writes when sync direction targets remote Wikibase.
 5. Reports and manifest metadata are emitted for traceability.
 
 ## Non-Negotiable Contracts
 
-- Do not add a new generic Wikibase client under `gkc.wikibase`.
+- Do not add a new generic Wikibase client outside `gkc.mash`.
 - Do not bypass `shipper` for Wikibase write execution paths.
 - Keep SpiritSafe runtime contracts stable and testable.
 - Preserve offline-first behavior: network-backed enhancement must not break cache-only operation.
@@ -328,9 +322,8 @@ When adding new functionality, assign ownership using this matrix:
 - Need atomic validation/coercion and conformance notices? -> `fermenter`
 - Need to build/shape values into claim/snak/payload structures? -> `bottler`
 - Need schema/specification retrieval? -> `mash`
-- Need reusable charged-packet to Wikibase operation planning? -> `wikibase`
 - Need to execute write operations to external APIs? -> `shipper`
-- Need Data Distillery semantic orchestration, ontology conformance, or sync policy? -> `wikibase`
+- Need Data Distillery semantic orchestration or ontology conformance? -> DD Wikibase ontology + SpiritSafe artifacts
 
 ## Current Gaps to Revisit During Critical Analysis
 

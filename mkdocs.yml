@@ -81,8 +81,6 @@ nav:
       - SpiritSafe: gkc/api/spirit_safe.md
       - ShEx: gkc/api/shex.md
       - Shipper: gkc/api/shipper.md
-      - Wikibase: gkc/api/wikibase.md
-      - Ontology: gkc/api/ontology.md
       - SPARQL: gkc/api/sparql.md
     - Command Line Interface:
       - Overview: gkc/cli/index.md
@@ -90,7 +88,6 @@ nav:
       - Mash: gkc/cli/mash.md
       - Profiles: gkc/cli/profiles.md
       - Wizard: gkc/cli/wizard.md
-      - Wikibase: gkc/cli/wikibase.md
       - ShEx: gkc/cli/shex.md
     - Utilities and Tools:
       - Utilities: gkc/utilities.md

@@ -373,7 +373,7 @@ Current contract:
 
 - Live Data Distillery Wikibase semantics are the authoritative source for semantic identifiers and relationships.
 - SpiritSafe artifacts remain the authoritative runtime materialization for offline execution.
-- `gkc wikibase audit` and related workflows remain useful operational tools, but they should not be treated as the primary semantic authority contract.
+- `gkc mash check-wikibase-revisions` and `gkc mash cache-wikibase-revisions` are the operational cache-sync tools, but they should not be treated as the primary semantic authority contract.
 
 ### Operational Modes
 
@@ -389,20 +389,17 @@ Current contract:
 
 ## Current CLI Behavior
 
-### `gkc wikibase audit`
+### `gkc mash check-wikibase-revisions`
 
 - Reads Data Distillery runtime settings from `DD_WB_*` environment variables.
-- Uses authenticated mode when credentials are valid.
-- Falls back to anonymous session on login failure unless `--require-auth` is provided.
-- Produces summary output and optional JSON report via `--output`.
+- Checks MediaWiki recentchanges for entity page updates.
+- Produces change summaries and optional JSON report via `--output`.
 
-### `gkc wikibase init`
+### `gkc mash cache-wikibase-revisions`
 
-- Runs an audit pass first and builds create/skip action records.
-- Defaults to dry-run preview mode.
-- Requires explicit `--execute` to submit writes.
-- Requires authentication; supports environment credentials or `--interactive` prompt flow.
-- Supports explicit edit summaries and bot marking controls (`--summary`, `--bot`).
+- Refreshes per-entity SpiritSafe cache files from recentchanges-derived IDs.
+- Supports explicit watermark control via `--since` and overlap safety window.
+- Writes summary artifacts consumable by downstream profile export workflows.
 
 ### SpiritSafe Cache and Build Workflows
 
