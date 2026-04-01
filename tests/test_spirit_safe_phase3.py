@@ -9,7 +9,6 @@ from gkc.spirit_safe import (
     build_spiritsafe_manifest_document,
     export_spiritsafe_entity_index,
     export_spiritsafe_manifest,
-    get_profile_graph,
     load_manifest,
     load_profile,
     load_profile_package,
@@ -138,16 +137,6 @@ def test_load_profile_package_uses_embedded_profile_graph():
         "https://datadistillery.wikibase.cloud/entity/Q4"
     )
     assert set(package["profiles"].keys()) == {"Q4", "Q39"}
-    assert set(package["graph"].nodes.keys()) == {"Q4", "Q39"}
-
-
-def test_get_profile_graph_builds_from_manifest_fixture():
-    """Profile graph helper should return the QID-keyed graph from manifest."""
-
-    graph = get_profile_graph()
-
-    assert graph.profile_count() == 2
-    assert graph.get_neighbors("Q4") == ["Q39"]
 
 
 def test_resolve_profile_link_matches_statement_uri():

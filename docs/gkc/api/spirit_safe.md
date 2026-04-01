@@ -103,10 +103,7 @@ print(sorted(package["profiles"].keys()))
 ### Resolve Profile Links and Graph Traversal
 
 ```python
-from gkc.spirit_safe import get_profile_graph, resolve_profile_link
-
-graph = get_profile_graph()
-print(graph.get_neighbors("Q4"))
+from gkc.spirit_safe import resolve_profile_link
 
 link = resolve_profile_link("Q4", "Q40")
 print(link)
@@ -177,13 +174,9 @@ print(result.hydrated_ids)
 
 ### Registry Metadata and Lookups
 
-::: gkc.spirit_safe.ProfileMetadata
-
 ::: gkc.spirit_safe.list_profiles
 
 ::: gkc.spirit_safe.profile_exists
-
-::: gkc.spirit_safe.get_profile_metadata
 
 ::: gkc.spirit_safe.resolve_profile_path
 
@@ -192,8 +185,6 @@ print(result.hydrated_ids)
 ::: gkc.spirit_safe.LookupCache
 
 ::: gkc.spirit_safe.LookupFetcher
-
-::: gkc.spirit_safe.hydrate_profile_lookups
 
 ### Entity Profile and Value-List Artifacts
 
@@ -228,8 +219,6 @@ print(result.hydrated_ids)
 ::: gkc.spirit_safe.load_profile
 
 ::: gkc.spirit_safe.load_profile_package
-
-::: gkc.spirit_safe.get_profile_graph
 
 ::: gkc.spirit_safe.resolve_profile_link
 

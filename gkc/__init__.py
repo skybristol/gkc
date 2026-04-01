@@ -75,17 +75,6 @@ from gkc.mash import (
     fetch_entity_schema_specification as fetch_schema_specification,
 )
 
-# YAML-first profiles (SpiritSafe)
-from gkc.profiles import (
-    FormSchemaGenerator,
-    ProfileDefinition,
-    ProfileLoader,
-    ProfilePydanticGenerator,
-    ProfileValidator,
-    ValidationIssue,
-    ValidationResult,
-)
-
 # Runtime configuration
 from gkc.runtime_config import DEFAULT_USER_AGENT
 
@@ -122,7 +111,6 @@ from gkc.spirit_safe import (
     LookupCache,
     LookupFetcher,
     Manifest,
-    ProfileMetadata,
     SpiritSafeSourceConfig,
     ValueListHydrationResult,
     build_entity_profile_json_documents,
@@ -131,10 +119,7 @@ from gkc.spirit_safe import (
     export_entity_profile_json_documents,
     export_spiritsafe_manifest,
     export_value_list_sparql_queries,
-    get_profile_graph,
-    get_profile_metadata,
     get_spirit_safe_source,
-    hydrate_profile_lookups,
     hydrate_value_list_query_caches,
     hydrate_value_lists_from_cache,
     list_profiles,
@@ -321,12 +306,8 @@ __all__ = [
     "export_entity_profile_json_documents",
     "export_spiritsafe_manifest",
     "export_value_list_sparql_queries",
-    "get_profile_graph",
-    "hydrate_profile_lookups",
     "hydrate_value_list_query_caches",
     "hydrate_value_lists_from_cache",
-    "ProfileMetadata",
-    "get_profile_metadata",
     "load_manifest",
     "load_profile",
     "load_profile_package",

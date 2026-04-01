@@ -25,7 +25,6 @@ from gkc.mash import (
     get_latest_cache_timestamp,
     refresh_entity_cache_from_recentchanges,
 )
-from gkc.profiles import FormSchemaGenerator, ProfileLoader, ProfileValidator
 from gkc.runtime_config import DEFAULT_USER_AGENT, get_wikibase_runtime_config
 from gkc.shipper import WikibaseShipper
 from gkc.sitelinks import (
@@ -388,57 +387,9 @@ def _build_parser() -> argparse.ArgumentParser:
         command_path="shex.validate",
     )
 
-    # Profile commands (minus removed 'form' entry)
+    # Profile commands
     profile_parser = subparsers.add_parser("profile", help="Profile utilities")
     profile_subparsers = profile_parser.add_subparsers(dest="profile_command")
-
-    profile_validate = profile_subparsers.add_parser(
-        "validate", help="Validate a Wikidata item against a YAML profile"
-    )
-    profile_validate.add_argument(
-        "--profile",
-        required=True,
-        help="Path to YAML profile definition",
-    )
-    profile_validate.add_argument(
-        "--qid",
-        help="Wikidata item ID to fetch and validate",
-    )
-    profile_validate.add_argument(
-        "--item-json",
-        help="Path to Wikidata item JSON file",
-    )
-    profile_validate.add_argument(
-        "--policy",
-        choices=["strict", "lenient"],
-        default="lenient",
-        help="Validation policy (default: lenient)",
-    )
-    _add_profile_source_args(profile_validate)
-    profile_validate.set_defaults(
-        handler=_handle_profile_validate,
-        command_path="profile.validate",
-    )
-
-    profile_form = profile_subparsers.add_parser(
-        "form-schema", help="Generate a form schema from a YAML profile"
-    )
-    profile_form.add_argument(
-        "--profile",
-        required=True,
-        help="Path to YAML profile definition",
-    )
-    profile_form.add_argument(
-        "-o",
-        "--output",
-        type=str,
-        help="Write output to file instead of stdout",
-    )
-    _add_profile_source_args(profile_form)
-    profile_form.set_defaults(
-        handler=_handle_profile_form_schema,
-        command_path="profile.form_schema",
-    )
 
     profile_export_json = profile_subparsers.add_parser(
         "export-json",
@@ -505,84 +456,6 @@ def _build_parser() -> argparse.ArgumentParser:
     wizard_parser.set_defaults(
         handler=_handle_wizard,
         command_path="wizard",
-    )
-
-    profile_lookups = profile_subparsers.add_parser(
-        "lookups", help="Profile lookup hydration utilities"
-    )
-    profile_lookups_subparsers = profile_lookups.add_subparsers(
-        dest="profile_lookups_command"
-    )
-
-    profile_lookups_hydrate = profile_lookups_subparsers.add_parser(
-        "hydrate", help="Hydrate SPARQL lookup caches from profile definitions"
-    )
-    profile_lookups_hydrate.add_argument(
-        "--profile",
-        action="append",
-        required=True,
-        help="Path to profile YAML (repeatable)",
-    )
-    profile_lookups_hydrate.add_argument(
-        "--refresh",
-        choices=["manual", "daily", "weekly", "on_release"],
-        help="Optional refresh policy override",
-    )
-    profile_lookups_hydrate.add_argument(
-        "--force-refresh",
-        action="store_true",
-        help="Refresh queries even when cache appears fresh",
-    )
-    profile_lookups_hydrate.add_argument(
-        "--page-size",
-        type=int,
-        default=1000,
-        help="Query page size for pagination (default: 1000)",
-    )
-    profile_lookups_hydrate.add_argument(
-        "--max-results",
-        type=int,
-        help="Maximum total results per query",
-    )
-    profile_lookups_hydrate.add_argument(
-        "--endpoint",
-        default=runtime_config.sparql_endpoint,
-        help=(
-            "SPARQL endpoint URL "
-            "(default: DD_WB_SPARQL_ENDPOINT env var or Wikidata Query Service)"
-        ),
-    )
-    profile_lookups_hydrate.add_argument(
-        "--dry-run",
-        action="store_true",
-        help="Analyze and summarize lookups without executing queries",
-    )
-    profile_lookups_hydrate.add_argument(
-        "--fail-on-query-error",
-        action="store_true",
-        help="Fail immediately when any query preparation/execution errors occur",
-    )
-    profile_lookups_hydrate.add_argument(
-        "--source",
-        choices=["github", "local"],
-        help="Override SpiritSafe source mode for this command",
-    )
-    profile_lookups_hydrate.add_argument(
-        "--local-root",
-        help="Local SpiritSafe root (required with --source local)",
-    )
-    profile_lookups_hydrate.add_argument(
-        "--repo",
-        help="GitHub repo slug when --source github (e.g., owner/SpiritSafe)",
-    )
-    profile_lookups_hydrate.add_argument(
-        "--ref",
-        dest="github_ref",
-        help="Git reference when --source github (default: main)",
-    )
-    profile_lookups_hydrate.set_defaults(
-        handler=_handle_profile_lookups_hydrate,
-        command_path="profile.lookups.hydrate",
     )
 
     profile_value_lists = profile_subparsers.add_parser(
@@ -687,26 +560,6 @@ def _build_parser() -> argparse.ArgumentParser:
     profile_package_load.set_defaults(
         handler=_handle_profile_package_load,
         command_path="profile.package.load",
-    )
-
-    profile_package_cardinality = profile_package_subparsers.add_parser(
-        "cardinality", help="Show cardinality report for profile linkages"
-    )
-    profile_package_cardinality.add_argument(
-        "--profile",
-        required=True,
-        help="Profile ID to analyze",
-    )
-    profile_package_cardinality.add_argument(
-        "--depth",
-        type=int,
-        default=1,
-        help="Depth of related profiles to include (default: 1)",
-    )
-    _add_profile_source_args(profile_package_cardinality)
-    profile_package_cardinality.set_defaults(
-        handler=_handle_profile_package_cardinality,
-        command_path="profile.package.cardinality",
     )
 
     profile_package_validate = profile_package_subparsers.add_parser(
@@ -1367,35 +1220,6 @@ def _preferred_manifest_text(values: Any) -> str:
         if isinstance(value, str) and value:
             return value
     return ""
-
-
-def _load_profile_from_reference(
-    loader: ProfileLoader,
-    profile_ref: str,
-) -> tuple[Any, str]:
-    """Load profile from path or SpiritSafe profile reference.
-
-    Returns:
-        Tuple of (ProfileDefinition, resolved profile reference).
-    """
-    resolved_profile = gkc.resolve_profile_path(profile_ref)
-    resolved_profile_str = str(resolved_profile)
-
-    try:
-        profile = loader.load_from_file(resolved_profile_str)
-        return profile, resolved_profile_str
-    except FileNotFoundError:
-        source = gkc.get_spirit_safe_source()
-        resolved = source.resolve_relative(resolved_profile_str)
-
-        if isinstance(resolved, Path):
-            profile = loader.load_from_file(resolved)
-            return profile, str(resolved)
-
-        response = requests.get(resolved, timeout=30)
-        response.raise_for_status()
-        profile = loader.load_from_text(response.text)
-        return profile, resolved_profile_str
 
 
 def _handle_wikiverse_login(args: argparse.Namespace) -> dict[str, Any]:
@@ -2334,87 +2158,6 @@ def _merge_profile_export_summary(
     return str(summary_path.resolve())
 
 
-def _handle_profile_lookups_hydrate(args: argparse.Namespace) -> dict[str, Any]:
-    """Hydrate SPARQL lookup caches from one or more profile YAML files."""
-    if not args.profile:
-        raise CLIError("Provide at least one --profile path")
-
-    previous_source = gkc.get_spirit_safe_source()
-    source_overridden = args.source is not None
-
-    try:
-        if source_overridden:
-            if args.source == "local":
-                if not args.local_root:
-                    raise CLIError("--local-root is required when --source local")
-                gkc.set_spirit_safe_source(mode="local", local_root=args.local_root)
-            else:
-                gkc.set_spirit_safe_source(
-                    mode="github",
-                    github_repo=args.repo or previous_source.github_repo,
-                    github_ref=args.github_ref or previous_source.github_ref,
-                )
-
-        # Resolve profile names to full paths
-        resolved_profiles = [gkc.resolve_profile_path(p) for p in args.profile]
-
-        summary = gkc.hydrate_profile_lookups(
-            profile_paths=resolved_profiles,
-            refresh_policy=args.refresh,
-            force_refresh=args.force_refresh,
-            page_size=args.page_size,
-            max_results=args.max_results,
-            endpoint=args.endpoint,
-            dry_run=args.dry_run,
-            fail_on_query_error=args.fail_on_query_error,
-        )
-    except Exception as exc:
-        raise CLIError(str(exc)) from exc
-    finally:
-        if source_overridden:
-            gkc.set_spirit_safe_source(
-                mode=previous_source.mode,
-                github_repo=previous_source.github_repo,
-                github_ref=previous_source.github_ref,
-                local_root=previous_source.local_root,
-            )
-
-    failures = summary.get("failures", [])
-    ok = len(failures) == 0
-
-    if args.dry_run:
-        message = (
-            "Dry run complete: "
-            f"{summary['lookup_specs_found']} lookup specs, "
-            f"{summary['unique_queries']} unique queries"
-        )
-    else:
-        message = (
-            "Hydration complete: "
-            f"{summary['unique_queries_executed']} unique queries executed"
-        )
-
-    if failures:
-        message += f" ({len(failures)} failures)"
-
-    details = {
-        "profiles_scanned": summary.get("profiles_scanned"),
-        "lookup_specs_found": summary.get("lookup_specs_found"),
-        "unique_queries": summary.get("unique_queries"),
-        "unique_queries_executed": summary.get("unique_queries_executed"),
-        "cache_dir": summary.get("cache_dir"),
-        "cache_file_count": summary.get("cache_file_count"),
-        "failures": failures,
-    }
-
-    return {
-        "command": args.command_path,
-        "ok": ok,
-        "message": message,
-        "details": details,
-    }
-
-
 def _handle_profile_value_lists_hydrate(args: argparse.Namespace) -> dict[str, Any]:
     """Extract value-list SPARQL and hydrate cache/queries artifacts."""
     previous_source, source_overridden = _apply_source_override(args)
@@ -2773,45 +2516,6 @@ def _handle_profile_package_load(args: argparse.Namespace) -> dict[str, Any]:
         _restore_source_override(previous_source, source_overridden)
 
 
-def _handle_profile_package_cardinality(args: argparse.Namespace) -> dict[str, Any]:
-    """Show cardinality report for profile linkages."""
-    previous_source, source_overridden = _apply_source_override(args)
-
-    try:
-        package = load_profile_package(args.profile, depth=args.depth)
-        cardinality_info = []
-        graph = package["graph"]
-        for profile_id in package["profiles"].keys():
-            for edge in graph.get_edges(profile_id):
-                cardinality_info.append(
-                    {
-                        "from": profile_id,
-                        "to": edge.target_profile,
-                        "via": edge.via_statement,
-                        "min": edge.cardinality.get("min", 0),
-                        "max": edge.cardinality.get("max", -1),
-                    }
-                )
-
-        message = f"Found {len(cardinality_info)} linkages with cardinality constraints"
-        details = {
-            "primary_profile": args.profile,
-            "depth": args.depth,
-            "cardinality_constraints": cardinality_info,
-        }
-
-        return {
-            "command": args.command_path,
-            "ok": True,
-            "message": message,
-            "details": details,
-        }
-    except Exception as exc:
-        raise CLIError(str(exc)) from exc
-    finally:
-        _restore_source_override(previous_source, source_overridden)
-
-
 def _handle_profile_package_validate(args: argparse.Namespace) -> dict[str, Any]:
     """Validate profile package structure."""
     previous_source, source_overridden = _apply_source_override(args)
@@ -2825,8 +2529,6 @@ def _handle_profile_package_validate(args: argparse.Namespace) -> dict[str, Any]
             errors.append("Missing primary_profile field")
         if "profiles" not in package:
             errors.append("Missing profiles field")
-        if "graph" not in package:
-            errors.append("Missing graph field")
 
         # Check all profiles loaded
         if package.get("primary_profile") not in package.get("profiles", {}):

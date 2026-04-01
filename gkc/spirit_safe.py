@@ -144,54 +144,6 @@ def get_spirit_safe_source() -> SpiritSafeSourceConfig:
 # ============================================================================
 
 
-@dataclass(frozen=True)
-class ProfileMetadata:
-    """Metadata for a SpiritSafe profile registrant.
-
-    This dataclass represents the structured metadata from a profile's
-    metadata.yaml file, supporting discovery, versioning, and governance.
-
-    Attributes:
-        profile_id: Profile identifier (directory name)
-        name: Human-readable profile name
-        description: Profile description
-        version: Semantic version string
-        status: Profile status (e.g., "stable", "draft", "deprecated")
-        published_date: Publication date (ISO 8601 string)
-        authors: List of author dicts with 'name' and optional 'email'
-        maintainers: List of maintainer dicts with 'name' and optional 'email'
-        source_references: List of reference dicts with 'name' and 'url'
-        related_profiles: List of related profile IDs
-        community_feedback: Dict with issue tracker and other feedback URLs
-        datatypes_used: List of Wikibase datatypes used in profile
-        statements_count: Number of statements defined in profile
-        references_required: Whether references are required
-        qualifiers_used: List of qualifier property IDs used
-        sparql_sources: List of SPARQL query filenames
-        raw_metadata: Complete raw metadata dict for access to additional fields
-
-    Plain meaning: Structured information about a profile package.
-    """
-
-    profile_id: str
-    name: str
-    description: str
-    version: str
-    status: str
-    published_date: Optional[str] = None
-    authors: list[dict[str, str]] = field(default_factory=list)
-    maintainers: list[dict[str, str]] = field(default_factory=list)
-    source_references: list[dict[str, str]] = field(default_factory=list)
-    related_profiles: list[str] = field(default_factory=list)
-    community_feedback: dict[str, str] = field(default_factory=dict)
-    datatypes_used: list[str] = field(default_factory=list)
-    statements_count: Optional[int] = None
-    references_required: Optional[bool] = None
-    qualifiers_used: list[str] = field(default_factory=list)
-    sparql_sources: list[str] = field(default_factory=list)
-    raw_metadata: dict[str, Any] = field(default_factory=dict)
-
-
 def _read_text_from_resolved_path(resolved: Union[Path, str]) -> str:
     """Read text content from a resolved path or URL.
 
@@ -291,81 +243,6 @@ def profile_exists(profile_id: str) -> bool:
         return True
     except Exception:
         return False
-
-
-def get_profile_metadata(profile_id: str) -> ProfileMetadata:
-    """Load metadata for a profile from its metadata.yaml file.
-
-    Args:
-        profile_id: Profile identifier (directory name)
-
-    Returns:
-        Structured profile metadata
-
-    Raises:
-        FileNotFoundError: If profile or metadata.yaml doesn't exist
-        ValueError: If metadata.yaml is invalid
-
-    Example:
-        >>> metadata = get_profile_metadata("TribalGovernmentUS")
-        >>> print(metadata.name)
-        'Federally Recognized Tribe'
-        >>> print(metadata.version)
-        '1.0.0'
-
-    Plain meaning: Get information about a profile without loading its full definition.
-    """
-    source = get_spirit_safe_source()
-    metadata_path = f"profiles/{profile_id}/metadata.yaml"
-    resolved = source.resolve_relative(metadata_path)
-
-    try:
-        metadata_text = _read_text_from_resolved_path(resolved)
-        raw = yaml.safe_load(metadata_text) or {}
-    except Exception as exc:
-        raise FileNotFoundError(
-            f"Could not load metadata for profile '{profile_id}'"
-        ) from exc
-
-    # Validate required fields
-    if "name" not in raw:
-        raise ValueError(
-            f"Profile '{profile_id}' metadata missing required field 'name'"
-        )
-    if "version" not in raw:
-        raise ValueError(
-            f"Profile '{profile_id}' metadata missing required field 'version'"
-        )
-    if "status" not in raw:
-        raise ValueError(
-            f"Profile '{profile_id}' metadata missing required field 'status'"
-        )
-
-    # Normalize published_date to string if it was parsed as date object
-    published_date = raw.get("published_date")
-    if published_date is not None and not isinstance(published_date, str):
-        # YAML may parse ISO dates as date objects
-        published_date = str(published_date)
-
-    return ProfileMetadata(
-        profile_id=profile_id,
-        name=raw["name"],
-        description=raw.get("description", ""),
-        version=raw["version"],
-        status=raw["status"],
-        published_date=published_date,
-        authors=raw.get("authors", []),
-        maintainers=raw.get("maintainers", []),
-        source_references=raw.get("source_references", []),
-        related_profiles=raw.get("related_profiles", []),
-        community_feedback=raw.get("community_feedback", {}),
-        datatypes_used=raw.get("datatypes_used", []),
-        statements_count=raw.get("statements_count"),
-        references_required=raw.get("references_required"),
-        qualifiers_used=raw.get("qualifiers_used", []),
-        sparql_sources=raw.get("sparql_sources", []),
-        raw_metadata=raw,
-    )
 
 
 class LookupCache:
@@ -746,7 +623,7 @@ def resolve_profile_path(profile_ref: Union[str, Path]) -> Union[str, Path]:
                 (e.g., "profiles/TribalGovernmentUS/profile.yaml").
 
     Returns:
-        Resolved path suitable for _resolve_profile_text().
+        Resolved path suitable for ``resolve_query_ref``.
     """
     ref_str = str(profile_ref)
 
@@ -763,60 +640,6 @@ def resolve_profile_path(profile_ref: Union[str, Path]) -> Union[str, Path]:
     # Allow both "ProfileName" and "ProfileName.yaml" inputs
     profile_name = ref_str.removesuffix(".yaml")
     return f"profiles/{profile_name}/profile.yaml"
-
-
-def _resolve_profile_text(profile_path: Union[str, Path]) -> str:
-    """Resolve and read profile YAML text from local path or configured source.
-
-    Args:
-        profile_path: Absolute path, relative path, or SpiritSafe-relative path.
-
-    Returns:
-        YAML text.
-    """
-    path_obj = Path(profile_path)
-    if path_obj.is_absolute() and path_obj.exists():
-        return path_obj.read_text(encoding="utf-8")
-
-    if path_obj.exists():
-        return path_obj.read_text(encoding="utf-8")
-
-    source = get_spirit_safe_source()
-    profile_path_str = str(profile_path)
-
-    # Transition compatibility:
-    # Prefer caller path first, then try alternate registrant/legacy forms.
-    candidates: list[str] = [profile_path_str]
-
-    # registrant path -> legacy flat YAML fallback
-    # profiles/Foo/profile.yaml -> profiles/Foo.yaml
-    if profile_path_str.startswith("profiles/") and profile_path_str.endswith(
-        "/profile.yaml"
-    ):
-        profile_id = profile_path_str[len("profiles/") : -len("/profile.yaml")]
-        if profile_id:
-            candidates.append(f"profiles/{profile_id}.yaml")
-
-    # legacy flat YAML -> registrant path fallback
-    # profiles/Foo.yaml -> profiles/Foo/profile.yaml
-    if profile_path_str.startswith("profiles/") and profile_path_str.endswith(".yaml"):
-        profile_file = profile_path_str[len("profiles/") :]
-        if "/" not in profile_file:
-            profile_id = Path(profile_file).stem
-            candidates.append(f"profiles/{profile_id}/profile.yaml")
-
-    last_error: Optional[Exception] = None
-    for candidate in dict.fromkeys(candidates):
-        try:
-            resolved = source.resolve_relative(candidate)
-            return _read_text_from_resolved_path(resolved)
-        except Exception as exc:
-            last_error = exc
-
-    if last_error is not None:
-        raise last_error
-
-    raise FileNotFoundError(f"Unable to resolve profile path: {profile_path_str}")
 
 
 def resolve_query_ref(
@@ -890,198 +713,6 @@ def resolve_query_ref(
         ) from last_error
 
     raise FileNotFoundError(f"Query not found: {query_ref} (tried: {tried_paths})")
-
-
-def _extract_sparql_specs(node: Any, location: str = "") -> list[dict[str, Any]]:
-    """Extract SPARQL lookup specs from nested profile data.
-
-    Args:
-        node: Nested YAML data node.
-        location: Dot/bracket path for diagnostics.
-
-    Returns:
-        List of extracted lookup spec dictionaries.
-    """
-    specs: list[dict[str, Any]] = []
-
-    if isinstance(node, dict):
-        if node.get("source") == "sparql" and ("query" in node or "query_ref" in node):
-            specs.append(
-                {
-                    "location": location or "<root>",
-                    "query": node.get("query"),
-                    "query_ref": node.get("query_ref"),
-                    "query_params": node.get("query_params") or {},
-                    "refresh": node.get("refresh", "manual"),
-                }
-            )
-
-        for key, value in node.items():
-            child_location = f"{location}.{key}" if location else key
-            specs.extend(_extract_sparql_specs(value, child_location))
-    elif isinstance(node, list):
-        for index, item in enumerate(node):
-            child_location = f"{location}[{index}]" if location else f"[{index}]"
-            specs.extend(_extract_sparql_specs(item, child_location))
-
-    return specs
-
-
-def _render_query_template(template: str, params: dict[str, Any]) -> str:
-    """Render a template query using simple token replacement.
-
-    Tokens are expected as `{{token_name}}`.
-
-    Args:
-        template: Query template text.
-        params: Token replacement values.
-
-    Returns:
-        Rendered query string.
-    """
-    rendered = template
-    for key, value in params.items():
-        rendered = rendered.replace(f"{{{{{key}}}}}", str(value))
-    return rendered
-
-
-def hydrate_profile_lookups(
-    profile_paths: list[Union[str, Path]],
-    *,
-    refresh_policy: Optional[RefreshPolicy] = None,
-    force_refresh: bool = False,
-    page_size: int = 1000,
-    max_results: Optional[int] = None,
-    endpoint: str = "https://query.wikidata.org/sparql",
-    dry_run: bool = False,
-    fail_on_query_error: bool = False,
-) -> dict[str, Any]:
-    """Hydrate SPARQL lookup caches for one or more profile files.
-
-    This performs an explicit lookup hydration workflow by scanning profile YAML,
-    extracting SPARQL lookup specs, resolving query references/templates, deduplicating
-    identical rendered queries, and optionally executing them through `LookupFetcher`.
-
-    Args:
-        profile_paths: Paths to profile YAML files.
-        refresh_policy: Optional global refresh policy override.
-        force_refresh: Force refresh even if cache is fresh.
-        page_size: Page size for paginated query execution.
-        max_results: Optional maximum total results per query.
-        endpoint: SPARQL endpoint URL.
-        dry_run: If True, do not execute queries; return discovery summary only.
-        fail_on_query_error: If True, raise on first query execution failure.
-
-    Returns:
-        Summary dictionary with discovery/execution stats.
-    """
-    source = get_spirit_safe_source()
-    discovered_specs: list[dict[str, Any]] = []
-
-    for profile_path in profile_paths:
-        yaml_text = _resolve_profile_text(profile_path)
-        profile_data = yaml.safe_load(yaml_text) or {}
-        profile_specs = _extract_sparql_specs(profile_data)
-        for spec in profile_specs:
-            spec["profile"] = str(profile_path)
-            discovered_specs.append(spec)
-
-    unique_queries: dict[tuple[str, str], dict[str, Any]] = {}
-    failures: list[dict[str, Any]] = []
-
-    for spec in discovered_specs:
-        try:
-            if spec.get("query"):
-                rendered_query = str(spec["query"])
-            else:
-                query_ref = spec.get("query_ref")
-                if not query_ref:
-                    raise ValueError("Missing both 'query' and 'query_ref'")
-                resolved_query_ref = resolve_query_ref(
-                    str(query_ref), spec.get("profile", "")
-                )
-                query_template = _read_text_from_resolved_path(resolved_query_ref)
-                rendered_query = _render_query_template(
-                    query_template, spec.get("query_params", {})
-                )
-
-            key = (endpoint, rendered_query.strip())
-            if key not in unique_queries:
-                unique_queries[key] = {
-                    "endpoint": endpoint,
-                    "query": rendered_query,
-                    "refresh": refresh_policy or spec.get("refresh", "manual"),
-                    "sources": [],
-                }
-            unique_queries[key]["sources"].append(
-                {
-                    "profile": spec.get("profile"),
-                    "location": spec.get("location"),
-                    "query_ref": spec.get("query_ref"),
-                }
-            )
-        except Exception as exc:
-            failure = {
-                "profile": spec.get("profile"),
-                "location": spec.get("location"),
-                "query_ref": spec.get("query_ref"),
-                "error": str(exc),
-            }
-            failures.append(failure)
-            if fail_on_query_error:
-                profile_loc = f"{failure['profile']}:{failure['location']}"
-                raise RuntimeError(
-                    f"Failed to prepare query for {profile_loc}"
-                ) from exc
-
-    hydrated: list[dict[str, Any]] = []
-    if not dry_run:
-        fetcher = LookupFetcher(endpoint=endpoint)
-        for entry in unique_queries.values():
-            try:
-                results = fetcher.fetch(
-                    entry["query"],
-                    refresh_policy=entry["refresh"],
-                    force_refresh=force_refresh,
-                    page_size=page_size,
-                    max_results=max_results,
-                )
-                hydrated.append(
-                    {
-                        "endpoint": endpoint,
-                        "refresh": entry["refresh"],
-                        "source_count": len(entry["sources"]),
-                        "result_count": len(results),
-                        "sources": entry["sources"],
-                    }
-                )
-            except Exception as exc:
-                failure = {
-                    "endpoint": endpoint,
-                    "sources": entry["sources"],
-                    "error": str(exc),
-                }
-                failures.append(failure)
-                if fail_on_query_error:
-                    raise RuntimeError(
-                        "Failed to execute hydrated lookup query"
-                    ) from exc
-
-    cache_dir = source.resolve_cache_dir()
-    cache_file_count = len(list(cache_dir.glob("*.json"))) if cache_dir.exists() else 0
-
-    return {
-        "source_mode": source.mode,
-        "profiles_scanned": len(profile_paths),
-        "lookup_specs_found": len(discovered_specs),
-        "unique_queries": len(unique_queries),
-        "unique_queries_executed": 0 if dry_run else len(hydrated),
-        "dry_run": dry_run,
-        "cache_dir": str(cache_dir),
-        "cache_file_count": cache_file_count,
-        "hydrated": hydrated,
-        "failures": failures,
-    }
 
 
 @dataclass(frozen=True)
@@ -3562,10 +3193,6 @@ def load_profile_package(
         visited=set(),
     )
 
-    from gkc.profiles.graph import ProfileGraph
-
-    graph = ProfileGraph.from_profile_documents(profiles_to_load)
-
     primary_profile = profiles_to_load.get(normalized_profile_id)
     if primary_profile is None:
         raise FileNotFoundError(
@@ -3577,20 +3204,8 @@ def load_profile_package(
         "primary_profile_entity": primary_profile.get("id")
         or primary_profile.get("entity"),
         "profiles": profiles_to_load,
-        "graph": graph,
         "depth": depth,
     }
-
-
-def get_profile_graph(manifest: Optional[Manifest] = None) -> Any:
-    """Get the complete ProfileGraph from the loaded manifest."""
-
-    if manifest is None:
-        manifest = load_manifest()
-
-    from gkc.profiles.graph import ProfileGraph
-
-    return ProfileGraph.from_manifest_data(manifest.profiles)
 
 
 def resolve_profile_link(

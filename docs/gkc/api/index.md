@@ -64,8 +64,7 @@ import gkc
 
 # default mode is GitHub: skybristol/SpiritSafe@main
 profiles = gkc.list_profiles()
-metadata = gkc.get_profile_metadata("TribalGovernmentUS")
-print(metadata.version)
+print(profiles)
 ```
 
 📖 [SpiritSafe Module Documentation](spirit_safe.md)
@@ -138,9 +137,9 @@ Configure SpiritSafe source mode, discover profile registrants, resolve profile/
 
 - `SpiritSafeSourceConfig`
 - `set_spirit_safe_source()`, `get_spirit_safe_source()`
-- `list_profiles()`, `profile_exists()`, `get_profile_metadata()`
+- `list_profiles()`, `profile_exists()`
 - `resolve_profile_path()`, `resolve_query_ref()`
-- `hydrate_profile_lookups()`, `LookupCache`, `LookupFetcher`
+- `LookupCache`, `LookupFetcher`
 
 ### [Bottler](bottler.md)
 
