@@ -11,14 +11,14 @@ from typing import Any, Optional
 import streamlit as st
 
 import gkc
-from gkc.profiles.forms.draft_manager import DraftManager
 from gkc.profiles.forms.validation_bridge import validate_entity_packet_data
-from gkc.profiles.forms.wizard import IdentificationStep, SitelinksStep, StatementsStep
 from gkc.spirit_safe import load_profile
 from gkc.still_charger import (
     build_curation_packet_from_json_profile,
     charge_packet_from_wikidata_items,
 )
+from gkc.wizard import IdentificationStep, SitelinksStep, StatementsStep
+from gkc.wizard.draft_manager import DraftManager
 
 STEPS = [
     {"id": "plan", "title": "Plan", "icon": "📋"},

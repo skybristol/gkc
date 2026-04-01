@@ -12,8 +12,8 @@ import streamlit as st
 
 import gkc
 from gkc.profiles.forms.validation_bridge import validate_inline_value
-from gkc.profiles.forms.widgets import WidgetFactory
-from gkc.profiles.forms.wizard.step_base import Step
+from gkc.wizard.step_base import Step
+from gkc.wizard.widgets import WidgetFactory
 
 
 def _active_profile_doc() -> dict[str, Any] | None:
