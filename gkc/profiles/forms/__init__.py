@@ -1,9 +1,6 @@
-"""Form generation and UI components for profiles.
+"""Legacy transition package for non-wizard profile form utilities.
 
-Plain meaning: Interactive form tools for profile-based data entry.
+Plain meaning: Wizard runtime no longer lives under gkc.profiles.forms.
 """
 
-from gkc.profiles.forms import streamlit_app
-from gkc.profiles.forms.draft_manager import DraftManager
-
-__all__ = ["DraftManager", "streamlit_app"]
+__all__: list[str] = []

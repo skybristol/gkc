@@ -1,6 +1,6 @@
 """Tests for wizard adaptation to packet-native still_charger structures."""
 
-from gkc.profiles.forms.streamlit_app import (
+from gkc.wizard.streamlit_app import (
     _adapt_packet_to_wizard_view,
     _qid_map_for_primary_entity,
 )

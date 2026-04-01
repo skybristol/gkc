@@ -1,7 +1,7 @@
 """Tests for review-stage wizard messaging semantics."""
 
 from gkc.fermenter import ConformanceNotice
-from gkc.profiles.forms.streamlit_app import (
+from gkc.wizard.streamlit_app import (
     _collect_review_consequences,
     _conformance_evaluations_for_entity,
     _group_review_items,

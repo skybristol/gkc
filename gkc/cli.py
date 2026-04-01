@@ -2129,7 +2129,7 @@ def _handle_wizard(args: argparse.Namespace) -> dict[str, Any]:
         )
 
         try:
-            from gkc.profiles.forms import streamlit_app
+            from gkc.wizard import streamlit_app
         except ImportError as exc:
             raise CLIError(
                 "Streamlit UI dependencies are unavailable. Install `streamlit` to use `gkc wizard`."

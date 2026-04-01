@@ -9,7 +9,7 @@ from gkc.profiles.forms.validation_bridge import (
     _merge_wikibase_item_metadata,
     validate_inline_value,
 )
-from gkc.profiles.forms.wizard.steps import (
+from gkc.wizard.steps import (
     _coerce_nested_statement_map,
     _extract_value_list_candidates,
     _filter_value_list_candidates,
