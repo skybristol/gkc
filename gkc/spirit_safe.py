@@ -30,6 +30,13 @@ from gkc.mash import (
     extract_first_sparql_block,
     fetch_mediawiki_page_wikitext,
 )
+from gkc.runtime_config import (
+    DEFAULT_META_WB_CONFIG_FILENAMES,
+    DEFAULT_META_WB_CONFIG_SEARCH_DIRS,
+    MetaWikibaseConfigValues,
+    default_meta_wikibase_config_values,
+    load_meta_wikibase_config,
+)
 from gkc.sparql import SPARQLQuery, paginate_query, read_sparql_query_file
 
 RefreshPolicy = Literal["manual", "daily", "weekly", "on_release"]
@@ -2562,6 +2569,22 @@ def _manifest_source_url() -> str:
     return f"https://github.com/{DEFAULT_SPIRIT_SAFE_GITHUB_REPO}"
 
 
+def _resolve_spiritsafe_meta_wikibase_config(
+    spiritsafe_root: Union[str, Path],
+) -> tuple[Optional[Path], MetaWikibaseConfigValues]:
+    root = Path(spiritsafe_root).expanduser().resolve()
+
+    for subdir in DEFAULT_META_WB_CONFIG_SEARCH_DIRS:
+        if subdir and subdir != "config":
+            continue
+        for filename in DEFAULT_META_WB_CONFIG_FILENAMES:
+            candidate = root / subdir / filename if subdir else root / filename
+            if candidate.is_file():
+                return candidate, load_meta_wikibase_config(candidate)
+
+    return None, default_meta_wikibase_config_values()
+
+
 def _entity_id_from_reference(reference: Any) -> Optional[str]:
     """Normalize a QID/property ID or entity URI to its trailing identifier."""
 
@@ -2872,6 +2895,140 @@ def export_spiritsafe_entity_index(
     destination.parent.mkdir(parents=True, exist_ok=True)
     destination.write_text(json.dumps(index_document, indent=2), encoding="utf-8")
     return index_document
+
+
+def _build_semantic_anchor_entry(
+    entity_doc: dict[str, Any],
+    *,
+    name_identifier_property_id: str,
+    internal_prefix: str,
+) -> Optional[dict[str, Any]]:
+    base_entry = _build_entity_index_entry(entity_doc)
+    entity_id = str(base_entry.get("id") or "")
+    claims = entity_doc.get("entity", {}).get("claims", {})
+    name_identifier = next(
+        (
+            value
+            for value in (
+                _claim_string_value(claim)
+                for claim in claims.get(name_identifier_property_id, [])
+            )
+            if value
+        ),
+        None,
+    )
+    if not name_identifier:
+        return None
+
+    is_internal = bool(internal_prefix and name_identifier.startswith(internal_prefix))
+    anchor_key = (
+        name_identifier[len(internal_prefix) :]
+        if is_internal and len(name_identifier) > len(internal_prefix)
+        else name_identifier
+    )
+
+    return {
+        "id": entity_id,
+        "entity": base_entry.get("entity"),
+        "label": base_entry.get("label"),
+        "name_identifier": name_identifier,
+        "anchor_key": anchor_key,
+        "is_internal": is_internal,
+        "classes": list(base_entry.get("classes", [])),
+        "io_map": list(base_entry.get("io_map", [])),
+    }
+
+
+def build_spiritsafe_semantic_anchor_document(
+    spiritsafe_root: Union[str, Path],
+) -> dict[str, Any]:
+    """Build a normalized semantic anchor artifact from cached SpiritSafe entities."""
+
+    root = Path(spiritsafe_root).expanduser().resolve()
+    cache_entities_dir = root / "cache" / "entities"
+    config_path, config_values = _resolve_spiritsafe_meta_wikibase_config(root)
+
+    name_identifier_property_id = (
+        config_values.get("name_identifier_property_id") or "P214"
+    )
+    internal_prefix = config_values.get("internal_name_identifier_prefix") or "_"
+
+    anchors: dict[str, dict[str, Any]] = {}
+    anchor_key_index: dict[str, list[str]] = {}
+    entity_id_index: dict[str, str] = {}
+
+    for entity_path in sorted(cache_entities_dir.glob("*.json")):
+        entity_doc = json.loads(entity_path.read_text(encoding="utf-8"))
+        entry = _build_semantic_anchor_entry(
+            entity_doc,
+            name_identifier_property_id=name_identifier_property_id,
+            internal_prefix=internal_prefix,
+        )
+        if not entry:
+            continue
+
+        name_identifier = str(entry["name_identifier"])
+        entity_id = str(entry["id"])
+        anchor_key = str(entry["anchor_key"])
+        anchors[name_identifier] = entry
+        entity_id_index[entity_id] = name_identifier
+        anchor_key_index.setdefault(anchor_key, []).append(name_identifier)
+
+    for anchor_key, identifiers in anchor_key_index.items():
+        anchor_key_index[anchor_key] = sorted(set(identifiers))
+
+    relative_config_path = None
+    if config_path is not None:
+        try:
+            relative_config_path = str(config_path.relative_to(root))
+        except ValueError:
+            relative_config_path = str(config_path)
+
+    internal_anchor_count = sum(
+        1 for anchor in anchors.values() if anchor.get("is_internal") is True
+    )
+
+    return {
+        "generated_at": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
+        "source": _manifest_source_url(),
+        "config": {
+            "path": relative_config_path,
+            "id": config_values.get("config_id"),
+            "label": config_values.get("label"),
+            "api_url": config_values.get("api_url"),
+            "sparql_endpoint": config_values.get("sparql_endpoint"),
+            "semantic_conventions": {
+                "name_identifier_property_id": name_identifier_property_id,
+                "internal_name_identifier_prefix": internal_prefix,
+            },
+        },
+        "anchor_count": len(anchors),
+        "internal_anchor_count": internal_anchor_count,
+        "anchors": anchors,
+        "anchor_key_index": anchor_key_index,
+        "entity_id_index": entity_id_index,
+    }
+
+
+def export_spiritsafe_semantic_anchors(
+    spiritsafe_root: Union[str, Path],
+    output_path: Optional[Union[str, Path]] = None,
+) -> dict[str, Any]:
+    """Build and write the SpiritSafe semantic anchor artifact."""
+
+    root = Path(spiritsafe_root).expanduser().resolve()
+    destination = (
+        Path(output_path).expanduser().resolve()
+        if output_path is not None
+        else (root / "cache" / "config" / "semantic_anchors.json")
+    )
+
+    semantic_anchor_document = build_spiritsafe_semantic_anchor_document(root)
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    destination.write_text(
+        json.dumps(semantic_anchor_document, indent=2), encoding="utf-8"
+    )
+    return semantic_anchor_document
 
 
 def _statement_id_from_definition(statement: dict[str, Any]) -> Optional[str]:

@@ -36,6 +36,7 @@ from gkc.spirit_safe import (
     export_entity_profile_json_documents,
     export_spiritsafe_entity_index,
     export_spiritsafe_manifest,
+    export_spiritsafe_semantic_anchors,
     get_spirit_safe_source,
     load_manifest,
     load_profile,
@@ -807,6 +808,33 @@ def _build_parser() -> argparse.ArgumentParser:
     spiritsafe_sitelinks_sync.set_defaults(
         handler=_handle_spiritsafe_sitelinks_sync_wikimedia_sites,
         command_path="spiritsafe.sitelinks.sync-wikimedia-sites",
+    )
+
+    spiritsafe_semantic_anchors = spiritsafe_subparsers.add_parser(
+        "semantic-anchors", help="Build SpiritSafe semantic anchor artifacts"
+    )
+    spiritsafe_semantic_anchors_subparsers = spiritsafe_semantic_anchors.add_subparsers(
+        dest="spiritsafe_semantic_anchors_command"
+    )
+
+    spiritsafe_semantic_anchors_build = (
+        spiritsafe_semantic_anchors_subparsers.add_parser(
+            "build",
+            help="Build semantic anchor metadata from local SpiritSafe cache entities",
+        )
+    )
+    spiritsafe_semantic_anchors_build.add_argument(
+        "-o",
+        "--output",
+        help=(
+            "Optional output path for artifact JSON "
+            "(default: <local_root>/cache/config/semantic_anchors.json)"
+        ),
+    )
+    _add_profile_source_args(spiritsafe_semantic_anchors_build)
+    spiritsafe_semantic_anchors_build.set_defaults(
+        handler=_handle_spiritsafe_semantic_anchors_build,
+        command_path="spiritsafe.semantic-anchors.build",
     )
 
     # Packet commands
@@ -2226,6 +2254,43 @@ def _handle_spiritsafe_sitelinks_sync_wikimedia_sites(
             "command": args.command_path,
             "ok": True,
             "message": f"Synced Wikimedia sites artifact to {output_path}",
+            "details": details,
+        }
+    except Exception as exc:
+        raise CLIError(str(exc)) from exc
+
+
+def _handle_spiritsafe_semantic_anchors_build(
+    args: argparse.Namespace,
+) -> dict[str, Any]:
+    """Build the SpiritSafe semantic anchor artifact from local cache entities."""
+
+    if args.source != "local" or not args.local_root:
+        raise CLIError(
+            "spiritsafe semantic-anchors build requires --source local --local-root /path/to/SpiritSafe"
+        )
+
+    try:
+        local_root = Path(args.local_root).expanduser().resolve()
+        output_path = (
+            Path(args.output).expanduser().resolve()
+            if args.output
+            else local_root / "cache" / "config" / "semantic_anchors.json"
+        )
+
+        artifact = export_spiritsafe_semantic_anchors(local_root, output_path)
+        config = artifact.get("config", {})
+        details = {
+            "output_path": str(output_path),
+            "config_path": config.get("path"),
+            "config_id": config.get("id"),
+            "anchor_count": artifact.get("anchor_count", 0),
+            "internal_anchor_count": artifact.get("internal_anchor_count", 0),
+        }
+        return {
+            "command": args.command_path,
+            "ok": True,
+            "message": f"Built SpiritSafe semantic anchor artifact at {output_path}",
             "details": details,
         }
     except Exception as exc:

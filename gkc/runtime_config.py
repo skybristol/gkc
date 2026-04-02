@@ -18,6 +18,7 @@ DEFAULT_USER_AGENT = "GKC/1.0 (https://github.com/skybristol/gkc; data integrati
 META_WB_CONFIG_ENV_VAR = "META_WB_CONFIG"
 META_WB_API_URL_ENV_VAR = "META_WB_API_URL"
 META_WB_SPARQL_ENDPOINT_ENV_VAR = "META_WB_SPARQL_ENDPOINT"
+DEFAULT_META_WB_CONFIG_SEARCH_DIRS = ("config", "")
 DEFAULT_META_WB_CONFIG_FILENAMES = (
     "meta-wikibase.yaml",
     "meta-wikibase.yml",
@@ -48,6 +49,17 @@ class MetaWikibaseConfigValues(TypedDict):
     internal_name_identifier_prefix: Optional[str]
 
 
+def default_meta_wikibase_config_values() -> MetaWikibaseConfigValues:
+    return {
+        "config_id": None,
+        "label": None,
+        "api_url": None,
+        "sparql_endpoint": None,
+        "name_identifier_property_id": None,
+        "internal_name_identifier_prefix": None,
+    }
+
+
 def _read_optional_string(mapping: dict[object, object], key: str) -> Optional[str]:
     value = mapping.get(key)
     if value is None:
@@ -58,8 +70,12 @@ def _read_optional_string(mapping: dict[object, object], key: str) -> Optional[s
     return stripped or None
 
 
-def _discover_meta_wikibase_config_path() -> Optional[Path]:
-    explicit_path = os.environ.get(META_WB_CONFIG_ENV_VAR)
+def discover_meta_wikibase_config_path(
+    *,
+    start_dir: Optional[Path] = None,
+    explicit_path: Optional[str] = None,
+) -> Optional[Path]:
+    explicit_path = explicit_path or os.environ.get(META_WB_CONFIG_ENV_VAR)
     if explicit_path:
         candidate = Path(explicit_path).expanduser()
         if not candidate.is_absolute():
@@ -68,16 +84,21 @@ def _discover_meta_wikibase_config_path() -> Optional[Path]:
             raise RuntimeError(f"META_WB_CONFIG points to a missing file: {candidate}")
         return candidate
 
-    for directory in (Path.cwd(), *Path.cwd().parents):
-        for filename in DEFAULT_META_WB_CONFIG_FILENAMES:
-            candidate = directory / filename
-            if candidate.is_file():
-                return candidate
+    search_root = start_dir or Path.cwd()
+
+    for directory in (search_root, *search_root.parents):
+        for subdir in DEFAULT_META_WB_CONFIG_SEARCH_DIRS:
+            for filename in DEFAULT_META_WB_CONFIG_FILENAMES:
+                candidate = (
+                    directory / subdir / filename if subdir else directory / filename
+                )
+                if candidate.is_file():
+                    return candidate
 
     return None
 
 
-def _load_meta_wikibase_config(path: Path) -> MetaWikibaseConfigValues:
+def load_meta_wikibase_config(path: Path) -> MetaWikibaseConfigValues:
     try:
         raw_config = yaml.safe_load(path.read_text(encoding="utf-8"))
     except Exception as exc:
@@ -86,14 +107,7 @@ def _load_meta_wikibase_config(path: Path) -> MetaWikibaseConfigValues:
         ) from exc
 
     if raw_config is None:
-        return {
-            "config_id": None,
-            "label": None,
-            "api_url": None,
-            "sparql_endpoint": None,
-            "name_identifier_property_id": None,
-            "internal_name_identifier_prefix": None,
-        }
+        return default_meta_wikibase_config_values()
     if not isinstance(raw_config, dict):
         raise RuntimeError(
             f"Meta-wikibase config {path} must contain a top-level mapping"
@@ -142,19 +156,12 @@ def get_wikibase_runtime_config() -> WikibaseRuntimeConfig:
     ``WIKIVERSE_*`` environment variables or explicit parameters.
     """
 
-    config_path = _discover_meta_wikibase_config_path()
+    config_path = discover_meta_wikibase_config_path()
     config_values: MetaWikibaseConfigValues
     if config_path:
-        config_values = _load_meta_wikibase_config(config_path)
+        config_values = load_meta_wikibase_config(config_path)
     else:
-        config_values = {
-            "config_id": None,
-            "label": None,
-            "api_url": None,
-            "sparql_endpoint": None,
-            "name_identifier_property_id": None,
-            "internal_name_identifier_prefix": None,
-        }
+        config_values = default_meta_wikibase_config_values()
 
     api_url = (
         os.environ.get(META_WB_API_URL_ENV_VAR)

@@ -1,14 +1,18 @@
 """Tests for next-generation SpiritSafe manifest and JSON profile workflows."""
 
+import json
 from pathlib import Path
+from shutil import copytree
 
 import pytest
 
 from gkc.spirit_safe import (
     build_spiritsafe_entity_index_document,
     build_spiritsafe_manifest_document,
+    build_spiritsafe_semantic_anchor_document,
     export_spiritsafe_entity_index,
     export_spiritsafe_manifest,
+    export_spiritsafe_semantic_anchors,
     load_manifest,
     load_profile,
     load_profile_package,
@@ -100,6 +104,167 @@ def test_export_spiritsafe_entity_index(fixture_root: Path, tmp_path: Path):
     assert output_path.exists()
     assert index["entity_count"] == 1
     assert index["class_index"] == {}
+
+
+def test_build_spiritsafe_semantic_anchor_document(tmp_path: Path, fixture_root: Path):
+    """Semantic anchor builder should normalize named entities and config metadata."""
+
+    root = tmp_path / "spiritsafe"
+    copytree(fixture_root, root)
+    config_dir = root / "config"
+    config_dir.mkdir()
+    (config_dir / "dd-wikibase.yaml").write_text(
+        """
+meta_wikibase:
+  id: datadistillery-wikibase
+  label: Data Distillery Wikibase
+  semantic_conventions:
+    name_identifier_property_id: P214
+    internal_name_identifier_prefix: "_"
+""".strip()
+        + "\n",
+        encoding="utf-8",
+    )
+
+    entity_path = root / "cache" / "entities" / "Q4.json"
+    entity_doc = json.loads(entity_path.read_text(encoding="utf-8"))
+    entity_doc["entity"]["claims"]["P214"] = [
+        {
+            "mainsnak": {
+                "snaktype": "value",
+                "property": "P214",
+                "datavalue": {
+                    "value": "TribalGovernmentInTheUnitedStates",
+                    "type": "string",
+                },
+                "datatype": "string",
+            },
+            "type": "statement",
+            "id": "Q4$P214",
+            "rank": "normal",
+        }
+    ]
+    entity_path.write_text(json.dumps(entity_doc, indent=2), encoding="utf-8")
+
+    anchors = build_spiritsafe_semantic_anchor_document(root)
+
+    assert anchors["config"]["path"] == "config/dd-wikibase.yaml"
+    assert anchors["config"]["semantic_conventions"] == {
+        "name_identifier_property_id": "P214",
+        "internal_name_identifier_prefix": "_",
+    }
+    assert anchors["anchor_count"] == 1
+    assert anchors["internal_anchor_count"] == 0
+    assert anchors["anchors"]["TribalGovernmentInTheUnitedStates"] == {
+        "id": "Q4",
+        "entity": "https://datadistillery.wikibase.cloud/entity/Q4",
+        "label": "Tribal Government in the United States",
+        "name_identifier": "TribalGovernmentInTheUnitedStates",
+        "anchor_key": "TribalGovernmentInTheUnitedStates",
+        "is_internal": False,
+        "classes": [],
+        "io_map": [],
+    }
+    assert anchors["anchor_key_index"] == {
+        "TribalGovernmentInTheUnitedStates": ["TribalGovernmentInTheUnitedStates"]
+    }
+    assert anchors["entity_id_index"] == {"Q4": "TribalGovernmentInTheUnitedStates"}
+
+
+def test_build_spiritsafe_semantic_anchor_document_marks_internal_entries(
+    tmp_path: Path, fixture_root: Path
+):
+    """Semantic anchor builder should flag underscore-prefixed internal anchors."""
+
+    root = tmp_path / "spiritsafe"
+    copytree(fixture_root, root)
+    config_dir = root / "config"
+    config_dir.mkdir()
+    (config_dir / "dd-wikibase.yaml").write_text(
+        """
+meta_wikibase:
+  semantic_conventions:
+    name_identifier_property_id: P214
+    internal_name_identifier_prefix: "_"
+""".strip()
+        + "\n",
+        encoding="utf-8",
+    )
+
+    entity_path = root / "cache" / "entities" / "Q4.json"
+    entity_doc = json.loads(entity_path.read_text(encoding="utf-8"))
+    entity_doc["entity"]["claims"]["P214"] = [
+        {
+            "mainsnak": {
+                "snaktype": "value",
+                "property": "P214",
+                "datavalue": {
+                    "value": "_tribal_government_profile",
+                    "type": "string",
+                },
+                "datatype": "string",
+            },
+            "type": "statement",
+            "id": "Q4$P214-internal",
+            "rank": "normal",
+        }
+    ]
+    entity_path.write_text(json.dumps(entity_doc, indent=2), encoding="utf-8")
+
+    anchors = build_spiritsafe_semantic_anchor_document(root)
+
+    entry = anchors["anchors"]["_tribal_government_profile"]
+    assert entry["is_internal"] is True
+    assert entry["anchor_key"] == "tribal_government_profile"
+    assert anchors["internal_anchor_count"] == 1
+    assert anchors["anchor_key_index"] == {
+        "tribal_government_profile": ["_tribal_government_profile"]
+    }
+
+
+def test_export_spiritsafe_semantic_anchors(fixture_root: Path, tmp_path: Path):
+    """Semantic anchor export should write JSON to the requested path."""
+
+    root = tmp_path / "spiritsafe"
+    copytree(fixture_root, root)
+    config_dir = root / "config"
+    config_dir.mkdir()
+    (config_dir / "dd-wikibase.yaml").write_text(
+        """
+meta_wikibase:
+  semantic_conventions:
+    name_identifier_property_id: P214
+    internal_name_identifier_prefix: "_"
+""".strip()
+        + "\n",
+        encoding="utf-8",
+    )
+
+    entity_path = root / "cache" / "entities" / "Q4.json"
+    entity_doc = json.loads(entity_path.read_text(encoding="utf-8"))
+    entity_doc["entity"]["claims"]["P214"] = [
+        {
+            "mainsnak": {
+                "snaktype": "value",
+                "property": "P214",
+                "datavalue": {
+                    "value": "TribalGovernmentInTheUnitedStates",
+                    "type": "string",
+                },
+                "datatype": "string",
+            },
+            "type": "statement",
+            "id": "Q4$P214",
+            "rank": "normal",
+        }
+    ]
+    entity_path.write_text(json.dumps(entity_doc, indent=2), encoding="utf-8")
+
+    output_path = tmp_path / "semantic_anchors.json"
+    anchors = export_spiritsafe_semantic_anchors(root, output_path)
+
+    assert output_path.exists()
+    assert anchors["anchor_count"] == 1
 
 
 def test_load_manifest_reads_new_shape():

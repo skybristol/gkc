@@ -82,7 +82,7 @@ If you intend to publish data to Wikidata, Wikimedia Commons, or OpenStreetMap, 
 If you are working with read-oriented processes that interface with the [Data Distillery Wikibase](https://datadistillery.wikibase.cloud/), point `gkc` at the tracked meta-wikibase config file.
 
 ```bash
-export META_WB_CONFIG="/path/to/SpiritSafe/dd-wikibase.yaml"
+export META_WB_CONFIG="/path/to/SpiritSafe/config/dd-wikibase.yaml"
 ```
 
 When necessary, you can override endpoint values directly:

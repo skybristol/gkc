@@ -85,11 +85,13 @@ meta_wikibase:
 
 
 def test_runtime_config_autodiscovers_config_file(monkeypatch, tmp_path):
-    """Runtime config auto-discovers dd-wikibase.yaml from parent directories."""
+    """Runtime config auto-discovers config/dd-wikibase.yaml from parent directories."""
     root_dir = tmp_path / "SpiritSafe"
     nested_dir = root_dir / "cache" / "entities"
     nested_dir.mkdir(parents=True)
-    config_path = root_dir / "dd-wikibase.yaml"
+    config_dir = root_dir / "config"
+    config_dir.mkdir()
+    config_path = config_dir / "dd-wikibase.yaml"
     config_path.write_text(
         "api_url: https://autodiscovery.example/w/api.php\n",
         encoding="utf-8",
@@ -104,6 +106,27 @@ def test_runtime_config_autodiscovers_config_file(monkeypatch, tmp_path):
     assert config.config_path == str(config_path)
     assert config.api_url == "https://autodiscovery.example/w/api.php"
     assert config.sparql_endpoint == DEFAULT_SPARQL_ENDPOINT
+
+
+def test_runtime_config_autodiscovers_root_fallback_config(monkeypatch, tmp_path):
+    """Runtime config still supports root-level dd-wikibase.yaml as a fallback."""
+    root_dir = tmp_path / "SpiritSafe"
+    nested_dir = root_dir / "cache" / "entities"
+    nested_dir.mkdir(parents=True)
+    config_path = root_dir / "dd-wikibase.yaml"
+    config_path.write_text(
+        "api_url: https://rootfallback.example/w/api.php\n",
+        encoding="utf-8",
+    )
+    monkeypatch.delenv(META_WB_CONFIG_ENV_VAR, raising=False)
+    monkeypatch.delenv(META_WB_API_URL_ENV_VAR, raising=False)
+    monkeypatch.delenv(META_WB_SPARQL_ENDPOINT_ENV_VAR, raising=False)
+    monkeypatch.chdir(nested_dir)
+
+    config = get_wikibase_runtime_config()
+
+    assert config.config_path == str(config_path)
+    assert config.api_url == "https://rootfallback.example/w/api.php"
 
 
 def test_runtime_config_env_overrides_config_file(monkeypatch, tmp_path):
