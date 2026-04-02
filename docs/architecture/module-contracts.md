@@ -77,14 +77,16 @@ Transition-only legacy surface (deferred removal):
 Responsibility:
 
 - Assemble curation packet scaffolds from Entity Profile JSON documents.
-- Fill curation packet entity scaffolds with concrete source values.
-- Support charging from Wikidata entities and other source adapters.
-- Emit shared conformance notices and charge summaries.
+- Charge packet entities from source values (Wikidata and other adapters).
+- Inject per-entity source provenance into packet metadata for charged packets.
+- Reseal packet metadata digest after charge-time metadata mutation.
+- Orchestrate packet conformance section assembly from fermenter primitives.
 
 Out of scope:
 
 - Target payload shaping for any specific destination API.
 - API transport execution.
+- Validation semantics and outcome interpretation.
 
 Current anchor surface:
 
@@ -118,7 +120,7 @@ Out of scope:
 Current anchor surface:
 
 - `ConformanceNotice`
-- `ConformanceOutcome` (string enum: `CONFORMANT`, `NON_CONFORMANT_MAPPABLE`, `UNCOVERED`, `MISSING_REQUIRED`)
+- `ConformanceOutcome` (evaluation outcome contract under active refinement; packet-facing record migration tracked in #200)
 - `StatementEvaluation`
 - `EntityEvaluation`
 - `ValidationResult`
@@ -327,10 +329,14 @@ When adding new functionality, assign ownership using this matrix:
 
 ## Current Gaps to Revisit During Critical Analysis
 
-- Still Charger does not yet emit per-entity source provenance (`source_qid`, `lastrevid`, `pulled_at`) in the packet.
 - Boundaries between wikibase write planning and bottler transformation stages still need explicit acceptance criteria per phase.
 - Cross-module tests should identify failure source by layer (read, transform, payload-shape, write, orchestration).
 - Packet compatibility metadata, change classification, and forward-migration rules for long-lived offline packets remain to be implemented.
+
+Additional contract-alignment gaps under active work:
+
+- Packet `data` remains transitional hybrid shape in current runtime implementation and must be normalized per #200 contract direction.
+- Still charger should not patch fermenter record fields post-serialization; missing fields must be addressed in fermenter-owned serializer contracts.
 
 Additional active boundary cleanup:
 

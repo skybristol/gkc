@@ -15,7 +15,7 @@ Infrastructure components:
 
 1. **Data Distillery Wikibase** — semantic authoring system of record for profiles, statements, value lists, and linkage semantics.
 2. **SpiritSafe repository** — materialized artifact registry (JSON profiles, query files, hydrated caches, manifest, entity index).
-3. **GKC Python package** — runtime engine that consumes SpiritSafe artifacts to build packets, validate/coerce, plan writes, and ship.
+3. **GKC Python package** — runtime engine that consumes SpiritSafe artifacts to assemble packets (`still_charger`), validate/coerce (`fermenter`), plan writes, and ship.
 
 Architectural components:
 
@@ -154,7 +154,7 @@ Profiles are the *source of truth*; JSON Schemas are the *machine interface*.
 
 - **Primary entity** — The entity being directly curated
 - **Related entities** — Secondary entities linked via profile graph (e.g., offices, organizations)
-- **Packet metadata** — Creation timestamps, curator username, status tracking
+- **Packet metadata** — Profile ruleset, linkage graph, provenance, source context, and integrity sealing
 - **Dual-key identity system** — `name_identifier` is the human-facing key while `id` (URI) remains canonical for joins, provenance, and round-trip mapping
 
 **Packet Lifecycle:**
@@ -185,6 +185,7 @@ This enables dependency ordering (ship entities depth-first), audit trails, and 
 
 - [GKC Entity JSON Schema](../gkc/entity-json-schema.md)
 - [Wizard Multi-Entity Curation](../gkc/wizard.md#multi-entity-curation-sessions)
+- [Still Charger Architecture](still_charger.md)
 
 ### SpiritSafe
 

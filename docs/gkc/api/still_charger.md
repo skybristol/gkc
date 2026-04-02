@@ -2,46 +2,56 @@
 
 ## Overview
 
-The `gkc.still_charger` module assembles curation packet scaffolds from JSON Entity Profiles and fills them with concrete source values before Wikibase write planning.
+`gkc.still_charger` is the packet assembly and source charging module.
 
-All packets enforce a strict `metadata` / `data` split. The `metadata` section carries the full profile ruleset, unified graph, mint provenance, and an integrity digest. The `data` section contains fillable entity slots keyed by statement `name_identifier`.
+It owns:
 
-Validation and coercion notices are emitted as `ConformanceNotice` objects (see [Fermenter API](fermenter.md)).
+- Building curation packet scaffolds from JSON Entity Profiles.
+- Charging packet entities from source systems (currently Wikidata via `mash`).
+- Producing packet-level conformance payloads by orchestrating fermenter primitives.
+- Maintaining packet metadata integrity sealing after charge-time metadata mutation.
 
-## Quick Start: Build and Charge a Packet
+It does not own validation semantics. Fermenter owns validation outcomes and notice semantics.
+
+## Contract Shape
+
+Curation packets follow a strict three-section top-level shape:
+
+- `metadata`
+- `data`
+- `conformance`
+
+Source metadata for charged packets is recorded in `metadata.profiles[*]` and includes:
+
+- `source_qid`
+- `lastrevid`
+- `pulled_at`
+
+After source metadata injection, `still_charger` reseals `metadata.integrity.metadata_digest`.
+
+## Quick Start
 
 ```python
-from pathlib import Path
-from gkc.still_charger import (
-    create_curation_packet,
-    charge_packet_from_wikidata_items,
-)
+from gkc.still_charger import create_curation_packet, charge_packet_from_wikidata_items
 from gkc.spirit_safe import set_spirit_safe_source
 
 set_spirit_safe_source(mode="local", local_root="/path/to/SpiritSafe")
 
-# 1. Create uncharged scaffold from profile QID (canonical entrypoint)
 packet = create_curation_packet("Q4", operation_mode="single")
 
-print(packet["packet_id"])
-# Entity slots are keyed by name_identifier in data.entities
-for entity in packet["data"]["entities"]:
-    print(entity["profile"], list(entity["statements"].keys()))
-
-# 2. Charge from Wikidata (Cherokee Nation Q195562)
-# qid_map accepts profile entity URI or name_identifier as keys
 qid_map = {entity["id"]: "Q195562" for entity in packet["data"]["entities"]}
 charged_packet, notices = charge_packet_from_wikidata_items(packet, qid_map)
 
-for notice in notices:
-    print(notice.severity, notice.code, notice.message)
+print(charged_packet["metadata"]["profiles"][0].get("source_qid"))
+print(charged_packet["metadata"]["integrity"]["metadata_digest_algorithm"])
+print(len(notices))
 ```
 
 ## Public API
 
-### `create_curation_packet()`
+### create_curation_packet
 
-Create a packet scaffold from SpiritSafe by profile identifier.
+Create a packet scaffold from SpiritSafe profile JSON.
 
 ```python
 from gkc.still_charger import create_curation_packet
@@ -49,20 +59,20 @@ from gkc.still_charger import create_curation_packet
 packet = create_curation_packet("Q4", operation_mode="single")
 ```
 
-**Arguments:**
+Arguments:
 
-| Argument | Type | Description |
+| Argument | Type | Meaning |
 |---|---|---|
 | `profile_id` | `str` | Profile QID or full profile URI |
-| `operation_mode` | `str` | `single` for primary-only scaffold or `bulk` for profile-graph expansion |
+| `operation_mode` | `str` | `single` for primary profile only, `bulk` for profile-graph expansion |
 
-**Returns:** `dict` — Packet scaffold in the dual-key packet contract (`name_identifier` for human-facing keys and `id` URI for canonical identity).
+Returns:
 
----
+- Packet scaffold with `metadata`, `data`, and empty `conformance` target surface.
 
-### `build_curation_packet_from_json_profile()`
+### build_curation_packet_from_json_profile
 
-Assemble a curation packet scaffold from a JSON Entity Profile document.
+Assemble a packet scaffold from a loaded JSON profile document.
 
 ```python
 from pathlib import Path
@@ -75,232 +85,140 @@ packet = build_curation_packet_from_json_profile(
 )
 ```
 
-**Arguments:**
+Arguments:
 
-| Argument | Type | Description |
+| Argument | Type | Meaning |
 |---|---|---|
-| `profile_entity` | `str` | Full URI for the entity profile (e.g., `https://datadistillery.wikibase.cloud/entity/Q4`) |
-| `json_profile_doc` | `dict` | Parsed JSON Entity Profile document |
-| `source_root` | `Path \| None` | Local SpiritSafe root for value-list route resolution (optional) |
+| `profile_entity` | `str` | Profile URI or QID |
+| `json_profile_doc` | `dict` | Parsed JSON profile document |
+| `source_root` | `Path | None` | Optional SpiritSafe local root for value-list route resolution |
+| `source_config` | `dict | None` | Optional source descriptor stored under `metadata.source` |
 
-**Returns:** `dict` — The assembled packet with the two-section contract:
+Returns:
 
-```json
-{
-  "packet_id": "pkt-...",
-  "operation_mode": "new",
-  "metadata": {
-    "primary_profile": {
-      "name_identifier": "tribal_government_us",
-      "id": "https://datadistillery.wikibase.cloud/entity/Q4"
-    },
-    "profiles": [
-      {
-        "id": "https://datadistillery.wikibase.cloud/entity/Q4",
-        "name_identifier": "tribal_government_us",
-        "identification": {},
-        "statements": [],
-        "metadata": {}
-      }
-    ],
-    "graph": {"nodes": {}, "edges": []},
-    "mint": {"minted_at": "...", "generator": "...", "gkc_version": "..."},
-    "integrity": {"metadata_digest": "..."}
-  },
-  "data": {
-    "entities": [
-      {
-        "profile": "tribal_government_us",
-        "id": "https://datadistillery.wikibase.cloud/entity/Q4",
-        "labels": {"mul": {"data-value": ""}},
-        "descriptions": {"mul": {"data-value": ""}},
-        "aliases": {"mul": {"data-value": ""}},
-        "statements": {
-          "instance_of": {
-            "id": "https://datadistillery.wikibase.cloud/entity/Q16",
-            "data-type": "wikibase-item",
-            "data-value": "https://www.wikidata.org/entity/Q7840353"
-          }
-        }
-      }
-    ]
-  }
-}
-```
+- Uncharged packet scaffold with sealed metadata integrity digest.
 
-### `charge_packet_from_wikidata_items()`
+### charge_packet_from_wikidata_items
 
-Charge a packet scaffold with live data fetched from Wikidata.
+Charge a packet from Wikidata entities and emit conformance payloads.
 
 ```python
 from gkc.still_charger import charge_packet_from_wikidata_items
 
-# Map all packet entities to a single QID
-qid_map = {entity["id"]: "Q195562" for entity in packet["data"]["entities"]}
-
 charged_packet, notices = charge_packet_from_wikidata_items(packet, qid_map)
-
-errors = [n for n in notices if n.severity == "error"]
-warnings = [n for n in notices if n.severity == "warning"]
 ```
 
-**Arguments:**
+Arguments:
 
-| Argument | Type | Description |
+| Argument | Type | Meaning |
 |---|---|---|
-| `packet` | `dict` | Assembled packet from `build_curation_packet_from_json_profile()` |
-| `qid_map` | `dict[str, str]` | Maps profile entity URIs or profile `name_identifier` values to Wikidata QIDs |
-| `mash_client` | `Any \| None` | Optional pre-configured mash client; creates a new one if not supplied |
+| `packet` | `dict` | Packet assembled by `build_curation_packet_from_json_profile` |
+| `qid_map` | `dict[str, str]` | Maps profile URI or profile `name_identifier` to Wikidata QID |
+| `mash_client` | `Any | None` | Optional `WikibaseLoader`-compatible client |
 
-**QID resolution order for entity slots:**
+Returns:
 
-1. Full profile entity URI — exact key match in `qid_map`
-2. Profile `name_identifier` — key match in `qid_map`
-
-The charger does not infer primary entity mappings from DD Wikibase QID tails. Pass an explicit profile URI or `name_identifier` key to avoid namespace ambiguity across Wikibase instances.
-
-**Returns:** `tuple[dict, list[ConformanceNotice]]`
-
-- `dict`: Charged packet with `data-value` fields populated in each entity slot and a `conformance` section added at the top level.
-- `list[ConformanceNotice]`: All conformance notices from the charging pass.
-
-**Charged packet `conformance` section:**
-
-```json
-{
-  "conformance": {
-    "entity_profile_map": {
-      "Q195562": "https://datadistillery.wikibase.cloud/entity/Q4",
-      "tribal_government_us": "https://datadistillery.wikibase.cloud/entity/Q4",
-      "https://datadistillery.wikibase.cloud/entity/Q4": "https://datadistillery.wikibase.cloud/entity/Q4",
-      "Q7245055": "https://datadistillery.wikibase.cloud/entity/Q39"
-    },
-    "statement_evaluations": [
-      {
-        "entity_id": "Q195562",
-        "gkc_entity_statement": {
-          "id": "office_held_by_head_of_government",
-          "uri": "https://datadistillery.wikibase.cloud/entity/Q40"
-        },
-        "json_path": "$.entity.claims.P1313[0]",
-        "statement_uri": "https://datadistillery.wikibase.cloud/entity/Q40",
-        "statement_id": "office_held_by_head_of_government",
-        "status": "conformant",
-        "outcome": "conformant"
-      },
-      {
-        "entity_id": "Q195562",
-        "gkc_entity_statement": {
-          "id": "P31",
-          "uri": "unknown/P31"
-        },
-        "json_path": "$.entity.claims.P31[0]",
-        "statement_uri": "unknown/P31",
-        "status": "uncovered"
-      }
-    ]
-  }
-}
-```
-
-**`entity_profile_map` keys:** Each loaded entity is indexed three ways — by Wikidata QID, by profile `name_identifier`, and by full profile URI — all mapping to the profile URI that governs that entity's conformance.
-
-**`statement_evaluations` fields:**
-
-| Field | Type | Description |
+| Position | Type | Meaning |
 |---|---|---|
-| `entity_id` | `str` | Wikidata QID of the evaluated entity |
-| `gkc_entity_statement` | `dict` | DD Wikibase statement reference with keys `id` and `uri`; placed immediately below `entity_id` |
-| `json_path` | `str` | JSONPath to the evaluated claim (e.g. `$.entity.claims.P31[0]`) |
-| `statement_uri` | `str` | DD Wikibase statement URI if matched; `unknown/<prop>` if unrecognized |
-| `statement_id` | `str` | Profile `name_identifier` for the statement when available |
-| `status` | `str` | `conformant`, `nonconformant`, or `uncovered` |
-| `outcome` | `str` | Fermenter conformance outcome (`conformant`, `non_conformant_mappable`, `missing`, `to_be_defined`) |
-| `notices` | `list[dict]` | Serialized fermenter notices for the statement |
-| `qualifiers` | `list[dict]` | Nested qualifier statement evaluation records (same shape recursively) |
-| `references` | `list[dict]` | Nested reference statement evaluation records (same shape recursively) |
+| `0` | `dict` | Charged packet |
+| `1` | `list[ConformanceNotice]` | Packet notices (currently empty placeholder list for this path) |
 
-**Linked entity loading:** When the primary entity has claims matching a profile-declared linkage (via `metadata.linkage_index`), the linked entity is automatically fetched from Wikidata and evaluated against its target profile. Both primary and linked entities appear in `data.entities` and `conformance.entity_profile_map`.
+Charge behavior:
 
-`still_charger` delegates statement-level conformance evaluation and serialization to fermenter primitives (`evaluate_statement_instance` and `statement_evaluation_to_record`). Charger owns packet orchestration and entity loading; fermenter owns conformance interpretation.
+- Resolves linked entities via profile linkage routes.
+- Loads primary and linked entity JSON from Wikidata.
+- Populates packet data entities with source payloads.
+- Injects source provenance fields into `metadata.profiles[*]`.
+- Builds `conformance` payload from fermenter statement evaluators.
+- Reseals metadata digest after metadata mutation.
 
----
+Current runtime note:
 
-### `charge_curation_packet()` (Legacy)
+- `data.entities` remains a transitional hybrid surface in current implementation (scaffold slots plus embedded raw entity payload).
+- Contract direction in #200 is to eliminate hybrid slot decoration from packet `data` and keep evaluation semantics in `conformance` only.
 
-Charge a packet directly from a source-values dict. This is a legacy path for bulk operations where data has already been fetched and transformed before packet assembly. New workflows should use `charge_packet_from_wikidata_items()` instead.
+### charge_curation_packet (Legacy)
+
+Legacy direct-charge path from caller-provided source values.
 
 ```python
 from gkc.still_charger import charge_curation_packet
 
-source_values = {
-    "https://datadistillery.wikibase.cloud/entity/Q4": {
-        "labels": {"mul": {"data-value": "Cherokee Nation"}},
-        "statements": {
-            "instance_of": [{"data-value": "https://www.wikidata.org/entity/Q7840353"}],
-        },
-    }
-}
-
 charged_packet, report = charge_curation_packet(packet, source_values)
-
-print(report.entities_charged)
-print(report.entities_skipped)
-print([issue.message for issue in report.issues])
 ```
 
----
+New workflows should prefer `charge_packet_from_wikidata_items`.
 
-### `ChargeIssue` and `ChargeReport`
+### ChargeIssue and ChargeReport
 
-```python
-from gkc.still_charger import ChargeIssue, ChargeReport
+`ChargeIssue` captures a non-fatal charging issue.
 
-issue = ChargeIssue(
-    severity="warning",
-  entity_ref="https://datadistillery.wikibase.cloud/entity/Q4",
-    code="specificationless_charge",
-    message="Specificationless charging accepted unknown statements",
-)
+`ChargeReport` summarizes charge results:
 
-report = ChargeReport(entities_charged=1, entities_skipped=0, issues=[issue])
-print(report.entities_charged, report.issues[0].severity)
-```
+- `entities_charged`
+- `entities_skipped`
+- `issues`
 
-`ChargeIssue` is an alias for `ConformanceNotice` (see [Fermenter API](fermenter.md)).
+## Metadata Integrity and Provenance
 
+Metadata digest behavior:
+
+1. Packet scaffolds are sealed at build time.
+2. Charged packets inject source provenance into `metadata.profiles[*]`.
+3. Metadata is resealed after provenance injection.
+
+This supports packet re-presentation checks where metadata integrity and source revision context must be evaluated together.
+
+## Conformance Output Interface
+
+`still_charger` orchestrates conformance payload construction and delegates atomic statement evaluation to fermenter:
+
+- `evaluate_statement_instance`
+- `statement_evaluation_to_record`
+
+Ownership split:
+
+- `still_charger`: packet orchestration, source loading, packet mutation order.
+- `fermenter`: statement-level evaluation semantics and record serialization.
 
 ## API Reference (mkdocstrings)
 
-### `ChargeIssue`
+### ChargeIssue
 
 ::: gkc.still_charger.ChargeIssue
     options:
       show_root_heading: false
       heading_level: 4
 
-### `ChargeReport`
+### ChargeReport
 
 ::: gkc.still_charger.ChargeReport
     options:
       show_root_heading: false
       heading_level: 4
 
-### `create_curation_packet()`
+### create_curation_packet
 
 ::: gkc.still_charger.create_curation_packet
     options:
       show_root_heading: false
       heading_level: 4
 
-### `build_curation_packet_from_json_profile()`
+### build_curation_packet_from_json_profile
 
 ::: gkc.still_charger.build_curation_packet_from_json_profile
     options:
       show_root_heading: false
       heading_level: 4
 
-### `charge_curation_packet()`
+### charge_packet_from_wikidata_items
+
+::: gkc.still_charger.charge_packet_from_wikidata_items
+    options:
+      show_root_heading: false
+      heading_level: 4
+
+### charge_curation_packet
 
 ::: gkc.still_charger.charge_curation_packet
     options:
@@ -309,5 +227,6 @@ print(report.entities_charged, report.issues[0].severity)
 
 ## See Also
 
-- [Shipper API](shipper.md)
+- [Fermenter API](fermenter.md)
 - [SpiritSafe API](spirit_safe.md)
+- [Curation Packet Contract](../entity-json-schema.md)
