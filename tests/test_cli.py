@@ -182,6 +182,72 @@ def test_mash_cache_wikibase_revisions_json(monkeypatch, capsys, tmp_path):
     assert data["details"]["deleted_count"] == 1
 
 
+def test_mash_full_sync_wikibase_json(monkeypatch, capsys, tmp_path):
+    """mash full-sync-wikibase returns summary in JSON mode."""
+
+    class FakeRuntimeConfig:
+        api_url = "https://datadistillery.wikibase.cloud/w/api.php"
+        sparql_endpoint = "https://datadistillery.wikibase.cloud/query/sparql"
+        username = None
+        password = None
+
+    class FakeAuth:
+        def __init__(self, api_url=None):
+            self.api_url = api_url
+            self.username = None
+            self.password = None
+
+    class FakeSyncResult:
+        cache_dir = str(tmp_path / "cache")
+        api_url = "https://datadistillery.wikibase.cloud/w/api.php"
+        api_url_source = "runtime_config"
+        run_mode = "full_sync_baseline"
+        started_at = "2026-03-13T16:00:00Z"
+        completed_at = "2026-03-13T16:05:00Z"
+        duration_seconds = 300.0
+        discovered_ids = ["Q4", "Q39", "P211"]
+        hydrated_ids = ["P211", "Q4"]
+        tombstone_ids = ["Q39"]
+        redirect_ids = []
+        failed_ids = []
+        batch_size_requested = 50
+        batch_size_effective = 50
+        batch_fallback_count = 0
+        batch_fallback_first_error = None
+
+    monkeypatch.setattr(cli, "get_wikibase_runtime_config", lambda: FakeRuntimeConfig())
+    monkeypatch.setattr(cli, "WikibaseApiClient", lambda api_url: object())
+    monkeypatch.setattr(cli, "WikiverseAuth", FakeAuth)
+    monkeypatch.setattr(
+        cli,
+        "full_sync_wikibase_entity_cache",
+        lambda **kwargs: FakeSyncResult(),
+    )
+
+    output_path = tmp_path / "full-sync.json"
+    exit_code = cli.main(
+        [
+            "--json",
+            "mash",
+            "full-sync-wikibase",
+            "--cache-dir",
+            str(tmp_path / "cache"),
+            "--items-only",
+            "--output",
+            str(output_path),
+        ]
+    )
+
+    assert exit_code == 0
+    output = capsys.readouterr().out.strip()
+    data = json.loads(output)
+    assert data["command"] == "mash.full-sync-wikibase"
+    assert data["ok"] is True
+    assert data["details"]["hydrated_count"] == 2
+    assert data["details"]["tombstone_count"] == 1
+    assert output_path.exists()
+
+
 def test_packet_build_supports_github_source(monkeypatch, capsys):
     """packet build should load profile via source config when source=github."""
 

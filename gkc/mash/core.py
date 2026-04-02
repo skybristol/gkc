@@ -161,6 +161,32 @@ class WikibaseCacheRefreshResult:
 
 
 @dataclass(frozen=True)
+class WikibaseFullSyncResult:
+    """Result of a full-sync baseline entity cache operation.
+
+    Plain meaning: What happened when we re-cached every live entity in a
+    Wikibase instance from scratch.
+    """
+
+    cache_dir: str
+    api_url: str
+    api_url_source: str
+    run_mode: str
+    started_at: str
+    completed_at: str
+    duration_seconds: float
+    discovered_ids: list[str] = field(default_factory=list)
+    hydrated_ids: list[str] = field(default_factory=list)
+    tombstone_ids: list[str] = field(default_factory=list)
+    redirect_ids: list[str] = field(default_factory=list)
+    failed_ids: list[str] = field(default_factory=list)
+    batch_size_requested: int = 500
+    batch_size_effective: int = 500
+    batch_fallback_count: int = 0
+    batch_fallback_first_error: Optional[str] = None
+
+
+@dataclass(frozen=True)
 class URLFetchResult:
     """Result envelope for generic URL retrieval checks."""
 
@@ -626,6 +652,258 @@ def refresh_entity_cache_from_recentchanges(
         refreshed_ids=refreshed_ids,
         deleted_ids=deleted_ids,
         missing_ids=missing_ids,
+    )
+
+
+def discover_wikibase_entity_ids(
+    api_client: WikibaseApiClient,
+    *,
+    include_items: bool = True,
+    include_properties: bool = True,
+) -> list[str]:
+    """Discover all entity IDs from a Wikibase instance using the allpages API.
+
+    Uses MediaWiki ``list=allpages`` with namespace filtering to enumerate all
+    non-redirect entity pages.  Items live in namespace 0 (titles like ``Q1``)
+    and properties live in namespace 120 (titles like ``Property:P1``).
+
+    Redirect pages are excluded via ``apfilteredir=nonredirects``.
+
+    Args:
+        api_client: Configured Wikibase API client.
+        include_items: Include Q-entity items (namespace 0).
+        include_properties: Include P-entity properties (namespace 120).
+
+    Returns:
+        Sorted list of discovered entity IDs (e.g. ``["P1", "Q1", "Q42", ...]``).
+
+    Plain meaning: Enumerate every live entity ID so full-sync knows exactly
+    what to fetch.
+    """
+    entity_ids: list[str] = []
+
+    # (namespace id, title prefix to strip for ID extraction)
+    namespaces: list[tuple[int, str]] = []
+    if include_items:
+        namespaces.append((0, ""))
+    if include_properties:
+        namespaces.append((120, "Property:"))
+
+    for ns, prefix in namespaces:
+        params: dict[str, Any] = {
+            "action": "query",
+            "format": "json",
+            "list": "allpages",
+            "apnamespace": str(ns),
+            "apfilteredir": "nonredirects",
+            "aplimit": "500",
+        }
+        while True:
+            payload = api_client.request(params)
+            pages = payload.get("query", {}).get("allpages", [])
+            if not isinstance(pages, list):
+                break
+            for page in pages:
+                if not isinstance(page, dict):
+                    continue
+                title = page.get("title", "")
+                if not isinstance(title, str):
+                    continue
+                entity_id = title[len(prefix):].strip() if prefix else title.strip()
+                if entity_id:
+                    entity_ids.append(entity_id)
+            continuation = payload.get("continue")
+            if not isinstance(continuation, dict):
+                break
+            apcontinue = continuation.get("apcontinue")
+            if not apcontinue:
+                break
+            params["apcontinue"] = apcontinue
+
+    return sorted(entity_ids)
+
+
+def full_sync_wikibase_entity_cache(
+    api_client: WikibaseApiClient,
+    cache_dir: str | Path,
+    *,
+    auth: Optional[Any] = None,
+    include_items: bool = True,
+    include_properties: bool = True,
+    ignore_ids: Optional[set[str]] = None,
+    batch_size: Optional[int] = None,
+    source_endpoint: Optional[str] = None,
+    api_url_source: str = "default",
+) -> WikibaseFullSyncResult:
+    """Perform a full-sync baseline of all entity cache files from a Wikibase instance.
+
+    Discovers every live entity via the allpages API, then fetches and re-writes
+    cache artifacts for each one.  Redirects and tombstoned IDs are silently
+    ignored per Data Distillery design policy.
+
+    Batch size is auto-selected based on ``auth.has_api_high_limits()`` (500
+    when available, 50 otherwise).  If a 500-item batch fails, the request is
+    automatically retried in 50-item sub-batches and the fallback is recorded
+    in the result diagnostics.
+
+    Args:
+        api_client: Configured Wikibase API client pointed at the target instance.
+        cache_dir: Directory to write per-entity cache JSON files.
+        auth: Optional authenticated session (``WikiverseAuth``) used for
+            capability detection.  When omitted, batch size defaults to 50.
+        include_items: Sync Q-entity items.
+        include_properties: Sync P-entity properties.
+        ignore_ids: Entity IDs to exclude from cache writes (e.g. housekeeping
+            placeholder items).
+        batch_size: Override auto-detected batch size.  Ignored when ``auth``
+            provides a valid capability signal.
+        source_endpoint: Source endpoint label stored in cache metadata.
+            Defaults to ``api_client.api_url``.
+        api_url_source: Human-readable label for how the API URL was resolved
+            (``"explicit"``, ``"env"``, or ``"default"``).  Stored in metadata.
+
+    Returns:
+        :class:`WikibaseFullSyncResult` with full run diagnostics.
+
+    Plain meaning: Re-cache every live entity from scratch — the authoritative
+    bootstrap/rebuild operation for the SpiritSafe entity cache.
+    """
+    started_dt = datetime.now(timezone.utc)
+    started_at = started_dt.isoformat().replace("+00:00", "Z")
+    cache_path = Path(cache_dir)
+    cache_path.mkdir(parents=True, exist_ok=True)
+    ignore_set = set(ignore_ids or set())
+
+    # Resolve effective batch size
+    if batch_size is not None:
+        effective_batch_size = max(1, batch_size)
+    elif auth is not None and callable(getattr(auth, "has_api_high_limits", None)):
+        try:
+            effective_batch_size = 500 if auth.has_api_high_limits() else 50
+        except Exception:
+            effective_batch_size = 50
+    else:
+        effective_batch_size = 50
+
+    batch_size_requested = effective_batch_size
+
+    # Collect provenance metadata
+    source_repo_path = Path(__file__).resolve().parents[2]
+    source_branch, source_commit = _get_git_context(source_repo_path)
+    extractor_version = _get_installed_gkc_version()
+    synced_at = started_at
+
+    # Discover all entity IDs
+    discovered_ids = discover_wikibase_entity_ids(
+        api_client,
+        include_items=include_items,
+        include_properties=include_properties,
+    )
+
+    # Filter ignored IDs from candidates
+    candidate_ids = [eid for eid in discovered_ids if eid not in ignore_set]
+
+    hydrated_ids: list[str] = []
+    tombstone_ids: list[str] = []
+    redirect_ids: list[str] = []
+    failed_ids: list[str] = []
+    batch_fallback_count = 0
+    batch_fallback_first_error: Optional[str] = None
+
+    for chunk in _chunked(candidate_ids, effective_batch_size):
+        entities_raw: dict[str, Any] = {}
+        chunk_failed: set[str] = set()
+
+        try:
+            payload = api_client.request(
+                {
+                    "action": "wbgetentities",
+                    "format": "json",
+                    "ids": "|".join(chunk),
+                }
+            )
+            raw = payload.get("entities", {})
+            entities_raw = raw if isinstance(raw, dict) else {}
+        except RuntimeError as exc:
+            if effective_batch_size <= 50:
+                # Already at fallback size; mark whole chunk as failed
+                failed_ids.extend(chunk)
+                continue
+
+            # Fallback: retry this chunk in 50-item sub-batches
+            batch_fallback_count += 1
+            if batch_fallback_first_error is None:
+                batch_fallback_first_error = str(exc)
+
+            for sub_chunk in _chunked(chunk, 50):
+                try:
+                    sub_payload = api_client.request(
+                        {
+                            "action": "wbgetentities",
+                            "format": "json",
+                            "ids": "|".join(sub_chunk),
+                        }
+                    )
+                    sub_raw = sub_payload.get("entities", {})
+                    if isinstance(sub_raw, dict):
+                        entities_raw.update(sub_raw)
+                except RuntimeError:
+                    for eid in sub_chunk:
+                        chunk_failed.add(eid)
+
+        for entity_id in chunk:
+            if entity_id in chunk_failed:
+                failed_ids.append(entity_id)
+                continue
+
+            entity_data = entities_raw.get(entity_id)
+
+            if not isinstance(entity_data, dict) or "missing" in entity_data:
+                tombstone_ids.append(entity_id)
+                continue
+
+            if "redirects" in entity_data:
+                redirect_ids.append(entity_id)
+                continue
+
+            payload_doc = _build_entity_cache_payload(
+                entity_id=entity_id,
+                entity_data=entity_data,
+                source_endpoint=source_endpoint or api_client.api_url,
+                workflow_mode="full_sync_baseline",
+                profile_entry_ids=[],
+                graph_fetched_at=entity_data.get("modified") or synced_at,
+                cache_exported_at=synced_at,
+                extractor="gkc.mash.full_sync_wikibase_entity_cache",
+                extractor_version=extractor_version,
+                source_branch=source_branch,
+                source_commit=source_commit,
+            )
+            out_file = cache_path / f"{entity_id}.json"
+            out_file.write_text(json.dumps(payload_doc, indent=2), encoding="utf-8")
+            hydrated_ids.append(entity_id)
+
+    completed_dt = datetime.now(timezone.utc)
+    completed_at = completed_dt.isoformat().replace("+00:00", "Z")
+    duration_seconds = (completed_dt - started_dt).total_seconds()
+
+    return WikibaseFullSyncResult(
+        cache_dir=str(cache_path.resolve()),
+        api_url=api_client.api_url,
+        api_url_source=api_url_source,
+        run_mode="full_sync_baseline",
+        started_at=started_at,
+        completed_at=completed_at,
+        duration_seconds=duration_seconds,
+        discovered_ids=discovered_ids,
+        hydrated_ids=sorted(hydrated_ids),
+        tombstone_ids=sorted(tombstone_ids),
+        redirect_ids=sorted(redirect_ids),
+        failed_ids=sorted(failed_ids),
+        batch_size_requested=batch_size_requested,
+        batch_size_effective=effective_batch_size,
+        batch_fallback_count=batch_fallback_count,
+        batch_fallback_first_error=batch_fallback_first_error,
     )
 
 

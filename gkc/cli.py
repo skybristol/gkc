@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import sys
 from pathlib import Path
 from typing import Any, Optional
@@ -20,6 +21,7 @@ from gkc.mash import (
     apply_item_property_filters,
     apply_template_language_filter,
     fetch_recent_entity_changes,
+    full_sync_wikibase_entity_cache,
     get_latest_cache_timestamp,
     refresh_entity_cache_from_recentchanges,
 )
@@ -418,6 +420,56 @@ def _build_parser() -> argparse.ArgumentParser:
     mash_cache_wikibase_revisions.set_defaults(
         handler=_handle_mash_cache_wikibase_revisions,
         command_path="mash.cache-wikibase-revisions",
+    )
+
+    mash_full_sync_wikibase = mash_subparsers.add_parser(
+        "full-sync-wikibase",
+        help="Full-sync baseline: discover and re-cache all entities from a Wikibase instance",
+    )
+    mash_full_sync_wikibase.add_argument(
+        "--cache-dir",
+        required=True,
+        type=str,
+        help="Local directory where cached entity JSON files are stored",
+    )
+    mash_full_sync_wikibase.add_argument(
+        "--api-url",
+        type=str,
+        help="Wikibase MediaWiki API URL (overrides runtime config)",
+    )
+    mash_full_sync_wikibase.add_argument(
+        "--ignore-id",
+        action="append",
+        dest="ignore_ids",
+        metavar="ID",
+        help="Entity ID to skip (may be repeated: --ignore-id Q1 --ignore-id P1)",
+    )
+    mash_full_sync_wikibase.add_argument(
+        "--items-only",
+        action="store_true",
+        default=False,
+        help="Discover and cache items (Q-entities) only",
+    )
+    mash_full_sync_wikibase.add_argument(
+        "--properties-only",
+        action="store_true",
+        default=False,
+        help="Discover and cache properties (P-entities) only",
+    )
+    mash_full_sync_wikibase.add_argument(
+        "--batch-size",
+        type=int,
+        default=None,
+        help="Override API batch size (default: auto-detected from auth capability)",
+    )
+    mash_full_sync_wikibase.add_argument(
+        "--output",
+        type=str,
+        help="Optional output path for full-sync result JSON",
+    )
+    mash_full_sync_wikibase.set_defaults(
+        handler=_handle_mash_full_sync_wikibase,
+        command_path="mash.full-sync-wikibase",
     )
 
     # ShEx validation commands
@@ -2750,6 +2802,134 @@ def _handle_mash_cache_wikibase_revisions(args: argparse.Namespace) -> dict[str,
                 f"{len(refresh_result.refreshed_ids)} refreshed, "
                 f"{len(refresh_result.deleted_ids)} deleted, "
                 f"{len(refresh_result.ignored_ids)} ignored"
+            ),
+            "details": details,
+        }
+    except CLIError:
+        raise
+    except Exception as exc:
+        raise CLIError(str(exc)) from exc
+
+
+def _handle_mash_full_sync_wikibase(args: argparse.Namespace) -> dict[str, Any]:
+    """Full-sync baseline: discover and re-cache all entities from a Wikibase instance."""
+    runtime_config = get_wikibase_runtime_config()
+    api_url = args.api_url or runtime_config.api_url
+    api_url_source = "arg" if args.api_url else "runtime_config"
+
+    # Attempt auth for high-volume batch capability; continue unauthenticated if unavailable
+    auth: Optional[WikiverseAuth] = None
+    try:
+        candidate = WikiverseAuth(api_url=api_url)
+        if candidate.username and candidate.password:
+            auth = candidate
+    except Exception:
+        pass
+
+    if args.items_only and args.properties_only:
+        raise CLIError("--items-only and --properties-only are mutually exclusive")
+
+    try:
+        api_client = WikibaseApiClient(api_url=api_url)
+        sync_result = full_sync_wikibase_entity_cache(
+            api_client=api_client,
+            cache_dir=args.cache_dir,
+            auth=auth,
+            ignore_ids=set(args.ignore_ids or []),
+            include_items=not args.properties_only,
+            include_properties=not args.items_only,
+            batch_size=args.batch_size,
+            source_endpoint=api_url,
+            api_url_source=api_url_source,
+        )
+
+        output_payload = {
+            "metadata": {
+                "api_url": sync_result.api_url,
+                "api_url_source": sync_result.api_url_source,
+                "cache_dir": sync_result.cache_dir,
+                "run_mode": sync_result.run_mode,
+                "started_at": sync_result.started_at,
+                "completed_at": sync_result.completed_at,
+                "duration_seconds": sync_result.duration_seconds,
+                "batch_size_requested": sync_result.batch_size_requested,
+                "batch_size_effective": sync_result.batch_size_effective,
+                "batch_fallback_count": sync_result.batch_fallback_count,
+                "batch_fallback_first_error": sync_result.batch_fallback_first_error,
+            },
+            "summary": {
+                "discovered_count": len(sync_result.discovered_ids),
+                "hydrated_count": len(sync_result.hydrated_ids),
+                "tombstone_count": len(sync_result.tombstone_ids),
+                "redirect_count": len(sync_result.redirect_ids),
+                "failed_count": len(sync_result.failed_ids),
+            },
+            "hydrated_ids": sync_result.hydrated_ids,
+            "tombstone_ids": sync_result.tombstone_ids,
+            "redirect_ids": sync_result.redirect_ids,
+            "failed_ids": sync_result.failed_ids,
+        }
+
+        if args.output:
+            output_path = Path(args.output)
+            output_path.parent.mkdir(parents=True, exist_ok=True)
+            output_path.write_text(
+                json.dumps(output_payload, indent=2), encoding="utf-8"
+            )
+
+        # Write GitHub Actions step summary if available
+        step_summary_path = Path(os.environ.get("GITHUB_STEP_SUMMARY", ""))
+        if step_summary_path.name:
+            summary_md = (
+                "## Full-Sync Wikibase Cache Result\n\n"
+                f"| Field | Value |\n"
+                f"| --- | --- |\n"
+                f"| API URL | `{sync_result.api_url}` |\n"
+                f"| Started | `{sync_result.started_at}` |\n"
+                f"| Completed | `{sync_result.completed_at}` |\n"
+                f"| Duration (s) | `{sync_result.duration_seconds:.1f}` |\n"
+                f"| Discovered | `{len(sync_result.discovered_ids)}` |\n"
+                f"| Hydrated | `{len(sync_result.hydrated_ids)}` |\n"
+                f"| Tombstones | `{len(sync_result.tombstone_ids)}` |\n"
+                f"| Redirects | `{len(sync_result.redirect_ids)}` |\n"
+                f"| Failed | `{len(sync_result.failed_ids)}` |\n"
+                f"| Batch size | `{sync_result.batch_size_effective}` "
+                f"(fallbacks: `{sync_result.batch_fallback_count}`) |\n"
+            )
+            with step_summary_path.open("a", encoding="utf-8") as fh:
+                fh.write(summary_md)
+
+        details: dict[str, Any] = {
+            "api_url": sync_result.api_url,
+            "api_url_source": sync_result.api_url_source,
+            "cache_dir": sync_result.cache_dir,
+            "run_mode": sync_result.run_mode,
+            "started_at": sync_result.started_at,
+            "completed_at": sync_result.completed_at,
+            "duration_seconds": round(sync_result.duration_seconds, 1),
+            "discovered_count": len(sync_result.discovered_ids),
+            "hydrated_count": len(sync_result.hydrated_ids),
+            "tombstone_count": len(sync_result.tombstone_ids),
+            "redirect_count": len(sync_result.redirect_ids),
+            "failed_count": len(sync_result.failed_ids),
+            "batch_size_requested": sync_result.batch_size_requested,
+            "batch_size_effective": sync_result.batch_size_effective,
+            "batch_fallback_count": sync_result.batch_fallback_count,
+            "failed_ids_preview": sync_result.failed_ids[:20],
+        }
+
+        if args.output:
+            details["output_file"] = str(Path(args.output).resolve())
+
+        return {
+            "command": args.command_path,
+            "ok": len(sync_result.failed_ids) == 0,
+            "message": (
+                "✓ Full-sync complete: "
+                f"{len(sync_result.hydrated_ids)} hydrated, "
+                f"{len(sync_result.tombstone_ids)} tombstones, "
+                f"{len(sync_result.redirect_ids)} redirects, "
+                f"{len(sync_result.failed_ids)} failed"
             ),
             "details": details,
         }

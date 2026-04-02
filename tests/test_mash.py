@@ -9,6 +9,7 @@ import gkc
 from gkc.mash import (
     ClaimSummary,
     WikibaseEntitySchemaTemplate,
+    WikibaseFullSyncResult,
     WikibaseItemTemplate,
     WikibaseLoader,
     WikibasePropertyTemplate,
@@ -17,11 +18,13 @@ from gkc.mash import (
     WikipediaTemplate,
     apply_item_property_filters,
     apply_template_language_filter,
+    discover_wikibase_entity_ids,
     extract_first_sparql_block,
     extract_sparql_blocks,
     fetch_mediawiki_page_wikitext,
     fetch_recent_entity_changes,
     fetch_url_resource,
+    full_sync_wikibase_entity_cache,
     get_latest_cache_timestamp,
     refresh_entity_cache_from_recentchanges,
     strip_entity_identifiers,
@@ -824,6 +827,112 @@ def test_wikibase_loader_load_entities_raw_respects_batch_size(monkeypatch):
     assert calls[0] == 500
     assert calls[1] == 100
     assert len(result) == 600
+
+
+def test_discover_wikibase_entity_ids_collects_items_and_properties():
+    client = _FakeApiClient(
+        [
+            {
+                "query": {
+                    "allpages": [
+                        {"title": "Q4"},
+                        {"title": "Q39"},
+                    ]
+                },
+                "continue": {"apcontinue": "next-item"},
+            },
+            {
+                "query": {
+                    "allpages": [
+                        {"title": "Q56"},
+                    ]
+                }
+            },
+            {
+                "query": {
+                    "allpages": [
+                        {"title": "Property:P1"},
+                        {"title": "Property:P211"},
+                    ]
+                }
+            },
+        ]
+    )
+
+    assert discover_wikibase_entity_ids(client) == ["P1", "P211", "Q39", "Q4", "Q56"]
+
+
+def test_full_sync_wikibase_entity_cache_falls_back_and_writes_cache(tmp_path, monkeypatch):
+    class FakeApiClient:
+        def __init__(self):
+            self.api_url = "https://datadistillery.wikibase.cloud/w/api.php"
+            self._allpages_calls = 0
+            self._wbgetentities_calls = 0
+
+        def request(self, params):
+            action = params["action"]
+            if action == "query":
+                self._allpages_calls += 1
+                if self._allpages_calls == 1:
+                    return {
+                        "query": {
+                            "allpages": [{"title": f"Q{i}"} for i in range(1, 61)]
+                        }
+                    }
+                return {"query": {"allpages": []}}
+
+            if action == "wbgetentities":
+                self._wbgetentities_calls += 1
+                entity_ids = params["ids"].split("|")
+                if self._wbgetentities_calls == 1:
+                    raise RuntimeError("batch too large")
+                if len(entity_ids) == 50:
+                    entities = {}
+                    for entity_id in entity_ids:
+                        if entity_id == "Q2":
+                            entities[entity_id] = {"id": entity_id, "missing": ""}
+                        elif entity_id == "Q3":
+                            entities[entity_id] = {
+                                "id": entity_id,
+                                "redirects": {"to": "Q39"},
+                            }
+                        else:
+                            entities[entity_id] = {
+                                "id": entity_id,
+                                "modified": "2026-03-13T17:00:00Z",
+                                "labels": {},
+                            }
+                    return {"entities": entities}
+                raise RuntimeError("sub-batch failure")
+
+            raise AssertionError(f"Unexpected action: {action}")
+
+    monkeypatch.setattr("gkc.mash.core._get_git_context", lambda path: ("main", "abc123"))
+    monkeypatch.setattr("gkc.mash.core._get_installed_gkc_version", lambda: "0.0.test")
+
+    result = full_sync_wikibase_entity_cache(
+        api_client=FakeApiClient(),
+        cache_dir=tmp_path / "entities",
+        auth=type("FakeAuth", (), {"has_api_high_limits": lambda self: True})(),
+        ignore_ids={"Q1"},
+        include_properties=False,
+        source_endpoint="https://datadistillery.wikibase.cloud/w/api.php",
+        api_url_source="runtime_config",
+    )
+
+    assert isinstance(result, WikibaseFullSyncResult)
+    assert result.batch_size_requested == 500
+    assert result.batch_size_effective == 500
+    assert result.batch_fallback_count == 1
+    assert result.tombstone_ids == ["Q2"]
+    assert result.redirect_ids == ["Q3"]
+    assert result.failed_ids == ["Q56", "Q57", "Q58", "Q59", "Q6", "Q60", "Q7", "Q8", "Q9"]
+    assert len(result.hydrated_ids) == 48
+
+    hydrated_payload = json.loads((tmp_path / "entities" / "Q4.json").read_text(encoding="utf-8"))
+    assert hydrated_payload["metadata"]["workflow_mode"] == "full_sync_baseline"
+    assert hydrated_payload["metadata"]["extractor"] == "gkc.mash.full_sync_wikibase_entity_cache"
+    assert hydrated_payload["metadata"]["source_endpoint"] == "https://datadistillery.wikibase.cloud/w/api.php"
 
 
 def test_wikipedia_template_initialization():

@@ -387,7 +387,57 @@ Current contract:
 - SpiritSafe artifacts are generated synchronization outputs consumed by runtime paths.
 - Entity cache refresh and profile build/export are independently invokable operations to support iterative modeling.
 
+## Cache Sync Contract
+
+The GKC cache layer maintains a local mirror of Wikibase entity JSON files. Two distinct sync modes govern how the cache is built and maintained.
+
+### Full-Sync Baseline
+
+A full-sync baseline discovers every entity in the Wikibase instance using the MediaWiki `allpages` API (namespace 0 for items, namespace 120 for properties) and fetches the full entity data for each discovered ID via `wbgetentities`.
+
+This mode is designed as a one-time seeding operation or a force-rebuild. It is **not** the routine update path.
+
+Key behavioral rules:
+
+- **Redirects are ignored.** Redirect entities are excluded during discovery (`apfilteredir=nonredirects`) and any redirect entity returned from `wbgetentities` is recorded but not written to cache.
+
+- **Tombstones and gaps are silently skipped.** Numeric gaps in the ID sequence (e.g., `Q10` does not exist) and deleted entities (missing from `wbgetentities`) are ignored. No placeholder files are written.
+
+- **Batch size is auto-detected from auth capability.** When an authenticated `WikiverseAuth` instance with `apihighlimits` rights is provided, the loader uses batches of 500. Without that right, batches of 50 are used. If a 500-item batch fails at runtime, the sync automatically falls back to 50-item sub-batches for that chunk and records a diagnostic counter.
+
+- **Provenance is embedded in every cache file.** Each written file includes `workflow_mode: "full_sync_baseline"` and `extractor: "gkc.mash.full_sync_wikibase_entity_cache"` in its provenance metadata.
+
+### Incremental Watermark Sync
+
+After a full-sync baseline is in place, routine cache maintenance uses the `cache-wikibase-revisions` mode, which:
+
+- Reads the MediaWiki `recentchanges` feed from a watermark timestamp forward.
+- Fetches only the changed entities.
+- Updates only the affected cache files.
+- Advances the watermark for the next run.
+
+The watermark is derived from the most recent cache file timestamp. If no watermark is available, `cache-wikibase-revisions` raises an error and instructs the operator to seed the cache first via `full-sync-wikibase`.
+
+### Redirect and Tombstone Policy
+
+| Entity State | Full-Sync | Incremental |
+| --- | --- | --- |
+| Normal entity | Written to cache | Written to cache |
+| Redirect | Excluded at discovery; skipped if seen | Skipped if detected |
+| Deleted/missing | Silently skipped | Removed from cache |
+| Numeric gap | Silently skipped | Not applicable |
+
+This table defines the canonical behavior contract. Deviations should be treated as bugs.
+
 ## Current CLI Behavior
+
+### `gkc mash full-sync-wikibase`
+
+- Discovers all item and property IDs from the Wikibase instance using the `allpages` API.
+- Fetches full entity data in batches (500 with high-limit auth, 50 otherwise) and writes cache files.
+- Handles redirect/tombstone exclusion automatically per the sync contract above.
+- Accepts `--items-only` / `--properties-only` flags to limit discovery scope.
+- Produces an optional JSON result artifact via `--output` and writes a Markdown summary to `$GITHUB_STEP_SUMMARY` when running in GitHub Actions.
 
 ### `gkc mash check-wikibase-revisions`
 
