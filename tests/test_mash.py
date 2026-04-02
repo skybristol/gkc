@@ -835,6 +835,7 @@ def test_discover_wikibase_entity_ids_collects_items_and_properties():
             {
                 "query": {
                     "allpages": [
+                        {"title": "Main Page"},
                         {"title": "Q4"},
                         {"title": "Q39"},
                     ]
@@ -851,6 +852,7 @@ def test_discover_wikibase_entity_ids_collects_items_and_properties():
             {
                 "query": {
                     "allpages": [
+                        {"title": "Property:Property proposal"},
                         {"title": "Property:P1"},
                         {"title": "Property:P211"},
                     ]
