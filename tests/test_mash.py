@@ -834,10 +834,27 @@ def test_discover_wikibase_entity_ids_collects_items_and_properties():
         [
             {
                 "query": {
+                    "namespaces": [
+                        {"id": 0, "name": "", "defaultcontentmodel": "wikitext"},
+                        {
+                            "id": 120,
+                            "name": "Item",
+                            "defaultcontentmodel": "wikibase-item",
+                        },
+                        {
+                            "id": 122,
+                            "name": "Property",
+                            "defaultcontentmodel": "wikibase-property",
+                        },
+                    ]
+                }
+            },
+            {
+                "query": {
                     "allpages": [
                         {"title": "Main Page"},
-                        {"title": "Q4"},
-                        {"title": "Q39"},
+                        {"title": "Item:Q4"},
+                        {"title": "Item:Q39"},
                     ]
                 },
                 "continue": {"apcontinue": "next-item"},
@@ -845,7 +862,7 @@ def test_discover_wikibase_entity_ids_collects_items_and_properties():
             {
                 "query": {
                     "allpages": [
-                        {"title": "Q56"},
+                        {"title": "Item:Q56"},
                     ]
                 }
             },
@@ -876,11 +893,28 @@ def test_full_sync_wikibase_entity_cache_falls_back_and_writes_cache(
         def request(self, params):
             action = params["action"]
             if action == "query":
+                if params.get("meta") == "siteinfo":
+                    return {
+                        "query": {
+                            "namespaces": [
+                                {
+                                    "id": 120,
+                                    "name": "Item",
+                                    "defaultcontentmodel": "wikibase-item",
+                                },
+                                {
+                                    "id": 122,
+                                    "name": "Property",
+                                    "defaultcontentmodel": "wikibase-property",
+                                },
+                            ]
+                        }
+                    }
                 self._allpages_calls += 1
                 if self._allpages_calls == 1:
                     return {
                         "query": {
-                            "allpages": [{"title": f"Q{i}"} for i in range(1, 61)]
+                            "allpages": [{"title": f"Item:Q{i}"} for i in range(1, 61)]
                         }
                     }
                 return {"query": {"allpages": []}}

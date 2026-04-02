@@ -393,7 +393,7 @@ The GKC cache layer maintains a local mirror of Wikibase entity JSON files. Two 
 
 ### Full-Sync Baseline
 
-A full-sync baseline discovers every entity in the Wikibase instance using the MediaWiki `allpages` API (namespace 0 for items, namespace 120 for properties) and fetches the full entity data for each discovered ID via `wbgetentities`.
+A full-sync baseline discovers every entity in the Wikibase instance using the MediaWiki `allpages` API, resolving the live item/property namespaces from `siteinfo`, and fetches the full entity data for each discovered ID via `wbgetentities`.
 
 This mode is designed as a one-time seeding operation or a force-rebuild. It is **not** the routine update path.
 

@@ -199,6 +199,60 @@ class URLFetchResult:
     error: Optional[str] = None
 
 
+def _resolve_wikibase_entity_namespace_specs(
+    api_client: WikibaseApiClient,
+) -> dict[str, tuple[int, str]]:
+    """Resolve Wikibase item/property namespaces from MediaWiki siteinfo.
+
+    Returns a mapping like ``{"item": (120, "Item:"), "property": (122, "Property:")}``
+    when the instance uses dedicated content namespaces, or ``{"item": (0, "")}``
+    for Wikibase installations that store items in the main namespace.
+    """
+
+    payload = api_client.request(
+        {
+            "action": "query",
+            "format": "json",
+            "formatversion": "2",
+            "meta": "siteinfo",
+            "siprop": "namespaces|namespacealiases",
+        }
+    )
+    query = payload.get("query", {})
+    raw_namespaces = query.get("namespaces", [])
+    if not isinstance(raw_namespaces, list):
+        raise RuntimeError("Wikibase siteinfo response did not include namespaces")
+
+    specs: dict[str, tuple[int, str]] = {}
+    for namespace in raw_namespaces:
+        if not isinstance(namespace, dict):
+            continue
+        namespace_id = namespace.get("id")
+        if not isinstance(namespace_id, int):
+            continue
+
+        content_model = namespace.get("defaultcontentmodel")
+        if content_model == "wikibase-item":
+            namespace_name = namespace.get("name")
+            prefix = f"{namespace_name}:" if namespace_name else ""
+            specs["item"] = (namespace_id, prefix)
+        elif content_model == "wikibase-property":
+            namespace_name = namespace.get("name")
+            prefix = f"{namespace_name}:" if namespace_name else ""
+            specs["property"] = (namespace_id, prefix)
+
+    missing = [
+        entity_type for entity_type in ("item", "property") if entity_type not in specs
+    ]
+    if missing:
+        missing_text = ", ".join(sorted(missing))
+        raise RuntimeError(
+            f"Wikibase siteinfo did not expose namespaces for: {missing_text}"
+        )
+
+    return specs
+
+
 @dataclass(frozen=True)
 class CommonsFileInfoResult:
     """Result envelope for Wikimedia Commons file existence and metadata checks.
@@ -664,8 +718,9 @@ def discover_wikibase_entity_ids(
     """Discover all entity IDs from a Wikibase instance using the allpages API.
 
     Uses MediaWiki ``list=allpages`` with namespace filtering to enumerate all
-    non-redirect entity pages.  Items live in namespace 0 (titles like ``Q1``)
-    and properties live in namespace 120 (titles like ``Property:P1``).
+    non-redirect entity pages. Namespace ids and title prefixes are resolved
+    from MediaWiki ``siteinfo`` so discovery works on Wikibase instances with
+    custom item/property namespaces.
 
     Redirect pages are excluded via ``apfilteredir=nonredirects``.
 
@@ -680,25 +735,28 @@ def discover_wikibase_entity_ids(
     Plain meaning: Enumerate every live entity ID so full-sync knows exactly
     what to fetch.
     """
-    entity_ids: list[str] = []
-    namespace_patterns: dict[int, re.Pattern[str]] = {
-        0: re.compile(r"^Q[1-9]\d*$"),
-        120: re.compile(r"^P[1-9]\d*$"),
+    entity_ids: set[str] = set()
+    namespace_specs = _resolve_wikibase_entity_namespace_specs(api_client)
+    patterns: dict[str, re.Pattern[str]] = {
+        "item": re.compile(r"^Q[1-9]\d*$"),
+        "property": re.compile(r"^P[1-9]\d*$"),
     }
 
-    # (namespace id, title prefix to strip for ID extraction)
-    namespaces: list[tuple[int, str]] = []
+    namespaces: list[tuple[str, int, str]] = []
     if include_items:
-        namespaces.append((0, ""))
+        item_namespace, item_prefix = namespace_specs["item"]
+        namespaces.append(("item", item_namespace, item_prefix))
     if include_properties:
-        namespaces.append((120, "Property:"))
+        property_namespace, property_prefix = namespace_specs["property"]
+        namespaces.append(("property", property_namespace, property_prefix))
 
-    for ns, prefix in namespaces:
+    for entity_type, namespace_id, prefix in namespaces:
         params: dict[str, Any] = {
             "action": "query",
             "format": "json",
+            "formatversion": "2",
             "list": "allpages",
-            "apnamespace": str(ns),
+            "apnamespace": str(namespace_id),
             "apfilteredir": "nonredirects",
             "aplimit": "500",
         }
@@ -714,9 +772,9 @@ def discover_wikibase_entity_ids(
                 if not isinstance(title, str):
                     continue
                 entity_id = title[len(prefix) :].strip() if prefix else title.strip()
-                pattern = namespace_patterns.get(ns)
+                pattern = patterns[entity_type]
                 if entity_id and pattern and pattern.fullmatch(entity_id):
-                    entity_ids.append(entity_id)
+                    entity_ids.add(entity_id)
             continuation = payload.get("continue")
             if not isinstance(continuation, dict):
                 break
