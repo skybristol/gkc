@@ -95,7 +95,7 @@ Use a dedicated Data Distillery service account (or user account) and do not ass
 
 Note: the class name `WikiverseAuth` is historical; in practice it is used as a MediaWiki-compatible auth client when you supply an explicit `api_url`.
 
-For Data Distillery command-line workflows, GKC uses dedicated `DD_WB_*` environment variables and treats this as a separate authentication context from `WIKIVERSE_*`.
+For Data Distillery read workflows, GKC uses `META_WB_CONFIG` and optional `META_WB_*` endpoint overrides as integration settings only. Authentication remains generic MediaWiki authentication via explicit `WikiverseAuth(...)` parameters or the `WIKIVERSE_*` environment variables.
 
 ### Python Usage
 
@@ -117,14 +117,13 @@ except AuthenticationError as exc:
 
 ### CLI Usage (`gkc mash cache-wikibase-revisions`)
 
-`gkc mash cache-wikibase-revisions` reads Data Distillery settings from `DD_WB_*` variables.
+`gkc mash cache-wikibase-revisions` reads Data Distillery integration settings from the tracked config file and optional overrides.
 
-- `DD_WB_API_URL`
-- `DD_WB_USERNAME`
-- `DD_WB_PASSWORD`
-- `DD_WB_SPARQL_ENDPOINT` (for SPARQL-based operations)
+- `META_WB_CONFIG`
+- `META_WB_API_URL`
+- `META_WB_SPARQL_ENDPOINT` (for SPARQL-based operations)
 
-Authentication for revision-check/cache operations is optional by default.
+Authentication for revision-check/cache operations is optional by default and is not configured through `META_WB_*` variables.
 
 ### Validate Authentication and Session Behavior
 
@@ -215,21 +214,20 @@ You can set the following environment variables for automatic authentication:
 
 ### Data Distillery Wikibase
 
-- `DD_WB_API_URL` - Data Distillery API URL (for example `https://datadistillery.wikibase.cloud/w/api.php`)
-- `DD_WB_USERNAME` - Data Distillery account username
-- `DD_WB_PASSWORD` - Data Distillery account password
-- `DD_WB_SPARQL_ENDPOINT` - SPARQL endpoint for Data Distillery profile lookup hydration and related query operations
+- `META_WB_CONFIG` - Path to the meta-wikibase config file (for example `/path/to/SpiritSafe/dd-wikibase.yaml`)
+- `META_WB_API_URL` - Optional API URL override for the configured meta-wikibase
+- `META_WB_SPARQL_ENDPOINT` - Optional SPARQL endpoint override for the configured meta-wikibase
 
-`DD_WB_*` variables are used for Data Distillery flows (for example `gkc mash cache-wikibase-revisions`) and are intentionally separate from `WIKIVERSE_*`.
+`META_WB_*` variables are used to point read-oriented Data Distillery flows at the correct config file and endpoint overrides. They are not a separate authentication framework.
 
-If you do not set `DD_WB_API_URL`, GKC defaults to Data Distillery (`https://datadistillery.wikibase.cloud/w/api.php`).
+If you do not set `META_WB_CONFIG` and no config file is auto-discovered, GKC defaults to the Data Distillery API URL (`https://datadistillery.wikibase.cloud/w/api.php`).
 
-If you do not set `DD_WB_SPARQL_ENDPOINT`, GKC currently falls back to `https://query.wikidata.org/sparql`; for Data Distillery operations you should set this explicitly to the Data Distillery query service endpoint.
+If you do not set `META_WB_SPARQL_ENDPOINT` and the config file does not provide a SPARQL endpoint, GKC currently falls back to `https://query.wikidata.org/sparql`; for Data Distillery operations you should set this explicitly in the config file or override.
 
 ### Data Distillery Authentication Troubleshooting
 
 - **Login fails with valid-looking credentials**: verify you are using a Data Distillery account, not Wikimedia SUL bot-password credentials.
-- **Data Distillery cache commands fail with auth/session errors**: verify `DD_WB_API_URL` and credential values if you intend to run authenticated requests.
+- **Data Distillery cache commands fail with auth/session errors**: verify `META_WB_CONFIG` points at the expected file, confirm the configured API URL is correct, and if you are explicitly supplying `WikiverseAuth` credentials verify those values independently.
 - **Write succeeds in manual UI but fails via API**: confirm account permissions/group membership on Data Distillery include edit rights.
 
 ### OpenStreetMap
@@ -260,10 +258,9 @@ export WIKIVERSE_PASSWORD="abc123def456ghi789"
 export WIKIVERSE_API_URL="https://wiki.mycompany.com/w/api.php"
 
 # Data Distillery Wikibase
-export DD_WB_API_URL="https://datadistillery.wikibase.cloud/w/api.php"
-export DD_WB_USERNAME="my_dd_account"
-export DD_WB_PASSWORD="my_dd_password"
-export DD_WB_SPARQL_ENDPOINT="https://datadistillery.wikibase.cloud/query/sparql"
+export META_WB_CONFIG="/path/to/SpiritSafe/dd-wikibase.yaml"
+export META_WB_API_URL="https://datadistillery.wikibase.cloud/w/api.php"
+export META_WB_SPARQL_ENDPOINT="https://datadistillery.wikibase.cloud/query/sparql"
 
 # OpenStreetMap
 export OPENSTREETMAP_USERNAME="your_osm_username"

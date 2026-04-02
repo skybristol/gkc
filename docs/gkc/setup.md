@@ -79,14 +79,20 @@ If you intend to publish data to Wikidata, Wikimedia Commons, or OpenStreetMap, 
 
 ### Data Distillery Wikibase Environment
 
-If you are working with processes that interface with the [Data Distillery Wikibase](https://datadistillery.wikibase.cloud/) you may find it useful to set the following additional environment variables:
+If you are working with read-oriented processes that interface with the [Data Distillery Wikibase](https://datadistillery.wikibase.cloud/), point `gkc` at the tracked meta-wikibase config file.
 
 ```bash
-export DD_WB_API_URL="https://datadistillery.wikibase.cloud/w/api.php"
-export DD_WB_SPARQL_ENDPOINT="https://datadistillery.wikibase.cloud/query/sparql"
-export DD_WB_USERNAME="your_dd_username"
-export DD_WB_PASSWORD="your_dd_password"
+export META_WB_CONFIG="/path/to/SpiritSafe/dd-wikibase.yaml"
 ```
+
+When necessary, you can override endpoint values directly:
+
+```bash
+export META_WB_API_URL="https://datadistillery.wikibase.cloud/w/api.php"
+export META_WB_SPARQL_ENDPOINT="https://datadistillery.wikibase.cloud/query/sparql"
+```
+
+These settings configure which Wikibase instance and SPARQL endpoint the mash utilities read from. They are not an authentication namespace.
 
 
 ---

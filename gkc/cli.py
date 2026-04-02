@@ -349,7 +349,7 @@ def _build_parser() -> argparse.ArgumentParser:
     )
     mash_check_wikibase_revisions.add_argument(
         "--api-url",
-        help="Override the Data Distillery API URL (default: DD_WB_API_URL env var)",
+        help="Override the configured Wikibase API URL (default: META_WB_API_URL env var)",
     )
     mash_check_wikibase_revisions.add_argument(
         "--since",
@@ -391,7 +391,7 @@ def _build_parser() -> argparse.ArgumentParser:
     )
     mash_cache_wikibase_revisions.add_argument(
         "--api-url",
-        help="Override the Data Distillery API URL (default: DD_WB_API_URL env var)",
+        help="Override the configured Wikibase API URL (default: META_WB_API_URL env var)",
     )
     mash_cache_wikibase_revisions.add_argument(
         "--source-endpoint",
@@ -460,7 +460,7 @@ def _build_parser() -> argparse.ArgumentParser:
         "--batch-size",
         type=int,
         default=None,
-        help="Override API batch size (default: auto-detected from auth capability)",
+        help="Override API batch size (default: 50 for unauthenticated mash reads)",
     )
     mash_full_sync_wikibase.add_argument(
         "--output",
@@ -623,7 +623,7 @@ def _build_parser() -> argparse.ArgumentParser:
         default=runtime_config.api_url,
         help=(
             "Wikibase API URL used for talk-page retrieval "
-            "(default: DD_WB_API_URL or Data Distillery API)"
+            "(default: META_WB_API_URL env var, config file, or Data Distillery API)"
         ),
     )
     profile_value_lists_hydrate.add_argument(
@@ -631,7 +631,7 @@ def _build_parser() -> argparse.ArgumentParser:
         default=runtime_config.sparql_endpoint,
         help=(
             "SPARQL endpoint URL used for hydration "
-            "(default: DD_WB_SPARQL_ENDPOINT env var or Wikidata Query Service)"
+            "(default: META_WB_SPARQL_ENDPOINT env var, config file, or Wikidata Query Service)"
         ),
     )
     profile_value_lists_hydrate.add_argument(
@@ -2816,15 +2816,7 @@ def _handle_mash_full_sync_wikibase(args: argparse.Namespace) -> dict[str, Any]:
     runtime_config = get_wikibase_runtime_config()
     api_url = args.api_url or runtime_config.api_url
     api_url_source = "arg" if args.api_url else "runtime_config"
-
-    # Attempt auth for high-volume batch capability; continue unauthenticated if unavailable
     auth: Optional[WikiverseAuth] = None
-    try:
-        candidate = WikiverseAuth(api_url=api_url)
-        if candidate.username and candidate.password:
-            auth = candidate
-    except Exception:
-        pass
 
     if args.items_only and args.properties_only:
         raise CLIError("--items-only and --properties-only are mutually exclusive")
