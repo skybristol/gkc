@@ -862,7 +862,9 @@ def test_discover_wikibase_entity_ids_collects_items_and_properties():
     assert discover_wikibase_entity_ids(client) == ["P1", "P211", "Q39", "Q4", "Q56"]
 
 
-def test_full_sync_wikibase_entity_cache_falls_back_and_writes_cache(tmp_path, monkeypatch):
+def test_full_sync_wikibase_entity_cache_falls_back_and_writes_cache(
+    tmp_path, monkeypatch
+):
     class FakeApiClient:
         def __init__(self):
             self.api_url = "https://datadistillery.wikibase.cloud/w/api.php"
@@ -907,7 +909,9 @@ def test_full_sync_wikibase_entity_cache_falls_back_and_writes_cache(tmp_path, m
 
             raise AssertionError(f"Unexpected action: {action}")
 
-    monkeypatch.setattr("gkc.mash.core._get_git_context", lambda path: ("main", "abc123"))
+    monkeypatch.setattr(
+        "gkc.mash.core._get_git_context", lambda path: ("main", "abc123")
+    )
     monkeypatch.setattr("gkc.mash.core._get_installed_gkc_version", lambda: "0.0.test")
 
     result = full_sync_wikibase_entity_cache(
@@ -926,13 +930,31 @@ def test_full_sync_wikibase_entity_cache_falls_back_and_writes_cache(tmp_path, m
     assert result.batch_fallback_count == 1
     assert result.tombstone_ids == ["Q2"]
     assert result.redirect_ids == ["Q3"]
-    assert result.failed_ids == ["Q56", "Q57", "Q58", "Q59", "Q6", "Q60", "Q7", "Q8", "Q9"]
+    assert result.failed_ids == [
+        "Q56",
+        "Q57",
+        "Q58",
+        "Q59",
+        "Q6",
+        "Q60",
+        "Q7",
+        "Q8",
+        "Q9",
+    ]
     assert len(result.hydrated_ids) == 48
 
-    hydrated_payload = json.loads((tmp_path / "entities" / "Q4.json").read_text(encoding="utf-8"))
+    hydrated_payload = json.loads(
+        (tmp_path / "entities" / "Q4.json").read_text(encoding="utf-8")
+    )
     assert hydrated_payload["metadata"]["workflow_mode"] == "full_sync_baseline"
-    assert hydrated_payload["metadata"]["extractor"] == "gkc.mash.full_sync_wikibase_entity_cache"
-    assert hydrated_payload["metadata"]["source_endpoint"] == "https://datadistillery.wikibase.cloud/w/api.php"
+    assert (
+        hydrated_payload["metadata"]["extractor"]
+        == "gkc.mash.full_sync_wikibase_entity_cache"
+    )
+    assert (
+        hydrated_payload["metadata"]["source_endpoint"]
+        == "https://datadistillery.wikibase.cloud/w/api.php"
+    )
 
 
 def test_wikipedia_template_initialization():

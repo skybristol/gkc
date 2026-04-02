@@ -709,7 +709,7 @@ def discover_wikibase_entity_ids(
                 title = page.get("title", "")
                 if not isinstance(title, str):
                     continue
-                entity_id = title[len(prefix):].strip() if prefix else title.strip()
+                entity_id = title[len(prefix) :].strip() if prefix else title.strip()
                 if entity_id:
                     entity_ids.append(entity_id)
             continuation = payload.get("continue")
