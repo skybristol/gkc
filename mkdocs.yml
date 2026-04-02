@@ -49,6 +49,7 @@ nav:
     - Tribal Governments: tribes.md
   - Architecture:
     - Overview: architecture/index.md
+    - Meta-Wikibase: architecture/meta-wikibase.md
     - Data Distillery Wikibase: architecture/DataDistillery-Wikibase.md
     - Cross-Module Contracts: architecture/module-contracts.md
     - Still Charger: architecture/still_charger.md

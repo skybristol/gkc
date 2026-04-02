@@ -2,9 +2,11 @@
 
 Data Distillery Wikibase (`datadistillery.wikibase.cloud`) is the semantic registry for GKC ontology terms, profile metadata relationships, statement/value-list semantics, and multilingual guidance content that must be queryable and collaboratively maintained.
 
+This page describes the current reference implementation of the generic [meta-wikibase architecture](meta-wikibase.md).
+
 This page focuses on one part of a three-part infrastructure model:
 
-- **Data Distillery Wikibase**: semantic source of truth.
+- **Meta-wikibase**: semantic source of truth.
 - **SpiritSafe repository**: materialized artifact registry.
 - **GKC Python package**: runtime execution layer.
 
@@ -15,11 +17,11 @@ The runtime and collaboration needs are different:
 - SpiritSafe JSON profile artifacts are optimized for offline execution and deterministic profile consumption.
 - Wikibase is optimized for semantic relationships, multilingual fields, and query-oriented discovery.
 
-The Data Distillery uses a hybrid model where both sides are maintained in sync.
+The Data Distillery uses the generic meta-wikibase pattern, with a DD-specific ontology and deployment footprint.
 
 Authoring and execution split:
 
-- DD Wikibase holds foundation semantics.
+- The Data Distillery Wikibase holds foundation semantics.
 - SpiritSafe holds deterministic materialized/actionable artifacts.
 - `gkc` consumes materialized artifacts and runs curation/validation/shipping workflows.
 
@@ -403,7 +405,7 @@ Key behavioral rules:
 
 - **Tombstones and gaps are silently skipped.** Numeric gaps in the ID sequence (e.g., `Q10` does not exist) and deleted entities (missing from `wbgetentities`) are ignored. No placeholder files are written.
 
-- **Batch size is auto-detected from auth capability.** When an authenticated `WikiverseAuth` instance with `apihighlimits` rights is provided, the loader uses batches of 500. Without that right, batches of 50 are used. If a 500-item batch fails at runtime, the sync automatically falls back to 50-item sub-batches for that chunk and records a diagnostic counter.
+- **Mash full-sync defaults to unauthenticated reads.** The CLI runs full-sync with 50-entity batches unless an explicit batch size is provided. The lower-level loader still accepts an authenticated session for capability-sensitive batching when a caller intentionally provides one.
 
 - **Provenance is embedded in every cache file.** Each written file includes `workflow_mode: "full_sync_baseline"` and `extractor: "gkc.mash.full_sync_wikibase_entity_cache"` in its provenance metadata.
 
@@ -441,7 +443,7 @@ This table defines the canonical behavior contract. Deviations should be treated
 
 ### `gkc mash check-wikibase-revisions`
 
-- Reads Data Distillery runtime settings from `DD_WB_*` environment variables.
+- Reads Data Distillery integration settings from the resolved meta-wikibase config (`META_WB_CONFIG`, `META_WB_API_URL`, `META_WB_SPARQL_ENDPOINT`).
 - Checks MediaWiki recentchanges for entity page updates.
 - Produces change summaries and optional JSON report via `--output`.
 
@@ -476,23 +478,22 @@ The following items reflect active architectural exploration and are not yet fin
 
 ## Environment Variables
 
-- `DD_WB_API_URL`
-- `DD_WB_SPARQL_ENDPOINT`
-- `DD_WB_USERNAME`
-- `DD_WB_PASSWORD`
+- `META_WB_CONFIG`
+- `META_WB_API_URL`
+- `META_WB_SPARQL_ENDPOINT`
 
 Recommended baseline:
 
 ```bash
-export DD_WB_API_URL="https://datadistillery.wikibase.cloud/w/api.php"
-export DD_WB_SPARQL_ENDPOINT="https://datadistillery.wikibase.cloud/query/sparql"
-export DD_WB_USERNAME="your_dd_username"
-export DD_WB_PASSWORD="your_dd_password"
+export META_WB_CONFIG="/path/to/SpiritSafe/dd-wikibase.yaml"
+# Optional per-run overrides
+export META_WB_API_URL="https://datadistillery.wikibase.cloud/w/api.php"
+export META_WB_SPARQL_ENDPOINT="https://datadistillery.wikibase.cloud/query/sparql"
 ```
 
 ## Troubleshooting
 
-- **Auth group mismatch**: if credentials authenticate but write requests fail, verify Data Distillery account permissions include edit rights.
+- **Auth group mismatch**: if explicit MediaWiki credentials authenticate but write requests fail, verify Data Distillery account permissions include edit rights.
 - **Write summary missing**: shipper write operations and init flows require a non-empty summary.
 - **Property create datatype error**: ensure datatype is embedded in the `data` payload JSON for property creation.
 

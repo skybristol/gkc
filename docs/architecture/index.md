@@ -13,7 +13,7 @@ GKC architecture is best understood through two coordinated lenses:
 
 Infrastructure components:
 
-1. **Data Distillery Wikibase** — semantic authoring system of record for profiles, statements, value lists, and linkage semantics.
+1. **Meta-wikibase** — semantic authoring system of record for profiles, statements, value lists, and linkage semantics.
 2. **SpiritSafe repository** — materialized artifact registry (JSON profiles, query files, hydrated caches, manifest, entity index).
 3. **GKC Python package** — runtime engine that consumes SpiritSafe artifacts to assemble packets (`still_charger`), validate/coerce (`fermenter`), plan writes, and ship.
 
@@ -24,26 +24,28 @@ Architectural components:
 3. **GKC Value Lists** — curated allowed-item domains used to guide and constrain selection.
 4. **GKC Curation Packets** — actionable packet structures combining metadata rulesets and fillable data slots.
 
-This pairing enables a consistent pattern: **define in DD Wikibase, materialize in SpiritSafe, execute in gkc**.
+This pairing enables a consistent pattern: **define in a meta-wikibase, materialize in SpiritSafe, execute in gkc**.
 
 The JSON Schema layer remains important as a machine-facing contract derived from these components, but it is a representation layer rather than a top-level architectural component.
 
-Entity Statements, Entity Profiles, and Value List semantics are defined and organized within the [Data Distillery Wikibase](https://datadistillery.wikibase.cloud/). These semantics are exported into [SpiritSafe](https://github.com/skybristol/SpiritSafe), which is then consumed by the GKC runtime package.
+Entity Statements, Entity Profiles, and Value List semantics are defined and organized within a meta-wikibase. The current reference implementation is the [Data Distillery Wikibase](DataDistillery-Wikibase.md). These semantics are exported into [SpiritSafe](https://github.com/skybristol/SpiritSafe), which is then consumed by the GKC runtime package.
 
 ---
 
 ## Infrastructure Components
 
-### Data Distillery Wikibase
+### Meta-Wikibase
 
-Data Distillery Wikibase is the semantic source of truth. It is where profile, statement, value-list, and linkage semantics are authored and curated.
+A meta-wikibase is the semantic source of truth. It is where profile, statement, value-list, and linkage semantics are authored and curated.
 
-DD Wikibase defines the **foundation form** of architectural components:
+The meta-wikibase defines the **foundation form** of architectural components:
 
 - Profile composition directives.
 - Reusable statement defaults and scoped overrides.
 - Value-list membership and refresh semantics.
 - Prompt/guidance/error messaging and multilingual metadata.
+
+For the generic contract, see [Meta-Wikibase Architecture](meta-wikibase.md). For the current concrete deployment, see [Data Distillery Wikibase](DataDistillery-Wikibase.md).
 
 ### SpiritSafe Repository
 
