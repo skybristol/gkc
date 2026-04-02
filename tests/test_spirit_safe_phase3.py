@@ -107,7 +107,7 @@ def test_export_spiritsafe_entity_index(fixture_root: Path, tmp_path: Path):
 
 
 def test_build_spiritsafe_semantic_anchor_document(tmp_path: Path, fixture_root: Path):
-    """Semantic anchor builder should normalize named entities and config metadata."""
+    """Semantic anchor builder should emit only underscore-prefixed thin mappings."""
 
     root = tmp_path / "spiritsafe"
     copytree(fixture_root, root)
@@ -134,7 +134,7 @@ meta_wikibase:
                 "snaktype": "value",
                 "property": "P214",
                 "datavalue": {
-                    "value": "TribalGovernmentInTheUnitedStates",
+                    "value": "_TribalGovernmentInTheUnitedStates",
                     "type": "string",
                 },
                 "datatype": "string",
@@ -148,33 +148,78 @@ meta_wikibase:
 
     anchors = build_spiritsafe_semantic_anchor_document(root)
 
-    assert anchors["config"]["path"] == "config/dd-wikibase.yaml"
-    assert anchors["config"]["semantic_conventions"] == {
-        "name_identifier_property_id": "P214",
-        "internal_name_identifier_prefix": "_",
+    assert anchors == {
+        "_TribalGovernmentInTheUnitedStates": {
+            "id": "Q4",
+            "entity": "https://datadistillery.wikibase.cloud/entity/Q4",
+        }
     }
-    assert anchors["anchor_count"] == 1
-    assert anchors["internal_anchor_count"] == 0
-    assert anchors["anchors"]["TribalGovernmentInTheUnitedStates"] == {
-        "id": "Q4",
-        "entity": "https://datadistillery.wikibase.cloud/entity/Q4",
-        "label": "Tribal Government in the United States",
-        "name_identifier": "TribalGovernmentInTheUnitedStates",
-        "anchor_key": "TribalGovernmentInTheUnitedStates",
-        "is_internal": False,
-        "classes": [],
-        "io_map": [],
+
+
+def test_build_spiritsafe_semantic_anchor_document_includes_property_datatype(
+    tmp_path: Path, fixture_root: Path
+):
+    """Semantic anchor builder should include datatype for properties only."""
+
+    root = tmp_path / "spiritsafe"
+    copytree(fixture_root, root)
+    config_dir = root / "config"
+    config_dir.mkdir()
+    (config_dir / "dd-wikibase.yaml").write_text(
+        """
+meta_wikibase:
+  semantic_conventions:
+    name_identifier_property_id: P214
+    internal_name_identifier_prefix: "_"
+""".strip()
+        + "\n",
+        encoding="utf-8",
+    )
+
+    property_path = root / "cache" / "entities" / "P192.json"
+    property_doc = {
+        "entity_id": "P192",
+        "entity": {
+            "type": "property",
+            "datatype": "time",
+            "id": "P192",
+            "claims": {
+                "P214": [
+                    {
+                        "mainsnak": {
+                            "snaktype": "value",
+                            "property": "P214",
+                            "datavalue": {
+                                "value": "_time",
+                                "type": "string",
+                            },
+                            "datatype": "string",
+                        },
+                        "type": "statement",
+                        "id": "P192$P214-internal",
+                        "rank": "normal",
+                    }
+                ]
+            },
+        },
     }
-    assert anchors["anchor_key_index"] == {
-        "TribalGovernmentInTheUnitedStates": ["TribalGovernmentInTheUnitedStates"]
+    property_path.write_text(json.dumps(property_doc, indent=2), encoding="utf-8")
+
+    anchors = build_spiritsafe_semantic_anchor_document(root)
+
+    assert anchors == {
+        "_time": {
+            "id": "P192",
+            "entity": "https://datadistillery.wikibase.cloud/entity/P192",
+            "datatype": "time",
+        }
     }
-    assert anchors["entity_id_index"] == {"Q4": "TribalGovernmentInTheUnitedStates"}
 
 
 def test_build_spiritsafe_semantic_anchor_document_marks_internal_entries(
     tmp_path: Path, fixture_root: Path
 ):
-    """Semantic anchor builder should flag underscore-prefixed internal anchors."""
+    """Semantic anchor builder should exclude non-underscore identifiers."""
 
     root = tmp_path / "spiritsafe"
     copytree(fixture_root, root)
@@ -199,7 +244,7 @@ meta_wikibase:
                 "snaktype": "value",
                 "property": "P214",
                 "datavalue": {
-                    "value": "_tribal_government_profile",
+                    "value": "tribal_government_profile",
                     "type": "string",
                 },
                 "datatype": "string",
@@ -213,13 +258,7 @@ meta_wikibase:
 
     anchors = build_spiritsafe_semantic_anchor_document(root)
 
-    entry = anchors["anchors"]["_tribal_government_profile"]
-    assert entry["is_internal"] is True
-    assert entry["anchor_key"] == "tribal_government_profile"
-    assert anchors["internal_anchor_count"] == 1
-    assert anchors["anchor_key_index"] == {
-        "tribal_government_profile": ["_tribal_government_profile"]
-    }
+    assert anchors == {}
 
 
 def test_export_spiritsafe_semantic_anchors(fixture_root: Path, tmp_path: Path):
@@ -248,7 +287,7 @@ meta_wikibase:
                 "snaktype": "value",
                 "property": "P214",
                 "datavalue": {
-                    "value": "TribalGovernmentInTheUnitedStates",
+                    "value": "_TribalGovernmentInTheUnitedStates",
                     "type": "string",
                 },
                 "datatype": "string",
@@ -264,7 +303,12 @@ meta_wikibase:
     anchors = export_spiritsafe_semantic_anchors(root, output_path)
 
     assert output_path.exists()
-    assert anchors["anchor_count"] == 1
+    assert anchors == {
+        "_TribalGovernmentInTheUnitedStates": {
+            "id": "Q4",
+            "entity": "https://datadistillery.wikibase.cloud/entity/Q4",
+        }
+    }
 
 
 def test_load_manifest_reads_new_shape():

@@ -2903,8 +2903,8 @@ def _build_semantic_anchor_entry(
     name_identifier_property_id: str,
     internal_prefix: str,
 ) -> Optional[dict[str, Any]]:
-    base_entry = _build_entity_index_entry(entity_doc)
-    entity_id = str(base_entry.get("id") or "")
+    entity = entity_doc.get("entity", {})
+    entity_id = str(entity_doc.get("entity_id") or entity.get("id") or "")
     claims = entity_doc.get("entity", {}).get("claims", {})
     name_identifier = next(
         (
@@ -2920,33 +2920,28 @@ def _build_semantic_anchor_entry(
     if not name_identifier:
         return None
 
-    is_internal = bool(internal_prefix and name_identifier.startswith(internal_prefix))
-    anchor_key = (
-        name_identifier[len(internal_prefix) :]
-        if is_internal and len(name_identifier) > len(internal_prefix)
-        else name_identifier
-    )
+    if not (internal_prefix and name_identifier.startswith(internal_prefix)):
+        return None
 
-    return {
+    entry = {
         "id": entity_id,
-        "entity": base_entry.get("entity"),
-        "label": base_entry.get("label"),
-        "name_identifier": name_identifier,
-        "anchor_key": anchor_key,
-        "is_internal": is_internal,
-        "classes": list(base_entry.get("classes", [])),
-        "io_map": list(base_entry.get("io_map", [])),
+        "entity": f"{SPIRITSAFE_ENTITY_URI_PREFIX}{entity_id}",
     }
+
+    if entity.get("type") == "property" and isinstance(entity.get("datatype"), str):
+        entry["datatype"] = entity["datatype"]
+
+    return entry
 
 
 def build_spiritsafe_semantic_anchor_document(
     spiritsafe_root: Union[str, Path],
 ) -> dict[str, Any]:
-    """Build a normalized semantic anchor artifact from cached SpiritSafe entities."""
+    """Build a thin semantic anchor mapping from cached SpiritSafe entities."""
 
     root = Path(spiritsafe_root).expanduser().resolve()
     cache_entities_dir = root / "cache" / "entities"
-    config_path, config_values = _resolve_spiritsafe_meta_wikibase_config(root)
+    _config_path, config_values = _resolve_spiritsafe_meta_wikibase_config(root)
 
     name_identifier_property_id = (
         config_values.get("name_identifier_property_id") or "P214"
@@ -2954,60 +2949,32 @@ def build_spiritsafe_semantic_anchor_document(
     internal_prefix = config_values.get("internal_name_identifier_prefix") or "_"
 
     anchors: dict[str, dict[str, Any]] = {}
-    anchor_key_index: dict[str, list[str]] = {}
-    entity_id_index: dict[str, str] = {}
 
     for entity_path in sorted(cache_entities_dir.glob("*.json")):
         entity_doc = json.loads(entity_path.read_text(encoding="utf-8"))
+        claims = entity_doc.get("entity", {}).get("claims", {})
+        name_identifier = next(
+            (
+                value
+                for value in (
+                    _claim_string_value(claim)
+                    for claim in claims.get(name_identifier_property_id, [])
+                )
+                if value
+            ),
+            None,
+        )
         entry = _build_semantic_anchor_entry(
             entity_doc,
             name_identifier_property_id=name_identifier_property_id,
             internal_prefix=internal_prefix,
         )
-        if not entry:
+        if not entry or not name_identifier:
             continue
 
-        name_identifier = str(entry["name_identifier"])
-        entity_id = str(entry["id"])
-        anchor_key = str(entry["anchor_key"])
         anchors[name_identifier] = entry
-        entity_id_index[entity_id] = name_identifier
-        anchor_key_index.setdefault(anchor_key, []).append(name_identifier)
 
-    for anchor_key, identifiers in anchor_key_index.items():
-        anchor_key_index[anchor_key] = sorted(set(identifiers))
-
-    relative_config_path = None
-    if config_path is not None:
-        try:
-            relative_config_path = str(config_path.relative_to(root))
-        except ValueError:
-            relative_config_path = str(config_path)
-
-    internal_anchor_count = sum(
-        1 for anchor in anchors.values() if anchor.get("is_internal") is True
-    )
-
-    return {
-        "generated_at": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
-        "source": _manifest_source_url(),
-        "config": {
-            "path": relative_config_path,
-            "id": config_values.get("config_id"),
-            "label": config_values.get("label"),
-            "api_url": config_values.get("api_url"),
-            "sparql_endpoint": config_values.get("sparql_endpoint"),
-            "semantic_conventions": {
-                "name_identifier_property_id": name_identifier_property_id,
-                "internal_name_identifier_prefix": internal_prefix,
-            },
-        },
-        "anchor_count": len(anchors),
-        "internal_anchor_count": internal_anchor_count,
-        "anchors": anchors,
-        "anchor_key_index": anchor_key_index,
-        "entity_id_index": entity_id_index,
-    }
+    return anchors
 
 
 def export_spiritsafe_semantic_anchors(

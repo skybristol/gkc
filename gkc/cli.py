@@ -2279,13 +2279,9 @@ def _handle_spiritsafe_semantic_anchors_build(
         )
 
         artifact = export_spiritsafe_semantic_anchors(local_root, output_path)
-        config = artifact.get("config", {})
         details = {
             "output_path": str(output_path),
-            "config_path": config.get("path"),
-            "config_id": config.get("id"),
-            "anchor_count": artifact.get("anchor_count", 0),
-            "internal_anchor_count": artifact.get("internal_anchor_count", 0),
+            "anchor_count": len(artifact) if isinstance(artifact, dict) else 0,
         }
         return {
             "command": args.command_path,
