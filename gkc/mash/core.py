@@ -681,6 +681,10 @@ def discover_wikibase_entity_ids(
     what to fetch.
     """
     entity_ids: list[str] = []
+    namespace_patterns: dict[int, re.Pattern[str]] = {
+        0: re.compile(r"^Q[1-9]\d*$"),
+        120: re.compile(r"^P[1-9]\d*$"),
+    }
 
     # (namespace id, title prefix to strip for ID extraction)
     namespaces: list[tuple[int, str]] = []
@@ -710,7 +714,8 @@ def discover_wikibase_entity_ids(
                 if not isinstance(title, str):
                     continue
                 entity_id = title[len(prefix) :].strip() if prefix else title.strip()
-                if entity_id:
+                pattern = namespace_patterns.get(ns)
+                if entity_id and pattern and pattern.fullmatch(entity_id):
                     entity_ids.append(entity_id)
             continuation = payload.get("continue")
             if not isinstance(continuation, dict):
