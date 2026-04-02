@@ -834,19 +834,19 @@ def test_discover_wikibase_entity_ids_collects_items_and_properties():
         [
             {
                 "query": {
-                    "namespaces": [
-                        {"id": 0, "name": "", "defaultcontentmodel": "wikitext"},
-                        {
+                    "namespaces": {
+                        "0": {"id": 0, "name": "", "defaultcontentmodel": "wikitext"},
+                        "120": {
                             "id": 120,
                             "name": "Item",
                             "defaultcontentmodel": "wikibase-item",
                         },
-                        {
+                        "122": {
                             "id": 122,
                             "name": "Property",
                             "defaultcontentmodel": "wikibase-property",
                         },
-                    ]
+                    }
                 }
             },
             {
@@ -896,18 +896,18 @@ def test_full_sync_wikibase_entity_cache_falls_back_and_writes_cache(
                 if params.get("meta") == "siteinfo":
                     return {
                         "query": {
-                            "namespaces": [
-                                {
+                            "namespaces": {
+                                "120": {
                                     "id": 120,
                                     "name": "Item",
                                     "defaultcontentmodel": "wikibase-item",
                                 },
-                                {
+                                "122": {
                                     "id": 122,
                                     "name": "Property",
                                     "defaultcontentmodel": "wikibase-property",
                                 },
-                            ]
+                            }
                         }
                     }
                 self._allpages_calls += 1

@@ -220,11 +220,15 @@ def _resolve_wikibase_entity_namespace_specs(
     )
     query = payload.get("query", {})
     raw_namespaces = query.get("namespaces", [])
-    if not isinstance(raw_namespaces, list):
+    if isinstance(raw_namespaces, dict):
+        namespace_entries = list(raw_namespaces.values())
+    elif isinstance(raw_namespaces, list):
+        namespace_entries = raw_namespaces
+    else:
         raise RuntimeError("Wikibase siteinfo response did not include namespaces")
 
     specs: dict[str, tuple[int, str]] = {}
-    for namespace in raw_namespaces:
+    for namespace in namespace_entries:
         if not isinstance(namespace, dict):
             continue
         namespace_id = namespace.get("id")
