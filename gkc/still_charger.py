@@ -1424,6 +1424,26 @@ def charge_packet_from_wikidata_items(
     # Build charged packet while preserving packet-native scaffold slots.
     charged = deepcopy(packet)
 
+    pulled_at = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
+
+    def _resolve_profile_qid(
+        profile_uri: Optional[str], profile_name: Optional[str]
+    ) -> Optional[str]:
+        resolved_qid: Optional[str] = None
+        if isinstance(profile_uri, str):
+            resolved_qid = qid_map.get(profile_uri)
+        if not resolved_qid and isinstance(profile_name, str):
+            resolved_qid = qid_map.get(profile_name)
+        if resolved_qid:
+            return resolved_qid
+
+        if not isinstance(profile_uri, str):
+            return None
+        for map_key, mapped_profile in entity_profile_map.items():
+            if mapped_profile == profile_uri and _looks_like_qid(map_key):
+                return map_key
+        return None
+
     raw_entity_by_qid: dict[str, dict[str, Any]] = {
         entry.get("id"): entry.get("entity")
         for entry in data_entities
@@ -1433,6 +1453,28 @@ def charge_packet_from_wikidata_items(
     }
 
     scaffold_entities = packet_entities(charged)
+
+    profiles_meta = charged.get("metadata", {}).get("profiles", [])
+    if isinstance(profiles_meta, list):
+        for profile_meta in profiles_meta:
+            if not isinstance(profile_meta, dict):
+                continue
+            profile_uri = profile_meta.get("id")
+            profile_name = profile_meta.get("name_identifier")
+            entity_qid = _resolve_profile_qid(
+                profile_uri if isinstance(profile_uri, str) else None,
+                profile_name if isinstance(profile_name, str) else None,
+            )
+            if not entity_qid:
+                continue
+            raw_entity = raw_entity_by_qid.get(entity_qid)
+            if not isinstance(raw_entity, dict):
+                continue
+
+            profile_meta["source_qid"] = entity_qid
+            profile_meta["lastrevid"] = raw_entity.get("lastrevid")
+            profile_meta["pulled_at"] = pulled_at
+
     if not scaffold_entities:
         charged["data"] = {"entities": data_entities}
         charged["conformance"] = {
@@ -1440,10 +1482,10 @@ def charge_packet_from_wikidata_items(
             "statement_evaluations": statement_evaluations,
         }
         charged["operation_mode"] = "edit"
+        _reseal_packet_metadata(charged)
         notices: list[ConformanceNotice] = []
         return charged, notices
 
-    profiles_meta = charged.get("metadata", {}).get("profiles", [])
     if not isinstance(profiles_meta, list):
         profiles_meta = []
 
@@ -1545,6 +1587,7 @@ def charge_packet_from_wikidata_items(
     }
     charged["conformance"] = conformance
     charged["operation_mode"] = "edit"
+    _reseal_packet_metadata(charged)
 
     # For now, return empty notices (will be populated by fermenter integration)
     notices: list[ConformanceNotice] = []
