@@ -214,7 +214,7 @@ You can set the following environment variables for automatic authentication:
 
 ### Data Distillery Wikibase
 
-- `META_WB_CONFIG` - Path to the meta-wikibase config file (for example `/path/to/SpiritSafe/dd-wikibase.yaml`)
+- `META_WB_CONFIG` - Path to the meta-wikibase config file (for example `/path/to/SpiritSafe/config/dd-wikibase.yaml`)
 - `META_WB_API_URL` - Optional API URL override for the configured meta-wikibase
 - `META_WB_SPARQL_ENDPOINT` - Optional SPARQL endpoint override for the configured meta-wikibase
 
@@ -258,7 +258,7 @@ export WIKIVERSE_PASSWORD="abc123def456ghi789"
 export WIKIVERSE_API_URL="https://wiki.mycompany.com/w/api.php"
 
 # Data Distillery Wikibase
-export META_WB_CONFIG="/path/to/SpiritSafe/dd-wikibase.yaml"
+export META_WB_CONFIG="/path/to/SpiritSafe/config/dd-wikibase.yaml"
 export META_WB_API_URL="https://datadistillery.wikibase.cloud/w/api.php"
 export META_WB_SPARQL_ENDPOINT="https://datadistillery.wikibase.cloud/query/sparql"
 

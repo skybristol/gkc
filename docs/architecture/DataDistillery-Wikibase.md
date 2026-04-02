@@ -485,7 +485,7 @@ The following items reflect active architectural exploration and are not yet fin
 Recommended baseline:
 
 ```bash
-export META_WB_CONFIG="/path/to/SpiritSafe/dd-wikibase.yaml"
+export META_WB_CONFIG="/path/to/SpiritSafe/config/dd-wikibase.yaml"
 # Optional per-run overrides
 export META_WB_API_URL="https://datadistillery.wikibase.cloud/w/api.php"
 export META_WB_SPARQL_ENDPOINT="https://datadistillery.wikibase.cloud/query/sparql"

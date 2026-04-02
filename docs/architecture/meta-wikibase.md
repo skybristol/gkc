@@ -34,12 +34,16 @@ The current runtime contract is intentionally narrow.
 
 1. `META_WB_CONFIG`, when set explicitly, points to the config file to load.
 
-2. If `META_WB_CONFIG` is not set, `gkc` auto-discovers one of the following filenames from the current working directory upward through parent directories:
+2. If `META_WB_CONFIG` is not set, `gkc` auto-discovers one of the following paths from the current working directory upward through parent directories:
 
-   - `meta-wikibase.yaml`
-   - `meta-wikibase.yml`
-   - `dd-wikibase.yaml`
-   - `dd-wikibase.yml`
+  - `config/meta-wikibase.yaml`
+  - `config/meta-wikibase.yml`
+  - `config/dd-wikibase.yaml`
+  - `config/dd-wikibase.yml`
+  - `meta-wikibase.yaml`
+  - `meta-wikibase.yml`
+  - `dd-wikibase.yaml`
+  - `dd-wikibase.yml`
 
 3. `META_WB_API_URL` overrides the config-file `api_url` value.
 
@@ -97,6 +101,6 @@ It is not the right place for user credentials.
 
 ## Reference Implementation
 
-The checked-in reference implementation lives in the SpiritSafe repository as `dd-wikibase.yaml`.
+The checked-in reference implementation lives in the SpiritSafe repository as `config/dd-wikibase.yaml`.
 
 For the concrete Data Distillery infrastructure details, see [Data Distillery Wikibase](DataDistillery-Wikibase.md).
