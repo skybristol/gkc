@@ -156,6 +156,41 @@ auth.login()
 token = auth.get_csrf_token()
 ```
 
+## Capability Detection
+
+After login, the `WikiverseAuth` object can query the MediaWiki API for the authenticated user's rights and use those to adjust workflow behavior automatically.
+
+### `get_user_rights()`
+
+Returns the set of rights granted to the authenticated user.
+
+```python
+from gkc import WikiverseAuth
+
+auth = WikiverseAuth()
+auth.login()
+
+rights = auth.get_user_rights()
+print(rights)  # e.g. {"read", "edit", "apihighlimits", ...}
+```
+
+### `has_api_high_limits()`
+
+Returns `True` when the authenticated user holds the `apihighlimits` right, which raises the MediaWiki API's maximum batch size from **50** to **500** items per request.
+Bot accounts are typically granted this right; anonymous and standard user sessions are not.
+
+```python
+from gkc import WikiverseAuth
+
+auth = WikiverseAuth()
+auth.login()
+
+batch_size = 500 if auth.has_api_high_limits() else 50
+print(f"Using batch size: {batch_size}")
+```
+
+`full_sync_wikibase_entity_cache()` uses this check automatically when an authenticated `WikiverseAuth` instance is provided, so high-volume cache operations get the larger batch without manual configuration.
+
 ## Error Handling
 
 ### Missing credentials
