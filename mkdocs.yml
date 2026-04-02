@@ -51,6 +51,7 @@ nav:
     - Overview: architecture/index.md
     - Data Distillery Wikibase: architecture/DataDistillery-Wikibase.md
     - Cross-Module Contracts: architecture/module-contracts.md
+    - Still Charger: architecture/still_charger.md
     - SpiritSafe Registry: architecture/SpiritSafe.md
     - SpiritSafe Models & API: architecture/spirit_safe_models.md
     - Profile Loading: architecture/profile-loading.md

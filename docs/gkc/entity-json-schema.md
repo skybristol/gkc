@@ -4,9 +4,7 @@
 
 1. Data Distillery Wikibase semantics materialized into SpiritSafe JSON Entity Profiles.
 2. JSON Entity Profiles assembled into curation packet scaffolds.
-3. Curation packets charged with data, validated/coerced, and prepared for shipping.
-
-This document replaces older profile-name and YAML-era schema language where it no longer matches runtime behavior.
+3. Curation packets charged with data, validated/coerced, and prepared for editing and eventual shipping.
 
 ## Current Contract Scope
 
@@ -15,7 +13,7 @@ This page documents the active packet/profile contract used by:
 - `gkc.spirit_safe` for loading JSON Entity Profiles.
 - `gkc.still_charger` for packet scaffold assembly and charging.
 - `gkc.fermenter` for value validation/coercion and conformance notices.
-- `gkc.wikibase` and `gkc.shipper` for downstream write planning and execution.
+- `gkc.shipper` for downstream write planning and execution.
 
 Contract clarification:
 
@@ -26,11 +24,11 @@ Contract clarification:
 
 The current pipeline is:
 
-1. Data Distillery Wikibase semantics are captured in SpiritSafe cache artifacts.
-2. `gkc.spirit_safe` exports JSON Entity Profiles under `profiles/<QID>.json`.
-3. `gkc.still_charger.build_curation_packet_from_json_profile(...)` builds a packet scaffold.
-4. `gkc.still_charger.charge_packet_from_wikidata_items(...)` and related flows fill packet entity data.
-5. Validation/coercion runs on packet values and emits conformance notices.
+1. Data Distillery Wikibase semantics are developed and documented within the working "meta-wikibase".
+2. `gkc.spirit_safe` caches and updates raw Data Distillery Wikibase entity content periodically (currently a manual process while development progresses) within `SpiritSafe/cache/entities`. (reference `SpiritSafe/.github/workflows/cache-from-wikibase.yml` and `SpiritSafe/.github/workflows/cache-wikibase-and-build-profiles.yml`)
+3. `gkc.spirit_safe` generates JSON Entity Profiles under `SpiritSafe/profiles/<QID>.json`. (reference `SpiritSafe/.github/workflows/cache-wikibase-and-build-profiles.yml`)
+4. `gkc.still_charger.build_curation_packet_from_json_profile(...)` generates a Curation Packet scaffold and seeds default/fixed values from profile definitions.
+5. `gkc.still_charger.charge_packet_from_wikidata_items(...)` retrieves data from one or more Wikidata items, builds the `data` structure within the packet with those items verbatim, and runs `fermenter` processing to evaluate the items and produce a `conformance` object with reporting details on alignment with the profiles.
 6. Bottling transforms packet content to destination-specific payloads.
 7. Shipping sends destination-specific payloads to Commons Partners (Wikidata, etc.).
 
@@ -78,10 +76,15 @@ These are consumed by downstream wizard/validation paths and are not UI-only fie
 
 ## Curation Packet Structure
 
-All curation packets enforce a strict two-section top-level structure:
+All curation packets enforce a strict three-section top-level structure:
 
 - `metadata` — the ruleset, provenance, and integrity information for this packet. This section is sealed with a SHA-256 digest at mint time and must not be modified after generation.
-- `data` — the fillable data slots for each entity in the packet.
+- `data` — the source data payload: entity values (labels, descriptions, aliases, statements) indexed by entity slot.
+- `conformance` — fermenter-owned evaluation results: statement-by-statement assessment of alignment with profile rules, mapping of entities to profiles, and any notices/issues encountered during validation.
+
+Implementation note:
+
+- The three-section shape above is the locked contract target for #200. Runtime mutation details in current charging paths remain transitional while contract-correction refactors are completed.
 
 ### Top-Level Packet Shape
 
@@ -127,7 +130,14 @@ All curation packets enforce a strict two-section top-level structure:
   },
   "data": {
     "entities": []
-  }
+  },
+  "conformance": [
+    {
+      "source_item": "http://www.wikidata.org/entity/Q14708404",
+      "source_item_label": "Cherokee Nation",
+      "statement_evaluations": []
+    }
+  ]
 }
 ```
 
@@ -209,7 +219,11 @@ Qualifiers and references are omitted entirely when the profile does not specify
 
 ## Charged Entity Slot Shape
 
-Charging populates each entity slot's `data-value` fields and partitions statements into conformance buckets. The entity slot structure expands from the uncharged shape:
+Charging populates each entity slot's `data-value` fields with values from source data (Wikidata, curated input, defaults). The entity slot structure mirrors the uncharged shape:
+
+Implementation note:
+
+- Current runtime charged packets still include transitional hybrid payload details while #200 contract-correction refactors are in progress.
 
 ```json
 {
@@ -233,73 +247,108 @@ Charging populates each entity slot's `data-value` fields and partitions stateme
     "population": {
       "id": "https://datadistillery.wikibase.cloud/entity/Q21",
       "data-type": "quantity",
-      "data-value": null,
-      "non_conformant": true,
-      "notices": ["datatype_mismatch"]
+      "data-value": null
     }
-  },
-  "uncovered_statements": {
-    "P18": [
-      {
-        "data-type": null,
-        "data-value": "Cherokee_Nation_Capitol.jpg"
-      }
-    ]
   }
 }
 ```
 
-### Statement Evaluation Records
+**Target invariant:** The `data` section preserves the **source payload only**. Evaluation results, notices, and conformance status are never stored in `data`. All such metadata flows into the `conformance` section.
 
-Charged packet conformance is emitted as atomic statement evaluation records under:
+## Conformance Section
 
-- `conformance.statement_evaluations`
+The `conformance` section is produced by `gkc.fermenter` during packet charging and contains all evaluation results. It is an array of per-entity evaluation groups, each covering one source item.
 
-Each record is produced by fermenter statement primitives and includes the DD Wikibase statement reference block.
+Implementation note:
+
+- Current runtime charge output is still transitioning toward this grouped conformance shape as contract work in #200 proceeds.
+
+### Conformance Top-Level Shape
 
 ```json
 {
-  "entity_id": "Q14708404",
-  "gkc_entity_statement": {
-    "id": "official_website",
-    "uri": "https://datadistillery.wikibase.cloud/entity/Q19"
-  },
-  "json_path": "$.entity.claims.P856[0]",
-  "statement_uri": "https://datadistillery.wikibase.cloud/entity/Q19",
-  "statement_id": "official_website",
-  "status": "conformant",
-  "outcome": "conformant",
-  "references": [
+  "conformance": [
     {
-      "entity_id": "Q14708404",
-      "gkc_entity_statement": {
-        "id": "reference_url",
-        "uri": "https://datadistillery.wikibase.cloud/entity/Q29"
-      },
-      "json_path": "$.entity.claims.P856[0].references.P854",
-      "statement_uri": "https://datadistillery.wikibase.cloud/entity/Q29",
-      "statement_id": "reference_url",
-      "status": "conformant",
-      "outcome": "conformant"
+      "source_item": "http://www.wikidata.org/entity/Q14708404",
+      "source_item_label": "Cherokee Nation",
+      "statement_evaluations": [
+        { /* ... */ }
+      ]
     }
   ]
 }
 ```
 
-Outcome values (current):
+`source_item_label` is the best available single-language label for the entity, resolved in preference order: `en` → `mul` → first available language. This matches the active GKC language setting (currently defaulting to `en`).
 
-- `conformant`
-- `non_conformant_mappable`
-- `missing`
-- `to_be_defined`
+### Statement Evaluation Records
 
-Status values used in packet records (current):
+Each entry in `statement_evaluations` covers one claim from the source Wikidata entity. Records are produced by the fermenter primitive `evaluate_statement_instance(profile_statement, raw_claim)` and serialized by `statement_evaluation_to_record()`.
 
-- `conformant`
-- `nonconformant`
-- `uncovered`
+```json
+{
+  "json_path": "$.entity.claims.P856[0]",
+  "gkc_entity_statement": {
+    "id": "official_website",
+    "uri": "https://datadistillery.wikibase.cloud/entity/Q19"
+  },
+  "conformant": true,
+  "outcome": "conformant",
+  "normalized_value": "https://www.cherokee.org",
+  "qualifiers": [],
+  "references": [
+    {
+      "json_path": "$.entity.claims.P856[0].references.P854",
+      "gkc_entity_statement": {
+        "id": "reference_url",
+        "uri": "https://datadistillery.wikibase.cloud/entity/Q29"
+      },
+      "conformant": true,
+      "outcome": "conformant",
+      "normalized_value": "https://www.cherokee.org"
+    }
+  ]
+}
+```
 
-Nested qualifiers and references are serialized recursively with the same record shape.
+**For claims not mapped to any profile statement**, `gkc_entity_statement` is `null` and `outcome` is omitted. The claim still appears in the evaluations so curators can see what source data the profile does not cover.
+
+```json
+{
+  "json_path": "$.entity.claims.P18[0]",
+  "gkc_entity_statement": null,
+  "conformant": false,
+  "normalized_value": "Cherokee_Nation_Capitol.jpg"
+}
+```
+
+### Statement Evaluation Record Fields
+
+| Field | Type | Meaning |
+|---|---|---|
+| `json_path` | string | JSONPath to the claim in source Wikidata entity JSON (e.g., `$.entity.claims.P856[0]`) |
+| `gkc_entity_statement` | object or null | Profile statement identity: `id` (name_identifier) and `uri` (canonical DD Wikibase URI). `null` when the claim is not covered by the profile. |
+| `conformant` | boolean | `true` only when this record and all nested qualifiers and references are conformant. `false` for any failure or uncovered claim. |
+| `outcome` | string | Evaluation outcome code (see below). Omitted when `gkc_entity_statement` is null. |
+| `normalized_value` | any | Normalized, curator-facing value. For `wikibase-item` types this is a full resolvable URI (e.g., `http://www.wikidata.org/entity/Q12345`). |
+| `qualifiers` | array | Nested qualifier evaluation records using the same shape. |
+| `references` | array | Nested reference evaluation records using the same shape. |
+
+### Outcome Values
+
+`outcome` is set only when `gkc_entity_statement` is non-null. All outcome messaging for curator display is drawn from `error message` statements in the corresponding DD Wikibase entity profile items (accessible via `metadata.profiles` in the packet), enabling multilingual rendering without embedding text strings in the conformance record.
+
+| Outcome | Meaning | Curator action |
+|---|---|---|
+| `conformant` | Value matches all profile constraints | None |
+| `missing` | Profile expects this statement; none found in source | Add the statement |
+| `value_error` | Value is present but malformed or wrong datatype | Fix the value; see statement-type `error message` in profile |
+| `value_not_in_allowed_set` | Value is the right type but not in the required list or fixed value | Choose from allowed values; see list `error message` in profile |
+
+**Note:** fixed-value constraints are modeled as a list of one item in the profile. `value_not_in_allowed_set` covers both list and fixed-value mismatches.
+
+**Note on nesting:** Qualifiers and references use the same record shape recursively. `conformant` on the parent statement is `true` only when the parent value and all nested records are individually `conformant: true`.
+
 
 ### Source Provenance (per entity, in metadata)
 
@@ -313,16 +362,7 @@ When charging from Wikidata, each entity's source metadata is recorded under `me
 }
 ```
 
-`lastrevid` is used when a charged packet reaches the bottling/shipping stage to detect whether the Wikidata item has changed since the packet was minted.
-
-### Conformance Summary
-
-No separate `metadata.conformance_summary` field is currently guaranteed by the packet contract.
-
-Callers should derive summary metrics from:
-
-- `conformance.statement_evaluations`
-- `conformance.entity_profile_map`
+`lastrevid` is used when a charged packet reaches the bottling/shipping stage to detect whether the Wikidata item has changed since the packet was minted. It is also used when a Curation Packet is re-presented for validation.
 
 ## Conformance and Blocking Policy
 
