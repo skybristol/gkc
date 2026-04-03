@@ -113,6 +113,38 @@ class WikibaseApiClient:
             raise RuntimeError(f"Entity '{entity_id}' not found")
         return entities[entity_id]
 
+    def get_and_transform_entity(
+        self,
+        entity_id: str,
+        *,
+        target_entity_type: str = "item",
+        property_datatype: Optional[str] = None,
+    ) -> dict[str, Any]:
+        """Fetch one entity and reshape it into a shipper-ready payload.
+
+        Args:
+            entity_id: Wikibase entity ID to fetch (for example ``Q42`` or ``P31``).
+            target_entity_type: Target payload kind, either ``"item"`` or
+                ``"property"``.
+            property_datatype: Datatype to use when targeting a property payload.
+                If omitted and the source entity is already a property, the source
+                datatype is reused.
+
+        Returns:
+            A payload dictionary suitable for ``WikibaseShipper.write_item()`` or
+            ``WikibaseShipper.write_property()`` payload input.
+
+        Plain meaning: Fetch an entity and immediately convert it into a write
+        payload for templating workflows.
+        """
+
+        entity_data = self.get_entity(entity_id)
+        return transform_entity_for_write(
+            entity_data,
+            target_entity_type=target_entity_type,
+            property_datatype=property_datatype,
+        )
+
     def request(self, params: dict[str, Any]) -> dict[str, Any]:
         try:
             response = self.session.get(
@@ -1199,6 +1231,103 @@ def strip_entity_identifiers(entity_data: dict[str, Any]) -> dict[str, Any]:
                                                     snak.pop("hash", None)
 
     return cleaned
+
+
+def flatten_entity_claims_for_write(raw_claims: Any) -> list[dict[str, Any]]:
+    """Flatten raw Wikibase claims into wbeditentity write-payload claim list.
+
+    Args:
+        raw_claims: Claims structure from ``wbgetentities`` or a list of already
+            flattened statement dictionaries.
+
+    Returns:
+        A deep-copied list of statement dictionaries in the shape expected by
+        shipper payload validation.
+
+    Plain meaning: Convert read-side claims mapping into the flat statement list
+    used for writes.
+    """
+
+    flattened: list[dict[str, Any]] = []
+
+    if isinstance(raw_claims, dict):
+        for statement_list in raw_claims.values():
+            if not isinstance(statement_list, list):
+                continue
+            for statement in statement_list:
+                if isinstance(statement, dict):
+                    flattened.append(copy.deepcopy(statement))
+        return flattened
+
+    if isinstance(raw_claims, list):
+        for statement in raw_claims:
+            if isinstance(statement, dict):
+                flattened.append(copy.deepcopy(statement))
+
+    return flattened
+
+
+def transform_entity_for_write(
+    entity_data: dict[str, Any],
+    *,
+    target_entity_type: str = "item",
+    property_datatype: Optional[str] = None,
+) -> dict[str, Any]:
+    """Convert raw ``wbgetentities`` JSON into a shipper-ready payload.
+
+    Args:
+        entity_data: Raw entity JSON for a single entity from ``wbgetentities``.
+        target_entity_type: Target payload kind, either ``"item"`` or
+            ``"property"``.
+        property_datatype: Datatype to use when targeting a property payload.
+            If omitted and the source entity is already a property, the source
+            datatype is reused for validation purposes.
+
+    Returns:
+        A deep-copied payload dictionary suitable for the ``payload`` argument of
+        ``WikibaseShipper.write_item()`` or ``WikibaseShipper.write_property()``.
+
+    Raises:
+        ValueError: If ``target_entity_type`` is invalid or if a property target
+            is requested without a datatype that can be resolved.
+
+    Plain meaning: Turn one raw entity response into a reusable write payload.
+    """
+
+    normalized_target_entity_type = str(target_entity_type).strip().lower()
+    if normalized_target_entity_type not in {"item", "property"}:
+        raise ValueError("target_entity_type must be either 'item' or 'property'")
+
+    source_entity_type = entity_data.get("type")
+    source_datatype = entity_data.get("datatype")
+    resolved_property_datatype = property_datatype
+
+    if normalized_target_entity_type == "property":
+        if not resolved_property_datatype and source_entity_type == "property":
+            if isinstance(source_datatype, str) and source_datatype.strip():
+                resolved_property_datatype = source_datatype
+
+        if (
+            not isinstance(resolved_property_datatype, str)
+            or not resolved_property_datatype.strip()
+        ):
+            raise ValueError(
+                "property_datatype is required when transforming a non-property "
+                "entity into a property payload"
+            )
+
+    transformed = strip_entity_identifiers(entity_data)
+    transformed.pop("type", None)
+    transformed.pop("datatype", None)
+    transformed.pop("sitelinks", None)
+
+    flattened_claims = flatten_entity_claims_for_write(transformed.get("claims"))
+    if flattened_claims:
+        transformed["claims"] = flattened_claims
+    else:
+        transformed.pop("claims", None)
+
+    return transformed
 
 
 @dataclass

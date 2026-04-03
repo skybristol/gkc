@@ -8,6 +8,7 @@ import requests
 import gkc
 from gkc.mash import (
     ClaimSummary,
+    WikibaseApiClient,
     WikibaseEntitySchemaTemplate,
     WikibaseFullSyncResult,
     WikibaseItemTemplate,
@@ -24,10 +25,12 @@ from gkc.mash import (
     fetch_mediawiki_page_wikitext,
     fetch_recent_entity_changes,
     fetch_url_resource,
+    flatten_entity_claims_for_write,
     full_sync_wikibase_entity_cache,
     get_latest_cache_timestamp,
     refresh_entity_cache_from_recentchanges,
     strip_entity_identifiers,
+    transform_entity_for_write,
 )
 
 
@@ -289,6 +292,162 @@ def test_strip_entity_identifiers_removes_ids():
     assert "id" in entity_data
     assert entity_data["claims"]["P31"][0]["id"] == "Q42$ABC"
     assert entity_data["claims"]["P31"][0]["qualifiers"]["P580"][0]["hash"] == "abc123"
+
+
+def test_flatten_entity_claims_for_write_flattens_claim_mapping():
+    raw_claims = {
+        "P31": [{"mainsnak": {"property": "P31"}}],
+        "P279": [{"mainsnak": {"property": "P279"}}],
+        "bad": "ignore-me",
+    }
+
+    flattened = flatten_entity_claims_for_write(raw_claims)
+
+    assert [claim["mainsnak"]["property"] for claim in flattened] == ["P31", "P279"]
+    assert raw_claims["P31"][0]["mainsnak"]["property"] == "P31"
+
+
+def test_transform_entity_for_write_preserves_claim_content_and_strips_read_only_fields():
+    entity_data = {
+        "id": "P42",
+        "type": "property",
+        "datatype": "wikibase-item",
+        "pageid": 123,
+        "lastrevid": 456,
+        "modified": "2024-01-01T00:00:00Z",
+        "ns": 120,
+        "title": "Property:P42",
+        "labels": {"en": {"language": "en", "value": "source property"}},
+        "descriptions": {"en": {"language": "en", "value": "source desc"}},
+        "aliases": {"en": [{"language": "en", "value": "alias"}]},
+        "sitelinks": {"enwiki": {"site": "enwiki", "title": "Ignore me"}},
+        "claims": {
+            "P31": [
+                {
+                    "id": "P42$abc",
+                    "mainsnak": {
+                        "snaktype": "value",
+                        "property": "P31",
+                        "datatype": "wikibase-item",
+                        "hash": "main123",
+                        "datavalue": {
+                            "type": "wikibase-entityid",
+                            "value": {
+                                "entity-type": "item",
+                                "id": "Q5",
+                                "numeric-id": 5,
+                            },
+                        },
+                    },
+                    "type": "statement",
+                    "rank": "preferred",
+                    "qualifiers": {
+                        "P580": [
+                            {
+                                "snaktype": "value",
+                                "property": "P580",
+                                "datatype": "time",
+                                "hash": "qual123",
+                                "datavalue": {
+                                    "type": "time",
+                                    "value": {"time": "+2020-01-01T00:00:00Z"},
+                                },
+                            }
+                        ]
+                    },
+                    "qualifiers-order": ["P580"],
+                    "references": [
+                        {
+                            "hash": "ref123",
+                            "snaks": {
+                                "P248": [
+                                    {
+                                        "snaktype": "value",
+                                        "property": "P248",
+                                        "datatype": "wikibase-item",
+                                        "hash": "refsnak123",
+                                        "datavalue": {
+                                            "type": "wikibase-entityid",
+                                            "value": {
+                                                "entity-type": "item",
+                                                "id": "Q1",
+                                                "numeric-id": 1,
+                                            },
+                                        },
+                                    }
+                                ]
+                            },
+                            "snaks-order": ["P248"],
+                        }
+                    ],
+                }
+            ]
+        },
+    }
+
+    payload = transform_entity_for_write(entity_data, target_entity_type="item")
+
+    assert payload.get("id") is None
+    assert payload.get("type") is None
+    assert payload.get("datatype") is None
+    assert payload.get("sitelinks") is None
+    assert isinstance(payload["claims"], list)
+    assert len(payload["claims"]) == 1
+    assert payload["claims"][0]["rank"] == "preferred"
+    assert payload["claims"][0]["mainsnak"]["datatype"] == "wikibase-item"
+    assert payload["claims"][0]["mainsnak"].get("hash") is None
+    assert payload["claims"][0]["qualifiers"]["P580"][0].get("hash") is None
+    assert payload["claims"][0]["references"][0].get("hash") is None
+    assert payload["claims"][0]["references"][0]["snaks"]["P248"][0].get("hash") is None
+    assert entity_data["claims"]["P31"][0]["id"] == "P42$abc"
+    assert "sitelinks" in entity_data
+
+
+def test_transform_entity_for_write_requires_datatype_for_item_to_property():
+    entity_data = {
+        "id": "Q42",
+        "type": "item",
+        "labels": {"en": {"language": "en", "value": "Example item"}},
+    }
+
+    with pytest.raises(ValueError, match="property_datatype"):
+        transform_entity_for_write(entity_data, target_entity_type="property")
+
+
+def test_transform_entity_for_write_accepts_explicit_datatype_for_property_target():
+    entity_data = {
+        "id": "Q42",
+        "type": "item",
+        "labels": {"en": {"language": "en", "value": "Example item"}},
+    }
+
+    payload = transform_entity_for_write(
+        entity_data,
+        target_entity_type="property",
+        property_datatype="string",
+    )
+
+    assert payload["labels"]["en"]["value"] == "Example item"
+    assert "datatype" not in payload
+
+
+def test_wikibase_api_client_get_and_transform_entity_uses_transform_helper(
+    monkeypatch,
+):
+    entity_data = {
+        "id": "Q42",
+        "type": "item",
+        "labels": {"en": {"language": "en", "value": "Example item"}},
+        "claims": {"P31": [{"mainsnak": {"property": "P31"}}]},
+    }
+
+    client = WikibaseApiClient(api_url="https://example.test/w/api.php")
+    monkeypatch.setattr(client, "get_entity", lambda entity_id: entity_data)
+
+    payload = client.get_and_transform_entity("Q42")
+
+    assert payload["labels"]["en"]["value"] == "Example item"
+    assert isinstance(payload["claims"], list)
 
 
 class _FakeApiClient:

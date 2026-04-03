@@ -11,7 +11,7 @@ It includes:
 - `MashSourceAdapter` plugin contract for source loader integrations
 - Wikidata loaders and template objects
 - Wikipedia template retrieval
-- Utility functions for template preparation and label hydration
+- Utility functions for template preparation, raw-to-write payload shaping, and label hydration
 
 Use mash for reads and template shaping. Write operations belong in shipper.
 
@@ -52,6 +52,10 @@ single = client.get_entity("Q1")
 raw = client.request({"action": "query", "format": "json", "meta": "siteinfo"})
 print(len(results), sorted(batch.keys()), single.get("id"), bool(raw))
 ```
+
+`WikibaseApiClient.get_and_transform_entity()` provides a one-line bridge from
+raw entity retrieval to shipper-ready payload preparation for templating
+workflows.
 
 `WikibaseApiClient` sends a default `User-Agent` header automatically when one is not provided. You can still pass a custom `user_agent` value in the constructor to override it for your workflow.
 
@@ -158,6 +162,72 @@ entity_data = {
 shell = strip_entity_identifiers(entity_data)
 print(shell)
 ```
+
+### `flatten_entity_claims_for_write()`
+
+```python
+from gkc.mash import flatten_entity_claims_for_write
+
+raw_claims = {
+    "P31": [{"mainsnak": {"property": "P31"}}],
+    "P279": [{"mainsnak": {"property": "P279"}}],
+}
+
+claims = flatten_entity_claims_for_write(raw_claims)
+print(len(claims), claims[0]["mainsnak"]["property"])
+```
+
+Use this when you already have a stripped entity shell and only need to convert
+read-side claims mapping into the flat statement list accepted by shipper.
+
+### `transform_entity_for_write()`
+
+```python
+from gkc.mash import transform_entity_for_write
+
+raw_entity = api.get_entity("P31")
+
+item_payload = transform_entity_for_write(
+    raw_entity,
+    target_entity_type="item",
+)
+
+property_payload = transform_entity_for_write(
+    raw_entity,
+    target_entity_type="property",
+    property_datatype="wikibase-item",
+)
+
+print(item_payload.keys())
+print(property_payload.keys())
+```
+
+This helper performs the full raw-to-write conversion for one entity:
+
+- strips create-blocking identifiers and hashes
+- removes top-level read-side fields like `type`, `datatype`, and `sitelinks`
+- converts raw claims dicts into the flat statement list expected by shipper
+- preserves labels, descriptions, aliases, statement rank, qualifiers, and references
+
+When targeting a property payload, `property_datatype` is required unless the
+source entity is already a property and has a datatype that can be reused.
+
+### `WikibaseApiClient.get_and_transform_entity()`
+
+```python
+from gkc.mash import WikibaseApiClient
+
+api = WikibaseApiClient(api_url="https://datadistillery.wikibase.cloud/w/api.php")
+
+payload = api.get_and_transform_entity(
+    "P31",
+    target_entity_type="item",
+)
+
+print(payload["labels"]["en"]["value"])
+```
+
+Use this convenience method when you want to fetch and convert in one step.
 
 ### `ClaimSummary`
 
@@ -335,6 +405,20 @@ print(template.to_dict().keys())
     options:
       show_root_heading: false
       heading_level: 4
+
+### `flatten_entity_claims_for_write()`
+
+::: gkc.mash.flatten_entity_claims_for_write
+        options:
+            show_root_heading: false
+            heading_level: 4
+
+### `transform_entity_for_write()`
+
+::: gkc.mash.transform_entity_for_write
+        options:
+            show_root_heading: false
+            heading_level: 4
 
 ### `ClaimSummary`
 
