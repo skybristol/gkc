@@ -13,11 +13,18 @@ def test_spiritsafe_semantic_anchors_build_json(monkeypatch, capsys, tmp_path):
         assert str(spiritsafe_root).endswith("SpiritSafe")
         assert str(output_path).endswith("cache/config/semantic_anchors.json")
         return {
-            "_foo": {"id": "Q1", "entity": "https://example.org/entity/Q1"},
-            "_bar": {
-                "id": "P1",
-                "entity": "https://example.org/entity/P1",
-                "datatype": "string",
+            "metadata": {
+                "generated_at": "2026-04-03T00:00:00Z",
+                "property_count": 1,
+                "item_count": 1,
+            },
+            "entities": {
+                "_foo": {"id": "Q1", "entity": "https://example.org/entity/Q1"},
+                "_bar": {
+                    "id": "P1",
+                    "entity": "https://example.org/entity/P1",
+                    "datatype": "string",
+                },
             },
         }
 
@@ -41,6 +48,8 @@ def test_spiritsafe_semantic_anchors_build_json(monkeypatch, capsys, tmp_path):
     assert payload["command"] == "spiritsafe.semantic-anchors.build"
     assert payload["ok"] is True
     assert payload["details"]["anchor_count"] == 2
+    assert payload["details"]["property_count"] == 1
+    assert payload["details"]["item_count"] == 1
 
 
 def test_spiritsafe_semantic_anchors_build_requires_local_root(capsys):
