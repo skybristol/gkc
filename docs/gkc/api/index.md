@@ -111,6 +111,7 @@ Load data from Wikidata and other sources as templates for processing.
 
 **Key functions:**
 - `strip_entity_identifiers()` - Prepare for new item creation
+- `transform_entity_for_write()` - Convert raw entity JSON into shipper-ready payloads
 - `fetch_property_labels()` - Get property labels
 
 ### [Mash Formatters](mash_formatters.md)

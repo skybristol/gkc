@@ -33,10 +33,12 @@ from gkc.mash.core import (
     fetch_property_labels,
     fetch_recent_entity_changes,
     fetch_url_resource,
+    flatten_entity_claims_for_write,
     full_sync_wikibase_entity_cache,
     get_latest_cache_timestamp,
     refresh_entity_cache_from_recentchanges,
     strip_entity_identifiers,
+    transform_entity_for_write,
 )
 from gkc.mash.protocols import MashSourceAdapter
 
@@ -70,9 +72,11 @@ __all__ = [
     "fetch_entity_schema_specification",
     "fetch_commons_file_info",
     "fetch_url_resource",
+    "flatten_entity_claims_for_write",
     "fetch_property_labels",
     "fetch_recent_entity_changes",
     "get_latest_cache_timestamp",
     "refresh_entity_cache_from_recentchanges",
     "strip_entity_identifiers",
+    "transform_entity_for_write",
 ]
