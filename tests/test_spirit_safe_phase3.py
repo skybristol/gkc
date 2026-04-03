@@ -107,7 +107,7 @@ def test_export_spiritsafe_entity_index(fixture_root: Path, tmp_path: Path):
 
 
 def test_build_spiritsafe_semantic_anchor_document(tmp_path: Path, fixture_root: Path):
-    """Semantic anchor builder should emit only underscore-prefixed thin mappings."""
+    """Semantic anchor builder should emit metadata plus underscore mappings."""
 
     root = tmp_path / "spiritsafe"
     copytree(fixture_root, root)
@@ -148,7 +148,10 @@ meta_wikibase:
 
     anchors = build_spiritsafe_semantic_anchor_document(root)
 
-    assert anchors == {
+    assert anchors["metadata"]["property_count"] == 0
+    assert anchors["metadata"]["item_count"] == 1
+    assert isinstance(anchors["metadata"]["generated_at"], str)
+    assert anchors["entities"] == {
         "_TribalGovernmentInTheUnitedStates": {
             "id": "Q4",
             "entity": "https://datadistillery.wikibase.cloud/entity/Q4",
@@ -207,7 +210,9 @@ meta_wikibase:
 
     anchors = build_spiritsafe_semantic_anchor_document(root)
 
-    assert anchors == {
+    assert anchors["metadata"]["property_count"] == 1
+    assert anchors["metadata"]["item_count"] == 0
+    assert anchors["entities"] == {
         "_time": {
             "id": "P192",
             "entity": "https://datadistillery.wikibase.cloud/entity/P192",
@@ -258,7 +263,9 @@ meta_wikibase:
 
     anchors = build_spiritsafe_semantic_anchor_document(root)
 
-    assert anchors == {}
+    assert anchors["metadata"]["property_count"] == 0
+    assert anchors["metadata"]["item_count"] == 0
+    assert anchors["entities"] == {}
 
 
 def test_export_spiritsafe_semantic_anchors(fixture_root: Path, tmp_path: Path):
@@ -303,7 +310,9 @@ meta_wikibase:
     anchors = export_spiritsafe_semantic_anchors(root, output_path)
 
     assert output_path.exists()
-    assert anchors == {
+    assert anchors["metadata"]["property_count"] == 0
+    assert anchors["metadata"]["item_count"] == 1
+    assert anchors["entities"] == {
         "_TribalGovernmentInTheUnitedStates": {
             "id": "Q4",
             "entity": "https://datadistillery.wikibase.cloud/entity/Q4",

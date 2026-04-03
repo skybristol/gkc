@@ -828,7 +828,8 @@ def _build_parser() -> argparse.ArgumentParser:
         "--output",
         help=(
             "Optional output path for artifact JSON "
-            "(default: <local_root>/cache/config/semantic_anchors.json)"
+            "(default: <local_root>/cache/config/semantic_anchors.json; "
+            "SpiritSafe workflows may override this)"
         ),
     )
     _add_profile_source_args(spiritsafe_semantic_anchors_build)
@@ -2279,9 +2280,13 @@ def _handle_spiritsafe_semantic_anchors_build(
         )
 
         artifact = export_spiritsafe_semantic_anchors(local_root, output_path)
+        entities = artifact.get("entities", {})
+        metadata = artifact.get("metadata", {})
         details = {
             "output_path": str(output_path),
-            "anchor_count": len(artifact) if isinstance(artifact, dict) else 0,
+            "anchor_count": len(entities) if isinstance(entities, dict) else 0,
+            "property_count": metadata.get("property_count", 0),
+            "item_count": metadata.get("item_count", 0),
         }
         return {
             "command": args.command_path,

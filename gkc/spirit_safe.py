@@ -2937,7 +2937,7 @@ def _build_semantic_anchor_entry(
 def build_spiritsafe_semantic_anchor_document(
     spiritsafe_root: Union[str, Path],
 ) -> dict[str, Any]:
-    """Build a thin semantic anchor mapping from cached SpiritSafe entities."""
+    """Build a thin semantic anchor artifact from cached SpiritSafe entities."""
 
     root = Path(spiritsafe_root).expanduser().resolve()
     cache_entities_dir = root / "cache" / "entities"
@@ -2974,7 +2974,27 @@ def build_spiritsafe_semantic_anchor_document(
 
         anchors[name_identifier] = entry
 
-    return anchors
+    property_count = sum(
+        1
+        for entry in anchors.values()
+        if isinstance(entry.get("id"), str) and entry["id"].startswith("P")
+    )
+    item_count = sum(
+        1
+        for entry in anchors.values()
+        if isinstance(entry.get("id"), str) and entry["id"].startswith("Q")
+    )
+
+    return {
+        "metadata": {
+            "generated_at": datetime.now(timezone.utc)
+            .isoformat()
+            .replace("+00:00", "Z"),
+            "property_count": property_count,
+            "item_count": item_count,
+        },
+        "entities": anchors,
+    }
 
 
 def export_spiritsafe_semantic_anchors(
