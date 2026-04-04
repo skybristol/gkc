@@ -122,8 +122,33 @@ The initial helper surface includes:
 - loading the package-owned init document
 - normalizing authored datatype values against the canonical datatype registry
 - building a typed index over properties, items, and derived internal name identifiers
+- compiling the typed index into a required internal semantic-anchor contract using the active internal prefix
 
 This keeps the fixture, datatype registry, and later ontology-init logic aligned behind one Wikibase-specific access layer.
+
+## Semantic-Anchor Conformance
+
+The current slice of `#210` treats semantic-anchor evaluation as a narrow conformance problem.
+
+The package-owned init fixture defines the required internal ontology backbone. The SpiritSafe semantic-anchor artifact is then validated against that backbone for runtime use.
+
+The validation boundary is intentionally small:
+
+- load the package-owned ontology seed
+- compile the required internal semantic-anchor contract
+- load a semantic-anchor document
+- validate required internal names, kinds, and property datatypes
+- emit machine-readable results plus fermenter-style notices
+
+This slice does not attempt to validate class hierarchy, solve ontology-init ordering, or perform a separate live SPARQL conformance pass.
+
+The implementation split is:
+
+- `gkc.wikibase` compiles the required semantic-anchor contract from `meta_wb_init.yaml`
+- `gkc.fermenter` validates semantic-anchor documents against that contract
+- `gkc spiritsafe semantic-anchors validate` exposes the operator-facing CLI entry point
+
+When a local SpiritSafe root is available, workflows may also rebuild semantic anchors from current cache entities and compare them with a stored artifact to detect staleness.
 
 ## Continuing Work on Semantic Definition
 

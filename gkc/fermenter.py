@@ -24,6 +24,7 @@ from gkc.mash import (
     fetch_url_resource,
 )
 from gkc.wikibase import (
+    build_meta_wikibase_semantic_anchor_contract,
     canonicalize_wikibase_datatype,
     get_wikibase_datatype_spec,
     is_wikibase_item_datatype,
@@ -95,6 +96,19 @@ class ValidationPolicyConfig:
     request_accept: Optional[str] = None
 
 
+@dataclass
+class SemanticAnchorValidationResult:
+    """Validation outcome for a semantic-anchor artifact."""
+
+    valid: bool
+    required_anchor_count: int
+    matched_anchor_count: int
+    evaluated_anchor_count: int
+    notices: list[ConformanceNotice] = field(default_factory=list)
+    freshness_checked: bool = False
+    freshness_match: Optional[bool] = None
+
+
 def _resolve_validation_policy_config(
     validation_policy: ValidationPolicy,
     policy_config: Optional[ValidationPolicyConfig],
@@ -125,6 +139,296 @@ _COORD_DMS_PATTERN = re.compile(
     r"^\s*(?P<deg>[+-]?\d+(?:\.\d+)?)\D+(?P<min>\d+(?:\.\d+)?)?(?:\D+(?P<sec>\d+(?:\.\d+)?))?\D*(?P<hem>[NSEW])?\s*$",
     flags=re.IGNORECASE,
 )
+_INTERNAL_NAME_IDENTIFIER_BODY_PATTERN = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_-]*$")
+
+
+def validate_semantic_anchor_document(
+    anchor_document: dict[str, Any],
+    *,
+    internal_name_identifier_prefix: str | None = None,
+    current_anchor_document: dict[str, Any] | None = None,
+) -> SemanticAnchorValidationResult:
+    """Validate a semantic-anchor document against the package-owned init contract."""
+
+    contract = build_meta_wikibase_semantic_anchor_contract(
+        internal_name_identifier_prefix=internal_name_identifier_prefix
+    )
+    notices: list[ConformanceNotice] = []
+    required_anchor_count = len(contract.requirements)
+
+    if not isinstance(anchor_document, dict):
+        notices.append(
+            ConformanceNotice(
+                severity="error",
+                entity_ref="semantic_anchors",
+                code="artifact_shape_invalid",
+                message="Semantic anchor document must be a JSON object",
+            )
+        )
+        return SemanticAnchorValidationResult(
+            valid=False,
+            required_anchor_count=required_anchor_count,
+            matched_anchor_count=0,
+            evaluated_anchor_count=0,
+            notices=notices,
+            freshness_checked=current_anchor_document is not None,
+            freshness_match=None,
+        )
+
+    metadata = anchor_document.get("metadata")
+    entities = anchor_document.get("entities")
+
+    if not isinstance(metadata, dict):
+        notices.append(
+            ConformanceNotice(
+                severity="error",
+                entity_ref="semantic_anchors",
+                code="artifact_shape_invalid",
+                message="Semantic anchor document is missing metadata",
+            )
+        )
+
+    if not isinstance(entities, dict):
+        notices.append(
+            ConformanceNotice(
+                severity="error",
+                entity_ref="semantic_anchors",
+                code="artifact_shape_invalid",
+                message="Semantic anchor document is missing entities",
+            )
+        )
+        return SemanticAnchorValidationResult(
+            valid=False,
+            required_anchor_count=required_anchor_count,
+            matched_anchor_count=0,
+            evaluated_anchor_count=0,
+            notices=notices,
+            freshness_checked=current_anchor_document is not None,
+            freshness_match=None,
+        )
+
+    evaluated_anchor_count = len(entities)
+    matched_anchor_count = 0
+    active_prefix = contract.internal_name_identifier_prefix
+
+    for anchor_name, payload in entities.items():
+        if not isinstance(anchor_name, str) or not anchor_name:
+            notices.append(
+                ConformanceNotice(
+                    severity="error",
+                    entity_ref="semantic_anchors",
+                    code="anchor_identifier_invalid",
+                    message="Semantic anchor keys must be non-empty strings",
+                )
+            )
+            continue
+
+        if not anchor_name.startswith(active_prefix):
+            notices.append(
+                ConformanceNotice(
+                    severity="error",
+                    entity_ref=anchor_name,
+                    code="anchor_identifier_invalid",
+                    message=(
+                        f"Internal name identifier '{anchor_name}' must start with "
+                        f"configured prefix '{active_prefix}'"
+                    ),
+                )
+            )
+            continue
+
+        remainder = anchor_name[len(active_prefix) :]
+        if not remainder or not _INTERNAL_NAME_IDENTIFIER_BODY_PATTERN.fullmatch(
+            remainder
+        ):
+            notices.append(
+                ConformanceNotice(
+                    severity="error",
+                    entity_ref=anchor_name,
+                    code="anchor_identifier_invalid",
+                    message=(
+                        f"Internal name identifier '{anchor_name}' has an invalid "
+                        "body after the configured prefix"
+                    ),
+                )
+            )
+
+        if not isinstance(payload, dict):
+            notices.append(
+                ConformanceNotice(
+                    severity="error",
+                    entity_ref=anchor_name,
+                    code="anchor_shape_invalid",
+                    message="Semantic anchor entries must be JSON objects",
+                )
+            )
+
+    for anchor_name, requirement in contract.requirements.items():
+        payload = entities.get(anchor_name)
+        if not isinstance(payload, dict):
+            notices.append(
+                ConformanceNotice(
+                    severity="error",
+                    entity_ref=anchor_name,
+                    code="anchor_missing",
+                    message=f"Required semantic anchor '{anchor_name}' is missing",
+                )
+            )
+            continue
+
+        matched_anchor_count += 1
+        anchor_id = payload.get("id")
+        if not isinstance(anchor_id, str) or not anchor_id:
+            notices.append(
+                ConformanceNotice(
+                    severity="error",
+                    entity_ref=anchor_name,
+                    code="anchor_id_missing",
+                    message=f"Semantic anchor '{anchor_name}' is missing its id",
+                )
+            )
+            continue
+
+        expected_prefix = "P" if requirement.kind == "property" else "Q"
+        if not (
+            anchor_id.startswith(expected_prefix) and anchor_id[1:].isdigit()
+        ):
+            notices.append(
+                ConformanceNotice(
+                    severity="error",
+                    entity_ref=anchor_name,
+                    code="anchor_kind_mismatch",
+                    message=(
+                        f"Semantic anchor '{anchor_name}' must resolve to a "
+                        f"{requirement.kind} id"
+                    ),
+                    normalized_value={"id": anchor_id, "expected_kind": requirement.kind},
+                )
+            )
+
+        if requirement.kind != "property":
+            continue
+
+        datatype = payload.get("datatype")
+        if not isinstance(datatype, str) or not datatype.strip():
+            notices.append(
+                ConformanceNotice(
+                    severity="error",
+                    entity_ref=anchor_name,
+                    code="anchor_datatype_missing",
+                    message=f"Property anchor '{anchor_name}' is missing datatype",
+                )
+            )
+            continue
+
+        try:
+            normalized_datatype = canonicalize_wikibase_datatype(datatype, strict=True)
+        except KeyError:
+            notices.append(
+                ConformanceNotice(
+                    severity="error",
+                    entity_ref=anchor_name,
+                    code="anchor_datatype_invalid",
+                    message=(
+                        f"Property anchor '{anchor_name}' uses unknown datatype "
+                        f"'{datatype}'"
+                    ),
+                )
+            )
+            continue
+
+        if normalized_datatype != requirement.datatype:
+            notices.append(
+                ConformanceNotice(
+                    severity="error",
+                    entity_ref=anchor_name,
+                    code="anchor_datatype_mismatch",
+                    message=(
+                        f"Property anchor '{anchor_name}' must use datatype "
+                        f"'{requirement.datatype}', found '{normalized_datatype}'"
+                    ),
+                    normalized_value={
+                        "expected": requirement.datatype,
+                        "actual": normalized_datatype,
+                    },
+                )
+            )
+
+    extra_anchors = sorted(set(entities) - set(contract.requirements))
+    if extra_anchors:
+        notices.append(
+            ConformanceNotice(
+                severity="info",
+                entity_ref="semantic_anchors",
+                code="anchor_extra",
+                message=(
+                    f"Semantic anchor artifact contains {len(extra_anchors)} "
+                    "non-required internal anchors"
+                ),
+                normalized_value=extra_anchors,
+            )
+        )
+
+    freshness_checked = current_anchor_document is not None
+    freshness_match: Optional[bool] = None
+    if current_anchor_document is not None:
+        current_entities = current_anchor_document.get("entities")
+        if not isinstance(current_entities, dict):
+            notices.append(
+                ConformanceNotice(
+                    severity="error",
+                    entity_ref="semantic_anchors",
+                    code="freshness_source_invalid",
+                    message="Current semantic anchor comparison source is missing entities",
+                )
+            )
+            freshness_match = None
+        else:
+            freshness_match = entities == current_entities
+            if freshness_match:
+                notices.append(
+                    ConformanceNotice(
+                        severity="info",
+                        entity_ref="semantic_anchors",
+                        code="artifact_current",
+                        message="Semantic anchor artifact matches the current cache-derived document",
+                    )
+                )
+            else:
+                missing_in_artifact = sorted(set(current_entities) - set(entities))
+                extra_in_artifact = sorted(set(entities) - set(current_entities))
+                changed_entries = sorted(
+                    key
+                    for key in (set(entities) & set(current_entities))
+                    if entities[key] != current_entities[key]
+                )
+                notices.append(
+                    ConformanceNotice(
+                        severity="error",
+                        entity_ref="semantic_anchors",
+                        code="artifact_stale",
+                        message=(
+                            "Semantic anchor artifact does not match the current "
+                            "cache-derived document"
+                        ),
+                        normalized_value={
+                            "missing_in_artifact": missing_in_artifact,
+                            "extra_in_artifact": extra_in_artifact,
+                            "changed_entries": changed_entries,
+                        },
+                    )
+                )
+
+    valid = not any(notice.severity == "error" for notice in notices)
+    return SemanticAnchorValidationResult(
+        valid=valid,
+        required_anchor_count=required_anchor_count,
+        matched_anchor_count=matched_anchor_count,
+        evaluated_anchor_count=evaluated_anchor_count,
+        notices=notices,
+        freshness_checked=freshness_checked,
+        freshness_match=freshness_match,
+    )
 
 
 def _coerce_wikibase_item_reference(

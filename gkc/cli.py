@@ -25,6 +25,7 @@ from gkc.mash import (
     get_latest_cache_timestamp,
     refresh_entity_cache_from_recentchanges,
 )
+from gkc.fermenter import validate_semantic_anchor_document
 from gkc.runtime_config import DEFAULT_USER_AGENT, get_wikibase_runtime_config
 from gkc.sitelinks import (
     DEFAULT_WIKIMEDIA_SITEMATRIX_URL,
@@ -33,6 +34,7 @@ from gkc.sitelinks import (
 from gkc.sparql import fetch_entity_labels
 from gkc.spirit_safe import (
     build_entity_profile_json_documents,
+    build_spiritsafe_semantic_anchor_document,
     export_entity_profile_json_documents,
     export_spiritsafe_entity_index,
     export_spiritsafe_manifest,
@@ -41,6 +43,7 @@ from gkc.spirit_safe import (
     load_manifest,
     load_profile,
     load_profile_package,
+    resolve_spiritsafe_meta_wikibase_config,
     validate_packet_structure,
 )
 from gkc.still_charger import create_curation_packet
@@ -836,6 +839,39 @@ def _build_parser() -> argparse.ArgumentParser:
     spiritsafe_semantic_anchors_build.set_defaults(
         handler=_handle_spiritsafe_semantic_anchors_build,
         command_path="spiritsafe.semantic-anchors.build",
+    )
+
+    spiritsafe_semantic_anchors_validate = (
+        spiritsafe_semantic_anchors_subparsers.add_parser(
+            "validate",
+            help="Validate semantic anchors against the package-owned Meta-Wikibase contract",
+        )
+    )
+    spiritsafe_semantic_anchors_validate.add_argument(
+        "--artifact-file",
+        help=(
+            "Path to an existing semantic_anchors.json artifact "
+            "(defaults to <local_root>/cache/config/semantic_anchors.json when --local-root is provided)"
+        ),
+    )
+    spiritsafe_semantic_anchors_validate.add_argument(
+        "--local-root",
+        help=(
+            "Optional local SpiritSafe root used to locate the default artifact path "
+            "and optionally rebuild current semantic anchors from cache"
+        ),
+    )
+    spiritsafe_semantic_anchors_validate.add_argument(
+        "--check-current-cache",
+        action="store_true",
+        help=(
+            "Compare the artifact against a freshly rebuilt semantic-anchor document "
+            "from the current local cache"
+        ),
+    )
+    spiritsafe_semantic_anchors_validate.set_defaults(
+        handler=_handle_spiritsafe_semantic_anchors_validate,
+        command_path="spiritsafe.semantic-anchors.validate",
     )
 
     # Packet commands
@@ -2292,6 +2328,98 @@ def _handle_spiritsafe_semantic_anchors_build(
             "command": args.command_path,
             "ok": True,
             "message": f"Built SpiritSafe semantic anchor artifact at {output_path}",
+            "details": details,
+        }
+    except Exception as exc:
+        raise CLIError(str(exc)) from exc
+
+
+def _handle_spiritsafe_semantic_anchors_validate(
+    args: argparse.Namespace,
+) -> dict[str, Any]:
+    """Validate a semantic-anchor artifact against the package-owned contract."""
+
+    if not args.artifact_file and not args.local_root:
+        raise CLIError(
+            "spiritsafe semantic-anchors validate requires --artifact-file or --local-root"
+        )
+    if args.check_current_cache and not args.local_root:
+        raise CLIError(
+            "--check-current-cache requires --local-root /path/to/SpiritSafe"
+        )
+
+    try:
+        local_root = (
+            Path(args.local_root).expanduser().resolve() if args.local_root else None
+        )
+        artifact_path = (
+            Path(args.artifact_file).expanduser().resolve()
+            if args.artifact_file
+            else local_root / "cache" / "config" / "semantic_anchors.json"
+        )
+
+        try:
+            artifact = json.loads(artifact_path.read_text(encoding="utf-8"))
+        except Exception as exc:
+            raise CLIError(f"Failed to load semantic anchor artifact: {exc}") from exc
+
+        internal_prefix: str | None = None
+        if local_root is not None:
+            _config_path, config_values = resolve_spiritsafe_meta_wikibase_config(
+                local_root
+            )
+            internal_prefix = config_values.get("internal_name_identifier_prefix")
+        else:
+            runtime_config = get_wikibase_runtime_config()
+            internal_prefix = runtime_config.internal_name_identifier_prefix
+
+        current_document = None
+        if args.check_current_cache and local_root is not None:
+            current_document = build_spiritsafe_semantic_anchor_document(local_root)
+
+        result = validate_semantic_anchor_document(
+            artifact,
+            internal_name_identifier_prefix=internal_prefix,
+            current_anchor_document=current_document,
+        )
+
+        notices_payload = [
+            {
+                "severity": notice.severity,
+                "entity_ref": notice.entity_ref,
+                "statement_ref": notice.statement_ref,
+                "code": notice.code,
+                "message": notice.message,
+                "normalized_value": notice.normalized_value,
+            }
+            for notice in result.notices
+        ]
+        error_count = sum(1 for notice in result.notices if notice.severity == "error")
+        warning_count = sum(
+            1 for notice in result.notices if notice.severity == "warning"
+        )
+        info_count = sum(1 for notice in result.notices if notice.severity == "info")
+        details = {
+            "artifact_path": str(artifact_path),
+            "required_anchor_count": result.required_anchor_count,
+            "matched_anchor_count": result.matched_anchor_count,
+            "evaluated_anchor_count": result.evaluated_anchor_count,
+            "freshness_checked": result.freshness_checked,
+            "freshness_match": result.freshness_match,
+            "notices_error": error_count,
+            "notices_warning": warning_count,
+            "notices_info": info_count,
+            "notices": notices_payload,
+        }
+        message = (
+            f"Validated SpiritSafe semantic anchor artifact at {artifact_path}"
+            if result.valid
+            else f"Semantic anchor artifact failed validation at {artifact_path}"
+        )
+        return {
+            "command": args.command_path,
+            "ok": result.valid,
+            "message": message,
             "details": details,
         }
     except Exception as exc:

@@ -2569,7 +2569,7 @@ def _manifest_source_url() -> str:
     return f"https://github.com/{DEFAULT_SPIRIT_SAFE_GITHUB_REPO}"
 
 
-def _resolve_spiritsafe_meta_wikibase_config(
+def resolve_spiritsafe_meta_wikibase_config(
     spiritsafe_root: Union[str, Path],
 ) -> tuple[Optional[Path], MetaWikibaseConfigValues]:
     root = Path(spiritsafe_root).expanduser().resolve()
@@ -2941,7 +2941,7 @@ def build_spiritsafe_semantic_anchor_document(
 
     root = Path(spiritsafe_root).expanduser().resolve()
     cache_entities_dir = root / "cache" / "entities"
-    _config_path, config_values = _resolve_spiritsafe_meta_wikibase_config(root)
+    _config_path, config_values = resolve_spiritsafe_meta_wikibase_config(root)
 
     name_identifier_property_id = (
         config_values.get("name_identifier_property_id") or "P214"

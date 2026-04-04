@@ -8,6 +8,37 @@ Both the still charger and the Wikibase write-planning layer consume it, and all
 
 All validation surfaces return a `ConformanceNotice` (or internal `ValidationResult`) for consistent error reporting across wizard, CLI, and bulk pipelines.
 
+## Semantic Anchor Validation
+
+The fermenter also owns semantic-anchor conformance validation for Meta-Wikibase runtime readiness.
+
+### `validate_semantic_anchor_document(anchor_document, *, internal_name_identifier_prefix=None, current_anchor_document=None)`
+
+Validate a semantic-anchor document against the package-owned Meta-Wikibase init contract.
+
+```python
+from gkc.fermenter import validate_semantic_anchor_document
+
+result = validate_semantic_anchor_document(anchor_document)
+print(result.valid)
+print(result.required_anchor_count)
+print(result.matched_anchor_count)
+print(result.notices)
+```
+
+This validator checks:
+
+- top-level artifact shape
+- presence of every required internal semantic anchor
+- property versus item ID kind alignment
+- canonical datatype alignment for property anchors
+- optional staleness against a separately provided current anchor document
+
+The primary entry point is dict-based so the same primitive can validate either:
+
+- a semantic-anchor artifact loaded from file
+- a semantic-anchor document generated in memory from current cache entities
+
 ## `ConformanceNotice`
 
 Shared result envelope for all validation and coercion operations.
