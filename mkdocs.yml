@@ -90,7 +90,9 @@ nav:
       - Overview: gkc/cli/index.md
       - Authentication: gkc/cli/auth.md
       - Mash: gkc/cli/mash.md
-      - Profiles: gkc/cli/profiles.md
+      - Profile: gkc/cli/profiles.md
+      - Packet: gkc/cli/packet.md
+      - SpiritSafe: gkc/cli/spiritsafe.md
       - Wizard: gkc/cli/wizard.md
       - ShEx: gkc/cli/shex.md
     - Utilities and Tools:

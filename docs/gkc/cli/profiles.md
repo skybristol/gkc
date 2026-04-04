@@ -4,14 +4,14 @@ Plain meaning: Work with SpiritSafe-backed Entity Profiles and manifest artifact
 
 ## Overview
 
-The `gkc` CLI exposes profile validation, JSON profile export, value-list hydration, registry inspection, package loading, packet generation, and manifest indexing.
+The `gkc profile` command group handles profile export, value-list hydration, and profile package loading.
 
-Top-level command groups:
+Current subcommands:
 
-- `gkc profile`
-- `gkc registry`
-- `gkc packet`
-- `gkc spiritsafe manifest`
+- `gkc profile export-json`
+- `gkc profile value-lists hydrate`
+- `gkc profile package load`
+- `gkc profile package validate`
 
 ## Profile Commands
 
@@ -23,6 +23,17 @@ Build JSON Entity Profiles from `cache/entities` and write `<QID>.json` files.
 gkc profile export-json --source local --local-root /path/to/SpiritSafe --output /path/to/SpiritSafe/profiles
 ```
 
+Common options:
+
+- `--cache-entities-dir`: Override the cache entity directory.
+- `--profile-id`: Restrict export to one or more specific profile QIDs.
+- `-o`, `--output`: Output directory for per-profile JSON files.
+- `--summary-output`: Optional summary JSON file for export diagnostics.
+- `--source`: Source override, either `github` or `local`.
+- `--local-root`: Local SpiritSafe root when using `--source local`.
+- `--repo`: GitHub repository slug when using `--source github`.
+- `--ref`: Git ref when using `--source github`.
+
 ### `gkc profile value-lists hydrate`
 
 Export value-list queries and hydrate `cache/queries/<QID>.json`.
@@ -31,20 +42,28 @@ Export value-list queries and hydrate `cache/queries/<QID>.json`.
 gkc profile value-lists hydrate --source local --local-root /path/to/SpiritSafe
 ```
 
+Common options:
+
+- `--cache-entities-dir`: Override the cache entity directory.
+- `--queries-dir`: Override the output directory for exported SPARQL query files.
+- `--cache-queries-dir`: Override the hydrated value-list cache directory.
+- `--value-list-id`: Restrict hydration to one or more specific value-list QIDs.
+- `--api-url`: API URL used for talk-page retrieval.
+- `--endpoint`: SPARQL endpoint used for hydration.
+- `--page-size`: Query page size for pagination.
+- `--max-results`: Maximum total results per value list query.
+- `--continue-on-error`: Keep hydrating other value lists if one fails.
+- `--source`: Source override, either `github` or `local`.
+- `--local-root`: Local SpiritSafe root when using `--source local`.
+- `--repo`: GitHub repository slug when using `--source github`.
+- `--ref`: Git ref when using `--source github`.
+
 ### `gkc profile package load`
 
 Load a primary JSON profile and related profiles from embedded `metadata.profile_graph`.
 
 ```bash
 gkc profile package load --profile Q4 --depth 1 --source local --local-root /path/to/SpiritSafe
-```
-
-### `gkc profile package cardinality`
-
-Show linkage/cardinality metadata derived from loaded package graph edges.
-
-```bash
-gkc profile package cardinality --profile Q4 --depth 1 --source local --local-root /path/to/SpiritSafe
 ```
 
 ### `gkc profile package validate`
@@ -55,177 +74,18 @@ Validate package structure fields.
 gkc profile package validate --profile Q4 --depth 1 --source local --local-root /path/to/SpiritSafe
 ```
 
-## Registry Commands
+Common options for package commands:
 
-### `gkc registry list`
-
-List manifest-indexed profiles (`qid`, `entity`, labels, descriptions, statement counts).
-
-```bash
-gkc registry list --source local --local-root /path/to/SpiritSafe
-```
-
-### `gkc registry info`
-
-Show detailed manifest entry for a profile (`QID` or entity URI).
-
-```bash
-gkc registry info --profile Q4 --source local --local-root /path/to/SpiritSafe
-```
-
-### `gkc registry validate`
-
-Validate new manifest sections and counts.
-
-```bash
-gkc registry validate --source local --local-root /path/to/SpiritSafe
-```
-
-## Packet Commands
-
-The packet pipeline has two stages: **build** assembles a scaffold from a JSON Entity Profile, and **charge** fills that scaffold with data from a source such as Wikidata.
-
-### Quick Start: Build → Charge
-
-```bash
-# 1. Build a packet from a local SpiritSafe profile
-gkc --json packet build \
-  --profile Q4 \
-  --source local \
-  --local-root /path/to/SpiritSafe \
-  -o /tmp/packet.json
-
-# 2. Inspect the packet scaffold
-gkc --json packet info --packet-file /tmp/packet.json
-
-# 3. Charge with a Wikidata item (e.g., Cherokee Nation Q195562)
-gkc --json packet charge \
-  --packet-file /tmp/packet.json \
-  --source wikidata \
-  --qid Q195562 \
-  -o /tmp/charged.json
-
-# 4. Inspect the charged packet
-gkc --json packet info --packet-file /tmp/charged.json
-```
-
-### `gkc packet build`
-
-Assemble a curation packet scaffold from a JSON Entity Profile stored in SpiritSafe.
-Produces the frozen URI-keyed packet contract containing entity slots, statement slots, cross-references, and value-list routes.
-
-```bash
-gkc packet build --profile Q4 --source local --local-root /path/to/SpiritSafe
-gkc packet build --profile Q4 --source local --local-root /path/to/SpiritSafe -o /tmp/packet.json
-gkc packet build --profile Q4 --source github --repo skybristol/SpiritSafe --ref main
-```
-
-**Arguments:**
-
-| Argument | Required | Description |
-|---|---|---|
-| `--profile` | Yes | Profile QID (e.g., `Q4`) or full entity URI |
-| `--source` | No | `local` or `github` (default: runtime config) |
-| `--local-root` | When `--source local` | Path to local SpiritSafe checkout |
-| `--repo` | When `--source github` | GitHub repo slug (e.g., `owner/SpiritSafe`) |
-| `--ref` | No | Git ref for GitHub source (default: `main`) |
-| `-o` / `--output` | No | Write packet JSON to file instead of stdout |
-
-The output packet includes:
-
-- `packet_id` — UUID for this packet
-- `operation_mode` — scaffold mode indicator
-- `metadata.primary_profile` — `name_identifier` and full URI for the source profile
-- `metadata.profiles` — full profile definitions (statements, identification, metadata) for all profiles in scope
-- `metadata.graph` — unified graph combining profile-to-profile and profile-to-value-list relationships, with `name_identifier` as primary node identifier
-- `metadata.mint` — `minted_at`, `generator`, `gkc_version`
-- `metadata.integrity` — SHA-256 digest of canonical metadata JSON
-- `data.entities[]` — entity slots with statement slots pre-scaffolded, keyed by statement `name_identifier`
-
-### `gkc packet charge`
-
-Charge a packet scaffold with source data. Fetches the Wikidata item and populates each entity slot's `data` field with labels, descriptions, aliases, and statement values.
-
-```bash
-# Charge all entities in the packet from a single Wikidata QID
-gkc packet charge \
-  --packet-file /tmp/packet.json \
-  --source wikidata \
-  --qid Q195562 \
-  -o /tmp/charged.json
-
-# Charge using an explicit entity-to-QID mapping file
-gkc packet charge \
-  --packet-file /tmp/packet.json \
-  --source wikidata \
-  --mapping-file /tmp/qid_map.json \
-  -o /tmp/charged.json
-```
-
-**Arguments:**
-
-| Argument | Required | Description |
-|---|---|---|
-| `--packet-file` | Yes | Path to the packet JSON file produced by `packet build` |
-| `--source` | No | `wikidata` (default) or `local` |
-| `--qid` | When source=wikidata and no mapping | Wikidata QID to charge all entities with |
-| `--mapping-file` | Alternatively to `--qid` | JSON file mapping entity IDs to QIDs |
-| `-o` / `--output` | No | Write charged packet JSON to file instead of stdout |
-
-The output is the charged packet with each entity slot’s statement slots populated. Charged packets include:
-
-- `data-value` fields filled in for conformant statements
-- Non-conformant statements flagged with `non_conformant: true` and a `notices` array of reason codes
-- `entity.uncovered_statements` for Wikidata properties not modeled in the profile, keyed by Wikidata PID
-- Missing-required statements left with `data-value: null` and attached notices
-- `metadata.conformance_summary` with per-outcome counts (`conformant`, `non_conformant`, `uncovered`, `missing_required`) and observed notice codes
-
-All `ConformanceNotice` items raised during charging are also listed in the top-level `notices[]` array.
-
-### `gkc packet info`
-
-Inspect packet metadata.
-
-```bash
-gkc packet info --packet-file packet.json
-```
-
-### `gkc packet validate`
-
-Validate packet structure and entity linkage consistency.
-
-```bash
-gkc packet validate --packet-file packet.json
-```
-
-### `gkc packet create` (Legacy)
-
-Create curation packets using the legacy profile-name-based contract. Preserved for
-existing integrations. New workflows should use `packet build` instead.
-
-```bash
-gkc packet create --profile Q4 --mode bulk --depth 1 --source local --local-root /path/to/SpiritSafe
-```
-
-## SpiritSafe Manifest Commands
-
-### `gkc spiritsafe manifest build`
-
-Build `cache/manifest.json` from the current local SpiritSafe artifact state.
-
-```bash
-gkc --json spiritsafe manifest build --source local --local-root /path/to/SpiritSafe
-```
-
-```bash
-gkc --json spiritsafe manifest build --source local --local-root /path/to/SpiritSafe --output /tmp/manifest.json
-```
-
-This route requires local mode.
+- `--profile`: Primary profile QID or entity URI.
+- `--depth`: Related profile depth.
+- `--source`: Source override, either `github` or `local`.
+- `--local-root`: Local SpiritSafe root when using `--source local`.
+- `--repo`: GitHub repository slug when using `--source github`.
+- `--ref`: Git ref when using `--source github`.
 
 ## Common Source Flags
 
-Most profile/registry/packet/manifest routes support:
+Most `gkc profile` routes support:
 
 - `--source {github,local}`
 - `--local-root`
@@ -236,3 +96,9 @@ Most profile/registry/packet/manifest routes support:
 
 - `--json`
 - `--verbose`
+
+## Related Commands
+
+- `gkc packet build`
+- `gkc spiritsafe manifest build`
+- `gkc wizard`

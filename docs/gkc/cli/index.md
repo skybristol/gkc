@@ -4,7 +4,7 @@ Plain meaning: Run GKC tasks from your terminal.
 
 ## Overview
 
-The GKC command line interface provides a lightweight entry point for common workflows including authentication, data loading, and transformation tasks. Commands are organized into logical groups for easy discovery and use.
+The GKC command line interface provides a lightweight entry point for authentication, source loading, profile maintenance, packet workflows, validation, and SpiritSafe artifact maintenance.
 
 ## Installation
 
@@ -40,27 +40,53 @@ Load Wikidata items as templates for viewing, filtering, and exporting in variou
 gkc mash qid Q42
 ```
 
-### [Profiles](profiles.md)
+### [Profile](profiles.md)
 
-Validate items against profiles, export JSON Entity Profiles from cache entities, generate form schemas, hydrate SPARQL value lists, and build SpiritSafe artifact manifests.
+Export JSON Entity Profiles, hydrate value lists, and load profile packages.
 
 ```bash
 gkc profile package load --profile Q4 --source local --local-root /path/to/SpiritSafe
 ```
 
 ```bash
-gkc profile package load --profile Q4 --depth 1 --source local --local-root /path/to/SpiritSafe
-```
-
-```bash
-gkc profile export-json --cache-entities-dir /path/to/SpiritSafe/cache/entities --output /path/to/SpiritSafe/profiles
+gkc profile export-json --source local --local-root /path/to/SpiritSafe --output /path/to/SpiritSafe/profiles
 ```
 
 ```bash
 gkc profile value-lists hydrate --source local --local-root /path/to/SpiritSafe
-
-gkc --json spiritsafe manifest build --source local --local-root /path/to/SpiritSafe
 ```
+
+### [Packet](packet.md)
+
+Build, inspect, validate, and charge curation packets.
+
+```bash
+gkc packet build --profile Q4 --source local --local-root /path/to/SpiritSafe -o /tmp/packet.json
+```
+
+```bash
+gkc packet charge --packet-file /tmp/packet.json --qid Q195562 -o /tmp/charged.json
+```
+
+### [SpiritSafe](spiritsafe.md)
+
+Build SpiritSafe support artifacts such as manifests, sitelink sources, and semantic anchors.
+
+```bash
+gkc spiritsafe manifest build --source local --local-root /path/to/SpiritSafe
+```
+
+```bash
+gkc spiritsafe sitelinks sync-wikimedia-sites --source local --local-root /path/to/SpiritSafe
+```
+
+```bash
+gkc spiritsafe semantic-anchors build --source local --local-root /path/to/SpiritSafe
+```
+
+### Registry
+
+The live CLI also includes `gkc registry` for registry inspection and validation. That command group is currently transitional and its cleanup notes are being tracked outside the published CLI pages.
 
 ### [Wizard](wizard.md)
 
@@ -87,15 +113,16 @@ gkc auth wikiverse status
 ```
 
 Load a Wikidata item as a template:
+
 ```bash
-gkc mash qid Q42 --output summary
+gkc mash qid Q42 --summary
 ```
 
 Get raw Wikidata JSON output for scripting:
-```bash
-gkc --json mash qid Q42 --output json
-```
 
+```bash
+gkc --json mash qid Q42 --raw
+```
 
 Launch the interactive profile wizard:
 
@@ -111,6 +138,8 @@ Use `--help` with any command or subcommand to see available options:
 gkc --help
 gkc auth --help
 gkc mash qid --help
+gkc packet --help
+gkc spiritsafe --help
 ```
 
 ## Build and Test Commands
