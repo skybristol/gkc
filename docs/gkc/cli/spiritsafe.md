@@ -11,6 +11,7 @@ Current subcommands:
 - `gkc spiritsafe manifest build`
 - `gkc spiritsafe sitelinks sync-wikimedia-sites`
 - `gkc spiritsafe semantic-anchors build`
+- `gkc spiritsafe semantic-anchors validate`
 
 These routes are oriented toward local SpiritSafe maintenance workflows.
 
@@ -72,6 +73,37 @@ Common options:
 - `--repo`: GitHub repository slug when using `--source github`.
 - `--ref`: Git ref when using `--source github`.
 - `-o`, `--output`: Optional output path. By default this writes to `cache/config/semantic_anchors.json` under the local SpiritSafe root, unless a workflow overrides it.
+
+## `gkc spiritsafe semantic-anchors validate`
+
+Validate a semantic-anchor artifact against the package-owned Meta-Wikibase contract.
+
+Validate a specific artifact file:
+
+```bash
+gkc spiritsafe semantic-anchors validate --artifact-file /path/to/semantic_anchors.json
+```
+
+Validate the default artifact in a local SpiritSafe checkout and compare it to a freshly rebuilt cache-derived document:
+
+```bash
+gkc spiritsafe semantic-anchors validate --local-root /path/to/SpiritSafe --check-current-cache
+```
+
+Common options:
+
+- `--artifact-file`: Path to an existing semantic-anchor JSON artifact.
+- `--local-root`: Local SpiritSafe root. When `--artifact-file` is omitted, the command defaults to `cache/config/semantic_anchors.json` under this root.
+- `--check-current-cache`: Rebuild the current semantic-anchor document from `cache/entities` and compare it to the artifact being validated.
+
+This command checks the runtime contract only:
+
+- required internal semantic anchors are present
+- property anchors resolve to property IDs and carry the expected datatype
+- item anchors resolve to item IDs
+- the artifact shape is valid
+
+When `--check-current-cache` is used, stale-artifact drift against current cache-derived anchors is also reported.
 
 ## Related Commands
 

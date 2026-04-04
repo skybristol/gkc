@@ -6,8 +6,10 @@ import gkc
 from gkc.wikibase import (
     MetaWikibaseInitEntity,
     MetaWikibaseInitIndex,
+    MetaWikibaseSemanticAnchorContract,
     WikibaseDatatypeSpec,
     build_meta_wikibase_init_index,
+    build_meta_wikibase_semantic_anchor_contract,
     canonicalize_wikibase_datatype,
     get_meta_wikibase_init_entity,
     get_wikibase_datatype_spec,
@@ -153,13 +155,26 @@ def test_get_meta_wikibase_init_entity_returns_one_entry():
     }
 
 
+def test_build_meta_wikibase_semantic_anchor_contract_uses_active_prefix():
+    contract = build_meta_wikibase_semantic_anchor_contract(
+        internal_name_identifier_prefix="__"
+    )
+
+    assert isinstance(contract, MetaWikibaseSemanticAnchorContract)
+    assert contract.internal_name_identifier_prefix == "__"
+    assert contract.requirements["__entity"].kind == "item"
+    assert contract.requirements["__has_statement"].datatype == "wikibase-item"
+
+
 def test_wikibase_helpers_are_exported_from_package_namespace():
     """Top-level gkc exports include the initial wikibase registry helpers."""
     assert hasattr(gkc, "MetaWikibaseInitEntity")
     assert hasattr(gkc, "MetaWikibaseInitIndex")
     assert hasattr(gkc, "MetaWikibaseInitMetadata")
+    assert hasattr(gkc, "MetaWikibaseSemanticAnchorContract")
     assert hasattr(gkc, "WikibaseDatatypeSpec")
     assert hasattr(gkc, "build_meta_wikibase_init_index")
+    assert hasattr(gkc, "build_meta_wikibase_semantic_anchor_contract")
     assert hasattr(gkc, "canonicalize_wikibase_datatype")
     assert hasattr(gkc, "get_meta_wikibase_init_entity")
     assert hasattr(gkc, "get_wikibase_datatype_spec")

@@ -55,6 +55,24 @@ class MetaWikibaseInitIndex:
 
 
 @dataclass(frozen=True)
+class MetaWikibaseSemanticAnchorRequirement:
+    """Required internal semantic anchor compiled from the init fixture."""
+
+    key: str
+    internal_name_identifier: str
+    kind: str
+    datatype: str | None = None
+
+
+@dataclass(frozen=True)
+class MetaWikibaseSemanticAnchorContract:
+    """Compiled required semantic-anchor contract derived from the init fixture."""
+
+    internal_name_identifier_prefix: str
+    requirements: dict[str, MetaWikibaseSemanticAnchorRequirement]
+
+
+@dataclass(frozen=True)
 class WikibaseDatatypeSpec:
     """Canonical runtime specification for one Wikibase datatype."""
 
@@ -352,12 +370,46 @@ def get_meta_wikibase_init_entity(entity_key: str) -> MetaWikibaseInitEntity:
         raise KeyError(f"Unknown Meta-Wikibase init entity: {entity_key}") from exc
 
 
+def build_meta_wikibase_semantic_anchor_contract(
+    document: dict[str, Any] | None = None,
+    *,
+    internal_name_identifier_prefix: str | None = None,
+) -> MetaWikibaseSemanticAnchorContract:
+    """Compile the package-owned init fixture into a required anchor contract."""
+
+    index = build_meta_wikibase_init_index(document)
+    prefix = (
+        internal_name_identifier_prefix
+        if isinstance(internal_name_identifier_prefix, str)
+        and internal_name_identifier_prefix
+        else index.metadata.internal_name_identifier_prefix
+    )
+
+    requirements: dict[str, MetaWikibaseSemanticAnchorRequirement] = {}
+    for entity in index.entities.values():
+        requirement = MetaWikibaseSemanticAnchorRequirement(
+            key=entity.key,
+            internal_name_identifier=f"{prefix}{entity.key}",
+            kind=entity.kind,
+            datatype=entity.datatype if entity.kind == "property" else None,
+        )
+        requirements[requirement.internal_name_identifier] = requirement
+
+    return MetaWikibaseSemanticAnchorContract(
+        internal_name_identifier_prefix=prefix,
+        requirements=requirements,
+    )
+
+
 __all__ = [
     "MetaWikibaseInitEntity",
     "MetaWikibaseInitIndex",
     "MetaWikibaseInitMetadata",
+    "MetaWikibaseSemanticAnchorContract",
+    "MetaWikibaseSemanticAnchorRequirement",
     "WikibaseDatatypeSpec",
     "build_meta_wikibase_init_index",
+    "build_meta_wikibase_semantic_anchor_contract",
     "canonicalize_wikibase_datatype",
     "get_meta_wikibase_init_entity",
     "get_wikibase_datatype_spec",
