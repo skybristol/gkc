@@ -103,6 +103,20 @@ class TestSnakBuilder:
         assert snak["datavalue"]["type"] == "time"
         assert snak["datavalue"]["value"]["precision"] == 11
 
+    def test_create_snak_canonicalizes_item_alias(self):
+        builder = SnakBuilder(DataTypeTransformer())
+        snak = builder.create_snak("P31", "Q5", "item")
+
+        assert snak["datavalue"]["type"] == "wikibase-entityid"
+        assert snak["datavalue"]["value"]["id"] == "Q5"
+
+    def test_create_snak_uses_registry_for_string_like_datatypes(self):
+        builder = SnakBuilder(DataTypeTransformer())
+        snak = builder.create_snak("P999", "Example external id", "external-id")
+
+        assert snak["datavalue"]["type"] == "string"
+        assert snak["datavalue"]["value"] == "Example external id"
+
 
 class TestClaimBuilder:
     """Tests for ClaimBuilder."""

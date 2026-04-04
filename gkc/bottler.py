@@ -13,6 +13,7 @@ import math
 from typing import Any, Optional, Union
 
 from gkc.utilities import validate_entity_reference
+from gkc.wikibase import canonicalize_wikibase_datatype, get_wikibase_datatype_spec
 
 
 class DataTypeTransformer:
@@ -162,30 +163,32 @@ class SnakBuilder:
         self, property_id: str, value: Any, datatype: str, transform_config: dict = None
     ) -> dict:
         """Create a snak with the appropriate datavalue."""
+        canonical_datatype = canonicalize_wikibase_datatype(datatype)
+
         # Apply transformations based on datatype
-        if datatype == "wikibase-item":
+        if canonical_datatype == "wikibase-item":
             datavalue = self.transformer.to_wikibase_item(value)
-        elif datatype == "quantity":
+        elif canonical_datatype == "quantity":
             unit = transform_config.get("unit", "1") if transform_config else "1"
             datavalue = self.transformer.to_quantity(value, unit)
-        elif datatype == "time":
+        elif canonical_datatype == "time":
             # Get precision from transform_config or auto-detect
             precision = None
             if transform_config:
                 precision = transform_config.get("precision")
             datavalue = self.transformer.to_time(value, precision)
-        elif datatype == "monolingualtext":
+        elif canonical_datatype == "monolingualtext":
             language = (
                 transform_config.get("language", "en") if transform_config else "en"
             )
             datavalue = self.transformer.to_monolingualtext(value, language)
-        elif datatype == "globe-coordinate":
+        elif canonical_datatype == "globe-coordinate":
             datavalue = self.transformer.to_globe_coordinate(value["lat"], value["lon"])
-        elif datatype == "url":
+        elif canonical_datatype == "url":
             datavalue = self.transformer.to_url(value)
         else:
-            # Default: treat as string
-            datavalue = {"value": value, "type": "string"}
+            spec = get_wikibase_datatype_spec(canonical_datatype)
+            datavalue = {"value": value, "type": spec.datavalue_type}
 
         return {
             "snaktype": "value",

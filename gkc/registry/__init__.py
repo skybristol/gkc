@@ -1,0 +1,1 @@
+"""Package-owned registry artifacts for GKC runtime contracts."""

@@ -40,6 +40,18 @@ def test_mash_and_utilities_imports():
     assert hasattr(gkc, "get_entity_uri")
 
 
+def test_wikibase_registry_imports():
+    """Test that wikibase registry helpers are importable via gkc namespace."""
+    assert hasattr(gkc, "WikibaseDatatypeSpec")
+    assert hasattr(gkc, "canonicalize_wikibase_datatype")
+    assert hasattr(gkc, "get_wikibase_datatype_spec")
+    assert hasattr(gkc, "is_known_wikibase_datatype")
+    assert hasattr(gkc, "is_wikibase_item_datatype")
+    assert hasattr(gkc, "list_wikibase_datatypes")
+    assert hasattr(gkc, "load_wikibase_datatype_registry")
+    assert hasattr(gkc, "load_wikibase_datatype_registry_json")
+
+
 def test_mash_adapter_contract_imports():
     """Test that mash adapter contracts are importable from the mash package."""
     import gkc.mash as mash

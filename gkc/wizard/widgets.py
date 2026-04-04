@@ -10,6 +10,8 @@ from typing import Any, Dict, Optional
 
 import streamlit as st
 
+from gkc.wikibase import canonicalize_wikibase_datatype
+
 
 @st.dialog(
     "Select Wikidata item",
@@ -144,21 +146,22 @@ class WidgetFactory:
         Returns:
             User input value from widget
         """
+        canonical_datatype = canonicalize_wikibase_datatype(datatype)
+
         # Map Wikidata datatypes to widget renderers
         widget_map = {
-            "item": WidgetFactory._render_item,
             "wikibase-item": WidgetFactory._render_item,
             "string": WidgetFactory._render_string,
             "url": WidgetFactory._render_url,
             "time": WidgetFactory._render_time,
             "quantity": WidgetFactory._render_quantity,
             "monolingualtext": WidgetFactory._render_monolingualtext,
-            "globecoordinate": WidgetFactory._render_globecoordinate,
+            "globe-coordinate": WidgetFactory._render_globecoordinate,
             "external-id": WidgetFactory._render_external_id,
             "commonsMedia": WidgetFactory._render_commons_media,
         }
 
-        renderer = widget_map.get(datatype, WidgetFactory._render_default)
+        renderer = widget_map.get(canonical_datatype, WidgetFactory._render_default)
         return renderer(label, value, key, help_text, disabled, **kwargs)
 
     @staticmethod

@@ -129,6 +129,20 @@ def test_validate_by_datatype_passes_validation_policy_for_url(monkeypatch):
     assert result.valid is True
 
 
+def test_validate_by_datatype_canonicalizes_item_alias():
+    result = validate_by_datatype("item", "Q42")
+
+    assert result.valid is True
+    assert result.value["id"] == "Q42"
+
+
+def test_validate_by_datatype_uses_string_validation_for_external_id():
+    result = validate_by_datatype("external-id", 2024)
+
+    assert result.valid is True
+    assert result.value == "2024"
+
+
 def test_validate_with_pattern_matches_string():
     result = validate_with_pattern("AB-1234", r"^[A-Z]{2}-\d{4}$")
 

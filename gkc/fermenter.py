@@ -23,6 +23,11 @@ from gkc.mash import (
     fetch_commons_file_info,
     fetch_url_resource,
 )
+from gkc.wikibase import (
+    canonicalize_wikibase_datatype,
+    get_wikibase_datatype_spec,
+    is_wikibase_item_datatype,
+)
 
 
 @dataclass
@@ -843,9 +848,7 @@ def _statement_data_type(profile_statement: dict[str, Any]) -> Optional[str]:
     if not isinstance(data_type, str) or not data_type:
         return None
 
-    if data_type == "item":
-        return "wikibase-item"
-    return data_type
+    return canonicalize_wikibase_datatype(data_type)
 
 
 def _statement_max_count(profile_statement: dict[str, Any]) -> Optional[int]:
@@ -1710,7 +1713,7 @@ def validate_inline_value(
 
     if result.valid:
         normalized = result.value
-        if datatype in {"item", "wikibase-item"}:
+        if is_wikibase_item_datatype(datatype):
             normalized = _merge_wikibase_item_metadata(value, normalized)
         return normalized, notices
     return value, notices
@@ -1825,9 +1828,7 @@ def validate_entity_packet_data(
             continue
 
         value_block = statement_def.get("value", {})
-        datatype = value_block.get("type", "string")
-        if datatype == "globe-coordinate":
-            datatype = "globe-coordinate"
+        datatype = canonicalize_wikibase_datatype(value_block.get("type", "string"))
 
         configured_values = data_statements.get(statement_ref, [])
         if not isinstance(configured_values, list):
@@ -1937,7 +1938,7 @@ def validate_entity_packet_data(
 
             if datatype_result.valid:
                 normalized_value = datatype_result.value
-                if datatype in {"item", "wikibase-item"}:
+                if is_wikibase_item_datatype(datatype):
                     normalized_value = _merge_wikibase_item_metadata(
                         candidate,
                         normalized_value,
@@ -1970,7 +1971,9 @@ def validate_entity_packet_data(
                 )
 
             for qualifier_ref, qualifier_def in qualifier_defs.items():
-                q_datatype = qualifier_def.get("value", {}).get("type", "string")
+                q_datatype = canonicalize_wikibase_datatype(
+                    qualifier_def.get("value", {}).get("type", "string")
+                )
                 q_entries = qualifiers.get(qualifier_ref, [])
                 if not q_entries:
                     notices.append(
@@ -2035,7 +2038,7 @@ def validate_entity_packet_data(
                     )
                     if q_result.valid:
                         normalized_qualifier = q_result.value
-                        if q_datatype in {"item", "wikibase-item"}:
+                        if is_wikibase_item_datatype(q_datatype):
                             normalized_qualifier = _merge_wikibase_item_metadata(
                                 q_value,
                                 normalized_qualifier,
@@ -2085,7 +2088,9 @@ def validate_entity_packet_data(
                     )
                     continue
 
-                r_datatype = ref_def.get("value", {}).get("type", "string")
+                r_datatype = canonicalize_wikibase_datatype(
+                    ref_def.get("value", {}).get("type", "string")
+                )
                 r_max_count = ref_def.get("max_count")
                 if isinstance(r_max_count, int) and len(ref_entries) > r_max_count:
                     notices.append(
@@ -2132,7 +2137,7 @@ def validate_entity_packet_data(
                     )
                     if r_result.valid:
                         normalized_reference = r_result.value
-                        if r_datatype in {"item", "wikibase-item"}:
+                        if is_wikibase_item_datatype(r_datatype):
                             normalized_reference = _merge_wikibase_item_metadata(
                                 ref_value,
                                 normalized_reference,
@@ -2849,10 +2854,8 @@ def validate_commons_media(
     )
 
 
-# Dispatcher for datatype validators
-_DATATYPE_VALIDATORS = {
+_SPECIAL_DATATYPE_VALIDATORS = {
     "wikibase-item": validate_wikibase_item,
-    "string": validate_string,
     "monolingualtext": validate_monolingualtext,
     "url": validate_url,
     "time": validate_time,
@@ -2870,12 +2873,27 @@ def validate_by_datatype(
     policy_config: Optional[ValidationPolicyConfig] = None,
 ) -> ValidationResult:
     """Dispatch validation to the appropriate datatype validator."""
-    validator = _DATATYPE_VALIDATORS.get(datatype)
-    if not validator:
+    try:
+        canonical_datatype = canonicalize_wikibase_datatype(datatype, strict=True)
+    except (AttributeError, KeyError):
         return ValidationResult(
             valid=False, value=value, errors=[f"Unknown datatype: {datatype}"]
         )
-    if datatype in {"wikibase-item", "url", "commonsMedia"}:
+
+    validator = _SPECIAL_DATATYPE_VALIDATORS.get(canonical_datatype)
+    if validator is None:
+        spec = get_wikibase_datatype_spec(canonical_datatype)
+        if spec.datavalue_type == "string":
+            validator = validate_string
+
+    if validator is None:
+        return ValidationResult(
+            valid=False,
+            value=value,
+            errors=[f"No validator registered for datatype: {canonical_datatype}"],
+        )
+
+    if canonical_datatype in {"wikibase-item", "url", "commonsMedia"}:
         return validator(
             value,
             validation_policy=validation_policy,

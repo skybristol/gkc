@@ -33,6 +33,7 @@ import requests
 
 from gkc.mash.protocols import MashSourceAdapter
 from gkc.runtime_config import DEFAULT_USER_AGENT
+from gkc.wikibase import canonicalize_wikibase_datatype
 from gkc.sparql import fetch_entity_labels
 
 
@@ -1315,6 +1316,10 @@ def transform_entity_for_write(
                 "property_datatype is required when transforming a non-property "
                 "entity into a property payload"
             )
+
+        resolved_property_datatype = canonicalize_wikibase_datatype(
+            resolved_property_datatype
+        )
 
     transformed = strip_entity_identifiers(entity_data)
     transformed.pop("type", None)
