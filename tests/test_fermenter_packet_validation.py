@@ -21,6 +21,19 @@ def test_validate_inline_value_coerces_wikibase_item_qid() -> None:
     assert all(n.severity != "error" for n in notices)
 
 
+def test_validate_inline_value_accepts_item_alias() -> None:
+    normalized, notices = validate_inline_value(
+        datatype="item",
+        value="Q42",
+        entity_ref="ent-001",
+        statement_ref="https://datadistillery.wikibase.cloud/entity/Q16",
+    )
+
+    assert isinstance(normalized, dict)
+    assert normalized["id"] == "Q42"
+    assert all(n.severity != "error" for n in notices)
+
+
 def test_validate_entity_packet_data_reports_datatype_errors() -> None:
     statement_ref = "https://datadistillery.wikibase.cloud/entity/Q16"
     packet = {

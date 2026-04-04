@@ -50,6 +50,7 @@ nav:
   - Architecture:
     - Overview: architecture/index.md
     - Meta-Wikibase: architecture/meta-wikibase.md
+    - Wikibase Datatypes: architecture/wikibase-datatypes.md
     - Data Distillery Wikibase: architecture/DataDistillery-Wikibase.md
     - Cross-Module Contracts: architecture/module-contracts.md
     - Still Charger: architecture/still_charger.md
@@ -76,6 +77,7 @@ nav:
       - Authentication: gkc/api/auth.md
       - Mash: gkc/api/mash.md
       - Mash Formatters: gkc/api/mash_formatters.md
+      - Wikibase: gkc/api/wikibase.md
       - Still Charger: gkc/api/still_charger.md
       - Fermenter: gkc/api/fermenter.md
       - Bottler: gkc/api/bottler.md

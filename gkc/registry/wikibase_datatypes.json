@@ -1,0 +1,55 @@
+{
+  "commonsMedia": {
+    "ontology_uri": "http://wikiba.se/ontology#CommonsMedia",
+    "datavalue_type": "string"
+  },
+  "external-id": {
+    "ontology_uri": "http://wikiba.se/ontology#WikibaseExternalId",
+    "datavalue_type": "string"
+  },
+  "geo-shape": {
+    "ontology_uri": "http://wikiba.se/ontology#GeoShape",
+    "datavalue_type": "string"
+  },
+  "globe-coordinate": {
+    "ontology_uri": "http://wikiba.se/ontology#Globecoordinate",
+    "datavalue_type": "globecoordinate"
+  },
+  "math": {
+    "ontology_uri": "http://wikiba.se/ontology#Math",
+    "datavalue_type": "string"
+  },
+  "monolingualtext": {
+    "ontology_uri": "http://wikiba.se/ontology#Monolingualtext",
+    "datavalue_type": "monolingualtext"
+  },
+  "musical-notation": {
+    "ontology_uri": "http://wikiba.se/ontology#MusicalNotation",
+    "datavalue_type": "string"
+  },
+  "quantity": {
+    "ontology_uri": "http://wikiba.se/ontology#Quantity",
+    "datavalue_type": "quantity"
+  },
+  "string": {
+    "ontology_uri": "http://wikiba.se/ontology#String",
+    "datavalue_type": "string"
+  },
+  "tabular-data": {
+    "ontology_uri": "http://wikiba.se/ontology#TabularData",
+    "datavalue_type": "string"
+  },
+  "time": {
+    "ontology_uri": "http://wikiba.se/ontology#Time",
+    "datavalue_type": "time"
+  },
+  "url": {
+    "ontology_uri": "http://wikiba.se/ontology#Url",
+    "datavalue_type": "string"
+  },
+  "wikibase-item": {
+    "ontology_uri": "http://wikiba.se/ontology#WikibaseItem",
+    "datavalue_type": "wikibase-entityid",
+    "entity_value_kind": "item"
+  }
+}

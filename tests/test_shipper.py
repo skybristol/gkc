@@ -204,6 +204,30 @@ def test_wikibase_shipper_write_property_submit():
     assert posted_entity_data["labels"]["en"]["value"] == "Probe property"
 
 
+def test_wikibase_shipper_write_property_canonicalizes_datatype_alias():
+    """Property create normalizes known datatype aliases before submission."""
+    auth = FakeAuth()
+    shipper = WikibaseShipper(auth=auth, dry_run_default=False)
+
+    response = Mock()
+    response.raise_for_status.return_value = None
+    response.json.return_value = {
+        "entity": {"id": "P124", "lastrevid": 78},
+    }
+    auth.session.post.return_value = response
+
+    shipper.write_property(
+        payload=_basic_payload(),
+        summary="Create property alias datatype",
+        datatype="item",
+        dry_run=False,
+    )
+
+    sent_data = auth.session.post.call_args[1]["data"]
+    posted_entity_data = json.loads(sent_data["data"])
+    assert posted_entity_data["datatype"] == "wikibase-item"
+
+
 # ============================================================================
 # WikibaseShipper Planning (Batch Operations)
 # ============================================================================

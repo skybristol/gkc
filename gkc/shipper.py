@@ -76,6 +76,7 @@ from typing import Any, Optional
 
 from gkc.auth import OpenStreetMapAuth, WikiverseAuth
 from gkc.mash import WikibaseApiClient
+from gkc.wikibase import canonicalize_wikibase_datatype
 
 logger = logging.getLogger(__name__)
 
@@ -446,6 +447,8 @@ class WikibaseShipper(Shipper):
         if not entity_id and not datatype:
             raise ValueError("datatype is required when creating a new property")
 
+        normalized_datatype = canonicalize_wikibase_datatype(datatype, strict=True)
+
         effective_dry_run = self.dry_run_default if dry_run is None else dry_run
         normalized_payload = self._normalize_payload(payload)
 
@@ -492,7 +495,7 @@ class WikibaseShipper(Shipper):
         request_data = self._build_property_request_data(
             payload=normalized_payload,
             summary=summary,
-            datatype=datatype,
+            datatype=normalized_datatype,
             entity_id=entity_id,
             csrf_token=csrf_token,
             tags=tags,
@@ -825,6 +828,7 @@ class WikibaseShipper(Shipper):
                 reasons.append("claims differ")
 
         if kind == "property" and desired_datatype:
+            desired_datatype = canonicalize_wikibase_datatype(desired_datatype)
             existing_datatype = existing.get("datatype")
             if existing_datatype != desired_datatype:
                 reasons.append(

@@ -78,6 +78,18 @@ from gkc.mash import (
 # Runtime configuration
 from gkc.runtime_config import DEFAULT_USER_AGENT
 
+# Wikibase-specific helpers
+from gkc.wikibase import (
+    WikibaseDatatypeSpec,
+    canonicalize_wikibase_datatype,
+    get_wikibase_datatype_spec,
+    is_known_wikibase_datatype,
+    is_wikibase_item_datatype,
+    list_wikibase_datatypes,
+    load_wikibase_datatype_registry,
+    load_wikibase_datatype_registry_json,
+)
+
 # ShEx validation utilities
 from gkc.shex import ShexValidationError, ShexValidator
 
@@ -197,6 +209,15 @@ def get_languages() -> Union[str, list[str]]:
 __all__ = [
     # Runtime Configuration
     "DEFAULT_USER_AGENT",
+    # Wikibase-specific helpers
+    "WikibaseDatatypeSpec",
+    "canonicalize_wikibase_datatype",
+    "get_wikibase_datatype_spec",
+    "is_known_wikibase_datatype",
+    "is_wikibase_item_datatype",
+    "list_wikibase_datatypes",
+    "load_wikibase_datatype_registry",
+    "load_wikibase_datatype_registry_json",
     # Language Configuration
     "get_languages",
     "set_languages",

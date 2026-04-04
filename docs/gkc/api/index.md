@@ -18,6 +18,7 @@ GKC modules are grouped by their role in the distillery pipeline:
 | | [mash_formatters](mash_formatters.md) | Convert templates to output formats |
 | **Packet Fill** | [still_charger](still_charger.md) | Fill curation packet scaffolds with concrete source values |
 | **Validation / Registry** | [spirit_safe](spirit_safe.md) | SpiritSafe source config, registry discovery, query hydration, and caching |
+| **Wikibase Contracts** | [wikibase](wikibase.md) | Package-owned Wikibase datatype registry access and runtime normalization helpers |
 | **Transform** | [bottler](bottler.md) | Transform data into Wikidata format |
 | **Deliver** | [shipper](shipper.md) | Submit data to Wikibase-compatible APIs |
 | **Registry / Orchestration** | [spirit_safe](spirit_safe.md) | SpiritSafe registry and profile artifact orchestration |
@@ -141,6 +142,17 @@ Configure SpiritSafe source mode, discover profile registrants, resolve profile/
 - `list_profiles()`, `profile_exists()`
 - `resolve_profile_path()`, `resolve_query_ref()`
 - `LookupCache`, `LookupFetcher`
+
+### [Wikibase](wikibase.md)
+
+Expose package-owned Wikibase runtime contracts and datatype registry helpers.
+
+**Key classes/functions:**
+
+- `WikibaseDatatypeSpec`
+- `load_wikibase_datatype_registry()`
+- `get_wikibase_datatype_spec()`
+- `list_wikibase_datatypes()`
 
 ### [Bottler](bottler.md)
 

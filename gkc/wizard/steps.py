@@ -12,6 +12,7 @@ import streamlit as st
 
 import gkc
 from gkc.fermenter import validate_inline_value
+from gkc.wikibase import canonicalize_wikibase_datatype, is_wikibase_item_datatype
 from gkc.wizard.step_base import Step
 from gkc.wizard.widgets import WidgetFactory
 
@@ -197,7 +198,7 @@ def _initial_fixed_value(statement_def: dict[str, Any]) -> Any:
 def _fixed_value_widget_kwargs(statement_def: dict[str, Any]) -> dict[str, Any]:
     """Build widget kwargs for inline fixed value-list item displays."""
     dtype = _value_datatype(statement_def.get("value", {}))
-    if dtype not in {"item", "wikibase-item"}:
+    if not is_wikibase_item_datatype(dtype):
         return {}
 
     value_list = statement_def.get("value", {}).get("value_list")
@@ -215,10 +216,7 @@ def _fixed_value_widget_kwargs(statement_def: dict[str, Any]) -> dict[str, Any]:
 
 
 def _value_datatype(value_block: dict[str, Any]) -> str:
-    dtype = value_block.get("type", "string")
-    if dtype == "globe-coordinate":
-        return "globecoordinate"
-    return dtype
+    return canonicalize_wikibase_datatype(value_block.get("type", "string"))
 
 
 def _render_prompt_with_guidance(
@@ -464,7 +462,7 @@ def _normalize_rendered_value(
         statement_ref=statement_ref,
     )
     if (
-        datatype in {"item", "wikibase-item"}
+        is_wikibase_item_datatype(datatype)
         and isinstance(value, dict)
         and isinstance(normalized, dict)
     ):
