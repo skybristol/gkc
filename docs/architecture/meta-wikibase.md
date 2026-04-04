@@ -85,6 +85,82 @@ meta_wikibase:
 
 Current runtime use is limited to endpoint resolution plus preservation of semantic-convention metadata for downstream consumers.
 
+## Package-Owned Init Fixture
+
+In addition to the instance-targeting config file, `gkc` now ships a package-owned Meta-Wikibase initialization fixture under `gkc/registry/meta_wb_init.yaml`.
+
+This fixture is not environment config. It is a package artifact that defines the authored backbone terms needed to bootstrap a clean Meta-Wikibase with the minimum ontology required by `gkc` and SpiritSafe.
+
+The current fixture covers:
+
+- backbone properties such as `instance_of`, `subclass_of`, `name_identifier`, and profile/statement linkage terms
+- backbone item classes such as `entity`, `entity_profile`, `entity_statement`, and `value_list`
+- datatype template items such as `wikibase-item`, `url`, `time`, and `monolingualtext`
+
+## Datatype Contract In The Init Fixture
+
+The package fixture uses canonical runtime datatype names, not ontology-name spellings from SPARQL such as `WikibaseItem`, `Url`, or `String`.
+
+That means authored property definitions in `meta_wb_init.yaml` use values such as:
+
+- `wikibase-item`
+- `url`
+- `string`
+- `quantity`
+- `monolingualtext`
+
+This keeps the bootstrap artifact aligned with the package-owned datatype registry described in [Wikibase Datatypes](wikibase-datatypes.md).
+
+The supporting `gkc.wikibase` helpers still normalize ontology URI and ontology-name forms when needed, but the checked-in fixture itself should remain in canonical runtime form.
+
+## Runtime Helpers
+
+`gkc.wikibase` owns the package-facing helpers for this fixture.
+
+The initial helper surface includes:
+
+- loading the package-owned init document
+- normalizing authored datatype values against the canonical datatype registry
+- building a typed index over properties, items, and derived internal name identifiers
+
+This keeps the fixture, datatype registry, and later ontology-init logic aligned behind one Wikibase-specific access layer.
+
+## Continuing Work on Semantic Definition
+
+The current `meta_wb_init.yaml` fixture is intended to capture the minimum authored backbone needed to bootstrap the Meta-Wikibase and support the present runtime architecture.
+
+This means the seed intentionally includes:
+
+- core entity/profile/statement/value-list concepts
+- backbone linkage properties
+- datatype template items aligned to the canonical runtime datatype registry
+- selected operational guidance terms already exercised in code and workflow design
+
+It also intentionally defers some deeper semantic layers until they are hardened through real use cases.
+
+In particular, `gkc` is not currently trying to fully enumerate:
+
+- richer cardinality concepts beyond the lightweight limits already in use
+- separate ontology terms for every value-constraint or coercion mode
+- the full class hierarchy needed to distinguish abstract statement definitions from profile-context-specific statement use
+
+This is a deliberate design choice, not an omission by accident.
+
+The expectation is that these concepts will be added as contribution workflows, validation primitives, and cross-system shipping behavior become concrete enough to justify stable semantic labels in the Meta-Wikibase and its reference implementation.
+
+## Boundary
+
+The package-owned init fixture is the right place for authored bootstrap ontology terms that should ship with `gkc`.
+
+It is not the place for:
+
+- instance-specific URLs or endpoints
+- user credentials
+- generated SpiritSafe runtime artifacts
+- environment overrides
+
+Those concerns remain outside the fixture and continue to belong to config or materialized artifact layers.
+
 ## What Belongs Here
 
 The meta-wikibase config file is the right place for instance-level facts such as:

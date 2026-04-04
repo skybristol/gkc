@@ -6,12 +6,52 @@ import json
 from dataclasses import dataclass
 from functools import lru_cache
 from importlib.resources import files
+from typing import Any
+
+import yaml
 
 
 _DATATYPE_ALIASES = {
     "item": "wikibase-item",
     "globecoordinate": "globe-coordinate",
 }
+
+
+@dataclass(frozen=True)
+class MetaWikibaseInitMetadata:
+    """Package-owned metadata for the Meta-Wikibase init fixture."""
+
+    name: str
+    description: str
+    source: str
+    reference: str
+    internal_name_identifier_prefix: str
+
+
+@dataclass(frozen=True)
+class MetaWikibaseInitEntity:
+    """Normalized entity entry from the package-owned Meta-Wikibase init fixture."""
+
+    key: str
+    kind: str
+    label: str
+    description: str
+    internal_name_identifier: str
+    datatype: str | None = None
+    instance_of: str | None = None
+    subclass_of: str | None = None
+    attributes: dict[str, Any] | None = None
+
+
+@dataclass(frozen=True)
+class MetaWikibaseInitIndex:
+    """Indexed access surface for the package-owned Meta-Wikibase init fixture."""
+
+    metadata: MetaWikibaseInitMetadata
+    entities: dict[str, MetaWikibaseInitEntity]
+    properties: dict[str, MetaWikibaseInitEntity]
+    items: dict[str, MetaWikibaseInitEntity]
+    by_internal_name_identifier: dict[str, MetaWikibaseInitEntity]
 
 
 @dataclass(frozen=True)
@@ -77,6 +117,20 @@ def load_wikibase_datatype_registry() -> dict[str, WikibaseDatatypeSpec]:
     return registry
 
 
+@lru_cache(maxsize=1)
+def _load_meta_wikibase_init_yaml_text() -> str:
+    return files("gkc.registry").joinpath("meta_wb_init.yaml").read_text(
+        encoding="utf-8"
+    )
+
+
+def load_meta_wikibase_init_document() -> dict[str, Any]:
+    """Load the package-owned Meta-Wikibase init document and normalize it."""
+
+    raw_document = yaml.safe_load(_load_meta_wikibase_init_yaml_text())
+    return normalize_meta_wikibase_init_document(raw_document)
+
+
 def get_wikibase_datatype_spec(canonical_name: str) -> WikibaseDatatypeSpec:
     """Return the registry entry for one canonical datatype token."""
 
@@ -94,6 +148,17 @@ def list_wikibase_datatypes() -> list[str]:
     return sorted(load_wikibase_datatype_registry().keys())
 
 
+@lru_cache(maxsize=1)
+def _build_wikibase_datatype_aliases() -> dict[str, str]:
+    aliases = dict(_DATATYPE_ALIASES)
+    for canonical_name, spec in load_wikibase_datatype_registry().items():
+        aliases[canonical_name] = canonical_name
+        aliases[spec.ontology_uri] = canonical_name
+        ontology_name = spec.ontology_uri.rsplit("#", 1)[-1]
+        aliases[ontology_name] = canonical_name
+    return aliases
+
+
 def canonicalize_wikibase_datatype(
     datatype: str,
     *,
@@ -102,7 +167,7 @@ def canonicalize_wikibase_datatype(
     """Normalize a Wikibase datatype token to its canonical runtime spelling."""
 
     normalized = datatype.strip()
-    canonical = _DATATYPE_ALIASES.get(normalized, normalized)
+    canonical = _build_wikibase_datatype_aliases().get(normalized, normalized)
     if strict and canonical not in load_wikibase_datatype_registry():
         raise KeyError(f"Unknown Wikibase datatype: {canonical}")
     return canonical
@@ -143,13 +208,164 @@ def load_wikibase_datatype_registry_json() -> dict[str, dict[str, str]]:
     }
 
 
+def normalize_meta_wikibase_init_document(document: dict[str, Any]) -> dict[str, Any]:
+    """Normalize a Meta-Wikibase init document to canonical runtime datatypes."""
+
+    if not isinstance(document, dict):
+        raise RuntimeError("meta_wb_init document must be a mapping")
+
+    metadata = document.get("metadata")
+    if not isinstance(metadata, dict):
+        raise RuntimeError("meta_wb_init document is missing metadata")
+
+    entities = document.get("entities")
+    if not isinstance(entities, dict):
+        raise RuntimeError("meta_wb_init document is missing entities")
+
+    wikibase_entities = entities.get("wikibase_entities")
+    if not isinstance(wikibase_entities, dict):
+        raise RuntimeError(
+            "meta_wb_init document is missing entities.wikibase_entities"
+        )
+
+    normalized_properties: dict[str, dict[str, Any]] = {}
+    raw_properties = wikibase_entities.get("properties", {})
+    if not isinstance(raw_properties, dict):
+        raise RuntimeError("meta_wb_init properties must be a mapping")
+    for key, payload in raw_properties.items():
+        if not isinstance(payload, dict):
+            raise RuntimeError(f"meta_wb_init property '{key}' must be a mapping")
+        normalized_payload = dict(payload)
+        normalized_payload["kind"] = "property"
+        datatype = normalized_payload.get("datatype")
+        if not isinstance(datatype, str) or not datatype.strip():
+            raise RuntimeError(
+                f"meta_wb_init property '{key}' is missing datatype"
+            )
+        normalized_payload["datatype"] = canonicalize_wikibase_datatype(
+            datatype,
+            strict=True,
+        )
+        normalized_properties[key] = normalized_payload
+
+    normalized_items: dict[str, dict[str, Any]] = {}
+    raw_items = wikibase_entities.get("items", {})
+    if not isinstance(raw_items, dict):
+        raise RuntimeError("meta_wb_init items must be a mapping")
+    for key, payload in raw_items.items():
+        if not isinstance(payload, dict):
+            raise RuntimeError(f"meta_wb_init item '{key}' must be a mapping")
+        normalized_payload = dict(payload)
+        normalized_payload["kind"] = "item"
+        normalized_items[key] = normalized_payload
+
+    return {
+        "metadata": dict(metadata),
+        "entities": {
+            "wikibase_entities": {
+                "properties": normalized_properties,
+                "items": normalized_items,
+            }
+        },
+    }
+
+
+def build_meta_wikibase_init_index(
+    document: dict[str, Any] | None = None,
+) -> MetaWikibaseInitIndex:
+    """Build a typed index over the package-owned Meta-Wikibase init fixture."""
+
+    normalized_document = (
+        load_meta_wikibase_init_document()
+        if document is None
+        else normalize_meta_wikibase_init_document(document)
+    )
+    metadata_payload = normalized_document["metadata"]
+    metadata = MetaWikibaseInitMetadata(
+        name=str(metadata_payload.get("name", "")).strip(),
+        description=str(metadata_payload.get("description", "")).strip(),
+        source=str(metadata_payload.get("source", "")).strip(),
+        reference=str(metadata_payload.get("reference", "")).strip(),
+        internal_name_identifier_prefix=str(
+            metadata_payload.get("internal_name_identifier_prefix", "_")
+        ),
+    )
+
+    entities_block = normalized_document["entities"]["wikibase_entities"]
+    entities: dict[str, MetaWikibaseInitEntity] = {}
+    properties: dict[str, MetaWikibaseInitEntity] = {}
+    items: dict[str, MetaWikibaseInitEntity] = {}
+    by_internal_name_identifier: dict[str, MetaWikibaseInitEntity] = {}
+
+    for kind, bucket in (("property", entities_block["properties"]), ("item", entities_block["items"])):
+        for key, payload in bucket.items():
+            internal_name_identifier = (
+                f"{metadata.internal_name_identifier_prefix}{key}"
+            )
+            attributes = {
+                attr_key: attr_value
+                for attr_key, attr_value in payload.items()
+                if attr_key
+                not in {
+                    "kind",
+                    "label",
+                    "description",
+                    "datatype",
+                    "instance_of",
+                    "subclass_of",
+                }
+            }
+            entity = MetaWikibaseInitEntity(
+                key=key,
+                kind=kind,
+                label=str(payload.get("label", "")).strip(),
+                description=str(payload.get("description", "")).strip(),
+                internal_name_identifier=internal_name_identifier,
+                datatype=payload.get("datatype"),
+                instance_of=payload.get("instance_of"),
+                subclass_of=payload.get("subclass_of"),
+                attributes=attributes or None,
+            )
+            entities[key] = entity
+            by_internal_name_identifier[internal_name_identifier] = entity
+            if kind == "property":
+                properties[key] = entity
+            else:
+                items[key] = entity
+
+    return MetaWikibaseInitIndex(
+        metadata=metadata,
+        entities=entities,
+        properties=properties,
+        items=items,
+        by_internal_name_identifier=by_internal_name_identifier,
+    )
+
+
+def get_meta_wikibase_init_entity(entity_key: str) -> MetaWikibaseInitEntity:
+    """Return one normalized entity entry from the package-owned init fixture."""
+
+    index = build_meta_wikibase_init_index()
+    try:
+        return index.entities[entity_key]
+    except KeyError as exc:
+        raise KeyError(f"Unknown Meta-Wikibase init entity: {entity_key}") from exc
+
+
 __all__ = [
+    "MetaWikibaseInitEntity",
+    "MetaWikibaseInitIndex",
+    "MetaWikibaseInitMetadata",
     "WikibaseDatatypeSpec",
+    "build_meta_wikibase_init_index",
     "canonicalize_wikibase_datatype",
+    "get_meta_wikibase_init_entity",
     "get_wikibase_datatype_spec",
     "is_known_wikibase_datatype",
     "is_wikibase_item_datatype",
     "list_wikibase_datatypes",
+    "load_meta_wikibase_init_document",
     "load_wikibase_datatype_registry",
     "load_wikibase_datatype_registry_json",
+    "normalize_meta_wikibase_init_document",
 ]
