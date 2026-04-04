@@ -1,0 +1,303 @@
+metadata:
+  name: Meta-Wikibase Initialization Data
+  description: Seed ontology fixture for bootstrapping the Meta-Wikibase backbone used by gkc and SpiritSafe.
+  source: https://github.com/skybristol/gkc
+  reference: https://datadistillery.org/
+  internal_name_identifier_prefix: "_"
+
+entities:
+  wikibase_entities:
+    properties:
+      instance_of:
+        label: instance of
+        description: type to which this subject belongs or corresponds
+        datatype: wikibase-item
+        kind: property
+
+      subclass_of:
+        label: subclass of
+        description: this item is a subclass (subset) of that item
+        datatype: wikibase-item
+        kind: property
+
+      name_identifier:
+        label: name identifier
+        description: human-readable identifier for entities in this Wikibase used as a unique identifier in the JSON translations used by and within the SpiritSafe and gkc software package
+        datatype: string
+        kind: property
+
+      see_also:
+        label: see also
+        description: link to a Wikidata Entity Schema or another representation of a GKC Entity Profile
+        datatype: url
+        kind: property
+
+      same_as:
+        label: same as
+        description: link to an entity in another knowledge system that is considered to be the same as the subject entity; used for shipping data to other systems
+        datatype: url
+        kind: property
+
+      has_statement:
+        label: has statement
+        description: links a GKC Entity Profile to a GKC Entity Property included as a statement in that profile
+        datatype: wikibase-item
+        kind: property
+
+      refresh_policy:
+        label: refresh policy
+        description: specifies when or how often an entity such as a value list represented by an item should be refreshed
+        datatype: wikibase-item
+        kind: property
+
+      statement_type:
+        label: statement type
+        description: links to a wikibase property with data type and other optional specifications for a statement
+        datatype: wikibase-item
+        kind: property
+
+      has_value:
+        label: has value
+        description: links the value for a GKC Entity Statement to another entity with rules governing validation or coercion behavior that will be applied on that value
+        datatype: wikibase-item
+        kind: property
+
+      has_qualifier:
+        label: has qualifier
+        description: links a statement that is required as a qualifier on the subject statement
+        datatype: wikibase-item
+        kind: property
+
+      has_reference:
+        label: has reference
+        description: links a statement that is available as a reference on the subject statement
+        datatype: wikibase-item
+        kind: property
+
+      applies_to_profile:
+        label: applies to profile
+        description: used as a qualifier indicating that the subject statement applies to a particular GKC Entity Profile
+        datatype: wikibase-item
+        kind: property
+
+      applies_to_statement:
+        label: applies to statement
+        description: links a value list item to the statement that should be filled by a value in the list
+        datatype: wikibase-item
+        kind: property
+
+      max_count:
+        label: max count
+        description: qualifier used to specify the maximum number of instances allowed for a statement of a particular type on an item
+        datatype: quantity
+        kind: property
+
+      label_prompt:
+        label: label prompt
+        description: short guidance statement provided as instructions for creating labels for a GKC Entity
+        datatype: monolingualtext
+        kind: property
+
+      label_guidance:
+        label: label guidance
+        description: longer guidance statement provided as instructions for creating a label for a GKC Entity
+        datatype: monolingualtext
+        kind: property
+
+      description_prompt:
+        label: description prompt
+        description: short guidance statement provided as instructions for creating descriptions for a GKC Entity
+        datatype: monolingualtext
+        kind: property
+
+      description_guidance:
+        label: description guidance
+        description: longer guidance statement provided as instructions for creating descriptions for a GKC Entity
+        datatype: monolingualtext
+        kind: property
+
+      alias_prompt:
+        label: alias prompt
+        description: short guidance statement provided as instructions for creating aliases for a GKC Entity
+        datatype: monolingualtext
+        kind: property
+
+      alias_guidance:
+        label: alias guidance
+        description: longer guidance statement provided as instructions for creating aliases for a GKC Entity
+        datatype: monolingualtext
+        kind: property
+
+      statement_prompt:
+        label: statement prompt
+        description: monolingual text template for actionable suggestions in review and correction workflows
+        datatype: monolingualtext
+        kind: property
+
+      statement_guidance:
+        label: statement guidance
+        description: monolingual text template for additional guidance shown to users
+        datatype: monolingualtext
+        kind: property
+
+      error_message:
+        label: error message
+        description: monolingual text template for error presentation with placeholders resolved by fermenter
+        datatype: monolingualtext
+        kind: property
+
+      default_value:
+        label: default value
+        description: default identifier value for statement, qualifier, or reference in a remote system
+        datatype: url
+        kind: property
+
+      default_label:
+        label: default label
+        description: label for a default value that may accompany default identifier as informative text
+        datatype: string
+        kind: property
+
+      derives_default_value_from:
+        label: derives default value from
+        description: when the subject statement is used as a reference or qualifier on the object statement, its value should be populated by the object statement's value
+        datatype: wikibase-item
+        kind: property
+
+    items:
+      entity:
+        label: entity
+        description: anything that can be labeled and described; root item in this wikibase
+        kind: item
+
+      entity_profile:
+        label: GKC Entity Profile
+        description: formal specification for the content model used to build, validate, and organize GKC Entities
+        subclass_of: entity
+        kind: item
+
+      entity_statement:
+        label: GKC Entity Statement
+        description: a statement used to define a characteristic of or facts about a GKC Entity
+        subclass_of: entity
+        kind: item
+
+      value_list:
+        label: GKC Value List
+        description: list of values to be used for a statement, qualifier, or reference requiring specified values
+        subclass_of: entity
+        kind: item
+
+      wikibase_statement_modifier:
+        label: Wikibase Statement Modifier
+        description: specialized type of statement used to modify the configuration of values such as units of measure and precision
+        subclass_of: entity
+        kind: item
+
+      value_list_refresh_policy:
+        label: GKC Refresh Policy
+        description: refresh cadence term used for SPARQL-backed lookup hydration
+        subclass_of: entity
+        kind: item
+
+      manual_refresh_policy:
+        label: manual refresh
+        description: refresh policy where something is only refreshed manually and not on a schedule
+        instance_of: refresh_policy
+        kind: item
+
+      wikibase_statement_type:
+        label: Wikibase Statement Type
+        description: classification of items describing the basic data type aligned with the Wikibase framework
+        kind: item
+
+      wikibase-item:
+        label: wikibase-item
+        description: wikibase item property template used to set a data type for a statement, reference, or qualifier and any additional specifications
+        error_message: Item must be or resolve to a valid QID identifier.
+        instance_of: wikibase_statement_type
+        kind: item
+
+      url:
+        label: url
+        description: URL property template used to set a data type for a statement, reference, or qualifier and any additional specifications
+        error_message: Enter a complete URL starting with http:// or https://.
+        instance_of: wikibase_statement_type
+        kind: item
+
+      time:
+        label: time
+        description: date/time property template used to set a data type for a statement, reference, or qualifier and any additional specifications
+        error_message: Enter a valid date/time value such as 2024-01-31 or +2024-01-31T00:00:00Z.
+        instance_of: wikibase_statement_type
+        kind: item
+
+      commonsMedia:
+        label: commonsMedia
+        description: Commons media file property template used to set a data type for a statement, reference, or qualifier and any additional specifications
+        error_message: Provide a valid Wikimedia Commons file name such as Example.jpg.
+        instance_of: wikibase_statement_type
+        kind: item
+
+      external-id:
+        label: external-id
+        description: external identifier property template used to set a data type for a statement, reference, or qualifier and any additional specifications
+        error_message: Enter the identifier in the required format for this external ID.
+        instance_of: wikibase_statement_type
+        kind: item
+
+      globe-coordinate:
+        label: globe-coordinate
+        description: geographic coordinates property template used to set a data type for a statement, reference, or qualifier and any additional specifications
+        error_message: Enter valid latitude and longitude coordinates.
+        instance_of: wikibase_statement_type
+        kind: item
+
+      monolingualtext:
+        label: monolingualtext
+        description: monolingual text property template used to set a data type for a statement, reference, or qualifier and any additional specifications
+        error_message: Enter text and choose the correct language code.
+        instance_of: wikibase_statement_type
+        kind: item
+
+      quantity:
+        label: quantity
+        description: quantity property template used to set a data type for a statement, reference, or qualifier and any additional specifications
+        error_message: Enter a numeric value; include unit only when required.
+        instance_of: wikibase_statement_type
+        kind: item
+
+      string:
+        label: string
+        description: string property template used to set a data type for a statement, reference, or qualifier and any additional specifications
+        error_message: Enter plain text without unsupported formatting.
+        instance_of: wikibase_statement_type
+        kind: item
+
+      geo-shape:
+        label: geo-shape
+        description: geographic shape property template used to set a data type for a statement, reference, or qualifier and any additional specifications
+        error_message: Provide a valid Commons Data namespace geo-shape reference.
+        instance_of: wikibase_statement_type
+        kind: item
+
+      math:
+        label: math
+        description: mathematical expression property template used to set a data type for a statement, reference, or qualifier and any additional specifications
+        error_message: Enter a valid math expression in supported syntax.
+        instance_of: wikibase_statement_type
+        kind: item
+
+      musical-notation:
+        label: musical-notation
+        description: musical notation property template used to set a data type for a statement, reference, or qualifier and any additional specifications
+        error_message: This field requires musical notation encoded in a supported format such as MusicXML or LilyPond. Enter a valid notation snippet rather than plain text or a link.
+        instance_of: wikibase_statement_type
+        kind: item
+
+      tabular-data:
+        label: tabular-data
+        description: tabular data property template used to set a data type for a statement, reference, or qualifier and any additional specifications
+        error_message: Provide a valid Commons Data namespace tabular-data reference.
+        instance_of: wikibase_statement_type
+        kind: item

@@ -18,7 +18,7 @@ classifiers = [
     "Programming Language :: Python :: 3.12",
 ]
 packages = [{include = "gkc"}]
-include = ["gkc/profiles/schemas/*.json", "gkc/registry/*.json"]
+include = ["gkc/profiles/schemas/*.json", "gkc/registry/*.json", "gkc/registry/*.yaml"]
 
 [tool.poetry.dependencies]
 python = "^3.10"

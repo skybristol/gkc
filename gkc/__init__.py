@@ -80,14 +80,21 @@ from gkc.runtime_config import DEFAULT_USER_AGENT
 
 # Wikibase-specific helpers
 from gkc.wikibase import (
+    MetaWikibaseInitEntity,
+    MetaWikibaseInitIndex,
+    MetaWikibaseInitMetadata,
     WikibaseDatatypeSpec,
+    build_meta_wikibase_init_index,
     canonicalize_wikibase_datatype,
+    get_meta_wikibase_init_entity,
     get_wikibase_datatype_spec,
     is_known_wikibase_datatype,
     is_wikibase_item_datatype,
     list_wikibase_datatypes,
+    load_meta_wikibase_init_document,
     load_wikibase_datatype_registry,
     load_wikibase_datatype_registry_json,
+    normalize_meta_wikibase_init_document,
 )
 
 # ShEx validation utilities
@@ -210,14 +217,21 @@ __all__ = [
     # Runtime Configuration
     "DEFAULT_USER_AGENT",
     # Wikibase-specific helpers
+    "MetaWikibaseInitEntity",
+    "MetaWikibaseInitIndex",
+    "MetaWikibaseInitMetadata",
     "WikibaseDatatypeSpec",
+    "build_meta_wikibase_init_index",
     "canonicalize_wikibase_datatype",
+    "get_meta_wikibase_init_entity",
     "get_wikibase_datatype_spec",
     "is_known_wikibase_datatype",
     "is_wikibase_item_datatype",
     "list_wikibase_datatypes",
+    "load_meta_wikibase_init_document",
     "load_wikibase_datatype_registry",
     "load_wikibase_datatype_registry_json",
+    "normalize_meta_wikibase_init_document",
     # Language Configuration
     "get_languages",
     "set_languages",
