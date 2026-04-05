@@ -627,7 +627,7 @@ If SPARQL query fails or returns empty, wizard uses `fallback_items` from profil
 
 ## Future: QID Loading & Entity Editing
 
-**Post-MVP enhancement:** Load existing Wikidata items into wizard for editing
+Load existing Wikidata items into the wizard for editing.
 
 ### Workflow
 
@@ -735,5 +735,4 @@ Profile constraints generate user-friendly error messages:
 
 ---
 
-**Last Updated:** March 26, 2026  
-**Status:** Stable (Phase 0 documentation; implementation evolving in Wizard MVP)
+**Last Updated:** March 26, 2026

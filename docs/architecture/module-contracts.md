@@ -327,13 +327,13 @@ When adding new functionality, assign ownership using this matrix:
 - Need to execute write operations to external APIs? -> `shipper`
 - Need Data Distillery semantic orchestration or ontology conformance? -> DD Wikibase ontology + SpiritSafe artifacts
 
-## Current Gaps to Revisit During Critical Analysis
+## Current Gaps to Revisit
 
-- Boundaries between wikibase write planning and bottler transformation stages still need explicit acceptance criteria per phase.
+- Boundaries between wikibase write planning and bottler transformation stages still need explicit acceptance criteria.
 - Cross-module tests should identify failure source by layer (read, transform, payload-shape, write, orchestration).
 - Packet compatibility metadata, change classification, and forward-migration rules for long-lived offline packets remain to be implemented.
 
-Additional contract-alignment gaps under active work:
+Additional contract-alignment gaps:
 
 - Packet `data` remains transitional hybrid shape in current runtime implementation and must be normalized per #200 contract direction.
 - Still charger should not patch fermenter record fields post-serialization; missing fields must be addressed in fermenter-owned serializer contracts.

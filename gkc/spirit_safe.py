@@ -2673,7 +2673,7 @@ def export_entity_profile_json_documents(
 
 
 # ============================================================================
-# Phase 3: Artifact Manifest, JSON Profile Loading, and Curation Packets
+# Artifact Manifest, JSON Profile Loading, and Curation Packets
 # ============================================================================
 
 

@@ -37,7 +37,7 @@ The following directions are architecturally planned but may be implemented incr
 - Extended directional mapping forms (`to-through`, `from-through`) for multi-hop routing.
 - Deeper profile graph traversal policies and orchestration-driven packet expansion.
 
-These notes are design guidance for Wizard Engineer and Validation Agent implementation planning.
+These notes are design guidance for future implementation planning.
 
 ## Profile Artifact Structure
 

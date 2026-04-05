@@ -2,7 +2,7 @@
 
 This document defines the current structure of the Data Distillery Wikibase ontology as it relates to GKC Entity Profile representation. It is the authoritative reference for how profile structure, constraints, guidance, and linkages are encoded in Wikibase items and properties, and how they translate to the materialized JSON cache in SpiritSafe.
 
-It is intended to keep implementation work aligned across Profile Architect, Validation Agent, Wizard Engineer, and related contributors.
+It is intended to keep implementation work aligned across the modules and workflows that consume these contracts.
 
 ## Source Of Truth And Access Pattern
 
@@ -217,7 +217,7 @@ These notes capture architecturally plausible next steps not yet fully implement
 
 ### Processing Policies And Logical Coercion
 
-Properties for encoding statement-level logical processing or coercion policies exist in the Wikibase but are not currently active in the profile model. If fermenter-layer policy linkage is needed, those properties should be revisited before introducing new ones. Deferred until the Validation Agent's fermenter contract is stable enough to define required inputs.
+Properties for encoding statement-level logical processing or coercion policies exist in the Wikibase but are not currently active in the profile model. If fermenter-layer policy linkage is needed, those properties should be revisited before introducing new ones. This should wait until the fermenter contract is stable enough to define required inputs.
 
 ### Guidance Channel Configuration
 
@@ -238,7 +238,7 @@ Open questions:
 
 ### Typed Guidance Contracts
 
-Purpose: allow downstream consumers (Validation Agent, Wizard Engineer) to distinguish prompt, guidance, error, and consequence channels without inspecting PIDs directly.
+Purpose: allow downstream consumers to distinguish prompt, guidance, error, and consequence channels without inspecting PIDs directly.
 
 Open questions:
 

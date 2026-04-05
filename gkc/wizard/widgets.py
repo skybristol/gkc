@@ -1,7 +1,7 @@
 """Widget factory for Wikidata datatypes in Streamlit.
 
 Maps Wikidata datatypes to appropriate Streamlit input widgets.
-MVP scope: All wikibase-item properties use QID text input (no autocomplete).
+Currently, all wikibase-item properties use QID text input without autocomplete.
 """
 
 import re
