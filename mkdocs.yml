@@ -49,15 +49,19 @@ nav:
     - Tribal Governments: tribes.md
   - Architecture:
     - Overview: architecture/index.md
-    - Meta-Wikibase: architecture/meta-wikibase.md
-    - Wikibase Datatypes: architecture/wikibase-datatypes.md
-    - Data Distillery Wikibase: architecture/DataDistillery-Wikibase.md
+    - Meta-Wikibase:
+      - Overview: architecture/meta-wikibase/index.md
+      - Data Distillery Wikibase: architecture/meta-wikibase/DataDistillery-Wikibase.md
+      - Semantic Anchors: architecture/meta-wikibase/semantic-anchors.md
+      - Wikibase Datatypes: architecture/meta-wikibase/wikibase-datatypes.md
     - Cross-Module Contracts: architecture/module-contracts.md
     - Still Charger: architecture/still_charger.md
-    - SpiritSafe Registry: architecture/SpiritSafe.md
-    - SpiritSafe Models & API: architecture/spirit_safe_models.md
-    - Profile Loading: architecture/profile-loading.md
-    - SpiritSafe Testing: architecture/SpiritSafe-testing.md
+    - SpiritSafe:
+      - Overview: architecture/SpiritSafe/index.md
+      - Profile Loading: architecture/SpiritSafe/profile-loading.md
+      - SpiritSafe Models & API: architecture/SpiritSafe/spirit_safe_models.md
+      - SpiritSafe Entity Index: architecture/SpiritSafe/spiritsafe-entity-index.md
+      - SpiritSafe Testing: architecture/SpiritSafe/SpiritSafe-testing.md
     - Validation Architecture: architecture/validation-architecture.md
   - GKC Documentation:
     - Home: gkc/index.md

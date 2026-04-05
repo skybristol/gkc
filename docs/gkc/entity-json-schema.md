@@ -387,8 +387,8 @@ For long-lived packets that return after SpiritSafe or Data Distillery state has
 
 ## Related Documentation
 
-- [Data Distillery Wikibase Architecture](../architecture/DataDistillery-Wikibase.md)
+- [Data Distillery Wikibase Architecture](../architecture/meta-wikibase/DataDistillery-Wikibase.md)
 - [Cross-Module Contracts](../architecture/module-contracts.md)
-- [SpiritSafe Integration Architecture](../architecture/spirit_safe_models.md)
+- [SpiritSafe Integration Architecture](../architecture/SpiritSafe/spirit_safe_models.md)
 - [Profiles and Graph Linkage](./profiles.md)
 - [Wizard Workflows](./wizard.md)

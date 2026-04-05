@@ -25,6 +25,7 @@ from urllib.parse import urlparse
 
 import requests
 
+from gkc.fermenter import validate_semantic_anchor_document
 from gkc.mash import (
     WikibaseApiClient,
     extract_first_sparql_block,
@@ -737,13 +738,25 @@ class ValueListHydrationResult:
 def discover_value_list_ids(
     cache_entities_dir: Union[str, Path],
     *,
-    value_list_class_id: str = "Q7",
+    value_list_class_id: Optional[str] = None,
+    semantic_anchor_document: Optional[dict[str, Any]] = None,
 ) -> list[str]:
     """Discover all value-list entity IDs from SpiritSafe cache entities.
 
     Value lists are identified by `P1 -> Q7` classification in cached entity claims.
     """
     cache_dir = Path(cache_entities_dir)
+    resolved_value_list_class_id = value_list_class_id
+    instance_of_property_id: str
+
+    resolver = _resolve_semantic_anchor_resolver_for_cache_entities_dir(
+        cache_dir,
+        semantic_anchor_document=semantic_anchor_document,
+    )
+    instance_of_property_id = resolver.require_property_id("_instance_of")
+    if resolved_value_list_class_id is None:
+        resolved_value_list_class_id = resolver.require_item_id("_value_list")
+
     discovered: list[str] = []
 
     for path in sorted(cache_dir.glob("*.json")):
@@ -757,8 +770,10 @@ def discover_value_list_ids(
             continue
 
         claims = payload.get("entity", {}).get("claims", {})
-        p1_claims = claims.get("P1", []) if isinstance(claims, dict) else []
-        if _claims_include_entity_id(p1_claims, value_list_class_id):
+        p1_claims = (
+            claims.get(instance_of_property_id, []) if isinstance(claims, dict) else []
+        )
+        if _claims_include_entity_id(p1_claims, resolved_value_list_class_id):
             discovered.append(entity_id)
 
     return sorted(discovered)
@@ -770,13 +785,20 @@ def export_value_list_sparql_queries(
     queries_dir: Union[str, Path],
     api_url: str,
     value_list_ids: Optional[list[str]] = None,
+    semantic_anchor_document: Optional[dict[str, Any]] = None,
 ) -> dict[str, Any]:
     """Export first `<sparql>` talk-page blocks into SpiritSafe query files.
 
     Writes one file per value-list ID as `<queries_dir>/<QID>.sparql`.
     """
     selected_ids = sorted(
-        set(value_list_ids or discover_value_list_ids(cache_entities_dir))
+        set(
+            value_list_ids
+            or discover_value_list_ids(
+                cache_entities_dir,
+                semantic_anchor_document=semantic_anchor_document,
+            )
+        )
     )
     out_dir = Path(queries_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -890,6 +912,7 @@ def hydrate_value_lists_from_cache(
     api_url: str,
     endpoint: str,
     value_list_ids: Optional[list[str]] = None,
+    semantic_anchor_document: Optional[dict[str, Any]] = None,
     page_size: int = 1000,
     max_results: Optional[int] = None,
     fail_on_hydration_error: bool = True,
@@ -900,6 +923,7 @@ def hydrate_value_lists_from_cache(
         queries_dir=queries_dir,
         api_url=api_url,
         value_list_ids=value_list_ids,
+        semantic_anchor_document=semantic_anchor_document,
     )
 
     export_failures = list(export_summary.get("failures", []))
@@ -1013,48 +1037,9 @@ class EntityProfileJsonBuilder:
     Plain meaning: Convert profile-linked cache entities into JSON profile docs.
     """
 
-    PROFILE_CLASS_ID = "Q3"
-
-    PROFILE_STATEMENT = "P157"
-    HAS_QUALIFIER = "P158"
-    HAS_VALUE = "P161"
-    VALUE_TYPE = "P194"
-    IO_MAP = "P5"
-    PROMPT = "P171"
-    GUIDANCE = "P169"
-    CONSEQUENCES = "P170"
-    ERROR_MESSAGE = "P168"
-    MAX_COUNT = "P182"
-    HAS_REFERENCE = "P211"
-    APPLIES_TO_PROFILE = "P205"
-    APPLIES_TO_STATEMENT = "P163"
-    DERIVES_DEFAULT_VALUE_FROM = "P213"
-
-    LABEL_PROMPT = "P188"
-    LABEL_GUIDANCE = "P185"
-    DESCRIPTION_PROMPT = "P189"
-    DESCRIPTION_GUIDANCE = "P186"
-    ALIAS_PROMPT = "P190"
-    ALIAS_GUIDANCE = "P187"
-
-    NAME_IDENTIFIER = "P214"
-    SAME_AS = "P5"
-    WIKIDATA_ENTITY_URL = "P5"
-    GKC_ENTITY_PROFILE_CLASS = "Q3"
-    GKC_VALUE_LIST_CLASS = "Q7"
-    WIKIDATA_ENTITY_CLASS = "Q52"
-    STATEMENT_MODIFIER_CLASS = "Q58"
-
     LANGUAGE_KEY_PATTERN = re.compile(
         r"^(mul|[a-z]{2,3}(?:-[a-z0-9]+)*)$", re.IGNORECASE
     )
-
-    MESSAGE_FIELD_BY_PROP = {
-        PROMPT: "prompt",
-        GUIDANCE: "guidance",
-        CONSEQUENCES: "consequences_message",
-        ERROR_MESSAGE: "error_message",
-    }
 
     def __init__(
         self,
@@ -1062,11 +1047,106 @@ class EntityProfileJsonBuilder:
         entity_prefix: str = "https://datadistillery.wikibase.cloud/entity/",
         label_language_order: tuple[str, ...] = ("mul", "en"),
         description_language_order: tuple[str, ...] = ("en", "mul"),
+        semantic_anchor_document: Optional[dict[str, Any]] = None,
     ) -> None:
         self.cache_entities_dir = Path(cache_entities_dir)
         self.entity_prefix = entity_prefix.rstrip("/") + "/"
         self.label_language_order = label_language_order
         self.description_language_order = description_language_order
+        self.semantic_anchor_resolver = (
+            _resolve_semantic_anchor_resolver_for_cache_entities_dir(
+                self.cache_entities_dir,
+                semantic_anchor_document=semantic_anchor_document,
+            )
+        )
+        self.instance_of_property_id = (
+            self.semantic_anchor_resolver.require_property_id("_instance_of")
+        )
+        self.profile_class_id = self.semantic_anchor_resolver.require_item_id(
+            "_entity_profile"
+        )
+        self.profile_statement_property_id = (
+            self.semantic_anchor_resolver.require_property_id("_has_statement")
+        )
+        self.has_qualifier_property_id = (
+            self.semantic_anchor_resolver.require_property_id("_has_qualifier")
+        )
+        self.has_value_property_id = self.semantic_anchor_resolver.require_property_id(
+            "_has_value"
+        )
+        self.value_type_property_id = self.semantic_anchor_resolver.require_property_id(
+            "_statement_type"
+        )
+        self.same_as_property_id = self.semantic_anchor_resolver.require_property_id(
+            "_same_as"
+        )
+        self.statement_prompt_property_id = (
+            self.semantic_anchor_resolver.require_property_id("_statement_prompt")
+        )
+        self.statement_guidance_property_id = (
+            self.semantic_anchor_resolver.require_property_id("_statement_guidance")
+        )
+        self.consequences_message_property_id = (
+            self.semantic_anchor_resolver.optional_property_id("_consequences_message")
+        )
+        self.error_message_property_id = (
+            self.semantic_anchor_resolver.require_property_id("_error_message")
+        )
+        self.max_count_property_id = self.semantic_anchor_resolver.require_property_id(
+            "_max_count"
+        )
+        self.has_reference_property_id = (
+            self.semantic_anchor_resolver.require_property_id("_has_reference")
+        )
+        self.applies_to_profile_property_id = (
+            self.semantic_anchor_resolver.require_property_id("_applies_to_profile")
+        )
+        self.applies_to_statement_property_id = (
+            self.semantic_anchor_resolver.require_property_id("_applies_to_statement")
+        )
+        self.derives_default_value_from_property_id = (
+            self.semantic_anchor_resolver.require_property_id(
+                "_derives_default_value_from"
+            )
+        )
+        self.label_prompt_property_id = (
+            self.semantic_anchor_resolver.require_property_id("_label_prompt")
+        )
+        self.label_guidance_property_id = (
+            self.semantic_anchor_resolver.require_property_id("_label_guidance")
+        )
+        self.description_prompt_property_id = (
+            self.semantic_anchor_resolver.require_property_id("_description_prompt")
+        )
+        self.description_guidance_property_id = (
+            self.semantic_anchor_resolver.require_property_id("_description_guidance")
+        )
+        self.alias_prompt_property_id = (
+            self.semantic_anchor_resolver.require_property_id("_alias_prompt")
+        )
+        self.alias_guidance_property_id = (
+            self.semantic_anchor_resolver.require_property_id("_alias_guidance")
+        )
+        self.name_identifier_property_id = (
+            self.semantic_anchor_resolver.require_property_id("_name_identifier")
+        )
+        self.value_list_class_id = self.semantic_anchor_resolver.require_item_id(
+            "_value_list"
+        )
+        self.statement_modifier_class_id = (
+            self.semantic_anchor_resolver.require_item_id(
+                "_wikibase_statement_modifier"
+            )
+        )
+        self.message_field_by_prop = {
+            self.statement_prompt_property_id: "prompt",
+            self.statement_guidance_property_id: "guidance",
+            self.error_message_property_id: "error_message",
+        }
+        if self.consequences_message_property_id is not None:
+            self.message_field_by_prop[self.consequences_message_property_id] = (
+                "consequences_message"
+            )
         self._cache_index = self._load_cache_index()
 
     def build_all(self) -> list[dict[str, Any]]:
@@ -1116,13 +1196,19 @@ class EntityProfileJsonBuilder:
 
         identification = {
             "labels": self._build_language_section(
-                wikibase_item, self.LABEL_PROMPT, self.LABEL_GUIDANCE
+                wikibase_item,
+                self.label_prompt_property_id,
+                self.label_guidance_property_id,
             ),
             "descriptions": self._build_language_section(
-                wikibase_item, self.DESCRIPTION_PROMPT, self.DESCRIPTION_GUIDANCE
+                wikibase_item,
+                self.description_prompt_property_id,
+                self.description_guidance_property_id,
             ),
             "aliases": self._build_language_section(
-                wikibase_item, self.ALIAS_PROMPT, self.ALIAS_GUIDANCE
+                wikibase_item,
+                self.alias_prompt_property_id,
+                self.alias_guidance_property_id,
             ),
         }
 
@@ -1502,7 +1588,7 @@ class EntityProfileJsonBuilder:
         ):
             for target_id in linked_value_ids:
                 type_ids = self._entity_type_ids(self._cache_index.get(target_id))
-                if self.GKC_ENTITY_PROFILE_CLASS not in type_ids:
+                if self.profile_class_id not in type_ids:
                     continue
                 key = (statement_id, target_id)
                 if key in seen:
@@ -1516,7 +1602,7 @@ class EntityProfileJsonBuilder:
                     "entity": f"{self.entity_prefix}{target_id}",
                     "label": self._entity_label(target_id),
                     "via_statement": f"{self.entity_prefix}{statement_id}",
-                    "linkage_type": self.HAS_VALUE,
+                    "linkage_type": self.has_value_property_id,
                 }
                 if target_name_identifier:
                     entry["name_identifier"] = target_name_identifier
@@ -1550,7 +1636,7 @@ class EntityProfileJsonBuilder:
                 continue
 
             type_ids = self._entity_type_ids(self._cache_index.get(target_id))
-            if type_ids and self.GKC_VALUE_LIST_CLASS not in type_ids:
+            if type_ids and self.value_list_class_id not in type_ids:
                 continue
 
             key = (statement_entity, cache_path)
@@ -1604,7 +1690,7 @@ class EntityProfileJsonBuilder:
         linkages: list[tuple[str, list[str]]] = []
         claims = wikibase_item.get("entity", {}).get("claims", {})
         current_profile_id = wikibase_item.get("entity_id")
-        for claim in claims.get(self.PROFILE_STATEMENT, []):
+        for claim in claims.get(self.profile_statement_property_id, []):
             statement_id = self._claim_entity_id(claim)
             if not statement_id:
                 continue
@@ -1616,13 +1702,13 @@ class EntityProfileJsonBuilder:
             )
             intrinsic = self._claim_entity_values(
                 self._applicable_claims(
-                    statement_claims.get(self.HAS_VALUE, []),
+                    statement_claims.get(self.has_value_property_id, []),
                     current_profile_id=current_profile_id,
                     parent_statement_id=None,
                 )
             )
             overlay = self._qualifier_entity_ids(
-                claim.get("qualifiers", {}), self.HAS_VALUE
+                claim.get("qualifiers", {}), self.has_value_property_id
             )
             effective = overlay if overlay else intrinsic
             linkages.append((statement_id, self._dedupe_preserve_order(effective)))
@@ -1637,7 +1723,7 @@ class EntityProfileJsonBuilder:
         profile_spec_index = self._build_profile_statement_spec_index(
             wikibase_item, current_profile_id=root_id
         )
-        for claim in claims.get(self.PROFILE_STATEMENT, []):
+        for claim in claims.get(self.profile_statement_property_id, []):
             statement_id = self._claim_entity_id(claim)
             if not statement_id:
                 continue
@@ -1663,10 +1749,13 @@ class EntityProfileJsonBuilder:
         index: dict[str, dict[str, list[dict[str, Any]]]] = {}
         claims = profile_item.get("entity", {}).get("claims", {})
 
-        for prop_id in (self.HAS_QUALIFIER, self.HAS_REFERENCE):
+        for prop_id in (
+            self.has_qualifier_property_id,
+            self.has_reference_property_id,
+        ):
             for claim in claims.get(prop_id, []):
                 target_statement_ids = self._qualifier_entity_ids(
-                    claim.get("qualifiers", {}), self.APPLIES_TO_STATEMENT
+                    claim.get("qualifiers", {}), self.applies_to_statement_property_id
                 )
                 if not target_statement_ids:
                     continue
@@ -1717,7 +1806,9 @@ class EntityProfileJsonBuilder:
         )
 
         qualifiers = overlay_qualifiers or {}
-        overlay_value_ids = self._qualifier_entity_ids(qualifiers, self.HAS_VALUE)
+        overlay_value_ids = self._qualifier_entity_ids(
+            qualifiers, self.has_value_property_id
+        )
         if overlay_value_ids:
             combined_value_ids = self._dedupe_preserve_order(overlay_value_ids)
         else:
@@ -1743,9 +1834,9 @@ class EntityProfileJsonBuilder:
                 statement_json.get("messages", {}),
                 self._build_messages_from_qualifiers(qualifiers),
             )
-            if self.MAX_COUNT in qualifiers:
+            if self.max_count_property_id in qualifiers:
                 statement_json["max_count"] = self._qualifier_first_quantity_int(
-                    qualifiers, self.MAX_COUNT
+                    qualifiers, self.max_count_property_id
                 )
 
         if role == "statement":
@@ -1753,20 +1844,28 @@ class EntityProfileJsonBuilder:
             profile_overrides = profile_spec_index.get(entity_id, {})
 
             qualifier_specs = self._resolve_statement_spec_entries(
-                statement_claims=statement_claims.get(self.HAS_QUALIFIER, []),
-                claim_level_overlay_ids=self._qualifier_entity_ids(
-                    qualifiers, self.HAS_QUALIFIER
+                statement_claims=statement_claims.get(
+                    self.has_qualifier_property_id, []
                 ),
-                profile_override_claims=profile_overrides.get(self.HAS_QUALIFIER, []),
+                claim_level_overlay_ids=self._qualifier_entity_ids(
+                    qualifiers, self.has_qualifier_property_id
+                ),
+                profile_override_claims=profile_overrides.get(
+                    self.has_qualifier_property_id, []
+                ),
                 current_profile_id=current_profile_id,
                 parent_statement_id=parent_statement_id,
             )
             reference_specs = self._resolve_statement_spec_entries(
-                statement_claims=statement_claims.get(self.HAS_REFERENCE, []),
-                claim_level_overlay_ids=self._qualifier_entity_ids(
-                    qualifiers, self.HAS_REFERENCE
+                statement_claims=statement_claims.get(
+                    self.has_reference_property_id, []
                 ),
-                profile_override_claims=profile_overrides.get(self.HAS_REFERENCE, []),
+                claim_level_overlay_ids=self._qualifier_entity_ids(
+                    qualifiers, self.has_reference_property_id
+                ),
+                profile_override_claims=profile_overrides.get(
+                    self.has_reference_property_id, []
+                ),
                 current_profile_id=current_profile_id,
                 parent_statement_id=parent_statement_id,
             )
@@ -1930,16 +2029,18 @@ class EntityProfileJsonBuilder:
         )
 
         claims = statement_item.get("entity", {}).get("claims", {})
-        io_targets = self._claim_string_values(claims.get(self.IO_MAP, []))
+        io_targets = self._claim_string_values(claims.get(self.same_as_property_id, []))
 
         value_type: Optional[str] = None
-        type_refs = self._claim_entity_values(claims.get(self.VALUE_TYPE, []))
+        type_refs = self._claim_entity_values(
+            claims.get(self.value_type_property_id, [])
+        )
         if type_refs:
             value_type = self._entity_label(type_refs[0]) or type_refs[0]
 
         intrinsic_value_ids = self._claim_entity_values(
             self._applicable_claims(
-                claims.get(self.HAS_VALUE, []),
+                claims.get(self.has_value_property_id, []),
                 current_profile_id=current_profile_id,
                 parent_statement_id=parent_statement_id,
             )
@@ -1947,7 +2048,7 @@ class EntityProfileJsonBuilder:
 
         max_count = self._claim_first_quantity_int(
             self._applicable_claims(
-                claims.get(self.MAX_COUNT, []),
+                claims.get(self.max_count_property_id, []),
                 current_profile_id=current_profile_id,
                 parent_statement_id=parent_statement_id,
             )
@@ -1976,10 +2077,12 @@ class EntityProfileJsonBuilder:
             return 0
 
         has_profile_scope = bool(
-            self._qualifier_entity_ids(qualifiers, self.APPLIES_TO_PROFILE)
+            self._qualifier_entity_ids(qualifiers, self.applies_to_profile_property_id)
         )
         has_statement_scope = bool(
-            self._qualifier_entity_ids(qualifiers, self.APPLIES_TO_STATEMENT)
+            self._qualifier_entity_ids(
+                qualifiers, self.applies_to_statement_property_id
+            )
         )
 
         if has_profile_scope and has_statement_scope:
@@ -2035,20 +2138,22 @@ class EntityProfileJsonBuilder:
             target_label = self._entity_label(target_id)
             target_entity = f"{self.entity_prefix}{target_id}"
 
-            if self.GKC_ENTITY_PROFILE_CLASS in type_ids and "profile" not in payload:
+            if self.profile_class_id in type_ids and "profile" not in payload:
                 payload["profile"] = {"entity": target_entity, "label": target_label}
 
             if (
-                self.GKC_VALUE_LIST_CLASS in type_ids
+                self.value_list_class_id in type_ids
                 and "value_list_reference" not in payload
             ):
                 payload["value_list_reference"] = f"cache/queries/{target_id}.json"
 
-            if self.WIKIDATA_ENTITY_CLASS in type_ids:
+            if (
+                self.profile_class_id not in type_ids
+                and self.value_list_class_id not in type_ids
+            ):
                 wikidata_urls = self._dedupe_preserve_order(
-                    self._entity_string_claim_values(target_doc, self.SAME_AS)
-                    + self._entity_string_claim_values(
-                        target_doc, self.WIKIDATA_ENTITY_URL
+                    self._entity_string_claim_values(
+                        target_doc, self.same_as_property_id
                     )
                 )
                 for url in wikidata_urls:
@@ -2065,7 +2170,7 @@ class EntityProfileJsonBuilder:
         self, claims: dict[str, list[dict[str, Any]]]
     ) -> dict[str, dict[str, str]]:
         messages: dict[str, dict[str, str]] = {}
-        for prop_id, field_name in self.MESSAGE_FIELD_BY_PROP.items():
+        for prop_id, field_name in self.message_field_by_prop.items():
             by_lang = self._monolingual_claims_by_language(claims.get(prop_id, []))
             for language, text in by_lang.items():
                 messages.setdefault(language, {})[field_name] = text
@@ -2075,7 +2180,7 @@ class EntityProfileJsonBuilder:
         self, qualifiers: dict[str, list[dict[str, Any]]]
     ) -> dict[str, dict[str, str]]:
         messages: dict[str, dict[str, str]] = {}
-        for prop_id, field_name in self.MESSAGE_FIELD_BY_PROP.items():
+        for prop_id, field_name in self.message_field_by_prop.items():
             by_lang = self._monolingual_qualifiers_by_language(
                 qualifiers.get(prop_id, [])
             )
@@ -2217,9 +2322,13 @@ class EntityProfileJsonBuilder:
         return valid
 
     def _is_profile_item(self, wikibase_item: dict[str, Any]) -> bool:
-        claims_p1 = wikibase_item.get("entity", {}).get("claims", {}).get("P1", [])
+        claims_p1 = (
+            wikibase_item.get("entity", {})
+            .get("claims", {})
+            .get(self.instance_of_property_id, [])
+        )
         for claim in claims_p1:
-            if self._claim_entity_id(claim) == self.PROFILE_CLASS_ID:
+            if self._claim_entity_id(claim) == self.profile_class_id:
                 return True
         return False
 
@@ -2309,7 +2418,7 @@ class EntityProfileJsonBuilder:
             return None
 
         claims = statement_item.get("entity", {}).get("claims", {})
-        derives_claims = claims.get(self.DERIVES_DEFAULT_VALUE_FROM, [])
+        derives_claims = claims.get(self.derives_default_value_from_property_id, [])
         for claim in derives_claims:
             source_statement_id = self._claim_entity_id(claim)
             if not source_statement_id or source_statement_id != parent_statement_id:
@@ -2345,10 +2454,10 @@ class EntityProfileJsonBuilder:
             return True
 
         applies_to_profiles = self._qualifier_entity_ids(
-            qualifiers, self.APPLIES_TO_PROFILE
+            qualifiers, self.applies_to_profile_property_id
         )
         applies_to_statements = self._qualifier_entity_ids(
-            qualifiers, self.APPLIES_TO_STATEMENT
+            qualifiers, self.applies_to_statement_property_id
         )
 
         profile_matches = not applies_to_profiles or (
@@ -2399,7 +2508,7 @@ class EntityProfileJsonBuilder:
         if not entity_doc:
             return []
         claims = entity_doc.get("entity", {}).get("claims", {})
-        return self._claim_entity_values(claims.get("P1", []))
+        return self._claim_entity_values(claims.get(self.instance_of_property_id, []))
 
     def _entity_string_claim_values(
         self, entity_doc: Optional[dict[str, Any]], prop_id: str
@@ -2444,7 +2553,9 @@ class EntityProfileJsonBuilder:
         if not entity_doc:
             return None
         claims = entity_doc.get("entity", {}).get("claims", {})
-        values = self._claim_string_values(claims.get(self.NAME_IDENTIFIER, []))
+        values = self._claim_string_values(
+            claims.get(self.name_identifier_property_id, [])
+        )
         if values:
             return values[0]
         return None
@@ -2477,6 +2588,7 @@ def build_entity_profile_json_documents(
     cache_entities_dir: Union[str, Path],
     *,
     entity_prefix: str = "https://datadistillery.wikibase.cloud/entity/",
+    semantic_anchor_document: Optional[dict[str, Any]] = None,
 ) -> list[dict[str, Any]]:
     """Build JSON entity profile documents from cache entities.
 
@@ -2490,6 +2602,7 @@ def build_entity_profile_json_documents(
     builder = EntityProfileJsonBuilder(
         cache_entities_dir=cache_entities_dir,
         entity_prefix=entity_prefix,
+        semantic_anchor_document=semantic_anchor_document,
     )
     return builder.build_all()
 
@@ -2500,6 +2613,7 @@ def export_entity_profile_json_documents(
     *,
     entity_prefix: str = "https://datadistillery.wikibase.cloud/entity/",
     profile_ids: Optional[list[str]] = None,
+    semantic_anchor_document: Optional[dict[str, Any]] = None,
 ) -> EntityProfileJsonExportResult:
     """Build and export JSON entity profile documents as one file per profile.
 
@@ -2517,6 +2631,7 @@ def export_entity_profile_json_documents(
     builder = EntityProfileJsonBuilder(
         cache_entities_dir=cache_entities_dir,
         entity_prefix=entity_prefix,
+        semantic_anchor_document=semantic_anchor_document,
     )
     build_result = builder.build_all_with_report()
     documents = build_result["documents"]
@@ -2567,6 +2682,243 @@ SPIRITSAFE_ENTITY_URI_PREFIX = "https://datadistillery.wikibase.cloud/entity/"
 
 def _manifest_source_url() -> str:
     return f"https://github.com/{DEFAULT_SPIRIT_SAFE_GITHUB_REPO}"
+
+
+@dataclass(frozen=True)
+class SpiritSafeSemanticAnchor:
+    """Resolved semantic anchor entry for SpiritSafe runtime lookups."""
+
+    name: str
+    entity_id: str
+    entity_uri: str
+    kind: Literal["property", "item"]
+    datatype: Optional[str] = None
+
+
+@dataclass(frozen=True)
+class SpiritSafeSemanticAnchorResolver:
+    """Lookup facade over a validated SpiritSafe semantic-anchor artifact."""
+
+    anchors: dict[str, SpiritSafeSemanticAnchor]
+    artifact_path: Optional[str] = None
+
+    def get(self, anchor_name: str) -> Optional[SpiritSafeSemanticAnchor]:
+        return self.anchors.get(anchor_name)
+
+    def require(self, anchor_name: str) -> SpiritSafeSemanticAnchor:
+        anchor = self.get(anchor_name)
+        if anchor is None:
+            source = f" in {self.artifact_path}" if self.artifact_path else ""
+            raise RuntimeError(
+                f"Semantic anchor '{anchor_name}' is missing from the loaded artifact{source}"
+            )
+        return anchor
+
+    def require_property_id(self, anchor_name: str) -> str:
+        anchor = self.require(anchor_name)
+        if anchor.kind != "property":
+            raise RuntimeError(
+                f"Semantic anchor '{anchor_name}' resolves to {anchor.entity_id}, expected a property"
+            )
+        return anchor.entity_id
+
+    def require_item_id(self, anchor_name: str) -> str:
+        anchor = self.require(anchor_name)
+        if anchor.kind != "item":
+            raise RuntimeError(
+                f"Semantic anchor '{anchor_name}' resolves to {anchor.entity_id}, expected an item"
+            )
+        return anchor.entity_id
+
+    def optional_property_id(self, anchor_name: str) -> Optional[str]:
+        anchor = self.get(anchor_name)
+        if anchor is None:
+            return None
+        if anchor.kind != "property":
+            raise RuntimeError(
+                f"Semantic anchor '{anchor_name}' resolves to {anchor.entity_id}, expected a property"
+            )
+        return anchor.entity_id
+
+
+def build_spiritsafe_semantic_anchor_resolver(
+    anchor_document: dict[str, Any],
+    *,
+    artifact_path: Optional[Union[str, Path]] = None,
+) -> SpiritSafeSemanticAnchorResolver:
+    """Build a semantic-anchor resolver from an artifact document."""
+
+    entities = anchor_document.get("entities")
+    if not isinstance(entities, dict):
+        raise RuntimeError(
+            "Semantic anchor document must contain a top-level 'entities' mapping"
+        )
+
+    anchors: dict[str, SpiritSafeSemanticAnchor] = {}
+    for anchor_name, payload in entities.items():
+        if not isinstance(anchor_name, str) or not anchor_name:
+            raise RuntimeError("Semantic anchor names must be non-empty strings")
+        if not isinstance(payload, dict):
+            raise RuntimeError(
+                f"Semantic anchor '{anchor_name}' must map to an object payload"
+            )
+
+        entity_id = str(payload.get("id") or "").strip()
+        if not entity_id:
+            raise RuntimeError(
+                f"Semantic anchor '{anchor_name}' is missing required field 'id'"
+            )
+        if not (entity_id[0] in {"P", "Q"} and entity_id[1:].isdigit()):
+            raise RuntimeError(
+                f"Semantic anchor '{anchor_name}' has invalid entity id '{entity_id}'"
+            )
+
+        kind: Literal["property", "item"] = (
+            "property" if entity_id.startswith("P") else "item"
+        )
+        entity_uri = payload.get("entity")
+        if not isinstance(entity_uri, str) or not entity_uri:
+            entity_uri = f"{SPIRITSAFE_ENTITY_URI_PREFIX}{entity_id}"
+
+        datatype = payload.get("datatype")
+        if datatype is not None and not isinstance(datatype, str):
+            raise RuntimeError(
+                f"Semantic anchor '{anchor_name}' field 'datatype' must be a string when present"
+            )
+
+        anchors[anchor_name] = SpiritSafeSemanticAnchor(
+            name=anchor_name,
+            entity_id=entity_id,
+            entity_uri=entity_uri,
+            kind=kind,
+            datatype=datatype,
+        )
+
+    resolved_artifact_path = (
+        str(Path(artifact_path).expanduser().resolve()) if artifact_path else None
+    )
+    return SpiritSafeSemanticAnchorResolver(
+        anchors=anchors,
+        artifact_path=resolved_artifact_path,
+    )
+
+
+def _format_semantic_anchor_validation_errors(notices: list[Any]) -> str:
+    error_messages = [
+        str(getattr(notice, "message", "")).strip()
+        for notice in notices
+        if getattr(notice, "severity", None) == "error"
+    ]
+    if not error_messages:
+        return "semantic anchor validation failed"
+
+    preview = "; ".join(message for message in error_messages[:3] if message)
+    remaining = len(error_messages) - 3
+    if remaining > 0:
+        preview = f"{preview}; and {remaining} more"
+    return preview
+
+
+def _require_spiritsafe_meta_wikibase_semantics(
+    spiritsafe_root: Union[str, Path],
+) -> tuple[Path, str, str]:
+    """Resolve the required semantic config values for anchor-backed workflows."""
+
+    config_path, config_values = resolve_spiritsafe_meta_wikibase_config(
+        spiritsafe_root
+    )
+    if config_path is None:
+        raise FileNotFoundError(
+            "Meta-wikibase config not found under the SpiritSafe root. "
+            "Semantic-anchor-backed workflows require a config file in config/."
+        )
+
+    name_identifier_property_id = config_values.get("name_identifier_property_id")
+    if not name_identifier_property_id:
+        raise RuntimeError(
+            f"Meta-wikibase config {config_path} is missing semantic_conventions.name_identifier_property_id"
+        )
+
+    internal_prefix = config_values.get("internal_name_identifier_prefix")
+    if not internal_prefix:
+        raise RuntimeError(
+            f"Meta-wikibase config {config_path} is missing semantic_conventions.internal_name_identifier_prefix"
+        )
+
+    return config_path, name_identifier_property_id, internal_prefix
+
+
+def load_spiritsafe_semantic_anchor_resolver(
+    spiritsafe_root: Union[str, Path],
+    *,
+    artifact_path: Optional[Union[str, Path]] = None,
+) -> SpiritSafeSemanticAnchorResolver:
+    """Load and validate the SpiritSafe semantic-anchor artifact for runtime use."""
+
+    root = Path(spiritsafe_root).expanduser().resolve()
+    _config_path, _name_identifier_property_id, internal_prefix = (
+        _require_spiritsafe_meta_wikibase_semantics(root)
+    )
+
+    resolved_artifact_path = (
+        Path(artifact_path).expanduser().resolve()
+        if artifact_path is not None
+        else (root / "cache" / "config" / "semantic_anchors.json")
+    )
+    if not resolved_artifact_path.is_file():
+        raise FileNotFoundError(
+            f"Semantic anchor artifact not found at {resolved_artifact_path}. "
+            "Build or refresh cache/config/semantic_anchors.json before using anchor-backed runtime workflows."
+        )
+
+    try:
+        anchor_document = json.loads(resolved_artifact_path.read_text(encoding="utf-8"))
+    except Exception as exc:
+        raise RuntimeError(
+            f"Failed to load semantic anchor artifact {resolved_artifact_path}: {exc}"
+        ) from exc
+
+    validation_result = validate_semantic_anchor_document(
+        anchor_document,
+        internal_name_identifier_prefix=internal_prefix,
+    )
+    if not validation_result.valid:
+        raise RuntimeError(
+            "Semantic anchor artifact failed validation: "
+            f"{_format_semantic_anchor_validation_errors(validation_result.notices)}"
+        )
+
+    return build_spiritsafe_semantic_anchor_resolver(
+        anchor_document,
+        artifact_path=resolved_artifact_path,
+    )
+
+
+def _infer_spiritsafe_root_from_cache_entities_dir(
+    cache_entities_dir: Union[str, Path],
+) -> Optional[Path]:
+    cache_dir = Path(cache_entities_dir).expanduser().resolve()
+    if cache_dir.name == "entities" and cache_dir.parent.name == "cache":
+        return cache_dir.parent.parent
+    return None
+
+
+def _resolve_semantic_anchor_resolver_for_cache_entities_dir(
+    cache_entities_dir: Union[str, Path],
+    *,
+    semantic_anchor_document: Optional[dict[str, Any]] = None,
+) -> SpiritSafeSemanticAnchorResolver:
+    if semantic_anchor_document is not None:
+        return build_spiritsafe_semantic_anchor_resolver(semantic_anchor_document)
+
+    spiritsafe_root = _infer_spiritsafe_root_from_cache_entities_dir(cache_entities_dir)
+    if spiritsafe_root is None:
+        raise RuntimeError(
+            "Unable to infer SpiritSafe root from cache_entities_dir. "
+            "Provide cache/entities under a SpiritSafe checkout or pass semantic_anchor_document explicitly."
+        )
+
+    return load_spiritsafe_semantic_anchor_resolver(spiritsafe_root)
 
 
 def resolve_spiritsafe_meta_wikibase_config(
@@ -2741,14 +3093,60 @@ def _build_link_entries(
     return sorted(entries, key=lambda entry: (entry["target"], json.dumps(entry)))
 
 
-def _build_entity_index_entry(entity_doc: dict[str, Any]) -> dict[str, Any]:
+def _build_entity_index_entry(
+    entity_doc: dict[str, Any],
+    *,
+    semantic_anchor_resolver: SpiritSafeSemanticAnchorResolver,
+) -> dict[str, Any]:
     entity_id = str(entity_doc.get("entity_id") or "")
     claims = entity_doc.get("entity", {}).get("claims", {})
+    instance_of_property_id = semantic_anchor_resolver.require_property_id(
+        "_instance_of"
+    )
+    value_type_property_id = semantic_anchor_resolver.require_property_id(
+        "_statement_type"
+    )
+    max_count_property_id = semantic_anchor_resolver.require_property_id("_max_count")
+    name_identifier_property_id = semantic_anchor_resolver.require_property_id(
+        "_name_identifier"
+    )
+    same_as_property_id = semantic_anchor_resolver.require_property_id("_same_as")
+    has_statement_property_id = semantic_anchor_resolver.require_property_id(
+        "_has_statement"
+    )
+    has_qualifier_property_id = semantic_anchor_resolver.require_property_id(
+        "_has_qualifier"
+    )
+    has_reference_property_id = semantic_anchor_resolver.require_property_id(
+        "_has_reference"
+    )
+    has_value_property_id = semantic_anchor_resolver.require_property_id("_has_value")
+    derives_default_value_from_property_id = (
+        semantic_anchor_resolver.require_property_id("_derives_default_value_from")
+    )
+    applies_to_profile_property_id = semantic_anchor_resolver.require_property_id(
+        "_applies_to_profile"
+    )
+    applies_to_statement_property_id = semantic_anchor_resolver.require_property_id(
+        "_applies_to_statement"
+    )
+    message_field_by_prop = {
+        semantic_anchor_resolver.require_property_id("_statement_prompt"): "prompt",
+        semantic_anchor_resolver.require_property_id("_statement_guidance"): "guidance",
+        semantic_anchor_resolver.require_property_id("_error_message"): "error_message",
+    }
+    consequences_property_id = semantic_anchor_resolver.optional_property_id(
+        "_consequences_message"
+    )
+    if consequences_property_id is not None:
+        message_field_by_prop[consequences_property_id] = "consequences_message"
+
     classes = _sorted_unique(
         [
             entity_id_value
             for entity_id_value in (
-                _claim_entity_id_value(claim) for claim in claims.get("P1", [])
+                _claim_entity_id_value(claim)
+                for claim in claims.get(instance_of_property_id, [])
             )
             if entity_id_value
         ]
@@ -2758,7 +3156,8 @@ def _build_entity_index_entry(entity_doc: dict[str, Any]) -> dict[str, Any]:
         (
             value
             for value in (
-                _claim_entity_id_value(claim) for claim in claims.get("P194", [])
+                _claim_entity_id_value(claim)
+                for claim in claims.get(value_type_property_id, [])
             )
             if value
         ),
@@ -2768,7 +3167,8 @@ def _build_entity_index_entry(entity_doc: dict[str, Any]) -> dict[str, Any]:
         (
             value
             for value in (
-                _claim_quantity_int_value(claim) for claim in claims.get("P182", [])
+                _claim_quantity_int_value(claim)
+                for claim in claims.get(max_count_property_id, [])
             )
             if value is not None
         ),
@@ -2778,7 +3178,8 @@ def _build_entity_index_entry(entity_doc: dict[str, Any]) -> dict[str, Any]:
         (
             value
             for value in (
-                _claim_string_value(claim) for claim in claims.get("P214", [])
+                _claim_string_value(claim)
+                for claim in claims.get(name_identifier_property_id, [])
             )
             if value
         ),
@@ -2786,12 +3187,7 @@ def _build_entity_index_entry(entity_doc: dict[str, Any]) -> dict[str, Any]:
     )
 
     messages: dict[str, dict[str, str]] = {}
-    for prop_id, field_name in {
-        "P171": "prompt",
-        "P169": "guidance",
-        "P170": "consequences_message",
-        "P168": "error_message",
-    }.items():
+    for prop_id, field_name in message_field_by_prop.items():
         for language, text in _claim_monolingual_by_language(
             claims.get(prop_id, [])
         ).items():
@@ -2808,7 +3204,8 @@ def _build_entity_index_entry(entity_doc: dict[str, Any]) -> dict[str, Any]:
             [
                 value
                 for value in (
-                    _claim_string_value(claim) for claim in claims.get("P5", [])
+                    _claim_string_value(claim)
+                    for claim in claims.get(same_as_property_id, [])
                 )
                 if value
             ]
@@ -2817,29 +3214,29 @@ def _build_entity_index_entry(entity_doc: dict[str, Any]) -> dict[str, Any]:
         "messages": messages,
         "links": {
             "statements": _build_link_entries(
-                claims.get("P157", []),
-                applies_to_profile_prop="P205",
-                applies_to_statement_prop="P163",
+                claims.get(has_statement_property_id, []),
+                applies_to_profile_prop=applies_to_profile_property_id,
+                applies_to_statement_prop=applies_to_statement_property_id,
             ),
             "qualifiers": _build_link_entries(
-                claims.get("P158", []),
-                applies_to_profile_prop="P205",
-                applies_to_statement_prop="P163",
+                claims.get(has_qualifier_property_id, []),
+                applies_to_profile_prop=applies_to_profile_property_id,
+                applies_to_statement_prop=applies_to_statement_property_id,
             ),
             "references": _build_link_entries(
-                claims.get("P211", []),
-                applies_to_profile_prop="P205",
-                applies_to_statement_prop="P163",
+                claims.get(has_reference_property_id, []),
+                applies_to_profile_prop=applies_to_profile_property_id,
+                applies_to_statement_prop=applies_to_statement_property_id,
             ),
             "values": _build_link_entries(
-                claims.get("P161", []),
-                applies_to_profile_prop="P205",
-                applies_to_statement_prop="P163",
+                claims.get(has_value_property_id, []),
+                applies_to_profile_prop=applies_to_profile_property_id,
+                applies_to_statement_prop=applies_to_statement_property_id,
             ),
             "derives_default_value_from": _build_link_entries(
-                claims.get("P213", []),
-                applies_to_profile_prop="P205",
-                applies_to_statement_prop="P163",
+                claims.get(derives_default_value_from_property_id, []),
+                applies_to_profile_prop=applies_to_profile_property_id,
+                applies_to_statement_prop=applies_to_statement_property_id,
             ),
         },
     }
@@ -2847,18 +3244,28 @@ def _build_entity_index_entry(entity_doc: dict[str, Any]) -> dict[str, Any]:
 
 def build_spiritsafe_entity_index_document(
     spiritsafe_root: Union[str, Path],
+    *,
+    semantic_anchor_document: Optional[dict[str, Any]] = None,
 ) -> dict[str, Any]:
     """Build a normalized entity index from cached SpiritSafe entity JSON docs."""
 
     root = Path(spiritsafe_root).expanduser().resolve()
     cache_entities_dir = root / "cache" / "entities"
+    semantic_anchor_resolver = (
+        build_spiritsafe_semantic_anchor_resolver(semantic_anchor_document)
+        if semantic_anchor_document is not None
+        else load_spiritsafe_semantic_anchor_resolver(root)
+    )
 
     entities: dict[str, dict[str, Any]] = {}
     by_class: dict[str, list[str]] = {}
 
     for entity_path in sorted(cache_entities_dir.glob("*.json")):
         entity_doc = json.loads(entity_path.read_text(encoding="utf-8"))
-        entry = _build_entity_index_entry(entity_doc)
+        entry = _build_entity_index_entry(
+            entity_doc,
+            semantic_anchor_resolver=semantic_anchor_resolver,
+        )
         entity_id = str(entry.get("id") or entity_path.stem)
         entities[entity_id] = entry
 
@@ -2881,6 +3288,8 @@ def build_spiritsafe_entity_index_document(
 def export_spiritsafe_entity_index(
     spiritsafe_root: Union[str, Path],
     output_path: Optional[Union[str, Path]] = None,
+    *,
+    semantic_anchor_document: Optional[dict[str, Any]] = None,
 ) -> dict[str, Any]:
     """Build and write the SpiritSafe normalized entity index document."""
 
@@ -2891,7 +3300,10 @@ def export_spiritsafe_entity_index(
         else (root / "cache" / "entity_index.json")
     )
 
-    index_document = build_spiritsafe_entity_index_document(root)
+    index_document = build_spiritsafe_entity_index_document(
+        root,
+        semantic_anchor_document=semantic_anchor_document,
+    )
     destination.parent.mkdir(parents=True, exist_ok=True)
     destination.write_text(json.dumps(index_document, indent=2), encoding="utf-8")
     return index_document
@@ -2941,12 +3353,9 @@ def build_spiritsafe_semantic_anchor_document(
 
     root = Path(spiritsafe_root).expanduser().resolve()
     cache_entities_dir = root / "cache" / "entities"
-    _config_path, config_values = resolve_spiritsafe_meta_wikibase_config(root)
-
-    name_identifier_property_id = (
-        config_values.get("name_identifier_property_id") or "P214"
+    _config_path, name_identifier_property_id, internal_prefix = (
+        _require_spiritsafe_meta_wikibase_semantics(root)
     )
-    internal_prefix = config_values.get("internal_name_identifier_prefix") or "_"
 
     anchors: dict[str, dict[str, Any]] = {}
 

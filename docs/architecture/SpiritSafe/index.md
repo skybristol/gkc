@@ -2,6 +2,17 @@
 
 SpiritSafe is the artifact registry for GKC Entity Profiles and value-list caches.
 
+This section covers the SpiritSafe side of the architecture from registry purpose and artifact layout through profile loading, runtime integration models, entity-index structure, and testing strategy.
+
+In this section:
+
+- [Profile Loading Architecture](profile-loading.md)
+- [SpiritSafe Integration Architecture](spirit_safe_models.md)
+- [SpiritSafe Entity Index Architecture](spiritsafe-entity-index.md)
+- [SpiritSafe Testing Architecture](SpiritSafe-testing.md)
+
+For the authored semantic side of the architecture, see [Meta-Wikibase Architecture](../meta-wikibase/index.md).
+
 In the infrastructure triad:
 
 - Data Distillery Wikibase defines semantic foundation.
@@ -58,6 +69,8 @@ Both artifacts are generated in a single operation and are kept in sync.
 - Access link relationships with pre-extracted scope metadata (profile/statement applicability)
 
 See [SpiritSafe Entity Index Architecture](spiritsafe-entity-index.md) for detailed schema and consumption patterns.
+
+SpiritSafe also stores the semantic-anchor artifact used by anchor-backed runtime workflows. The semantic-anchor concept itself belongs to the Meta-Wikibase side of the architecture, but the built artifact lives under `cache/config/semantic_anchors.json` as part of the SpiritSafe materialization layer. See [Semantic Anchors](../meta-wikibase/semantic-anchors.md).
 
 Packet assembly routes in `still_charger.create_curation_packet` do not require manifest or entity index lookups; they consume profile JSON directly.
 

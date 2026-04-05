@@ -149,6 +149,30 @@ result = export_entity_profile_json_documents(
 print(result.written_ids)
 ```
 
+When `cache_entities_dir` is part of a normal SpiritSafe checkout, the exporter loads `cache/config/semantic_anchors.json` and the local meta-wikibase config automatically and uses them to resolve internal ontology concepts such as profile class, statement links, prompts, and value-list classification.
+
+For the full concept, lifecycle, and runtime boundary, see [Semantic Anchors](../../architecture/meta-wikibase/semantic-anchors.md).
+
+If you are building from an ad hoc cache directory outside the standard SpiritSafe layout, pass an explicit semantic anchor document:
+
+```python
+from gkc.spirit_safe import build_entity_profile_json_documents
+
+anchors = {
+    "entities": {
+        "_instance_of": {"id": "P1", "datatype": "wikibase-item"},
+        "_entity_profile": {"id": "Q3"},
+        "_has_statement": {"id": "P157", "datatype": "wikibase-item"},
+        "_name_identifier": {"id": "P214", "datatype": "string"},
+    }
+}
+
+documents = build_entity_profile_json_documents(
+    cache_entities_dir="/tmp/cache/entities",
+    semantic_anchor_document=anchors,
+)
+```
+
 ### Hydrate Value Lists from Cache Entities
 
 ```python

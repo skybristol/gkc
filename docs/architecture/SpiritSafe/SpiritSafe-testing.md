@@ -467,9 +467,9 @@ This architecture supports current development and scales to future GKC enhancem
 
 ## See Also
 
-- [SpiritSafe Registry Architecture](SpiritSafe.md) — Overall registry design and governance
+- [SpiritSafe Registry Architecture](index.md) — Overall registry design and governance
 - [Profile Loading Architecture](profile-loading.md) — How GKC loads profiles from sources
-- [GKC Entity Profiles](../gkc/profiles.md) — Profile schema reference
+- [GKC Entity Profiles](../../gkc/profiles.md) — Profile schema reference
 - [SpiritSafe Repository](https://github.com/skybristol/SpiritSafe) — Canonical profile registry
 
 ---
