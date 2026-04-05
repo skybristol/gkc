@@ -1,0 +1,100 @@
+{
+  "entity": "https://datadistillery.wikibase.cloud/entity/Q39",
+  "identification": {
+    "labels": {
+      "mul": {
+        "prompt": "official title of the office"
+      }
+    },
+    "descriptions": {
+      "mul": {
+        "prompt": "short description for the office"
+      }
+    },
+    "aliases": {}
+  },
+  "statements": [
+    {
+      "entity": "https://datadistillery.wikibase.cloud/entity/Q16",
+      "label": "instance of",
+      "io_map": [
+        {
+          "to": "http://www.wikidata.org/entity/P31"
+        }
+      ],
+      "value": {
+        "type": "wikibase-item",
+        "value_list": [
+          {
+            "item": "Q294414",
+            "itemLabel": "public office"
+          }
+        ]
+      },
+      "messages": {
+        "mul": {
+          "prompt": "fixed office classification"
+        }
+      },
+      "max_count": 1,
+      "qualifiers": [],
+      "references": []
+    },
+    {
+      "entity": "https://datadistillery.wikibase.cloud/entity/Q42",
+      "label": "applies to jurisdiction",
+      "io_map": [
+        {
+          "to": "http://www.wikidata.org/entity/P1001"
+        }
+      ],
+      "value": {
+        "type": "wikibase-item",
+        "profile": {
+          "entity": "https://datadistillery.wikibase.cloud/entity/Q4",
+          "label": "Tribal Government in the United States"
+        },
+        "value_list_id": "Q4"
+      },
+      "messages": {
+        "mul": {
+          "prompt": "linked jurisdiction profile"
+        }
+      },
+      "max_count": 1,
+      "qualifiers": [],
+      "references": []
+    }
+  ],
+  "metadata": {
+    "labels": {
+      "mul": "Office Held by Head of Government"
+    },
+    "descriptions": {
+      "mul": "Profile for head-of-government office entities"
+    },
+    "aliases": {},
+    "generated_at": "2026-03-17T18:00:00Z",
+    "languages": [
+      "mul"
+    ],
+    "statement_count": 2,
+    "profile_graph": [
+      {
+        "entity": "https://datadistillery.wikibase.cloud/entity/Q4",
+        "label": "Tribal Government in the United States",
+        "via_statement": "https://datadistillery.wikibase.cloud/entity/Q42",
+        "linkage_type": "P161"
+      }
+    ],
+    "value_list_graph": [
+      {
+        "entity": "https://datadistillery.wikibase.cloud/entity/Q28",
+        "label": "List of Federal Register Sources",
+        "via_statement": "https://datadistillery.wikibase.cloud/entity/Q30",
+        "value_list_id": "Q28"
+      }
+    ],
+    "exported_from": "https://datadistillery.wikibase.cloud/entity/Q39"
+  }
+}

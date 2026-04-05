@@ -12,6 +12,7 @@ import streamlit as st
 
 import gkc
 from gkc.fermenter import validate_inline_value
+from gkc.runtime_config import resolve_spiritsafe_layout_for_root
 from gkc.wikibase import canonicalize_wikibase_datatype, is_wikibase_item_datatype
 from gkc.wizard.step_base import Step
 from gkc.wizard.widgets import WidgetFactory
@@ -285,6 +286,19 @@ def _materialize_value_list_cache(cache_ref: str) -> tuple[Path | None, str | No
     Returns (local_path, error_message).
     """
     cache_ref_clean = cache_ref.lstrip("/")
+
+    if cache_ref_clean.startswith("Q") and cache_ref_clean[1:].isdigit():
+        source_root = _source_root_path()
+        if source_root is not None:
+            layout = resolve_spiritsafe_layout_for_root(source_root)
+            cache_ref_clean = str(
+                layout.value_list_cache_file(source_root, cache_ref_clean).relative_to(
+                    source_root
+                )
+            )
+        else:
+            cache_ref_clean = f"cache/queries/{cache_ref_clean}.json"
+
     local_cache_path = _wizard_value_list_cache_root() / cache_ref_clean
     local_cache_path.parent.mkdir(parents=True, exist_ok=True)
 
@@ -398,10 +412,12 @@ def _statement_value_list_candidates(
     """
     value_block = statement_def.get("value", {})
 
-    cache_ref = value_block.get("value_list_reference")
+    cache_ref = value_block.get("value_list_id")
+    if not isinstance(cache_ref, str) or not cache_ref:
+        cache_ref = value_block.get("value_list_reference")
     # Value-list behavior is statement-local in JSON profile contracts.
     # Do not infer from packet-level route maps when the statement omits
-    # value_list_reference, otherwise one statement's constrained picker can
+    # its own value-list binding, otherwise one statement's constrained picker can
     # incorrectly bleed into every use of the same statement URI.
     if not isinstance(cache_ref, str) or not cache_ref:
         return [], None

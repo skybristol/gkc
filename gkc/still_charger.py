@@ -22,6 +22,7 @@ from gkc.fermenter import (
     evaluate_statement_instance,
     statement_evaluation_to_record,
 )
+from gkc.runtime_config import resolve_spiritsafe_layout_for_root
 
 
 @dataclass
@@ -417,26 +418,31 @@ def _statement_data_slot(
             data_value = value_list[0]
 
     statement_id = _statement_identifier(statement)
-    value_list_path: Any = None
+    value_list_id: Any = None
     if isinstance(value_block, dict):
-        route_ref = value_block.get("value_list_reference")
+        route_ref = value_block.get("value_list_id")
         if isinstance(route_ref, str) and route_ref:
-            value_list_path = route_ref
+            value_list_id = route_ref
 
-    if value_list_path is None and statement_id and isinstance(value_list_routes, dict):
+    if value_list_id is None and statement_id and isinstance(value_list_routes, dict):
         route_entry = value_list_routes.get(statement_id, {})
         if isinstance(route_entry, dict):
-            route_path = route_entry.get("cache_path")
+            route_path = route_entry.get("value_list_id") or route_entry.get("query_id")
             if isinstance(route_path, str) and route_path:
-                value_list_path = route_path
+                value_list_id = route_path
+
+    if value_list_id is None and isinstance(value_block, dict):
+        route_ref = value_block.get("value_list_reference")
+        if isinstance(route_ref, str) and route_ref:
+            value_list_id = Path(route_ref).stem.upper()
 
     slot: dict[str, Any] = {
         "id": statement_id,
         "data-type": data_type,
         "data-value": data_value,
     }
-    if value_list_path is not None:
-        slot["value-list"] = value_list_path
+    if value_list_id is not None:
+        slot["value-list"] = value_list_id
 
     if include_children:
         qualifiers = statement.get("qualifiers")
@@ -739,19 +745,23 @@ def _build_value_list_routes(
             if not isinstance(statement_uri, str) or not statement_uri:
                 continue
 
-            cache_path = route.get("cache_path")
-            if not cache_path and isinstance(route.get("query_id"), str):
-                cache_path = f"cache/queries/{route['query_id']}.json"
+            value_list_id = route.get("value_list_id") or route.get("query_id")
+            if not value_list_id and isinstance(route.get("cache_path"), str):
+                value_list_id = Path(str(route["cache_path"])).stem.upper()
 
             entry = {
                 "entity": route.get("entity"),
                 "label": route.get("label"),
             }
-            if isinstance(cache_path, str) and cache_path:
-                entry["cache_path"] = cache_path
+            if isinstance(value_list_id, str) and value_list_id:
+                entry["value_list_id"] = value_list_id
+                entry["query_id"] = value_list_id
 
                 if source_root is not None:
-                    resolved_cache = source_root / cache_path
+                    layout = resolve_spiritsafe_layout_for_root(source_root)
+                    resolved_cache = layout.value_list_cache_file(
+                        source_root, value_list_id
+                    )
                     if resolved_cache.exists():
                         try:
                             cache_data = json.loads(

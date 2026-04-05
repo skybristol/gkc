@@ -68,13 +68,15 @@ def test_build_spiritsafe_manifest_document(fixture_root: Path):
     assert manifest["source"] == "https://github.com/skybristol/SpiritSafe"
     assert {profile["qid"] for profile in manifest["profiles"]} == {"Q4", "Q39"}
     assert manifest["entities"] == {"count": 1, "qids": ["Q4"]}
-    assert manifest["queries"] == [{"qid": "Q28", "path": "queries/Q28.sparql"}]
+    assert manifest["queries"] == [
+        {"qid": "Q28", "path": "still/value_lists/queries/Q28.sparql"}
+    ]
     assert manifest["value_lists"] == [
         {
             "entity": "https://datadistillery.wikibase.cloud/entity/Q28",
             "qid": "Q28",
             "label": "List of Federal Register Sources",
-            "path": "cache/queries/Q28.json",
+            "path": "still/value_lists/cache/Q28.json",
             "item_count": 2,
         }
     ]
@@ -87,7 +89,7 @@ def test_build_spiritsafe_manifest_document(fixture_root: Path):
             "entity": "https://datadistillery.wikibase.cloud/entity/Q28",
             "label": "List of Federal Register Sources",
             "via_statement": "https://datadistillery.wikibase.cloud/entity/Q16",
-            "cache_path": "cache/queries/Q28.json",
+            "value_list_id": "Q28",
         }
     ]
 
@@ -142,7 +144,6 @@ def test_build_spiritsafe_semantic_anchor_document(tmp_path: Path, fixture_root:
     root = tmp_path / "spiritsafe"
     copytree(fixture_root, root)
     config_dir = root / "config"
-    config_dir.mkdir()
     (config_dir / "dd-wikibase.yaml").write_text(
         """
 meta_wikibase:
@@ -151,12 +152,27 @@ meta_wikibase:
   semantic_conventions:
     name_identifier_property_id: P214
     internal_name_identifier_prefix: "_"
+spiritsafe:
+    layout_version: 2
+    roots:
+        materialized: still
+        partners: partners
+    paths:
+        entities: still/entities
+        profiles: still/profiles
+        value_list_queries: still/value_lists/queries
+        value_list_cache: still/value_lists/cache
+        semantic_anchors: config/semantic_anchors.json
+        logs: still/refresh
+        wikimedia_sites: partners/wikimedia_sites.json
+        manifest: still/manifest.json
+        entity_index: still/entity_index.json
 """.strip()
         + "\n",
         encoding="utf-8",
     )
 
-    entity_path = root / "cache" / "entities" / "Q4.json"
+    entity_path = root / "still" / "entities" / "Q4.json"
     entity_doc = json.loads(entity_path.read_text(encoding="utf-8"))
     entity_doc["entity"]["claims"]["P214"] = [
         {
@@ -197,19 +213,33 @@ def test_build_spiritsafe_semantic_anchor_document_includes_property_datatype(
     root = tmp_path / "spiritsafe"
     copytree(fixture_root, root)
     config_dir = root / "config"
-    config_dir.mkdir()
     (config_dir / "dd-wikibase.yaml").write_text(
         """
 meta_wikibase:
   semantic_conventions:
     name_identifier_property_id: P214
     internal_name_identifier_prefix: "_"
+spiritsafe:
+    layout_version: 2
+    roots:
+        materialized: still
+        partners: partners
+    paths:
+        entities: still/entities
+        profiles: still/profiles
+        value_list_queries: still/value_lists/queries
+        value_list_cache: still/value_lists/cache
+        semantic_anchors: config/semantic_anchors.json
+        logs: still/refresh
+        wikimedia_sites: partners/wikimedia_sites.json
+        manifest: still/manifest.json
+        entity_index: still/entity_index.json
 """.strip()
         + "\n",
         encoding="utf-8",
     )
 
-    property_path = root / "cache" / "entities" / "P192.json"
+    property_path = root / "still" / "entities" / "P192.json"
     property_doc = {
         "entity_id": "P192",
         "entity": {
@@ -259,19 +289,33 @@ def test_build_spiritsafe_semantic_anchor_document_marks_internal_entries(
     root = tmp_path / "spiritsafe"
     copytree(fixture_root, root)
     config_dir = root / "config"
-    config_dir.mkdir()
     (config_dir / "dd-wikibase.yaml").write_text(
         """
 meta_wikibase:
   semantic_conventions:
     name_identifier_property_id: P214
     internal_name_identifier_prefix: "_"
+spiritsafe:
+    layout_version: 2
+    roots:
+        materialized: still
+        partners: partners
+    paths:
+        entities: still/entities
+        profiles: still/profiles
+        value_list_queries: still/value_lists/queries
+        value_list_cache: still/value_lists/cache
+        semantic_anchors: config/semantic_anchors.json
+        logs: still/refresh
+        wikimedia_sites: partners/wikimedia_sites.json
+        manifest: still/manifest.json
+        entity_index: still/entity_index.json
 """.strip()
         + "\n",
         encoding="utf-8",
     )
 
-    entity_path = root / "cache" / "entities" / "Q4.json"
+    entity_path = root / "still" / "entities" / "Q4.json"
     entity_doc = json.loads(entity_path.read_text(encoding="utf-8"))
     entity_doc["entity"]["claims"]["P214"] = [
         {
@@ -305,6 +349,7 @@ def test_build_spiritsafe_semantic_anchor_document_requires_config(
 
     root = tmp_path / "spiritsafe"
     copytree(fixture_root, root)
+    (root / "config" / "dd-wikibase.yaml").unlink()
 
     with pytest.raises(FileNotFoundError, match="Meta-wikibase config"):
         build_spiritsafe_semantic_anchor_document(root)
@@ -316,19 +361,33 @@ def test_export_spiritsafe_semantic_anchors(fixture_root: Path, tmp_path: Path):
     root = tmp_path / "spiritsafe"
     copytree(fixture_root, root)
     config_dir = root / "config"
-    config_dir.mkdir()
     (config_dir / "dd-wikibase.yaml").write_text(
         """
 meta_wikibase:
   semantic_conventions:
     name_identifier_property_id: P214
     internal_name_identifier_prefix: "_"
+spiritsafe:
+    layout_version: 2
+    roots:
+        materialized: still
+        partners: partners
+    paths:
+        entities: still/entities
+        profiles: still/profiles
+        value_list_queries: still/value_lists/queries
+        value_list_cache: still/value_lists/cache
+        semantic_anchors: config/semantic_anchors.json
+        logs: still/refresh
+        wikimedia_sites: partners/wikimedia_sites.json
+        manifest: still/manifest.json
+        entity_index: still/entity_index.json
 """.strip()
         + "\n",
         encoding="utf-8",
     )
 
-    entity_path = root / "cache" / "entities" / "Q4.json"
+    entity_path = root / "still" / "entities" / "Q4.json"
     entity_doc = json.loads(entity_path.read_text(encoding="utf-8"))
     entity_doc["entity"]["claims"]["P214"] = [
         {
@@ -448,9 +507,7 @@ def test_create_curation_packet_bulk_mode():
     tribal_government = next(
         entity for entity in packet["data"]["entities"] if entity["profile"] == "Q4"
     )
-    assert tribal_government["statements"]["Q16"]["value-list"] == (
-        "cache/queries/Q28.json"
-    )
+    assert tribal_government["statements"]["Q16"]["value-list"] == "Q28"
 
 
 def test_validate_packet_structure_reports_invalid_data_entity_id():

@@ -30,11 +30,11 @@ def _statement(
     data_type: str,
     property_id: str,
     max_count: int = 1,
-    value_list_reference: str | None = None,
+    value_list_id: str | None = None,
 ) -> dict:
     value_block: dict[str, object] = {"type": data_type}
-    if value_list_reference:
-        value_block["value_list_reference"] = value_list_reference
+    if value_list_id:
+        value_block["value_list_id"] = value_list_id
 
     return {
         "id": statement_id,
@@ -140,7 +140,7 @@ def test_evaluate_statement_claim_non_conformant_mappable_value_list(tmp_path: P
         statement_id="https://datadistillery.wikibase.cloud/entity/Q16",
         data_type="wikibase-item",
         property_id="P31",
-        value_list_reference="cache/queries/Q28.json",
+        value_list_id="Q28",
     )
     claim = _claim({"entity-type": "item", "numeric-id": 1, "id": "Q1"})
 

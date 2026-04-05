@@ -978,9 +978,7 @@ meta_wikibase:
         + "\n",
         encoding="utf-8",
     )
-    cache_config_dir = tmp_path / "cache" / "config"
-    cache_config_dir.mkdir(parents=True, exist_ok=True)
-    (cache_config_dir / "semantic_anchors.json").write_text(
+    (config_dir / "semantic_anchors.json").write_text(
         json.dumps(_default_semantic_anchor_document(), indent=2),
         encoding="utf-8",
     )
@@ -1083,24 +1081,58 @@ def test_profile_value_lists_hydrate_local_source_defaults(
     """profile value-lists hydrate resolves local default directories."""
 
     local_root = tmp_path / "SpiritSafe"
-    (local_root / "cache" / "entities").mkdir(parents=True, exist_ok=True)
+    (local_root / "config").mkdir(parents=True, exist_ok=True)
+    (local_root / "still" / "entities").mkdir(parents=True, exist_ok=True)
+    (local_root / "config" / "dd-wikibase.yaml").write_text(
+        """
+meta_wikibase:
+  semantic_conventions:
+    name_identifier_property_id: P214
+    internal_name_identifier_prefix: "_"
+spiritsafe:
+  layout_version: 2
+  roots:
+    materialized: still
+    partners: partners
+  paths:
+    entities: still/entities
+    profiles: still/profiles
+    value_list_queries: still/value_lists/queries
+    value_list_cache: still/value_lists/cache
+    semantic_anchors: config/semantic_anchors.json
+    logs: still/refresh
+    wikimedia_sites: partners/wikimedia_sites.json
+    manifest: still/manifest.json
+    entity_index: still/entity_index.json
+""".strip()
+        + "\n",
+        encoding="utf-8",
+    )
 
     def fake_discover_value_list_ids(cache_entities_dir):
-        assert str(cache_entities_dir).endswith("SpiritSafe/cache/entities")
+        assert str(cache_entities_dir).endswith("SpiritSafe/still/entities")
         return ["Q4"]
 
     def fake_hydrate_value_lists_from_cache(**kwargs):
-        assert str(kwargs["cache_entities_dir"]).endswith("SpiritSafe/cache/entities")
-        assert str(kwargs["queries_dir"]).endswith("SpiritSafe/queries")
-        assert str(kwargs["cache_queries_dir"]).endswith("SpiritSafe/cache/queries")
+        assert str(kwargs["cache_entities_dir"]).endswith("SpiritSafe/still/entities")
+        assert str(kwargs["queries_dir"]).endswith(
+            "SpiritSafe/still/value_lists/queries"
+        )
+        assert str(kwargs["cache_queries_dir"]).endswith(
+            "SpiritSafe/still/value_lists/cache"
+        )
         assert kwargs["value_list_ids"] == ["Q4"]
         return gkc.ValueListHydrationResult(
-            queries_dir=str(local_root / "queries"),
-            cache_queries_dir=str(local_root / "cache" / "queries"),
+            queries_dir=str(local_root / "still" / "value_lists" / "queries"),
+            cache_queries_dir=str(local_root / "still" / "value_lists" / "cache"),
             discovered_ids=["Q4"],
             hydrated_ids=["Q4"],
-            query_files_written=[str(local_root / "queries" / "Q4.sparql")],
-            cache_files_written=[str(local_root / "cache" / "queries" / "Q4.json")],
+            query_files_written=[
+                str(local_root / "still" / "value_lists" / "queries" / "Q4.sparql")
+            ],
+            cache_files_written=[
+                str(local_root / "still" / "value_lists" / "cache" / "Q4.json")
+            ],
             failures=[],
         )
 

@@ -26,7 +26,12 @@ from gkc.mash import (
     get_latest_cache_timestamp,
     refresh_entity_cache_from_recentchanges,
 )
-from gkc.runtime_config import DEFAULT_USER_AGENT, get_wikibase_runtime_config
+from gkc.runtime_config import (
+    DEFAULT_USER_AGENT,
+    SpiritSafeLayout,
+    discover_meta_wikibase_config_path,
+    get_wikibase_runtime_config,
+)
 from gkc.sitelinks import (
     DEFAULT_WIKIMEDIA_SITEMATRIX_URL,
     export_wikimedia_sites_artifact,
@@ -43,6 +48,7 @@ from gkc.spirit_safe import (
     load_manifest,
     load_profile,
     load_profile_package,
+    resolve_spiritsafe_layout,
     resolve_spiritsafe_meta_wikibase_config,
     validate_packet_structure,
 )
@@ -107,6 +113,7 @@ def main(argv: Optional[list[str]] = None) -> int:
 
 def _build_parser() -> argparse.ArgumentParser:
     runtime_config = get_wikibase_runtime_config()
+    layout = getattr(runtime_config, "spiritsafe_layout", SpiritSafeLayout())
 
     parser = argparse.ArgumentParser(prog="gkc")
     parser.add_argument(
@@ -525,7 +532,7 @@ def _build_parser() -> argparse.ArgumentParser:
         "--cache-entities-dir",
         help=(
             "Directory containing SpiritSafe cache entity JSON files "
-            "(defaults to <local_root>/cache/entities when using --source local)"
+            f"(defaults to <local_root>/{layout.entities_path} when using --source local)"
         ),
     )
     profile_export_json.add_argument(
@@ -546,7 +553,7 @@ def _build_parser() -> argparse.ArgumentParser:
         "--summary-output",
         help=(
             "Optional summary JSON path to write/merge profile export diagnostics "
-            "(defaults to <cache_entities_dir>/../refresh/last_run_summary.json)"
+            f"(defaults to the configured SpiritSafe logs path: {layout.logs_path}/last_run_summary.json)"
         ),
     )
     _add_profile_source_args(profile_export_json)
@@ -599,21 +606,21 @@ def _build_parser() -> argparse.ArgumentParser:
         "--cache-entities-dir",
         help=(
             "Directory containing SpiritSafe cache entity JSON files "
-            "(defaults to <local_root>/cache/entities when using --source local)"
+            f"(defaults to <local_root>/{layout.entities_path} when using --source local)"
         ),
     )
     profile_value_lists_hydrate.add_argument(
         "--queries-dir",
         help=(
             "Directory to write SPARQL query files "
-            "(defaults to <local_root>/queries when using --source local)"
+            f"(defaults to <local_root>/{layout.value_list_queries_path} when using --source local)"
         ),
     )
     profile_value_lists_hydrate.add_argument(
         "--cache-queries-dir",
         help=(
             "Directory to write hydrated value-list cache JSON "
-            "(defaults to <local_root>/cache/queries when using --source local)"
+            f"(defaults to <local_root>/{layout.value_list_cache_path} when using --source local)"
         ),
     )
     profile_value_lists_hydrate.add_argument(
@@ -759,7 +766,7 @@ def _build_parser() -> argparse.ArgumentParser:
     )
 
     spiritsafe_manifest_build = spiritsafe_manifest_subparsers.add_parser(
-        "build", help="Build cache/manifest.json from local SpiritSafe artifacts"
+        "build", help="Build the configured SpiritSafe manifest from local artifacts"
     )
     spiritsafe_manifest_build.add_argument(
         "-o",
@@ -804,7 +811,7 @@ def _build_parser() -> argparse.ArgumentParser:
         "--output",
         help=(
             "Optional output path for artifact JSON "
-            "(default: <local_root>/cache/config/wikimedia_sites.json)"
+            f"(default: <local_root>/{layout.wikimedia_sites_path})"
         ),
     )
     _add_profile_source_args(spiritsafe_sitelinks_sync)
@@ -831,7 +838,7 @@ def _build_parser() -> argparse.ArgumentParser:
         "--output",
         help=(
             "Optional output path for artifact JSON "
-            "(default: <local_root>/cache/config/semantic_anchors.json; "
+            f"(default: <local_root>/{layout.semantic_anchors_path}; "
             "SpiritSafe workflows may override this)"
         ),
     )
@@ -849,7 +856,7 @@ def _build_parser() -> argparse.ArgumentParser:
         "--artifact-file",
         help=(
             "Path to an existing semantic_anchors.json artifact "
-            "(defaults to <local_root>/cache/config/semantic_anchors.json when --local-root is provided)"
+            f"(defaults to <local_root>/{layout.semantic_anchors_path} when --local-root is provided)"
         ),
     )
     spiritsafe_semantic_anchors_validate.add_argument(
@@ -1102,6 +1109,32 @@ def _restore_source_override(previous_source: Any, source_overridden: bool) -> N
             github_ref=previous_source.github_ref,
             local_root=previous_source.local_root,
         )
+
+
+def _resolve_local_spiritsafe_layout(local_root: Path):
+    return resolve_spiritsafe_layout(local_root)
+
+
+def _infer_local_spiritsafe_root_from_cache_entities_dir(
+    cache_entities_dir: Path,
+) -> Optional[Path]:
+    cache_dir = cache_entities_dir.expanduser().resolve()
+
+    config_path = discover_meta_wikibase_config_path(start_dir=cache_dir)
+    if config_path is not None:
+        candidate_root = (
+            config_path.parent.parent
+            if config_path.parent.name == "config"
+            else config_path.parent
+        )
+        layout = _resolve_local_spiritsafe_layout(candidate_root)
+        if layout.entities_dir(candidate_root) == cache_dir:
+            return candidate_root
+
+    if cache_dir.name == "entities" and cache_dir.parent.name == "cache":
+        return cache_dir.parent.parent
+
+    return None
 
 
 def _preferred_manifest_text(values: Any) -> str:
@@ -1823,7 +1856,8 @@ def _handle_profile_export_json(args: argparse.Namespace) -> dict[str, Any]:
         else:
             source = gkc.get_spirit_safe_source()
             if source.mode == "local" and source.local_root is not None:
-                cache_entities_dir = source.local_root / "cache" / "entities"
+                layout = _resolve_local_spiritsafe_layout(source.local_root)
+                cache_entities_dir = layout.entities_dir(source.local_root)
             else:
                 cache_entities_dir = None
 
@@ -1919,6 +1953,13 @@ def _resolve_profile_export_summary_output(
     if requested_summary_output:
         return Path(requested_summary_output)
 
+    spiritsafe_root = _infer_local_spiritsafe_root_from_cache_entities_dir(
+        cache_entities_dir
+    )
+    if spiritsafe_root is not None:
+        layout = _resolve_local_spiritsafe_layout(spiritsafe_root)
+        return layout.logs_dir(spiritsafe_root) / "last_run_summary.json"
+
     return cache_entities_dir.resolve().parent / "refresh" / "last_run_summary.json"
 
 
@@ -1982,7 +2023,9 @@ def _handle_profile_value_lists_hydrate(args: argparse.Namespace) -> dict[str, A
         else:
             source = gkc.get_spirit_safe_source()
             cache_entities_dir = (
-                source.local_root / "cache" / "entities"
+                _resolve_local_spiritsafe_layout(source.local_root).entities_dir(
+                    source.local_root
+                )
                 if source.mode == "local" and source.local_root is not None
                 else None
             )
@@ -1992,7 +2035,9 @@ def _handle_profile_value_lists_hydrate(args: argparse.Namespace) -> dict[str, A
         else:
             source = gkc.get_spirit_safe_source()
             queries_dir = (
-                source.local_root / "queries"
+                _resolve_local_spiritsafe_layout(
+                    source.local_root
+                ).value_list_queries_dir(source.local_root)
                 if source.mode == "local" and source.local_root is not None
                 else None
             )
@@ -2002,7 +2047,9 @@ def _handle_profile_value_lists_hydrate(args: argparse.Namespace) -> dict[str, A
         else:
             source = gkc.get_spirit_safe_source()
             cache_queries_dir = (
-                source.local_root / "cache" / "queries"
+                _resolve_local_spiritsafe_layout(
+                    source.local_root
+                ).value_list_cache_dir(source.local_root)
                 if source.mode == "local" and source.local_root is not None
                 else None
             )
@@ -2207,7 +2254,7 @@ def _handle_registry_validate(args: argparse.Namespace) -> dict[str, Any]:
 
 
 def _handle_spiritsafe_manifest_build(args: argparse.Namespace) -> dict[str, Any]:
-    """Build cache/manifest.json and cache/entity_index.json from local artifacts."""
+    """Build the configured SpiritSafe manifest and entity index from local artifacts."""
 
     if args.source != "local" or not args.local_root:
         raise CLIError(
@@ -2216,12 +2263,13 @@ def _handle_spiritsafe_manifest_build(args: argparse.Namespace) -> dict[str, Any
 
     try:
         local_root = Path(args.local_root).expanduser().resolve()
+        layout = _resolve_local_spiritsafe_layout(local_root)
         output_path = (
             Path(args.output).expanduser().resolve()
             if args.output
-            else local_root / "cache" / "manifest.json"
+            else layout.manifest_file(local_root)
         )
-        index_output_path = local_root / "cache" / "entity_index.json"
+        index_output_path = layout.entity_index_file(local_root)
         manifest_document = export_spiritsafe_manifest(local_root, output_path)
         index_document = export_spiritsafe_entity_index(local_root, index_output_path)
         details = {
@@ -2259,10 +2307,11 @@ def _handle_spiritsafe_sitelinks_sync_wikimedia_sites(
 
     try:
         local_root = Path(args.local_root).expanduser().resolve()
+        layout = _resolve_local_spiritsafe_layout(local_root)
         output_path = (
             Path(args.output).expanduser().resolve()
             if args.output
-            else local_root / "cache" / "config" / "wikimedia_sites.json"
+            else layout.wikimedia_sites_file(local_root)
         )
 
         artifact = export_wikimedia_sites_artifact(
@@ -2307,10 +2356,11 @@ def _handle_spiritsafe_semantic_anchors_build(
 
     try:
         local_root = Path(args.local_root).expanduser().resolve()
+        layout = _resolve_local_spiritsafe_layout(local_root)
         output_path = (
             Path(args.output).expanduser().resolve()
             if args.output
-            else local_root / "cache" / "config" / "semantic_anchors.json"
+            else layout.semantic_anchors_file(local_root)
         )
 
         artifact = export_spiritsafe_semantic_anchors(local_root, output_path)
@@ -2350,10 +2400,15 @@ def _handle_spiritsafe_semantic_anchors_validate(
         local_root = (
             Path(args.local_root).expanduser().resolve() if args.local_root else None
         )
+        layout = (
+            _resolve_local_spiritsafe_layout(local_root)
+            if local_root is not None
+            else get_wikibase_runtime_config().spiritsafe_layout
+        )
         artifact_path = (
             Path(args.artifact_file).expanduser().resolve()
             if args.artifact_file
-            else local_root / "cache" / "config" / "semantic_anchors.json"
+            else layout.semantic_anchors_file(local_root)
         )
 
         try:

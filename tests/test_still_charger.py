@@ -106,7 +106,7 @@ def test_build_packet_materializes_value_list_path_on_statement_slots():
     )
 
     statement_slot = packet["data"]["entities"][0]["statements"]["Q16"]
-    assert statement_slot["value-list"] == "cache/queries/Q28.json"
+    assert statement_slot["value-list"] == "Q28"
 
 
 def test_build_packet_includes_mul_language_slots_for_identification_fields():
@@ -326,7 +326,7 @@ def test_build_packet_includes_nested_children_for_q58_modifier_qualifier():
                                 "name_identifier": "unit_value",
                                 "value": {
                                     "type": "wikibase-item",
-                                    "value_list_reference": "cache/queries/Q56.json",
+                                    "value_list_id": "Q56",
                                 },
                                 "qualifiers": [],
                                 "references": [],
@@ -353,7 +353,7 @@ def test_build_packet_includes_nested_children_for_q58_modifier_qualifier():
     assert "qualifiers" in units_slot
     unit_value_slot = units_slot["qualifiers"]["unit_value"][0]
     assert unit_value_slot["id"] == "https://datadistillery.wikibase.cloud/entity/Q56"
-    assert unit_value_slot["value-list"] == "cache/queries/Q56.json"
+    assert unit_value_slot["value-list"] == "Q56"
 
 
 def test_charge_wikidata_supports_data_entities_packet_schema():
