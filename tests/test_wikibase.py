@@ -130,7 +130,9 @@ def test_normalize_meta_wikibase_init_document_transforms_prototype_datatypes():
     assert properties["instance_of"]["datatype"] == "wikibase-item"
     assert properties["same_as"]["datatype"] == "url"
     assert properties["instance_of"]["kind"] == "property"
-    assert normalized["entities"]["wikibase_entities"]["items"]["entity"]["kind"] == "item"
+    assert (
+        normalized["entities"]["wikibase_entities"]["items"]["entity"]["kind"] == "item"
+    )
 
 
 def test_build_meta_wikibase_init_index_provides_typed_entity_access():

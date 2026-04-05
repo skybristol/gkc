@@ -85,7 +85,9 @@ def test_spiritsafe_semantic_anchors_validate_json(monkeypatch, capsys, tmp_path
         freshness_match = None
         notices = []
 
-    monkeypatch.setattr(cli, "validate_semantic_anchor_document", lambda *args, **kwargs: FakeResult())
+    monkeypatch.setattr(
+        cli, "validate_semantic_anchor_document", lambda *args, **kwargs: FakeResult()
+    )
 
     exit_code = cli.main(
         [
@@ -120,7 +122,10 @@ def test_spiritsafe_semantic_anchors_validate_can_compare_current_cache(
     monkeypatch.setattr(
         cli,
         "resolve_spiritsafe_meta_wikibase_config",
-        lambda root: (Path(root) / "config" / "dd-wikibase.yaml", {"internal_name_identifier_prefix": "_"}),
+        lambda root: (
+            Path(root) / "config" / "dd-wikibase.yaml",
+            {"internal_name_identifier_prefix": "_"},
+        ),
     )
     monkeypatch.setattr(
         cli,
@@ -137,7 +142,9 @@ def test_spiritsafe_semantic_anchors_validate_can_compare_current_cache(
         freshness_match = True
         notices = []
 
-    monkeypatch.setattr(cli, "validate_semantic_anchor_document", lambda *args, **kwargs: FakeResult())
+    monkeypatch.setattr(
+        cli, "validate_semantic_anchor_document", lambda *args, **kwargs: FakeResult()
+    )
 
     exit_code = cli.main(
         [

@@ -73,9 +73,7 @@ def test_validate_semantic_anchor_document_rejects_property_datatype_mismatch() 
     result = validate_semantic_anchor_document(artifact)
 
     assert result.valid is False
-    assert any(
-        notice.code == "anchor_datatype_mismatch" for notice in result.notices
-    )
+    assert any(notice.code == "anchor_datatype_mismatch" for notice in result.notices)
 
 
 def test_validate_semantic_anchor_document_flags_stale_compare_source() -> None:

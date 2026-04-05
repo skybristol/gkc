@@ -841,11 +841,9 @@ def _build_parser() -> argparse.ArgumentParser:
         command_path="spiritsafe.semantic-anchors.build",
     )
 
-    spiritsafe_semantic_anchors_validate = (
-        spiritsafe_semantic_anchors_subparsers.add_parser(
-            "validate",
-            help="Validate semantic anchors against the package-owned Meta-Wikibase contract",
-        )
+    spiritsafe_semantic_anchors_validate = spiritsafe_semantic_anchors_subparsers.add_parser(
+        "validate",
+        help="Validate semantic anchors against the package-owned Meta-Wikibase contract",
     )
     spiritsafe_semantic_anchors_validate.add_argument(
         "--artifact-file",

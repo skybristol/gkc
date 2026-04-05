@@ -126,9 +126,11 @@ def load_wikibase_datatype_registry() -> dict[str, WikibaseDatatypeSpec]:
         registry[canonical_name] = WikibaseDatatypeSpec(
             ontology_uri=ontology_uri.strip(),
             datavalue_type=datavalue_type.strip(),
-            entity_value_kind=entity_value_kind.strip()
-            if isinstance(entity_value_kind, str)
-            else None,
+            entity_value_kind=(
+                entity_value_kind.strip()
+                if isinstance(entity_value_kind, str)
+                else None
+            ),
         )
 
     return registry
@@ -136,8 +138,8 @@ def load_wikibase_datatype_registry() -> dict[str, WikibaseDatatypeSpec]:
 
 @lru_cache(maxsize=1)
 def _load_meta_wikibase_init_yaml_text() -> str:
-    return files("gkc.registry").joinpath("meta_wb_init.yaml").read_text(
-        encoding="utf-8"
+    return (
+        files("gkc.registry").joinpath("meta_wb_init.yaml").read_text(encoding="utf-8")
     )
 
 
@@ -256,9 +258,7 @@ def normalize_meta_wikibase_init_document(document: dict[str, Any]) -> dict[str,
         normalized_payload["kind"] = "property"
         datatype = normalized_payload.get("datatype")
         if not isinstance(datatype, str) or not datatype.strip():
-            raise RuntimeError(
-                f"meta_wb_init property '{key}' is missing datatype"
-            )
+            raise RuntimeError(f"meta_wb_init property '{key}' is missing datatype")
         normalized_payload["datatype"] = canonicalize_wikibase_datatype(
             datatype,
             strict=True,
@@ -314,7 +314,10 @@ def build_meta_wikibase_init_index(
     items: dict[str, MetaWikibaseInitEntity] = {}
     by_internal_name_identifier: dict[str, MetaWikibaseInitEntity] = {}
 
-    for kind, bucket in (("property", entities_block["properties"]), ("item", entities_block["items"])):
+    for kind, bucket in (
+        ("property", entities_block["properties"]),
+        ("item", entities_block["items"]),
+    ):
         for key, payload in bucket.items():
             internal_name_identifier = (
                 f"{metadata.internal_name_identifier_prefix}{key}"

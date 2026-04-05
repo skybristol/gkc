@@ -290,9 +290,7 @@ def validate_semantic_anchor_document(
             continue
 
         expected_prefix = "P" if requirement.kind == "property" else "Q"
-        if not (
-            anchor_id.startswith(expected_prefix) and anchor_id[1:].isdigit()
-        ):
+        if not (anchor_id.startswith(expected_prefix) and anchor_id[1:].isdigit()):
             notices.append(
                 ConformanceNotice(
                     severity="error",
@@ -302,7 +300,10 @@ def validate_semantic_anchor_document(
                         f"Semantic anchor '{anchor_name}' must resolve to a "
                         f"{requirement.kind} id"
                     ),
-                    normalized_value={"id": anchor_id, "expected_kind": requirement.kind},
+                    normalized_value={
+                        "id": anchor_id,
+                        "expected_kind": requirement.kind,
+                    },
                 )
             )
 
