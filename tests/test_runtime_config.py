@@ -82,7 +82,7 @@ spiritsafe:
         value_list_queries: still/value_lists/queries
         value_list_cache: still/value_lists/cache
         semantic_anchors: config/semantic_anchors.json
-        logs: still/refresh
+        logs: still/logs
         wikimedia_sites: partners/wikimedia_sites.json
         manifest: still/manifest.json
         entity_index: still/entity_index.json
@@ -112,7 +112,7 @@ spiritsafe:
         config.spiritsafe_layout.value_list_queries_path == "still/value_lists/queries"
     )
     assert config.spiritsafe_layout.value_list_cache_path == "still/value_lists/cache"
-    assert config.spiritsafe_layout.logs_path == "still/refresh"
+    assert config.spiritsafe_layout.logs_path == "still/logs"
     assert (
         config.spiritsafe_layout.wikimedia_sites_path == "partners/wikimedia_sites.json"
     )
