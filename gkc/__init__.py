@@ -50,7 +50,6 @@ from gkc.fermenter import (
     ConformanceNotice,
     SemanticAnchorValidationResult,
     enforce_fixed_value,
-    validate_semantic_anchor_document,
     validate_by_datatype,
     validate_commons_media,
     validate_entity_packet_data,
@@ -58,6 +57,7 @@ from gkc.fermenter import (
     validate_inline_value,
     validate_monolingualtext,
     validate_quantity,
+    validate_semantic_anchor_document,
     validate_string,
     validate_time,
     validate_url,
@@ -79,28 +79,6 @@ from gkc.mash import (
 
 # Runtime configuration
 from gkc.runtime_config import DEFAULT_USER_AGENT
-
-# Wikibase-specific helpers
-from gkc.wikibase import (
-    MetaWikibaseInitEntity,
-    MetaWikibaseInitIndex,
-    MetaWikibaseInitMetadata,
-    MetaWikibaseSemanticAnchorContract,
-    MetaWikibaseSemanticAnchorRequirement,
-    WikibaseDatatypeSpec,
-    build_meta_wikibase_init_index,
-    build_meta_wikibase_semantic_anchor_contract,
-    canonicalize_wikibase_datatype,
-    get_meta_wikibase_init_entity,
-    get_wikibase_datatype_spec,
-    is_known_wikibase_datatype,
-    is_wikibase_item_datatype,
-    list_wikibase_datatypes,
-    load_meta_wikibase_init_document,
-    load_wikibase_datatype_registry,
-    load_wikibase_datatype_registry_json,
-    normalize_meta_wikibase_init_document,
-)
 
 # ShEx validation utilities
 from gkc.shex import ShexValidationError, ShexValidator
@@ -153,10 +131,10 @@ from gkc.spirit_safe import (
     load_profile,
     load_profile_package,
     profile_exists,
-    resolve_spiritsafe_meta_wikibase_config,
     resolve_profile_link,
     resolve_profile_path,
     resolve_query_ref,
+    resolve_spiritsafe_meta_wikibase_config,
     set_spirit_safe_source,
     validate_packet_structure,
 )
@@ -180,6 +158,28 @@ from gkc.utilities import (
     resolve_name_to_identifier,
     search_exact_label,
     validate_entity_reference,
+)
+
+# Wikibase-specific helpers
+from gkc.wikibase import (
+    MetaWikibaseInitEntity,
+    MetaWikibaseInitIndex,
+    MetaWikibaseInitMetadata,
+    MetaWikibaseSemanticAnchorContract,
+    MetaWikibaseSemanticAnchorRequirement,
+    WikibaseDatatypeSpec,
+    build_meta_wikibase_init_index,
+    build_meta_wikibase_semantic_anchor_contract,
+    canonicalize_wikibase_datatype,
+    get_meta_wikibase_init_entity,
+    get_wikibase_datatype_spec,
+    is_known_wikibase_datatype,
+    is_wikibase_item_datatype,
+    list_wikibase_datatypes,
+    load_meta_wikibase_init_document,
+    load_wikibase_datatype_registry,
+    load_wikibase_datatype_registry_json,
+    normalize_meta_wikibase_init_document,
 )
 
 # Language Configuration

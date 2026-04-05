@@ -10,7 +10,6 @@ from typing import Any
 
 import yaml
 
-
 _DATATYPE_ALIASES = {
     "item": "wikibase-item",
     "globecoordinate": "globe-coordinate",
