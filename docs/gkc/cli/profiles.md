@@ -6,6 +6,8 @@ Plain meaning: Work with SpiritSafe-backed Entity Profiles and manifest artifact
 
 The `gkc profile` command group handles profile export, value-list hydration, and profile package loading.
 
+Profile export and value-list hydration now rely on semantic anchors to resolve internal ontology concepts. For background, see [Semantic Anchors](../../architecture/meta-wikibase/semantic-anchors.md).
+
 Current subcommands:
 
 - `gkc profile export-json`
@@ -34,6 +36,8 @@ Common options:
 - `--repo`: GitHub repository slug when using `--source github`.
 - `--ref`: Git ref when using `--source github`.
 
+When `--cache-entities-dir` points into a normal local SpiritSafe checkout, this route loads `cache/config/semantic_anchors.json` and local Meta-Wikibase semantic conventions automatically. If you point it at an ad hoc cache directory outside that layout, use the Python API instead and pass an explicit semantic-anchor document.
+
 ### `gkc profile value-lists hydrate`
 
 Export value-list queries and hydrate `cache/queries/<QID>.json`.
@@ -57,6 +61,8 @@ Common options:
 - `--local-root`: Local SpiritSafe root when using `--source local`.
 - `--repo`: GitHub repository slug when using `--source github`.
 - `--ref`: Git ref when using `--source github`.
+
+Like profile export, this route expects semantic-anchor-backed local context when operating from a SpiritSafe checkout.
 
 ### `gkc profile package load`
 

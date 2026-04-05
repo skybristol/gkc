@@ -4,6 +4,16 @@ A meta-wikibase is the semantic authoring system of record for GKC profile, stat
 
 This document describes the generic contract. The current reference implementation is the [Data Distillery Wikibase](DataDistillery-Wikibase.md).
 
+This section covers the Meta-Wikibase side of the architecture from generic contract to concrete deployment and runtime-facing ontology artifacts.
+
+In this section:
+
+- [Data Distillery Wikibase](DataDistillery-Wikibase.md)
+- [Semantic Anchors](semantic-anchors.md)
+- [Wikibase Datatypes](wikibase-datatypes.md)
+
+For the materialized artifact side of the architecture, see [SpiritSafe Architecture](../SpiritSafe/index.md).
+
 ## Core Role
 
 A meta-wikibase exists to do the parts of the job that a file-only artifact registry does poorly, with an eye toward potential implementation within Wikidata:
@@ -128,6 +138,8 @@ This keeps the fixture, datatype registry, and later ontology-init logic aligned
 
 ## Semantic-Anchor Conformance
 
+For the conceptual overview, lifecycle, and runtime usage model, see [Semantic Anchors](semantic-anchors.md).
+
 The current slice of `#210` treats semantic-anchor evaluation as a narrow conformance problem.
 
 The package-owned init fixture defines the required internal ontology backbone. The SpiritSafe semantic-anchor artifact is then validated against that backbone for runtime use.
@@ -149,6 +161,8 @@ The implementation split is:
 - `gkc spiritsafe semantic-anchors validate` exposes the operator-facing CLI entry point
 
 When a local SpiritSafe root is available, workflows may also rebuild semantic anchors from current cache entities and compare them with a stored artifact to detect staleness.
+
+Current runtime consumers in `gkc.spirit_safe` now resolve internal ontology concepts through a shared semantic-anchor lookup layer rather than carrying inline DD-specific P/Q ids. That keeps profile/entity-index generation aligned with the generated SpiritSafe artifact and confines anchor loading/validation to one integration boundary.
 
 ## Continuing Work on Semantic Definition
 

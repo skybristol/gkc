@@ -81,7 +81,7 @@ The **SpiritSafe Entity Index** (`cache/entity_index.json`) is an additional der
 - O(1) class membership lookups for queries like "what are all profiles?" or "what are all value lists?"
 - Pre-extracted link relationships with scope metadata (profile/statement applicability)
 
-Validation engines and form generators use the entity index to avoid repeated traversal of raw Wikibase JSON. For detailed schema and consumption patterns, see [SpiritSafe Entity Index Architecture](../architecture/spiritsafe-entity-index.md).
+Validation engines and form generators use the entity index to avoid repeated traversal of raw Wikibase JSON. For detailed schema and consumption patterns, see [SpiritSafe Entity Index Architecture](../architecture/SpiritSafe/spiritsafe-entity-index.md).
 
 ## Profile Anatomy
 
@@ -383,6 +383,6 @@ Canonical fields:
 ## See Also
 
 - [Architecture Overview](../architecture/index.md)
-- [Profile Loading Architecture](../architecture/profile-loading.md)
-- [SpiritSafe Registry](../architecture/SpiritSafe.md)
+- [Profile Loading Architecture](../architecture/SpiritSafe/profile-loading.md)
+- [SpiritSafe Registry](../architecture/SpiritSafe/index.md)
 - [Validation Architecture](../architecture/validation-architecture.md)

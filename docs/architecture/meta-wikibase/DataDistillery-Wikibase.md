@@ -2,7 +2,7 @@
 
 Data Distillery Wikibase (`datadistillery.wikibase.cloud`) is the semantic registry for GKC ontology terms, profile metadata relationships, statement/value-list semantics, and multilingual guidance content that must be queryable and collaboratively maintained.
 
-This page describes the current reference implementation of the generic [meta-wikibase architecture](meta-wikibase.md).
+This page describes the current reference implementation of the generic [Meta-Wikibase Architecture](index.md).
 
 This page focuses on one part of a three-part infrastructure model:
 
@@ -499,8 +499,8 @@ export META_WB_SPARQL_ENDPOINT="https://datadistillery.wikibase.cloud/query/spar
 
 ## Related Documentation
 
-- [Setup and Orientation](../gkc/setup.md)
-- [Authentication Guide](../gkc/authentication.md)
-- [Cross-Module Contracts](module-contracts.md)
-- [Shipper API](../gkc/api/shipper.md)
-- [CLI Reference](../gkc/cli/index.md)
+- [Setup and Orientation](../../gkc/setup.md)
+- [Authentication Guide](../../gkc/authentication.md)
+- [Cross-Module Contracts](../module-contracts.md)
+- [Shipper API](../../gkc/api/shipper.md)
+- [CLI Reference](../../gkc/cli/index.md)

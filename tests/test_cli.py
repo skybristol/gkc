@@ -7,6 +7,7 @@ from pathlib import Path
 import gkc
 from gkc import cli, still_charger
 from gkc.mash import ClaimSummary, WikibaseItemTemplate
+from gkc.wikibase import build_meta_wikibase_semantic_anchor_contract
 
 
 class FakeWikiverseAuth:
@@ -40,6 +41,82 @@ class FakeOpenStreetMapAuth:
 
     def is_authenticated(self):
         return self._authenticated
+
+
+def _default_semantic_anchor_document() -> dict:
+    contract = build_meta_wikibase_semantic_anchor_contract()
+    entities: dict[str, dict[str, str]] = {}
+    property_index = 300
+    item_index = 300
+
+    fixed_ids = {
+        "_instance_of": ("P1", "wikibase-item"),
+        "_subclass_of": ("P2", "wikibase-item"),
+        "_name_identifier": ("P214", "string"),
+        "_same_as": ("P5", "url"),
+        "_has_statement": ("P157", "wikibase-item"),
+        "_has_value": ("P161", "wikibase-item"),
+        "_has_qualifier": ("P158", "wikibase-item"),
+        "_has_reference": ("P211", "wikibase-item"),
+        "_applies_to_profile": ("P205", "wikibase-item"),
+        "_applies_to_statement": ("P163", "wikibase-item"),
+        "_statement_type": ("P194", "wikibase-item"),
+        "_max_count": ("P182", "quantity"),
+        "_statement_prompt": ("P171", "monolingualtext"),
+        "_statement_guidance": ("P169", "monolingualtext"),
+        "_consequences_message": ("P170", "monolingualtext"),
+        "_error_message": ("P168", "monolingualtext"),
+        "_label_prompt": ("P188", "monolingualtext"),
+        "_label_guidance": ("P185", "monolingualtext"),
+        "_description_prompt": ("P189", "monolingualtext"),
+        "_description_guidance": ("P186", "monolingualtext"),
+        "_alias_prompt": ("P190", "monolingualtext"),
+        "_alias_guidance": ("P187", "monolingualtext"),
+        "_derives_default_value_from": ("P213", "wikibase-item"),
+        "_entity": ("Q1", None),
+        "_entity_profile": ("Q3", None),
+        "_entity_statement": ("Q5", None),
+        "_value_list": ("Q7", None),
+        "_wikibase_statement_modifier": ("Q58", None),
+    }
+
+    for anchor_name, requirement in contract.requirements.items():
+        fixed = fixed_ids.get(anchor_name)
+        if fixed is not None:
+            anchor_id, datatype = fixed
+        elif requirement.kind == "property":
+            property_index += 1
+            anchor_id = f"P{property_index}"
+            datatype = str(requirement.datatype)
+        else:
+            item_index += 1
+            anchor_id = f"Q{item_index}"
+            datatype = None
+
+        payload = {
+            "id": anchor_id,
+            "entity": f"https://datadistillery.wikibase.cloud/entity/{anchor_id}",
+        }
+        if datatype is not None:
+            payload["datatype"] = datatype
+        entities[anchor_name] = payload
+
+    return {
+        "metadata": {
+            "generated_at": "2026-04-04T00:00:00Z",
+            "property_count": sum(
+                1
+                for requirement in contract.requirements.values()
+                if requirement.kind == "property"
+            ),
+            "item_count": sum(
+                1
+                for requirement in contract.requirements.values()
+                if requirement.kind == "item"
+            ),
+        },
+        "entities": entities,
+    }
 
 
 def test_wikiverse_status_json(monkeypatch, capsys):
@@ -889,6 +966,24 @@ def test_profile_export_json_writes_output_directory(capsys, tmp_path):
 
     cache_entities_dir = tmp_path / "cache" / "entities"
     cache_entities_dir.mkdir(parents=True, exist_ok=True)
+    config_dir = tmp_path / "config"
+    config_dir.mkdir(parents=True, exist_ok=True)
+    (config_dir / "dd-wikibase.yaml").write_text(
+        """
+meta_wikibase:
+  semantic_conventions:
+    name_identifier_property_id: P214
+    internal_name_identifier_prefix: "_"
+""".strip()
+        + "\n",
+        encoding="utf-8",
+    )
+    cache_config_dir = tmp_path / "cache" / "config"
+    cache_config_dir.mkdir(parents=True, exist_ok=True)
+    (cache_config_dir / "semantic_anchors.json").write_text(
+        json.dumps(_default_semantic_anchor_document(), indent=2),
+        encoding="utf-8",
+    )
     output_dir = tmp_path / "profiles"
 
     cache_entities_dir.joinpath("Q4.json").write_text(

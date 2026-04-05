@@ -28,6 +28,29 @@ def fixture_root() -> Path:
     return Path(__file__).resolve().parent / "fixtures" / "spiritsafe"
 
 
+def _default_semantic_anchor_document() -> dict:
+    return {
+        "entities": {
+            "_instance_of": {"id": "P1", "datatype": "wikibase-item"},
+            "_name_identifier": {"id": "P214", "datatype": "string"},
+            "_same_as": {"id": "P5", "datatype": "url"},
+            "_has_statement": {"id": "P157", "datatype": "wikibase-item"},
+            "_has_value": {"id": "P161", "datatype": "wikibase-item"},
+            "_has_qualifier": {"id": "P158", "datatype": "wikibase-item"},
+            "_has_reference": {"id": "P211", "datatype": "wikibase-item"},
+            "_applies_to_profile": {"id": "P205", "datatype": "wikibase-item"},
+            "_applies_to_statement": {"id": "P163", "datatype": "wikibase-item"},
+            "_statement_type": {"id": "P194", "datatype": "wikibase-item"},
+            "_max_count": {"id": "P182", "datatype": "quantity"},
+            "_statement_prompt": {"id": "P171", "datatype": "monolingualtext"},
+            "_statement_guidance": {"id": "P169", "datatype": "monolingualtext"},
+            "_consequences_message": {"id": "P170", "datatype": "monolingualtext"},
+            "_error_message": {"id": "P168", "datatype": "monolingualtext"},
+            "_derives_default_value_from": {"id": "P213", "datatype": "wikibase-item"},
+        }
+    }
+
+
 @pytest.fixture(autouse=True)
 def setup_local_source(fixture_root: Path):
     """Configure SpiritSafe access to use deterministic local fixture artifacts."""
@@ -82,7 +105,10 @@ def test_export_spiritsafe_manifest(fixture_root: Path, tmp_path: Path):
 def test_build_spiritsafe_entity_index_document(fixture_root: Path):
     """Entity index builder should normalize cached entity artifacts."""
 
-    index = build_spiritsafe_entity_index_document(fixture_root)
+    index = build_spiritsafe_entity_index_document(
+        fixture_root,
+        semantic_anchor_document=_default_semantic_anchor_document(),
+    )
 
     assert index["source"] == "https://github.com/skybristol/SpiritSafe"
     assert index["entity_count"] == 1
@@ -99,7 +125,11 @@ def test_export_spiritsafe_entity_index(fixture_root: Path, tmp_path: Path):
     """Entity index export should write JSON to the requested path."""
 
     output_path = tmp_path / "entity_index.json"
-    index = export_spiritsafe_entity_index(fixture_root, output_path)
+    index = export_spiritsafe_entity_index(
+        fixture_root,
+        output_path,
+        semantic_anchor_document=_default_semantic_anchor_document(),
+    )
 
     assert output_path.exists()
     assert index["entity_count"] == 1
@@ -266,6 +296,18 @@ meta_wikibase:
     assert anchors["metadata"]["property_count"] == 0
     assert anchors["metadata"]["item_count"] == 0
     assert anchors["entities"] == {}
+
+
+def test_build_spiritsafe_semantic_anchor_document_requires_config(
+    tmp_path: Path, fixture_root: Path
+):
+    """Semantic anchor generation should fail clearly without meta-wikibase config."""
+
+    root = tmp_path / "spiritsafe"
+    copytree(fixture_root, root)
+
+    with pytest.raises(FileNotFoundError, match="Meta-wikibase config"):
+        build_spiritsafe_semantic_anchor_document(root)
 
 
 def test_export_spiritsafe_semantic_anchors(fixture_root: Path, tmp_path: Path):

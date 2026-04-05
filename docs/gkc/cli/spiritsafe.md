@@ -6,6 +6,8 @@ Plain meaning: Build SpiritSafe-maintained support artifacts from local cache co
 
 The `gkc spiritsafe` command group manages generated artifacts that live alongside the SpiritSafe cache.
 
+If you need the concept before the commands, see [Semantic Anchors](../../architecture/meta-wikibase/semantic-anchors.md).
+
 Current subcommands:
 
 - `gkc spiritsafe manifest build`
@@ -62,6 +64,8 @@ Common options:
 
 Build the SpiritSafe semantic anchor artifact from local cache entities.
 
+This command materializes the runtime lookup document that binds internal ontology names such as `_entity_profile` or `_has_statement` to the concrete IDs currently present in the SpiritSafe-backed Meta-Wikibase cache.
+
 ```bash
 gkc spiritsafe semantic-anchors build --source local --local-root /path/to/SpiritSafe
 ```
@@ -77,6 +81,8 @@ Common options:
 ## `gkc spiritsafe semantic-anchors validate`
 
 Validate a semantic-anchor artifact against the package-owned Meta-Wikibase contract.
+
+Use this when you need to confirm that the generated artifact still matches the ontology backbone expected by `gkc` runtime consumers.
 
 Validate a specific artifact file:
 

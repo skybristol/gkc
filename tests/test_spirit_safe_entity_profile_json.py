@@ -86,6 +86,41 @@ def _build_qualifier_quantity(amount: str) -> dict:
     }
 
 
+def _default_semantic_anchor_document() -> dict:
+    return {
+        "entities": {
+            "_instance_of": {"id": "P1", "datatype": "wikibase-item"},
+            "_subclass_of": {"id": "P2", "datatype": "wikibase-item"},
+            "_name_identifier": {"id": "P214", "datatype": "string"},
+            "_same_as": {"id": "P5", "datatype": "url"},
+            "_has_statement": {"id": "P157", "datatype": "wikibase-item"},
+            "_has_value": {"id": "P161", "datatype": "wikibase-item"},
+            "_has_qualifier": {"id": "P158", "datatype": "wikibase-item"},
+            "_has_reference": {"id": "P211", "datatype": "wikibase-item"},
+            "_applies_to_profile": {"id": "P205", "datatype": "wikibase-item"},
+            "_applies_to_statement": {"id": "P163", "datatype": "wikibase-item"},
+            "_statement_type": {"id": "P194", "datatype": "wikibase-item"},
+            "_max_count": {"id": "P182", "datatype": "quantity"},
+            "_statement_prompt": {"id": "P171", "datatype": "monolingualtext"},
+            "_statement_guidance": {"id": "P169", "datatype": "monolingualtext"},
+            "_consequences_message": {"id": "P170", "datatype": "monolingualtext"},
+            "_error_message": {"id": "P168", "datatype": "monolingualtext"},
+            "_label_prompt": {"id": "P188", "datatype": "monolingualtext"},
+            "_label_guidance": {"id": "P185", "datatype": "monolingualtext"},
+            "_description_prompt": {"id": "P189", "datatype": "monolingualtext"},
+            "_description_guidance": {"id": "P186", "datatype": "monolingualtext"},
+            "_alias_prompt": {"id": "P190", "datatype": "monolingualtext"},
+            "_alias_guidance": {"id": "P187", "datatype": "monolingualtext"},
+            "_derives_default_value_from": {"id": "P213", "datatype": "wikibase-item"},
+            "_entity": {"id": "Q1"},
+            "_entity_profile": {"id": "Q3"},
+            "_entity_statement": {"id": "Q5"},
+            "_value_list": {"id": "Q7"},
+            "_wikibase_statement_modifier": {"id": "Q58"},
+        }
+    }
+
+
 def test_build_entity_profile_json_documents_from_cache_entities(tmp_path):
     """Build returns JSON entity profile docs for cache entities typed as Q3."""
     cache_entities_dir = tmp_path / "cache" / "entities"
@@ -110,7 +145,10 @@ def test_build_entity_profile_json_documents_from_cache_entities(tmp_path):
     }
     (cache_entities_dir / "Q4.json").write_text(json.dumps(payload), encoding="utf-8")
 
-    docs = build_entity_profile_json_documents(cache_entities_dir)
+    docs = build_entity_profile_json_documents(
+        cache_entities_dir,
+        semantic_anchor_document=_default_semantic_anchor_document(),
+    )
 
     assert len(docs) == 1
     assert docs[0]["entity"].endswith("/Q4")
@@ -142,7 +180,11 @@ def test_export_entity_profile_json_documents_writes_qid_files(tmp_path):
     (cache_entities_dir / "Q4.json").write_text(json.dumps(payload), encoding="utf-8")
 
     output_dir = tmp_path / "profiles"
-    result = export_entity_profile_json_documents(cache_entities_dir, output_dir)
+    result = export_entity_profile_json_documents(
+        cache_entities_dir,
+        output_dir,
+        semantic_anchor_document=_default_semantic_anchor_document(),
+    )
 
     assert result.output_dir == str(output_dir.resolve())
     assert result.written_ids == ["Q4"]
@@ -261,7 +303,10 @@ def test_value_list_graph_includes_reference_and_qualifier_routes(tmp_path):
             json.dumps(payload), encoding="utf-8"
         )
 
-    docs = build_entity_profile_json_documents(cache_entities_dir)
+    docs = build_entity_profile_json_documents(
+        cache_entities_dir,
+        semantic_anchor_document=_default_semantic_anchor_document(),
+    )
 
     assert len(docs) == 1
     value_list_graph = docs[0]["metadata"]["value_list_graph"]
@@ -361,7 +406,10 @@ def test_linkage_index_maps_statement_property_and_target_profile(tmp_path):
             json.dumps(payload), encoding="utf-8"
         )
 
-    docs = build_entity_profile_json_documents(cache_entities_dir)
+    docs = build_entity_profile_json_documents(
+        cache_entities_dir,
+        semantic_anchor_document=_default_semantic_anchor_document(),
+    )
 
     linkage_index = docs[0]["metadata"]["linkage_index"]
     assert linkage_index == {
@@ -467,7 +515,10 @@ def test_profile_statement_has_value_link_to_wikidata_entity_emits_fixed_value_l
             json.dumps(payload), encoding="utf-8"
         )
 
-    docs = build_entity_profile_json_documents(cache_entities_dir)
+    docs = build_entity_profile_json_documents(
+        cache_entities_dir,
+        semantic_anchor_document=_default_semantic_anchor_document(),
+    )
     value_payload = docs[0]["statements"][0]["value"]
 
     assert value_payload["value_list"] == [
@@ -564,7 +615,10 @@ def test_reference_statement_derives_value_from_parent_statement(tmp_path):
             json.dumps(payload), encoding="utf-8"
         )
 
-    docs = build_entity_profile_json_documents(cache_entities_dir)
+    docs = build_entity_profile_json_documents(
+        cache_entities_dir,
+        semantic_anchor_document=_default_semantic_anchor_document(),
+    )
 
     references = docs[0]["statements"][0]["references"]
     assert len(references) == 1
@@ -671,7 +725,10 @@ def test_reference_statement_derived_value_respects_profile_scope(tmp_path):
             json.dumps(payload), encoding="utf-8"
         )
 
-    docs = build_entity_profile_json_documents(cache_entities_dir)
+    docs = build_entity_profile_json_documents(
+        cache_entities_dir,
+        semantic_anchor_document=_default_semantic_anchor_document(),
+    )
 
     references = docs[0]["statements"][0]["references"]
     assert len(references) == 1
@@ -792,7 +849,10 @@ def test_statement_level_value_claim_respects_p163_parent_scope(tmp_path):
             json.dumps(payload), encoding="utf-8"
         )
 
-    docs = build_entity_profile_json_documents(cache_entities_dir)
+    docs = build_entity_profile_json_documents(
+        cache_entities_dir,
+        semantic_anchor_document=_default_semantic_anchor_document(),
+    )
     qualifier = docs[0]["statements"][0]["qualifiers"][0]
     assert qualifier["value"]["value_list_reference"] == "cache/queries/Q43.json"
 
@@ -918,7 +978,10 @@ def test_profile_level_p158_claim_supersedes_statement_level_defaults(tmp_path):
             json.dumps(payload), encoding="utf-8"
         )
 
-    docs = build_entity_profile_json_documents(cache_entities_dir)
+    docs = build_entity_profile_json_documents(
+        cache_entities_dir,
+        semantic_anchor_document=_default_semantic_anchor_document(),
+    )
     qualifiers = docs[0]["statements"][0]["qualifiers"]
     by_entity = {entry["entity"].rsplit("/", 1)[-1]: entry for entry in qualifiers}
 
@@ -1007,7 +1070,10 @@ def test_profile_level_max_count_overrides_statement_level_baseline(tmp_path):
             json.dumps(payload), encoding="utf-8"
         )
 
-    docs = build_entity_profile_json_documents(cache_entities_dir)
+    docs = build_entity_profile_json_documents(
+        cache_entities_dir,
+        semantic_anchor_document=_default_semantic_anchor_document(),
+    )
     by_entity = {
         entry["entity"].rsplit("/", 1)[-1]: entry for entry in docs[0]["statements"]
     }
@@ -1039,7 +1105,11 @@ def test_export_json_skips_profile_when_mul_language_coverage_fails(tmp_path):
     (cache_entities_dir / "Q4.json").write_text(json.dumps(payload), encoding="utf-8")
 
     output_dir = tmp_path / "profiles"
-    result = export_entity_profile_json_documents(cache_entities_dir, output_dir)
+    result = export_entity_profile_json_documents(
+        cache_entities_dir,
+        output_dir,
+        semantic_anchor_document=_default_semantic_anchor_document(),
+    )
 
     assert result.written_ids == []
     assert result.skipped_ids == ["Q4"]
@@ -1085,7 +1155,11 @@ def test_export_json_filters_incomplete_non_mul_language(tmp_path):
     (cache_entities_dir / "Q4.json").write_text(json.dumps(payload), encoding="utf-8")
 
     output_dir = tmp_path / "profiles"
-    result = export_entity_profile_json_documents(cache_entities_dir, output_dir)
+    result = export_entity_profile_json_documents(
+        cache_entities_dir,
+        output_dir,
+        semantic_anchor_document=_default_semantic_anchor_document(),
+    )
 
     assert result.written_ids == ["Q4"]
     assert result.skipped_ids == []
@@ -1163,7 +1237,10 @@ def test_statement_node_emits_entity_classes_from_p1(tmp_path):
         json.dumps(value_type_payload), encoding="utf-8"
     )
 
-    docs = build_entity_profile_json_documents(cache_entities_dir)
+    docs = build_entity_profile_json_documents(
+        cache_entities_dir,
+        semantic_anchor_document=_default_semantic_anchor_document(),
+    )
 
     assert len(docs) == 1
     assert len(docs[0]["statements"]) == 1

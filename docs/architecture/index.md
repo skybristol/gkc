@@ -28,7 +28,7 @@ This pairing enables a consistent pattern: **define in a meta-wikibase, material
 
 The JSON Schema layer remains important as a machine-facing contract derived from these components, but it is a representation layer rather than a top-level architectural component.
 
-Entity Statements, Entity Profiles, and Value List semantics are defined and organized within a meta-wikibase. The current reference implementation is the [Data Distillery Wikibase](DataDistillery-Wikibase.md). These semantics are exported into [SpiritSafe](https://github.com/skybristol/SpiritSafe), which is then consumed by the GKC runtime package.
+Entity Statements, Entity Profiles, and Value List semantics are defined and organized within a meta-wikibase. The current reference implementation is the [Data Distillery Wikibase](meta-wikibase/DataDistillery-Wikibase.md). These semantics are exported into [SpiritSafe](https://github.com/skybristol/SpiritSafe), which is then consumed by the GKC runtime package.
 
 ---
 
@@ -45,7 +45,7 @@ The meta-wikibase defines the **foundation form** of architectural components:
 - Value-list membership and refresh semantics.
 - Prompt/guidance/error messaging and multilingual metadata.
 
-For the generic contract, see [Meta-Wikibase Architecture](meta-wikibase.md). For the current concrete deployment, see [Data Distillery Wikibase](DataDistillery-Wikibase.md).
+For the generic contract, see [Meta-Wikibase Architecture](meta-wikibase/index.md). For the current concrete deployment, see [Data Distillery Wikibase](meta-wikibase/DataDistillery-Wikibase.md).
 
 ### SpiritSafe Repository
 
@@ -108,7 +108,7 @@ Multiple platforms contribute to and consume a single GKC Entity:
 **Related Documentation:**
 
 - [Entity Profiles: Construction and Reference](../gkc/profiles.md)
-- [SpiritSafe Registry](SpiritSafe.md)
+- [SpiritSafe Registry](SpiritSafe/index.md)
 
 ### GKC Value List
 
@@ -193,7 +193,7 @@ This enables dependency ordering (ship entities depth-first), audit trails, and 
 
 **SpiritSafe** is the profile registry and supporting query/cache infrastructure. It stores materialized profile artifacts (`profiles/<QID>.json`), query files (`queries/*.sparql`), cache artifacts (`cache/entities`, `cache/queries`, `cache/manifest.json`), and the normalized index (`cache/entity_index.json`) used by runtime loading in local or GitHub-backed modes.
 
-For complete documentation on SpiritSafe, see [SpiritSafe Registry](SpiritSafe.md).
+For complete documentation on SpiritSafe, see [SpiritSafe Registry](SpiritSafe/index.md).
 
 ### SpiritSafe Entity Index
 
@@ -211,7 +211,7 @@ For complete documentation on SpiritSafe, see [SpiritSafe Registry](SpiritSafe.m
 - Determine applicable statements/qualifiers/references by profile and context
 - Discover value sets and reference options
 
-For detailed schema, consumption patterns, and examples, see [SpiritSafe Entity Index Architecture](spiritsafe-entity-index.md).
+For detailed schema, consumption patterns, and examples, see [SpiritSafe Entity Index Architecture](SpiritSafe/spiritsafe-entity-index.md).
 
 ---
 
@@ -369,8 +369,8 @@ Following Wikipedia/Wikidata philosophy:
 
 This architecture section includes detailed documentation on specific subsystems:
 
-- [Profile Loading Architecture](profile-loading.md)
-- [SpiritSafe Registry](SpiritSafe.md)
+- [Profile Loading Architecture](SpiritSafe/profile-loading.md)
+- [SpiritSafe Registry](SpiritSafe/index.md)
 - [Validation Architecture](validation-architecture.md)
 
 ---
@@ -382,7 +382,7 @@ This architecture section includes detailed documentation on specific subsystems
 - [GKC Entity Profiles: Construction and Reference](../gkc/profiles.md)
 - [GKC Entity JSON Schema](../gkc/entity-json-schema.md)
 - [GKC Wizard Documentation](../gkc/wizard.md)
-- [SpiritSafe Registry](SpiritSafe.md)
+- [SpiritSafe Registry](SpiritSafe/index.md)
 
 ### Specialized Topics
 

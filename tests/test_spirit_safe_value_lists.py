@@ -17,6 +17,15 @@ def _claim_entity_id(entity_id: str) -> dict:
     }
 
 
+def _value_list_semantic_anchor_document() -> dict:
+    return {
+        "entities": {
+            "_instance_of": {"id": "P1", "datatype": "wikibase-item"},
+            "_value_list": {"id": "Q7"},
+        }
+    }
+
+
 def test_hydrate_value_lists_from_cache_writes_query_and_cache(monkeypatch, tmp_path):
     cache_entities_dir = tmp_path / "cache" / "entities"
     queries_dir = tmp_path / "queries"
@@ -72,6 +81,7 @@ def test_hydrate_value_lists_from_cache_writes_query_and_cache(monkeypatch, tmp_
         cache_queries_dir=cache_queries_dir,
         api_url="https://datadistillery.wikibase.cloud/w/api.php",
         endpoint="https://datadistillery.wikibase.cloud/query/sparql",
+        semantic_anchor_document=_value_list_semantic_anchor_document(),
         fail_on_hydration_error=True,
     )
 
@@ -150,6 +160,7 @@ def test_hydrate_value_lists_keeps_existing_cache_on_failure(monkeypatch, tmp_pa
         cache_queries_dir=cache_queries_dir,
         api_url="https://datadistillery.wikibase.cloud/w/api.php",
         endpoint="https://datadistillery.wikibase.cloud/query/sparql",
+        semantic_anchor_document=_value_list_semantic_anchor_document(),
         fail_on_hydration_error=False,
     )
 
@@ -222,6 +233,7 @@ def test_hydrate_value_lists_fails_on_duplicate_non_core_conflict(
         cache_queries_dir=cache_queries_dir,
         api_url="https://datadistillery.wikibase.cloud/w/api.php",
         endpoint="https://datadistillery.wikibase.cloud/query/sparql",
+        semantic_anchor_document=_value_list_semantic_anchor_document(),
         fail_on_hydration_error=False,
     )
 

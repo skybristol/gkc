@@ -12,6 +12,8 @@ All validation surfaces return a `ConformanceNotice` (or internal `ValidationRes
 
 The fermenter also owns semantic-anchor conformance validation for Meta-Wikibase runtime readiness.
 
+For the broader concept and artifact lifecycle, see [Semantic Anchors](../../architecture/meta-wikibase/semantic-anchors.md).
+
 ### `validate_semantic_anchor_document(anchor_document, *, internal_name_identifier_prefix=None, current_anchor_document=None)`
 
 Validate a semantic-anchor document against the package-owned Meta-Wikibase init contract.

@@ -153,4 +153,4 @@ Target direction under #200:
 - [Curation Packet Contract](../gkc/entity-json-schema.md)
 - [Cross-Module Contracts](module-contracts.md)
 - [Validation Architecture](validation-architecture.md)
-- [SpiritSafe Registry](SpiritSafe.md)
+- [SpiritSafe Registry](SpiritSafe/index.md)
