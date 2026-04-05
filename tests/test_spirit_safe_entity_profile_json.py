@@ -316,14 +316,14 @@ def test_value_list_graph_includes_reference_and_qualifier_routes(tmp_path):
             "entity": "https://datadistillery.wikibase.cloud/entity/Q43",
             "label": "List of Tribal Jurisdictions",
             "via_statement": "https://datadistillery.wikibase.cloud/entity/Q41",
-            "cache_path": "cache/queries/Q43.json",
+            "value_list_id": "Q43",
         },
         {
             "id": "https://datadistillery.wikibase.cloud/entity/Q28",
             "entity": "https://datadistillery.wikibase.cloud/entity/Q28",
             "label": "List of Federal Register Sources",
             "via_statement": "https://datadistillery.wikibase.cloud/entity/Q30",
-            "cache_path": "cache/queries/Q28.json",
+            "value_list_id": "Q28",
         },
     ]
 
@@ -854,7 +854,7 @@ def test_statement_level_value_claim_respects_p163_parent_scope(tmp_path):
         semantic_anchor_document=_default_semantic_anchor_document(),
     )
     qualifier = docs[0]["statements"][0]["qualifiers"][0]
-    assert qualifier["value"]["value_list_reference"] == "cache/queries/Q43.json"
+    assert qualifier["value"]["value_list_id"] == "Q43"
 
 
 def test_profile_level_p158_claim_supersedes_statement_level_defaults(tmp_path):

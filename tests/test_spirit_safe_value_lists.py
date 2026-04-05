@@ -97,7 +97,9 @@ def test_hydrate_value_lists_from_cache_writes_query_and_cache(monkeypatch, tmp_
     cache_file = cache_queries_dir / "Q4.json"
     assert cache_file.exists()
     payload = json.loads(cache_file.read_text(encoding="utf-8"))
-    assert payload["metadata"]["query"] == "queries/Q4.sparql"
+    assert payload["metadata"]["query_id"] == "Q4"
+    assert "SELECT ?item ?itemLabel ?domain" in payload["metadata"]["query_sparql"]
+    assert "query_hash" in payload["metadata"]
     assert payload["metadata"]["source"].endswith("/wiki/Item_talk:Q4")
     assert payload["metadata"]["count"] == 2
     assert payload["metadata"]["columns"] == ["domain", "item", "itemLabel"]
@@ -198,7 +200,7 @@ def test_hydrate_value_lists_fails_on_duplicate_non_core_conflict(
     existing_payload = {
         "metadata": {
             "entity": "https://datadistillery.wikibase.cloud/entity/Q4",
-            "query": "queries/Q4.sparql",
+            "query_id": "Q4",
         },
         "items": [{"item": "http://www.wikidata.org/entity/Q999", "itemLabel": "Old"}],
     }

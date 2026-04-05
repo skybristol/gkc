@@ -35,8 +35,11 @@ from gkc.runtime_config import (
     DEFAULT_META_WB_CONFIG_FILENAMES,
     DEFAULT_META_WB_CONFIG_SEARCH_DIRS,
     MetaWikibaseConfigValues,
+    SpiritSafeLayout,
     default_meta_wikibase_config_values,
+    discover_meta_wikibase_config_path,
     load_meta_wikibase_config,
+    resolve_spiritsafe_layout_for_root,
 )
 from gkc.sparql import SPARQLQuery, paginate_query, read_sparql_query_file
 
@@ -617,7 +620,7 @@ class LookupFetcher:
         return choices
 
 
-def resolve_profile_path(profile_ref: Union[str, Path]) -> Union[str, Path]:
+def resolve_profile_path(profile_ref: str) -> str:
     """Resolve a profile reference to a path within SpiritSafe structure.
 
     Handles profile name resolution (with or without .yaml extension) to the
@@ -626,27 +629,30 @@ def resolve_profile_path(profile_ref: Union[str, Path]) -> Union[str, Path]:
 
     Args:
         profile_ref: Profile name (e.g., "TribalGovernmentUS",
-                "TribalGovernmentUS.yaml") or explicit path
-                (e.g., "profiles/TribalGovernmentUS/profile.yaml").
+            "TribalGovernmentUS.yaml") or explicit path
+            (e.g., "profiles/TribalGovernmentUS/profile.yaml").
 
     Returns:
         Resolved path suitable for ``resolve_query_ref``.
     """
-    ref_str = str(profile_ref)
+    ref_str = str(profile_ref).strip()
+    if not ref_str:
+        return ref_str
 
-    # If it's already a path with directory separators, use as-is
     if "/" in ref_str or "\\" in ref_str:
-        return profile_ref
+        return ref_str
 
-    # If it looks like an absolute path, use as-is
     path_obj = Path(profile_ref)
     if path_obj.is_absolute():
         return profile_ref
 
-    # Simple profile name: resolve to registrant package path
-    # Allow both "ProfileName" and "ProfileName.yaml" inputs
     profile_name = ref_str.removesuffix(".yaml")
     return f"profiles/{profile_name}/profile.yaml"
+
+
+def resolve_profile_ref(profile_ref: str) -> str:
+    """Backward-compatible alias for resolve_profile_path."""
+    return resolve_profile_path(profile_ref)
 
 
 def resolve_query_ref(
@@ -873,7 +879,11 @@ def hydrate_value_list_query_caches(
                 "metadata": {
                     "entity": f"{base_uri}/entity/{entity_id}",
                     "source": f"{base_uri}/wiki/Item_talk:{entity_id}",
-                    "query": f"queries/{entity_id}.sparql",
+                    "query_id": entity_id,
+                    "query_sparql": query_text,
+                    "query_hash": hashlib.sha256(
+                        query_text.encode("utf-8")
+                    ).hexdigest(),
                     "updated": datetime.now(timezone.utc)
                     .isoformat()
                     .replace("+00:00", "Z"),
@@ -1627,32 +1637,34 @@ class EntityProfileJsonBuilder:
             if not isinstance(value_payload, dict):
                 continue
 
-            cache_path = value_payload.get("value_list_reference")
-            if not isinstance(cache_path, str) or not cache_path:
+            value_list_id = value_payload.get("value_list_id")
+            if not isinstance(value_list_id, str) or not value_list_id:
+                cache_path = value_payload.get("value_list_reference")
+                if not isinstance(cache_path, str) or not cache_path:
+                    continue
+                value_list_id = self._qid_from_cache_path(cache_path)
+
+            if not isinstance(value_list_id, str) or not value_list_id:
                 continue
 
-            target_id = self._qid_from_cache_path(cache_path)
-            if not target_id:
-                continue
-
-            type_ids = self._entity_type_ids(self._cache_index.get(target_id))
+            type_ids = self._entity_type_ids(self._cache_index.get(value_list_id))
             if type_ids and self.value_list_class_id not in type_ids:
                 continue
 
-            key = (statement_entity, cache_path)
+            key = (statement_entity, value_list_id)
             if key in seen:
                 continue
             seen.add(key)
 
             target_name_identifier = self._entity_name_identifier(
-                self._cache_index.get(target_id)
+                self._cache_index.get(value_list_id)
             )
             entry: dict[str, Optional[str]] = {
-                "id": f"{self.entity_prefix}{target_id}",
-                "entity": f"{self.entity_prefix}{target_id}",
-                "label": self._entity_label(target_id),
+                "id": f"{self.entity_prefix}{value_list_id}",
+                "entity": f"{self.entity_prefix}{value_list_id}",
+                "label": self._entity_label(value_list_id),
                 "via_statement": statement_entity,
-                "cache_path": cache_path,
+                "value_list_id": value_list_id,
             }
             if target_name_identifier:
                 entry["name_identifier"] = target_name_identifier
@@ -2141,11 +2153,8 @@ class EntityProfileJsonBuilder:
             if self.profile_class_id in type_ids and "profile" not in payload:
                 payload["profile"] = {"entity": target_entity, "label": target_label}
 
-            if (
-                self.value_list_class_id in type_ids
-                and "value_list_reference" not in payload
-            ):
-                payload["value_list_reference"] = f"cache/queries/{target_id}.json"
+            if self.value_list_class_id in type_ids and "value_list_id" not in payload:
+                payload["value_list_id"] = target_id
 
             if (
                 self.profile_class_id not in type_ids
@@ -2856,6 +2865,7 @@ def load_spiritsafe_semantic_anchor_resolver(
     """Load and validate the SpiritSafe semantic-anchor artifact for runtime use."""
 
     root = Path(spiritsafe_root).expanduser().resolve()
+    layout = resolve_spiritsafe_layout(root)
     _config_path, _name_identifier_property_id, internal_prefix = (
         _require_spiritsafe_meta_wikibase_semantics(root)
     )
@@ -2863,12 +2873,12 @@ def load_spiritsafe_semantic_anchor_resolver(
     resolved_artifact_path = (
         Path(artifact_path).expanduser().resolve()
         if artifact_path is not None
-        else (root / "cache" / "config" / "semantic_anchors.json")
+        else layout.semantic_anchors_file(root)
     )
     if not resolved_artifact_path.is_file():
         raise FileNotFoundError(
             f"Semantic anchor artifact not found at {resolved_artifact_path}. "
-            "Build or refresh cache/config/semantic_anchors.json before using anchor-backed runtime workflows."
+            f"Build or refresh {layout.semantic_anchors_path} before using anchor-backed runtime workflows."
         )
 
     try:
@@ -2898,6 +2908,18 @@ def _infer_spiritsafe_root_from_cache_entities_dir(
     cache_entities_dir: Union[str, Path],
 ) -> Optional[Path]:
     cache_dir = Path(cache_entities_dir).expanduser().resolve()
+
+    config_path = discover_meta_wikibase_config_path(start_dir=cache_dir)
+    if config_path is not None:
+        candidate_root = (
+            config_path.parent.parent
+            if config_path.parent.name == "config"
+            else config_path.parent
+        )
+        layout = resolve_spiritsafe_layout(candidate_root)
+        if layout.entities_dir(candidate_root) == cache_dir:
+            return candidate_root
+
     if cache_dir.name == "entities" and cache_dir.parent.name == "cache":
         return cache_dir.parent.parent
     return None
@@ -2935,6 +2957,12 @@ def resolve_spiritsafe_meta_wikibase_config(
                 return candidate, load_meta_wikibase_config(candidate)
 
     return None, default_meta_wikibase_config_values()
+
+
+def resolve_spiritsafe_layout(spiritsafe_root: Union[str, Path]) -> SpiritSafeLayout:
+    """Resolve the SpiritSafe artifact layout contract for a local checkout."""
+
+    return resolve_spiritsafe_layout_for_root(spiritsafe_root)
 
 
 def _entity_id_from_reference(reference: Any) -> Optional[str]:
@@ -3250,7 +3278,8 @@ def build_spiritsafe_entity_index_document(
     """Build a normalized entity index from cached SpiritSafe entity JSON docs."""
 
     root = Path(spiritsafe_root).expanduser().resolve()
-    cache_entities_dir = root / "cache" / "entities"
+    layout = resolve_spiritsafe_layout(root)
+    cache_entities_dir = layout.entities_dir(root)
     semantic_anchor_resolver = (
         build_spiritsafe_semantic_anchor_resolver(semantic_anchor_document)
         if semantic_anchor_document is not None
@@ -3294,10 +3323,11 @@ def export_spiritsafe_entity_index(
     """Build and write the SpiritSafe normalized entity index document."""
 
     root = Path(spiritsafe_root).expanduser().resolve()
+    layout = resolve_spiritsafe_layout(root)
     destination = (
         Path(output_path).expanduser().resolve()
         if output_path is not None
-        else (root / "cache" / "entity_index.json")
+        else layout.entity_index_file(root)
     )
 
     index_document = build_spiritsafe_entity_index_document(
@@ -3352,7 +3382,8 @@ def build_spiritsafe_semantic_anchor_document(
     """Build a thin semantic anchor artifact from cached SpiritSafe entities."""
 
     root = Path(spiritsafe_root).expanduser().resolve()
-    cache_entities_dir = root / "cache" / "entities"
+    layout = resolve_spiritsafe_layout(root)
+    cache_entities_dir = layout.entities_dir(root)
     _config_path, name_identifier_property_id, internal_prefix = (
         _require_spiritsafe_meta_wikibase_semantics(root)
     )
@@ -3413,10 +3444,11 @@ def export_spiritsafe_semantic_anchors(
     """Build and write the SpiritSafe semantic anchor artifact."""
 
     root = Path(spiritsafe_root).expanduser().resolve()
+    layout = resolve_spiritsafe_layout(root)
     destination = (
         Path(output_path).expanduser().resolve()
         if output_path is not None
-        else (root / "cache" / "config" / "semantic_anchors.json")
+        else layout.semantic_anchors_file(root)
     )
 
     semantic_anchor_document = build_spiritsafe_semantic_anchor_document(root)
@@ -3470,10 +3502,11 @@ def build_spiritsafe_manifest_document(
     """
 
     root = Path(spiritsafe_root).expanduser().resolve()
-    profiles_dir = root / "profiles"
-    cache_entities_dir = root / "cache" / "entities"
-    queries_dir = root / "queries"
-    cache_queries_dir = root / "cache" / "queries"
+    layout = resolve_spiritsafe_layout(root)
+    profiles_dir = layout.profiles_dir(root)
+    cache_entities_dir = layout.entities_dir(root)
+    queries_dir = layout.value_list_queries_dir(root)
+    cache_queries_dir = layout.value_list_cache_dir(root)
 
     entity_label_index: dict[str, str] = {}
     entity_qids: list[str] = []
@@ -3489,6 +3522,23 @@ def build_spiritsafe_manifest_document(
         metadata = profile_doc.get("metadata", {})
         entity_uri = _entity_uri_from_reference(profile_doc.get("entity"))
         qid = _entity_id_from_reference(entity_uri) or profile_path.stem
+        raw_value_list_graph = metadata.get("value_list_graph", [])
+        value_list_graph: list[dict[str, Any]] = []
+        if isinstance(raw_value_list_graph, list):
+            for entry in raw_value_list_graph:
+                if not isinstance(entry, dict):
+                    continue
+                normalized_entry = dict(entry)
+                value_list_id = normalized_entry.get("value_list_id")
+                if not isinstance(value_list_id, str) or not value_list_id:
+                    cache_path = normalized_entry.get("cache_path")
+                    if isinstance(cache_path, str) and cache_path:
+                        value_list_id = Path(cache_path).stem.upper()
+                if isinstance(value_list_id, str) and value_list_id:
+                    normalized_entry["value_list_id"] = value_list_id
+                normalized_entry.pop("cache_path", None)
+                value_list_graph.append(normalized_entry)
+
         profiles.append(
             {
                 "entity": entity_uri,
@@ -3499,12 +3549,15 @@ def build_spiritsafe_manifest_document(
                     "statement_count", len(profile_doc.get("statements", []))
                 ),
                 "profile_graph": metadata.get("profile_graph", []),
-                "value_list_graph": metadata.get("value_list_graph", []),
+                "value_list_graph": value_list_graph,
             }
         )
 
     queries = [
-        {"qid": query_path.stem, "path": f"queries/{query_path.name}"}
+        {
+            "qid": query_path.stem,
+            "path": f"{layout.value_list_queries_path}/{query_path.name}",
+        }
         for query_path in sorted(queries_dir.glob("*.sparql"))
     ]
 
@@ -3525,7 +3578,7 @@ def build_spiritsafe_manifest_document(
                     or entity_label_index.get(qid)
                     or _profile_label_from_map(metadata.get("labels", {}))
                 ),
-                "path": f"cache/queries/{cache_path.name}",
+                "path": f"{layout.value_list_cache_path}/{cache_path.name}",
                 "item_count": metadata.get("count", len(cache_doc.get("items", []))),
             }
         )
@@ -3553,10 +3606,11 @@ def export_spiritsafe_manifest(
     """
 
     root = Path(spiritsafe_root).expanduser().resolve()
+    layout = resolve_spiritsafe_layout(root)
     destination = (
         Path(output_path).expanduser().resolve()
         if output_path is not None
-        else (root / "cache" / "manifest.json")
+        else layout.manifest_file(root)
     )
     manifest_document = build_spiritsafe_manifest_document(root)
     destination.parent.mkdir(parents=True, exist_ok=True)
@@ -3640,7 +3694,13 @@ def load_manifest(
         if cached_key == cache_key:
             return cached_manifest
 
-    manifest_path = source.resolve_relative("cache/manifest.json")
+    if source.mode == "local" and source.local_root is not None:
+        layout = resolve_spiritsafe_layout(source.local_root)
+        relative_manifest_path = layout.manifest_path
+    else:
+        relative_manifest_path = "cache/manifest.json"
+
+    manifest_path = source.resolve_relative(relative_manifest_path)
 
     try:
         manifest_data = _load_json_from_resolved_path(manifest_path)
@@ -3679,14 +3739,18 @@ def load_profile(
         raise FileNotFoundError(f"Invalid profile reference: {profile_id}")
 
     source = get_spirit_safe_source()
-    resolved_path = source.resolve_relative(f"profiles/{entity_id}.json")
+    if source.mode == "local" and source.local_root is not None:
+        layout = resolve_spiritsafe_layout(source.local_root)
+        relative_path = f"{layout.profiles_path}/{entity_id}.json"
+    else:
+        relative_path = f"profiles/{entity_id}.json"
+
+    resolved_path = source.resolve_relative(relative_path)
 
     try:
         return _load_json_from_resolved_path(resolved_path)
     except FileNotFoundError as exc:
-        raise FileNotFoundError(
-            f"Profile JSON not found: profiles/{entity_id}.json"
-        ) from exc
+        raise FileNotFoundError(f"Profile JSON not found: {relative_path}") from exc
     except Exception as exc:
         raise RuntimeError(f"Failed to load profile '{entity_id}': {exc}") from exc
 

@@ -23,6 +23,7 @@ from gkc.mash import (
     fetch_commons_file_info,
     fetch_url_resource,
 )
+from gkc.runtime_config import resolve_spiritsafe_layout_for_root
 from gkc.wikibase import (
     build_meta_wikibase_semantic_anchor_contract,
     canonicalize_wikibase_datatype,
@@ -1203,9 +1204,15 @@ def _resolve_statement_value_list_path(
     if not isinstance(value_block, dict):
         return None
 
-    reference = value_block.get("value_list_reference")
+    reference = value_block.get("value_list_id")
+    if not isinstance(reference, str) or not reference:
+        reference = value_block.get("value_list_reference")
     if not isinstance(reference, str) or not reference:
         return None
+
+    if reference.startswith("Q") and reference[1:].isdigit():
+        layout = resolve_spiritsafe_layout_for_root(value_list_root)
+        return layout.value_list_cache_file(value_list_root, reference)
 
     reference_path = Path(reference)
     if reference_path.is_absolute():
@@ -2035,14 +2042,26 @@ def _resolve_packet_statement_value_list_path(
 
     statement_ref = statement_def.get("entity")
     route = packet.get("value_list_routes", {}).get(statement_ref, {})
-    route_cache = route.get("cache_path") if isinstance(route, dict) else None
+    route_cache = None
+    if isinstance(route, dict):
+        route_cache = (
+            route.get("value_list_id")
+            or route.get("query_id")
+            or route.get("cache_path")
+        )
 
     value_block = statement_def.get("value", {})
-    statement_cache = value_block.get("value_list_reference")
+    statement_cache = value_block.get("value_list_id") or value_block.get(
+        "value_list_reference"
+    )
 
     cache_path = statement_cache or route_cache
     if not isinstance(cache_path, str) or not cache_path:
         return None
+
+    if cache_path.startswith("Q") and cache_path[1:].isdigit():
+        layout = resolve_spiritsafe_layout_for_root(source_root)
+        return layout.value_list_cache_file(source_root, cache_path)
 
     return source_root / cache_path
 

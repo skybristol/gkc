@@ -12,7 +12,7 @@ def test_spiritsafe_semantic_anchors_build_json(monkeypatch, capsys, tmp_path):
 
     def fake_export(spiritsafe_root, output_path=None):
         assert str(spiritsafe_root).endswith("SpiritSafe")
-        assert str(output_path).endswith("cache/config/semantic_anchors.json")
+        assert str(output_path).endswith("config/semantic_anchors.json")
         return {
             "metadata": {
                 "generated_at": "2026-04-03T00:00:00Z",
@@ -112,7 +112,7 @@ def test_spiritsafe_semantic_anchors_validate_can_compare_current_cache(
     monkeypatch, capsys, tmp_path
 ):
     local_root = tmp_path / "SpiritSafe"
-    artifact_path = local_root / "cache" / "config" / "semantic_anchors.json"
+    artifact_path = local_root / "config" / "semantic_anchors.json"
     artifact_path.parent.mkdir(parents=True, exist_ok=True)
     artifact_path.write_text(
         json.dumps({"metadata": {}, "entities": {"_entity": {"id": "Q1"}}}),

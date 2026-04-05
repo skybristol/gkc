@@ -99,7 +99,7 @@ def test_materialize_value_list_cache_from_local_source(
 
     try:
         monkeypatch.setattr(Path, "home", lambda: tmp_path)
-        local_path, error = _materialize_value_list_cache("cache/queries/Q28.json")
+        local_path, error = _materialize_value_list_cache("Q28")
 
         assert error is None
         assert local_path is not None
@@ -114,7 +114,7 @@ def test_materialize_value_list_cache_from_local_source(
         )
 
 
-def test_value_list_widget_kwargs_uses_statement_local_value_list_reference(
+def test_value_list_widget_kwargs_uses_statement_local_value_list_id(
     monkeypatch, tmp_path: Path
 ) -> None:
     spirit_safe_root = tmp_path / "SpiritSafe"
@@ -135,7 +135,8 @@ def test_value_list_widget_kwargs_uses_statement_local_value_list_reference(
         st.session_state["packet"] = {
             "value_list_routes": {
                 "https://datadistillery.wikibase.cloud/entity/Q30": {
-                    "cache_path": "cache/queries/Q28.json"
+                    "value_list_id": "Q28",
+                    "query_id": "Q28",
                 }
             }
         }
@@ -147,7 +148,7 @@ def test_value_list_widget_kwargs_uses_statement_local_value_list_reference(
                 "label": "stated in",
                 "value": {
                     "type": "wikibase-item",
-                    "value_list_reference": "cache/queries/Q28.json",
+                    "value_list_id": "Q28",
                 },
             }
         )
@@ -190,7 +191,8 @@ def test_value_list_widget_kwargs_does_not_fallback_to_route_only(
         st.session_state["packet"] = {
             "value_list_routes": {
                 "https://datadistillery.wikibase.cloud/entity/Q30": {
-                    "cache_path": "cache/queries/Q28.json"
+                    "value_list_id": "Q28",
+                    "query_id": "Q28",
                 }
             }
         }

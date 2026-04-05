@@ -23,6 +23,12 @@ def test_runtime_config_defaults(monkeypatch):
     assert config.api_url == DEFAULT_WIKIBASE_API_URL
     assert config.sparql_endpoint == DEFAULT_SPARQL_ENDPOINT
     assert config.config_path is None
+    assert config.spiritsafe_layout.entities_path == "cache/entities"
+    assert (
+        config.spiritsafe_layout.semantic_anchors_path == "config/semantic_anchors.json"
+    )
+    assert config.spiritsafe_layout.manifest_path == "cache/manifest.json"
+    assert config.spiritsafe_layout.entity_index_path == "cache/entity_index.json"
 
 
 def test_runtime_config_env_overrides(monkeypatch):
@@ -65,6 +71,21 @@ meta_wikibase:
   semantic_conventions:
     name_identifier_property_id: P214
     internal_name_identifier_prefix: "_"
+spiritsafe:
+    layout_version: 2
+    roots:
+        materialized: still
+        partners: partners
+    paths:
+        entities: still/entities
+        profiles: still/profiles
+        value_list_queries: still/value_lists/queries
+        value_list_cache: still/value_lists/cache
+        semantic_anchors: config/semantic_anchors.json
+        logs: still/refresh
+        wikimedia_sites: partners/wikimedia_sites.json
+        manifest: still/manifest.json
+        entity_index: still/entity_index.json
 """.strip()
         + "\n",
         encoding="utf-8",
@@ -82,6 +103,21 @@ meta_wikibase:
     assert config.sparql_endpoint == "https://config.example/query/sparql"
     assert config.name_identifier_property_id == "P214"
     assert config.internal_name_identifier_prefix == "_"
+    assert config.spiritsafe_layout.layout_version == 2
+    assert config.spiritsafe_layout.materialized_root == "still"
+    assert config.spiritsafe_layout.partners_root == "partners"
+    assert config.spiritsafe_layout.entities_path == "still/entities"
+    assert config.spiritsafe_layout.profiles_path == "still/profiles"
+    assert (
+        config.spiritsafe_layout.value_list_queries_path == "still/value_lists/queries"
+    )
+    assert config.spiritsafe_layout.value_list_cache_path == "still/value_lists/cache"
+    assert config.spiritsafe_layout.logs_path == "still/refresh"
+    assert (
+        config.spiritsafe_layout.wikimedia_sites_path == "partners/wikimedia_sites.json"
+    )
+    assert config.spiritsafe_layout.manifest_path == "still/manifest.json"
+    assert config.spiritsafe_layout.entity_index_path == "still/entity_index.json"
 
 
 def test_runtime_config_autodiscovers_config_file(monkeypatch, tmp_path):

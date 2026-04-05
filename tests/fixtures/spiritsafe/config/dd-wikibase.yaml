@@ -1,0 +1,27 @@
+meta_wikibase:
+  id: datadistillery-wikibase
+  label: Data Distillery Wikibase
+  api_url: https://datadistillery.wikibase.cloud/w/api.php
+  sparql_endpoint: https://datadistillery.wikibase.cloud/query/sparql
+
+  semantic_conventions:
+    name_identifier_property_id: P214
+    internal_name_identifier_prefix: "_"
+
+spiritsafe:
+  layout_version: 2
+
+  roots:
+    materialized: still
+    partners: partners
+
+  paths:
+    entities: still/entities
+    profiles: still/profiles
+    value_list_queries: still/value_lists/queries
+    value_list_cache: still/value_lists/cache
+    semantic_anchors: config/semantic_anchors.json
+    logs: still/refresh
+    wikimedia_sites: partners/wikimedia_sites.json
+    manifest: still/manifest.json
+    entity_index: still/entity_index.json
