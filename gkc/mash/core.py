@@ -33,8 +33,8 @@ import requests
 
 from gkc.mash.protocols import MashSourceAdapter
 from gkc.runtime_config import DEFAULT_USER_AGENT
-from gkc.wikibase import canonicalize_wikibase_datatype
 from gkc.sparql import fetch_entity_labels
+from gkc.wikibase import canonicalize_wikibase_datatype
 
 
 class WikibaseApiClient:

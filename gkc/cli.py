@@ -14,6 +14,7 @@ from typing import Any, Optional
 
 import gkc
 from gkc.auth import AuthenticationError, OpenStreetMapAuth, WikiverseAuth
+from gkc.fermenter import validate_semantic_anchor_document
 from gkc.mash import (
     WikibaseApiClient,
     WikibaseLoader,
@@ -25,7 +26,6 @@ from gkc.mash import (
     get_latest_cache_timestamp,
     refresh_entity_cache_from_recentchanges,
 )
-from gkc.fermenter import validate_semantic_anchor_document
 from gkc.runtime_config import DEFAULT_USER_AGENT, get_wikibase_runtime_config
 from gkc.sitelinks import (
     DEFAULT_WIKIMEDIA_SITEMATRIX_URL,
