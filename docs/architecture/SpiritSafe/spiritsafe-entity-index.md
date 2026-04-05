@@ -250,7 +250,7 @@ is_profile = 'Q3' in index['entities'][qid]['classes']
 value_lists = index['class_index'].get('Q7', [])
 ```
 
-### For Wizard Engineer
+### For Form Generation
 
 The index provides pre-organized metadata for form generation:
 
@@ -357,7 +357,7 @@ def check_completeness(index, qid, language='en'):
 ## Notes for Contribution
 
 - The entity index should **never be hand-edited**. All changes flow through Wikibase → cache refresh → index rebuild.
-- If the index structure needs to change, coordinate through the Profile Architect.
+- If the index structure needs to change, coordinate through the normal architecture review path.
 - Index test fixtures should be regenerated whenever Wikibase semantics changes (via `gkc spiritsafe manifest build` on test SpiritSafe repo).
 - For offline development, a test fixture entity_index.json should exist in `tests/fixtures/` with representative Q3/Q5/Q7/Q44 entities.
 

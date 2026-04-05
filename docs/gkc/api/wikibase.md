@@ -4,7 +4,7 @@
 
 The `gkc.wikibase` module is the package-facing access layer for package-owned Wikibase runtime contracts.
 
-In the current slice, it exposes the canonical datatype registry used to normalize datatype semantics across validation, payload shaping, and future ontology initialization flows.
+It exposes the canonical datatype registry used to normalize datatype semantics across validation, payload shaping, and ontology initialization flows.
 
 ## Quick Start
 

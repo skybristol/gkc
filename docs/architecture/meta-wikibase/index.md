@@ -140,7 +140,7 @@ This keeps the fixture, datatype registry, and later ontology-init logic aligned
 
 For the conceptual overview, lifecycle, and runtime usage model, see [Semantic Anchors](semantic-anchors.md).
 
-The current slice of `#210` treats semantic-anchor evaluation as a narrow conformance problem.
+The current implementation treats semantic-anchor evaluation as a narrow conformance problem.
 
 The package-owned init fixture defines the required internal ontology backbone. The SpiritSafe semantic-anchor artifact is then validated against that backbone for runtime use.
 
@@ -152,7 +152,7 @@ The validation boundary is intentionally small:
 - validate required internal names, kinds, and property datatypes
 - emit machine-readable results plus fermenter-style notices
 
-This slice does not attempt to validate class hierarchy, solve ontology-init ordering, or perform a separate live SPARQL conformance pass.
+This implementation does not attempt to validate class hierarchy, solve ontology-init ordering, or perform a separate live SPARQL conformance pass.
 
 The implementation split is:
 

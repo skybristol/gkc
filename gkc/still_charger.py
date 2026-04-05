@@ -1090,7 +1090,7 @@ def _resolve_linked_entity_graph_from_primary(
     primary_qid: str,
     mash_client: Any,
 ) -> tuple[dict[str, str], dict[str, Any]]:
-    """Phase 1: Resolve which linked entities the primary entity references.
+    """Resolve which linked entities the primary entity references.
 
     Args:
         packet: Curation packet with metadata profiles assembled
@@ -1192,7 +1192,7 @@ def _load_and_evaluate_linked_entities(
     primary_qid: str,
     mash_client: Any,
 ) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
-    """Phase 2: Load linked entities, populate data, and evaluate conformance.
+    """Load linked entities, populate data, and evaluate conformance.
 
     Args:
         packet: Curation packet with metadata
@@ -1361,9 +1361,9 @@ def charge_packet_from_wikidata_items(
 ) -> tuple[dict[str, Any], list[ConformanceNotice]]:
     """Charge a curation packet with raw Wikibase entity JSON and conformance evaluation.
 
-    This is the primary charging entry point. It orchestrates two phases:
-    1. Resolve linked entity graph from primary entity claims
-    2. Load linked entities and populate data section with raw Wikibase JSON
+    This is the primary charging entry point. It first resolves the linked
+    entity graph from primary entity claims, then loads linked entities and
+    populates the data section with raw Wikibase JSON.
 
     Raw entity JSON is stored unmodified in data.entities[].entity.
     Conformance evaluation (statement-level alignment vs. profile) is stored separately
@@ -1411,12 +1411,12 @@ def charge_packet_from_wikidata_items(
             f"{primary_profile_uri}, {primary_profile_name}"
         )
 
-    # Phase 1: Resolve linked entity graph from primary entity
+    # Resolve linked entity graph from the primary entity.
     entity_profile_map, primary_entity = _resolve_linked_entity_graph_from_primary(
         packet, primary_qid, mash_client
     )
 
-    # Phase 2: Load linked entities and evaluate conformance
+    # Load linked entities and evaluate conformance.
     data_entities, statement_evaluations = _load_and_evaluate_linked_entities(
         packet, entity_profile_map, primary_entity, primary_qid, mash_client
     )

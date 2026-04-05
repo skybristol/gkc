@@ -348,14 +348,14 @@ Following Wikipedia/Wikidata philosophy:
 - Wikidata JSON serialization
 - Statement, qualifier, reference validation
 
-**In Development (Wizard MVP):**
+**Additional capabilities under design:**
 
 - Multi-entity packets with cross-entity references
 - Expanded profile graph traversal and orchestration policy controls
 - Wizard multi-tab UI for related entities
 - Status tracking lifecycle
 
-**Planned (Post-MVP):**
+**Future capabilities:**
 
 - QID-based packet hydration (load existing Wikidata items into packets)
 - Cross-entity validation rules
@@ -421,10 +421,9 @@ The following are directionally important but not yet fully implemented as stabl
 - Expanded profile composition and branching workflow semantics.
 - Additional cross-platform publishing orchestration beyond current shipping abstractions.
 
-These are retained as design intent for follow-on implementation work by the Wizard Engineer and Validation Agent.
+These are retained as design intent for future implementation work.
 
 ---
 
 **Last Updated:** March 26, 2026  
-**Maintainer:** Profile Architect  
 **Status:** Stable (subject to enhancement as architecture evolves)
