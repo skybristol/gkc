@@ -163,7 +163,7 @@ spiritsafe:
         value_list_queries: still/value_lists/queries
         value_list_cache: still/value_lists/cache
         semantic_anchors: config/semantic_anchors.json
-        logs: still/refresh
+        logs: still/logs
         wikimedia_sites: partners/wikimedia_sites.json
         manifest: still/manifest.json
         entity_index: still/entity_index.json
@@ -230,7 +230,7 @@ spiritsafe:
         value_list_queries: still/value_lists/queries
         value_list_cache: still/value_lists/cache
         semantic_anchors: config/semantic_anchors.json
-        logs: still/refresh
+        logs: still/logs
         wikimedia_sites: partners/wikimedia_sites.json
         manifest: still/manifest.json
         entity_index: still/entity_index.json
@@ -306,7 +306,7 @@ spiritsafe:
         value_list_queries: still/value_lists/queries
         value_list_cache: still/value_lists/cache
         semantic_anchors: config/semantic_anchors.json
-        logs: still/refresh
+        logs: still/logs
         wikimedia_sites: partners/wikimedia_sites.json
         manifest: still/manifest.json
         entity_index: still/entity_index.json
@@ -378,7 +378,7 @@ spiritsafe:
         value_list_queries: still/value_lists/queries
         value_list_cache: still/value_lists/cache
         semantic_anchors: config/semantic_anchors.json
-        logs: still/refresh
+        logs: still/logs
         wikimedia_sites: partners/wikimedia_sites.json
         manifest: still/manifest.json
         entity_index: still/entity_index.json

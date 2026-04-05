@@ -66,11 +66,11 @@ Refresh SpiritSafe entity cache files from recentchanges-derived entity IDs.
 
 ```bash
 gkc mash cache-wikibase-revisions \
-  --cache-dir /path/to/SpiritSafe/cache/entities \
+  --cache-dir /path/to/SpiritSafe/still/entities \
   --ignore-id Q1 \
   --ignore-id P1 \
   --ignore-id P2 \
-  --output /path/to/SpiritSafe/cache/refresh/last_run_summary.json
+  --output /path/to/SpiritSafe/still/logs/last_run_summary.json
 ```
 
 ---
