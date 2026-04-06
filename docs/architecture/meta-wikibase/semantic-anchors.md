@@ -127,7 +127,7 @@ When they are not available, anchor-backed workflows fail deliberately rather th
 
 Not every caller works from a full SpiritSafe checkout.
 
-For tests or ad hoc tooling that only has a temporary `cache/entities` directory, the relevant APIs accept an explicit `semantic_anchor_document` argument.
+For tests or ad hoc tooling that only has a temporary `still/entities` directory, the relevant APIs accept an explicit `semantic_anchor_document` argument.
 
 Use that route when:
 

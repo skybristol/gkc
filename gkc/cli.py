@@ -41,11 +41,9 @@ from gkc.spirit_safe import (
     build_entity_profile_json_documents,
     build_spiritsafe_semantic_anchor_document,
     export_entity_profile_json_documents,
-    export_spiritsafe_entity_index,
-    export_spiritsafe_manifest,
     export_spiritsafe_semantic_anchors,
     get_spirit_safe_source,
-    load_manifest,
+    list_profiles,
     load_profile,
     load_profile_package,
     resolve_spiritsafe_layout,
@@ -745,7 +743,7 @@ def _build_parser() -> argparse.ArgumentParser:
     )
 
     registry_validate = registry_subparsers.add_parser(
-        "validate", help="Validate manifest structure"
+        "validate", help="Validate registry profile structure"
     )
     _add_profile_source_args(registry_validate)
     registry_validate.set_defaults(
@@ -757,27 +755,6 @@ def _build_parser() -> argparse.ArgumentParser:
         "spiritsafe", help="SpiritSafe artifact operations"
     )
     spiritsafe_subparsers = spiritsafe_parser.add_subparsers(dest="spiritsafe_command")
-
-    spiritsafe_manifest = spiritsafe_subparsers.add_parser(
-        "manifest", help="Build and inspect SpiritSafe manifests"
-    )
-    spiritsafe_manifest_subparsers = spiritsafe_manifest.add_subparsers(
-        dest="spiritsafe_manifest_command"
-    )
-
-    spiritsafe_manifest_build = spiritsafe_manifest_subparsers.add_parser(
-        "build", help="Build the configured SpiritSafe manifest from local artifacts"
-    )
-    spiritsafe_manifest_build.add_argument(
-        "-o",
-        "--output",
-        help="Optional output path for the manifest JSON file",
-    )
-    _add_profile_source_args(spiritsafe_manifest_build)
-    spiritsafe_manifest_build.set_defaults(
-        handler=_handle_spiritsafe_manifest_build,
-        command_path="spiritsafe.manifest.build",
-    )
 
     spiritsafe_sitelinks = spiritsafe_subparsers.add_parser(
         "sitelinks", help="Build SpiritSafe sitelink source artifacts"
@@ -1137,8 +1114,8 @@ def _infer_local_spiritsafe_root_from_cache_entities_dir(
     return None
 
 
-def _preferred_manifest_text(values: Any) -> str:
-    """Pick a curator-facing string from a multilingual manifest text map."""
+def _preferred_profile_text(values: Any) -> str:
+    """Pick a curator-facing string from a multilingual profile text map."""
 
     if not isinstance(values, dict):
         return ""
@@ -2123,33 +2100,33 @@ def _handle_profile_value_lists_hydrate(args: argparse.Namespace) -> dict[str, A
 
 
 def _handle_registry_list(args: argparse.Namespace) -> dict[str, Any]:
-    """List all profiles in the SpiritSafe artifact manifest."""
+    """List all profiles in the configured SpiritSafe registry."""
     previous_source, source_overridden = _apply_source_override(args)
 
     try:
-        manifest = load_manifest()
         profiles = []
 
-        for profile_id in manifest.profile_qids:
-            entry = manifest.get_profile_entry(profile_id)
-            if entry:
-                profiles.append(
-                    {
-                        "qid": profile_id,
-                        "entity": entry.get("entity"),
-                        "label": _preferred_manifest_text(entry.get("labels", {})),
-                        "description": _preferred_manifest_text(
-                            entry.get("descriptions", {})
-                        ),
-                        "statement_count": entry.get("statement_count", 0),
-                    }
-                )
+        for profile_id in list_profiles():
+            profile = load_profile(profile_id)
+            metadata = profile.get("metadata", {})
+            profiles.append(
+                {
+                    "qid": profile_id,
+                    "entity": profile.get("entity"),
+                        "label": _preferred_profile_text(metadata.get("labels", {})),
+                        "description": _preferred_profile_text(
+                        metadata.get("descriptions", {})
+                    ),
+                    "statement_count": metadata.get(
+                        "statement_count", len(profile.get("statements", []))
+                    ),
+                }
+            )
 
         message = f"Found {len(profiles)} profiles in registry"
         details = {
             "profiles": profiles,
-            "generated_at": manifest.generated_at,
-            "source": manifest.source,
+            "source": get_spirit_safe_source().mode,
         }
 
         return {
@@ -2165,29 +2142,30 @@ def _handle_registry_list(args: argparse.Namespace) -> dict[str, Any]:
 
 
 def _handle_registry_info(args: argparse.Namespace) -> dict[str, Any]:
-    """Show detailed profile metadata from the artifact manifest."""
+    """Show detailed profile metadata from the JSON profile document."""
     previous_source, source_overridden = _apply_source_override(args)
 
     try:
-        manifest = load_manifest()
-        entry = manifest.get_profile_entry(args.profile)
-
-        if not entry:
-            raise CLIError(
-                f"Profile '{args.profile}' not found. "
-                f"Available: {', '.join(manifest.profile_qids)}"
-            )
-
-        profile_qid = entry.get("qid") or args.profile
-        message = f"Profile: {_preferred_manifest_text(entry.get('labels', {})) or profile_qid}"
+        available_profiles = list_profiles()
+        profile = load_profile(args.profile)
+        metadata = profile.get("metadata", {})
+        profile_entity = profile.get("entity")
+        profile_qid = (
+            str(profile_entity).rstrip("/").split("/")[-1]
+            if isinstance(profile_entity, str) and profile_entity
+            else args.profile
+        )
+        message = f"Profile: {_preferred_profile_text(metadata.get('labels', {})) or profile_qid}"
         details = {
             "qid": profile_qid,
-            "entity": entry.get("entity"),
-            "labels": entry.get("labels", {}),
-            "descriptions": entry.get("descriptions", {}),
-            "statement_count": entry.get("statement_count", 0),
-            "profile_graph": entry.get("profile_graph", []),
-            "value_list_graph": entry.get("value_list_graph", []),
+            "entity": profile.get("entity"),
+            "labels": metadata.get("labels", {}),
+            "descriptions": metadata.get("descriptions", {}),
+            "statement_count": metadata.get(
+                "statement_count", len(profile.get("statements", []))
+            ),
+            "profile_graph": metadata.get("profile_graph", []),
+            "value_list_graph": metadata.get("value_list_graph", []),
         }
 
         return {
@@ -2197,47 +2175,44 @@ def _handle_registry_info(args: argparse.Namespace) -> dict[str, Any]:
             "details": details,
         }
     except Exception as exc:
+        if isinstance(exc, FileNotFoundError):
+            raise CLIError(
+                f"Profile '{args.profile}' not found. Available: {', '.join(available_profiles)}"
+            ) from exc
         raise CLIError(str(exc)) from exc
     finally:
         _restore_source_override(previous_source, source_overridden)
 
 
 def _handle_registry_validate(args: argparse.Namespace) -> dict[str, Any]:
-    """Validate artifact manifest structure."""
+    """Validate registry profile structure."""
     previous_source, source_overridden = _apply_source_override(args)
 
     try:
-        manifest = load_manifest()
         errors = []
+        profile_ids = list_profiles()
 
-        if not manifest.profiles:
-            errors.append("No profiles found in manifest")
+        if not profile_ids:
+            errors.append("No profiles found in registry")
 
-        for profile_id in manifest.profile_qids:
-            entry = manifest.get_profile_entry(profile_id)
-            if not entry:
-                errors.append(f"Profile {profile_id} has no entry")
-                continue
+        for profile_id in profile_ids:
+            profile = load_profile(profile_id)
+            metadata = profile.get("metadata", {})
 
-            if not entry.get("entity"):
+            if not profile.get("entity"):
                 errors.append(f"Profile {profile_id} missing entity URI")
-            if not isinstance(entry.get("profile_graph", []), list):
+            if not isinstance(metadata.get("profile_graph", []), list):
                 errors.append(f"Profile {profile_id} has invalid profile_graph")
-            if not isinstance(entry.get("value_list_graph", []), list):
+            if not isinstance(metadata.get("value_list_graph", []), list):
                 errors.append(f"Profile {profile_id} has invalid value_list_graph")
-
-        if manifest.entities.get("count") != len(manifest.entities.get("qids", [])):
-            errors.append("Manifest entities.count does not match entities.qids length")
+            if not isinstance(profile.get("statements", []), list):
+                errors.append(f"Profile {profile_id} has invalid statements section")
 
         ok = len(errors) == 0
-        message = "✓ Manifest is valid" if ok else "✗ Manifest validation failed"
+        message = "✓ Registry is valid" if ok else "✗ Registry validation failed"
 
         details = {
-            "profile_count": len(manifest.profile_qids),
-            "entity_count": manifest.entities.get("count", 0),
-            "query_count": len(manifest.queries),
-            "value_list_count": len(manifest.value_lists),
-            "generated_at": manifest.generated_at,
+            "profile_count": len(profile_ids),
             "errors": errors,
         }
 
@@ -2251,48 +2226,6 @@ def _handle_registry_validate(args: argparse.Namespace) -> dict[str, Any]:
         raise CLIError(str(exc)) from exc
     finally:
         _restore_source_override(previous_source, source_overridden)
-
-
-def _handle_spiritsafe_manifest_build(args: argparse.Namespace) -> dict[str, Any]:
-    """Build the configured SpiritSafe manifest and entity index from local artifacts."""
-
-    if args.source != "local" or not args.local_root:
-        raise CLIError(
-            "spirit_safe manifest build requires --source local --local-root /path/to/SpiritSafe"
-        )
-
-    try:
-        local_root = Path(args.local_root).expanduser().resolve()
-        layout = _resolve_local_spiritsafe_layout(local_root)
-        output_path = (
-            Path(args.output).expanduser().resolve()
-            if args.output
-            else layout.manifest_file(local_root)
-        )
-        index_output_path = layout.entity_index_file(local_root)
-        manifest_document = export_spiritsafe_manifest(local_root, output_path)
-        index_document = export_spiritsafe_entity_index(local_root, index_output_path)
-        details = {
-            "output_path": str(output_path),
-            "entity_index_output_path": str(index_output_path),
-            "profile_count": len(manifest_document.get("profiles", [])),
-            "entity_count": manifest_document.get("entities", {}).get("count", 0),
-            "query_count": len(manifest_document.get("queries", [])),
-            "value_list_count": len(manifest_document.get("value_lists", [])),
-            "indexed_entity_count": index_document.get("entity_count", 0),
-            "indexed_class_count": index_document.get("class_count", 0),
-        }
-        return {
-            "command": args.command_path,
-            "ok": True,
-            "message": (
-                f"Built SpiritSafe manifest at {output_path} "
-                f"and entity index at {index_output_path}"
-            ),
-            "details": details,
-        }
-    except Exception as exc:
-        raise CLIError(str(exc)) from exc
 
 
 def _handle_spiritsafe_sitelinks_sync_wikimedia_sites(

@@ -23,9 +23,9 @@ Operational framing:
 
 Implemented and architecturally committed:
 
-- JSON Entity Profile loading from SpiritSafe (`profiles/<QID>.json`).
+- JSON Entity Profile loading from SpiritSafe (`still/profiles/<QID>.json`).
 - Statement/value/reference/qualifier schema structures in exported profile artifacts.
-- SPARQL-driven allowed-items hydration with cached fallbacks (`cache/queries/<QID>.json`).
+- SPARQL-driven allowed-items hydration with cached fallbacks (`still/value_lists/cache/<QID>.json`).
 - Directional mapping architecture via `io_map`.
 - URI/QID-aware profile graph traversal from embedded profile metadata.
 
@@ -44,7 +44,7 @@ These notes are design guidance for future implementation planning.
 Current SpiritSafe publication artifacts use QID-keyed JSON profile files:
 
 ```text
-profiles/<QID>.json
+still/profiles/<QID>.json
 ```
 
 Each profile artifact contains:
@@ -73,15 +73,7 @@ Statement-spec resolution in materialized JSON follows a specificity-first contr
   - statement-level defaults still apply for nested statement ids not explicitly configured in profile context.
 - Statement-level directive scoping uses `applies to profile` and `applies to statement` qualifiers with AND-across-properties semantics.
 
-The SpiritSafe manifest (`cache/manifest.json`) is generated as an artifact index over these files.
-
-The **SpiritSafe Entity Index** (`cache/entity_index.json`) is an additional derived artifact that normalizes and indexes all entity metadata from the Wikibase cache for efficient runtime consumption. It provides:
-
-- Normalized per-entity metadata (labels, identifiers, guidance messages, class membership)
-- O(1) class membership lookups for queries like "what are all profiles?" or "what are all value lists?"
-- Pre-extracted link relationships with scope metadata (profile/statement applicability)
-
-Validation engines and form generators use the entity index to avoid repeated traversal of raw Wikibase JSON. For detailed schema and consumption patterns, see [SpiritSafe Entity Index Architecture](../architecture/SpiritSafe/spiritsafe-entity-index.md).
+SpiritSafe registry and packet tooling now enumerate `still/profiles/*.json` directly rather than relying on a separate manifest or entity-index artifact.
 
 ## Profile Anatomy
 

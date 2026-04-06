@@ -1,6 +1,6 @@
 ---
 title: SpiritSafe Integration Architecture
-description: Artifact indexing, profile graph traversal, and packet scaffolding
+description: Profile graph traversal and packet scaffolding
 ---
 
 # SpiritSafe Integration Architecture
@@ -11,21 +11,19 @@ This document describes the current architecture used by `gkc.spirit_safe` for i
 
 Implemented and committed:
 
-- JSON Entity Profiles are loaded from `profiles/<QID>.json`.
-- Value-list artifacts are loaded from `cache/queries/<QID>.json`.
-- Artifact manifest indexing is built from local SpiritSafe artifacts into `cache/manifest.json`.
-- Profile graph traversal is QID/URI-aware and built from `metadata.profile_graph` and manifest profile entries.
-- Curation packet scaffolding is manifest-independent and profile-document-driven.
+- JSON Entity Profiles are loaded from `still/profiles/<QID>.json`.
+- Value-list artifacts are loaded from `still/value_lists/cache/<QID>.json`.
+- Profile graph traversal is QID/URI-aware and built from embedded `metadata.profile_graph` entries.
+- Curation packet scaffolding is profile-document-driven.
 
 ## Artifact Layers
 
 ### SpiritSafe Repository Artifacts
 
-- `profiles/<QID>.json`
-- `queries/<QID>.sparql`
-- `cache/entities/<QID|PID>.json`
-- `cache/queries/<QID>.json`
-- `cache/manifest.json`
+- `still/profiles/<QID>.json`
+- `still/value_lists/queries/<QID>.sparql`
+- `still/entities/<QID|PID>.json`
+- `still/value_lists/cache/<QID>.json`
 
 ### gkc Runtime Layers
 
@@ -42,30 +40,22 @@ SpiritSafe artifacts and curation packets use a dual-key identity model:
 
 QIDs are normalized from URI tails only where file path resolution requires them. Labels are display-only and are never used as join keys.
 
-## Manifest Model
+## Registry Metadata Model
 
-`cache/manifest.json` is a URI-keyed artifact index.
+Registry discovery reads metadata directly from each JSON profile document.
 
-Top-level fields:
+Relevant metadata fields include:
 
-- `generated_at`
-- `source`
-- `profiles`
-- `entities`
-- `queries`
-- `value_lists`
-
-`profiles` entries summarize each profile document metadata:
-
-- `entity`, `qid`
-- `labels`, `descriptions`
-- `statement_count`
-- `profile_graph`
-- `value_list_graph` (includes value-list routes referenced by statements and nested qualifier/reference statements)
+- `entity`
+- `metadata.labels`
+- `metadata.descriptions`
+- `metadata.statement_count`
+- `metadata.profile_graph`
+- `metadata.value_list_graph`
 
 ## Profile Graph Model
 
-`ProfileGraph` now consumes manifest profile entries where edge targets and statements are URIs.
+`ProfileGraph` consumes embedded profile metadata where edge targets and statements are URIs.
 
 Normalization rules:
 
@@ -110,13 +100,12 @@ These are derived from DD Wikibase statement-level semantics and are intended fo
 
 ## Testing Strategy
 
-`tests/fixtures/spiritsafe/` now mirrors the artifact-index model with minimal fixtures:
+`tests/fixtures/spiritsafe/` now mirrors the current SpiritSafe layout with minimal fixtures:
 
-- `profiles/Q4.json`, `profiles/Q39.json`
-- `cache/entities/Q4.json`
-- `cache/queries/Q28.json`
-- `queries/Q28.sparql`
-- `cache/manifest.json`
+- `still/profiles/Q4.json`, `still/profiles/Q39.json`
+- `still/entities/Q4.json`
+- `still/value_lists/cache/Q28.json`
+- `still/value_lists/queries/Q28.sparql`
 
 ## Theoretical Design Notes
 

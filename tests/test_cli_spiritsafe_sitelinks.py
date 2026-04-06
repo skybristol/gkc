@@ -28,8 +28,6 @@ spiritsafe:
     semantic_anchors: config/semantic_anchors.json
     logs: still/logs
     wikimedia_sites: partners/wikimedia_sites.json
-    manifest: still/manifest.json
-    entity_index: still/entity_index.json
 """.strip()
         + "\n",
         encoding="utf-8",

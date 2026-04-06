@@ -38,6 +38,7 @@ from gkc.runtime_config import (
     SpiritSafeLayout,
     default_meta_wikibase_config_values,
     discover_meta_wikibase_config_path,
+    get_wikibase_runtime_config,
     load_meta_wikibase_config,
     resolve_spiritsafe_layout_for_root,
 )
@@ -174,24 +175,29 @@ def _read_text_from_resolved_path(resolved: Union[Path, str]) -> str:
     return response.text
 
 
+def _profile_sort_key(profile_id: str) -> tuple[int, str]:
+    if isinstance(profile_id, str) and len(profile_id) > 1:
+        prefix = profile_id[0]
+        suffix = profile_id[1:]
+        if prefix in {"Q", "P"} and suffix.isdigit():
+            return (int(suffix), profile_id)
+    return (2**31 - 1, str(profile_id))
+
+
 def list_profiles() -> list[str]:
-    """List all available profile IDs in the configured SpiritSafe source.
+    """List all available JSON profile IDs in the configured SpiritSafe source.
 
     Returns:
-        List of profile identifiers (directory names under profiles/)
+        List of profile identifiers derived from profile JSON filenames
 
     Example:
         >>> profiles = list_profiles()
         >>> print(profiles)
-        ['TribalGovernmentUS', 'OfficeHeldByHeadOfState']
+        ['Q4', 'Q39']
 
     Note:
         For GitHub mode, this requires an API call to list directory contents.
-        For local mode, this scans the local profiles/ directory.
-
-        **Design Question**: Should we maintain a central registry.yaml file
-        in SpiritSafe to avoid GitHub API calls and provide additional metadata
-        like profile categories, deprecation warnings, or featured profiles?
+        For local mode, this scans the configured profiles directory.
 
     Plain meaning: See what entity profiles are available.
     """
@@ -200,29 +206,40 @@ def list_profiles() -> list[str]:
     if source.mode == "local":
         if source.local_root is None:
             raise ValueError("local_root required for local mode")
-        profiles_dir = source.local_root / "profiles"
+        layout = resolve_spiritsafe_layout(source.local_root)
+        profiles_dir = layout.profiles_dir(source.local_root)
         if not profiles_dir.exists():
             return []
-        # List directories only
         return sorted(
             [
-                item.name
+                item.stem
                 for item in profiles_dir.iterdir()
-                if item.is_dir() and not item.name.startswith(".")
-            ]
+                if item.is_file()
+                and item.suffix == ".json"
+                and not item.name.startswith(".")
+            ],
+            key=_profile_sort_key,
         )
 
-    # GitHub mode: use GitHub API to list directory contents
+    layout = get_wikibase_runtime_config().spiritsafe_layout
     api_url = (
         f"https://api.github.com/repos/{source.github_repo}/"
-        f"contents/profiles?ref={source.github_ref}"
+        f"contents/{layout.profiles_path}?ref={source.github_ref}"
     )
     try:
         response = requests.get(api_url, timeout=10)
         response.raise_for_status()
         contents = response.json()
-        # Filter for directories only
-        return sorted([item["name"] for item in contents if item["type"] == "dir"])
+        return sorted(
+            [
+                Path(item["name"]).stem
+                for item in contents
+                if item.get("type") == "file"
+                and str(item.get("name", "")).endswith(".json")
+                and not str(item.get("name", "")).startswith(".")
+            ],
+            key=_profile_sort_key,
+        )
     except requests.RequestException as exc:
         raise RuntimeError(
             f"Failed to list profiles from {source.github_repo}: {exc}"
@@ -230,7 +247,7 @@ def list_profiles() -> list[str]:
 
 
 def profile_exists(profile_id: str) -> bool:
-    """Check if a profile exists in the configured SpiritSafe source.
+    """Check if a profile JSON exists in the configured SpiritSafe source.
 
     Args:
         profile_id: Profile identifier to check
@@ -245,11 +262,7 @@ def profile_exists(profile_id: str) -> bool:
     Plain meaning: Check if a specific entity profile is available.
     """
     try:
-        # Attempt to resolve the profile path
-        profile_path = f"profiles/{profile_id}/profile.yaml"
-        source = get_spirit_safe_source()
-        resolved = source.resolve_relative(profile_path)
-        _read_text_from_resolved_path(resolved)
+        load_profile(profile_id)
         return True
     except Exception:
         return False
@@ -2682,15 +2695,11 @@ def export_entity_profile_json_documents(
 
 
 # ============================================================================
-# Artifact Manifest, JSON Profile Loading, and Curation Packets
+# JSON Profile Loading and Curation Packets
 # ============================================================================
 
 
 SPIRITSAFE_ENTITY_URI_PREFIX = "https://datadistillery.wikibase.cloud/entity/"
-
-
-def _manifest_source_url() -> str:
-    return f"https://github.com/{DEFAULT_SPIRIT_SAFE_GITHUB_REPO}"
 
 
 @dataclass(frozen=True)
@@ -2920,7 +2929,7 @@ def _infer_spiritsafe_root_from_cache_entities_dir(
         if layout.entities_dir(candidate_root) == cache_dir:
             return candidate_root
 
-    if cache_dir.name == "entities" and cache_dir.parent.name == "cache":
+    if cache_dir.name == "entities" and cache_dir.parent.name in {"cache", "still"}:
         return cache_dir.parent.parent
     return None
 
@@ -2937,7 +2946,7 @@ def _resolve_semantic_anchor_resolver_for_cache_entities_dir(
     if spiritsafe_root is None:
         raise RuntimeError(
             "Unable to infer SpiritSafe root from cache_entities_dir. "
-            "Provide cache/entities under a SpiritSafe checkout or pass semantic_anchor_document explicitly."
+            "Provide still/entities under a SpiritSafe checkout or pass semantic_anchor_document explicitly."
         )
 
     return load_spiritsafe_semantic_anchor_resolver(spiritsafe_root)
@@ -3002,31 +3011,6 @@ def _load_json_from_resolved_path(resolved: Union[Path, str]) -> dict[str, Any]:
         raise ValueError(f"Invalid JSON at {resolved}: {exc}") from exc
 
 
-def _profile_label_from_map(values: Any) -> str:
-    if not isinstance(values, dict):
-        return ""
-    for language in ("mul", "en"):
-        value = values.get(language)
-        if isinstance(value, str) and value:
-            return value
-    for value in values.values():
-        if isinstance(value, str) and value:
-            return value
-    return ""
-
-
-def _label_from_cache_entity(document: dict[str, Any]) -> str:
-    labels = document.get("entity", {}).get("labels", {})
-    for language in ("mul", "en"):
-        payload = labels.get(language, {})
-        if isinstance(payload, dict) and payload.get("value"):
-            return str(payload["value"])
-    for payload in labels.values():
-        if isinstance(payload, dict) and payload.get("value"):
-            return str(payload["value"])
-    return ""
-
-
 def _claim_entity_id_value(claim: dict[str, Any]) -> Optional[str]:
     value = claim.get("mainsnak", {}).get("datavalue", {}).get("value", {})
     return value.get("id") if isinstance(value, dict) else None
@@ -3035,308 +3019,6 @@ def _claim_entity_id_value(claim: dict[str, Any]) -> Optional[str]:
 def _claim_string_value(claim: dict[str, Any]) -> Optional[str]:
     value = claim.get("mainsnak", {}).get("datavalue", {}).get("value")
     return value if isinstance(value, str) and value else None
-
-
-def _claim_quantity_int_value(claim: dict[str, Any]) -> Optional[int]:
-    value = claim.get("mainsnak", {}).get("datavalue", {}).get("value", {})
-    if not isinstance(value, dict):
-        return None
-    amount = value.get("amount")
-    if not isinstance(amount, str) or not amount:
-        return None
-    try:
-        return int(float(amount))
-    except ValueError:
-        return None
-
-
-def _qualifier_entity_ids(
-    qualifiers: Any,
-    prop_id: str,
-) -> list[str]:
-    if not isinstance(qualifiers, dict):
-        return []
-
-    values: list[str] = []
-    for snak in qualifiers.get(prop_id, []):
-        value = snak.get("datavalue", {}).get("value", {})
-        entity_id = value.get("id") if isinstance(value, dict) else None
-        if isinstance(entity_id, str) and entity_id:
-            values.append(entity_id)
-    return values
-
-
-def _claim_monolingual_by_language(claims: list[dict[str, Any]]) -> dict[str, str]:
-    by_language: dict[str, str] = {}
-    for claim in claims:
-        value = claim.get("mainsnak", {}).get("datavalue", {}).get("value", {})
-        if not isinstance(value, dict):
-            continue
-        language = value.get("language")
-        text = value.get("text")
-        if (
-            isinstance(language, str)
-            and language
-            and isinstance(text, str)
-            and text
-            and language not in by_language
-        ):
-            by_language[language] = text
-    return by_language
-
-
-def _sorted_unique(values: list[str]) -> list[str]:
-    return sorted({value for value in values if isinstance(value, str) and value})
-
-
-def _build_link_entries(
-    claims: list[dict[str, Any]],
-    *,
-    applies_to_profile_prop: str,
-    applies_to_statement_prop: str,
-) -> list[dict[str, Any]]:
-    entries: list[dict[str, Any]] = []
-    for claim in claims:
-        target_id = _claim_entity_id_value(claim)
-        if not target_id:
-            continue
-
-        entry: dict[str, Any] = {"target": target_id}
-        scope_profiles = _sorted_unique(
-            _qualifier_entity_ids(claim.get("qualifiers", {}), applies_to_profile_prop)
-        )
-        scope_statements = _sorted_unique(
-            _qualifier_entity_ids(
-                claim.get("qualifiers", {}),
-                applies_to_statement_prop,
-            )
-        )
-        if scope_profiles or scope_statements:
-            entry["scope"] = {
-                "profiles": scope_profiles,
-                "statements": scope_statements,
-            }
-        entries.append(entry)
-
-    return sorted(entries, key=lambda entry: (entry["target"], json.dumps(entry)))
-
-
-def _build_entity_index_entry(
-    entity_doc: dict[str, Any],
-    *,
-    semantic_anchor_resolver: SpiritSafeSemanticAnchorResolver,
-) -> dict[str, Any]:
-    entity_id = str(entity_doc.get("entity_id") or "")
-    claims = entity_doc.get("entity", {}).get("claims", {})
-    instance_of_property_id = semantic_anchor_resolver.require_property_id(
-        "_instance_of"
-    )
-    value_type_property_id = semantic_anchor_resolver.require_property_id(
-        "_statement_type"
-    )
-    max_count_property_id = semantic_anchor_resolver.require_property_id("_max_count")
-    name_identifier_property_id = semantic_anchor_resolver.require_property_id(
-        "_name_identifier"
-    )
-    same_as_property_id = semantic_anchor_resolver.require_property_id("_same_as")
-    has_statement_property_id = semantic_anchor_resolver.require_property_id(
-        "_has_statement"
-    )
-    has_qualifier_property_id = semantic_anchor_resolver.require_property_id(
-        "_has_qualifier"
-    )
-    has_reference_property_id = semantic_anchor_resolver.require_property_id(
-        "_has_reference"
-    )
-    has_value_property_id = semantic_anchor_resolver.require_property_id("_has_value")
-    derives_default_value_from_property_id = (
-        semantic_anchor_resolver.require_property_id("_derives_default_value_from")
-    )
-    applies_to_profile_property_id = semantic_anchor_resolver.require_property_id(
-        "_applies_to_profile"
-    )
-    applies_to_statement_property_id = semantic_anchor_resolver.require_property_id(
-        "_applies_to_statement"
-    )
-    message_field_by_prop = {
-        semantic_anchor_resolver.require_property_id("_statement_prompt"): "prompt",
-        semantic_anchor_resolver.require_property_id("_statement_guidance"): "guidance",
-        semantic_anchor_resolver.require_property_id("_error_message"): "error_message",
-    }
-    consequences_property_id = semantic_anchor_resolver.optional_property_id(
-        "_consequences_message"
-    )
-    if consequences_property_id is not None:
-        message_field_by_prop[consequences_property_id] = "consequences_message"
-
-    classes = _sorted_unique(
-        [
-            entity_id_value
-            for entity_id_value in (
-                _claim_entity_id_value(claim)
-                for claim in claims.get(instance_of_property_id, [])
-            )
-            if entity_id_value
-        ]
-    )
-
-    value_type = next(
-        (
-            value
-            for value in (
-                _claim_entity_id_value(claim)
-                for claim in claims.get(value_type_property_id, [])
-            )
-            if value
-        ),
-        None,
-    )
-    max_count = next(
-        (
-            value
-            for value in (
-                _claim_quantity_int_value(claim)
-                for claim in claims.get(max_count_property_id, [])
-            )
-            if value is not None
-        ),
-        None,
-    )
-    name_identifier = next(
-        (
-            value
-            for value in (
-                _claim_string_value(claim)
-                for claim in claims.get(name_identifier_property_id, [])
-            )
-            if value
-        ),
-        None,
-    )
-
-    messages: dict[str, dict[str, str]] = {}
-    for prop_id, field_name in message_field_by_prop.items():
-        for language, text in _claim_monolingual_by_language(
-            claims.get(prop_id, [])
-        ).items():
-            messages.setdefault(language, {})[field_name] = text
-
-    return {
-        "id": entity_id,
-        "entity": f"{SPIRITSAFE_ENTITY_URI_PREFIX}{entity_id}",
-        "label": _label_from_cache_entity(entity_doc),
-        "name_identifier": name_identifier,
-        "classes": classes,
-        "value_type": value_type,
-        "io_map": _sorted_unique(
-            [
-                value
-                for value in (
-                    _claim_string_value(claim)
-                    for claim in claims.get(same_as_property_id, [])
-                )
-                if value
-            ]
-        ),
-        "max_count": max_count,
-        "messages": messages,
-        "links": {
-            "statements": _build_link_entries(
-                claims.get(has_statement_property_id, []),
-                applies_to_profile_prop=applies_to_profile_property_id,
-                applies_to_statement_prop=applies_to_statement_property_id,
-            ),
-            "qualifiers": _build_link_entries(
-                claims.get(has_qualifier_property_id, []),
-                applies_to_profile_prop=applies_to_profile_property_id,
-                applies_to_statement_prop=applies_to_statement_property_id,
-            ),
-            "references": _build_link_entries(
-                claims.get(has_reference_property_id, []),
-                applies_to_profile_prop=applies_to_profile_property_id,
-                applies_to_statement_prop=applies_to_statement_property_id,
-            ),
-            "values": _build_link_entries(
-                claims.get(has_value_property_id, []),
-                applies_to_profile_prop=applies_to_profile_property_id,
-                applies_to_statement_prop=applies_to_statement_property_id,
-            ),
-            "derives_default_value_from": _build_link_entries(
-                claims.get(derives_default_value_from_property_id, []),
-                applies_to_profile_prop=applies_to_profile_property_id,
-                applies_to_statement_prop=applies_to_statement_property_id,
-            ),
-        },
-    }
-
-
-def build_spiritsafe_entity_index_document(
-    spiritsafe_root: Union[str, Path],
-    *,
-    semantic_anchor_document: Optional[dict[str, Any]] = None,
-) -> dict[str, Any]:
-    """Build a normalized entity index from cached SpiritSafe entity JSON docs."""
-
-    root = Path(spiritsafe_root).expanduser().resolve()
-    layout = resolve_spiritsafe_layout(root)
-    cache_entities_dir = layout.entities_dir(root)
-    semantic_anchor_resolver = (
-        build_spiritsafe_semantic_anchor_resolver(semantic_anchor_document)
-        if semantic_anchor_document is not None
-        else load_spiritsafe_semantic_anchor_resolver(root)
-    )
-
-    entities: dict[str, dict[str, Any]] = {}
-    by_class: dict[str, list[str]] = {}
-
-    for entity_path in sorted(cache_entities_dir.glob("*.json")):
-        entity_doc = json.loads(entity_path.read_text(encoding="utf-8"))
-        entry = _build_entity_index_entry(
-            entity_doc,
-            semantic_anchor_resolver=semantic_anchor_resolver,
-        )
-        entity_id = str(entry.get("id") or entity_path.stem)
-        entities[entity_id] = entry
-
-        for class_id in entry.get("classes", []):
-            by_class.setdefault(class_id, []).append(entity_id)
-
-    for class_id, members in by_class.items():
-        by_class[class_id] = sorted(set(members))
-
-    return {
-        "generated_at": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
-        "source": _manifest_source_url(),
-        "entity_count": len(entities),
-        "class_count": len(by_class),
-        "entities": entities,
-        "class_index": by_class,
-    }
-
-
-def export_spiritsafe_entity_index(
-    spiritsafe_root: Union[str, Path],
-    output_path: Optional[Union[str, Path]] = None,
-    *,
-    semantic_anchor_document: Optional[dict[str, Any]] = None,
-) -> dict[str, Any]:
-    """Build and write the SpiritSafe normalized entity index document."""
-
-    root = Path(spiritsafe_root).expanduser().resolve()
-    layout = resolve_spiritsafe_layout(root)
-    destination = (
-        Path(output_path).expanduser().resolve()
-        if output_path is not None
-        else layout.entity_index_file(root)
-    )
-
-    index_document = build_spiritsafe_entity_index_document(
-        root,
-        semantic_anchor_document=semantic_anchor_document,
-    )
-    destination.parent.mkdir(parents=True, exist_ok=True)
-    destination.write_text(json.dumps(index_document, indent=2), encoding="utf-8")
-    return index_document
 
 
 def _build_semantic_anchor_entry(
@@ -3492,243 +3174,8 @@ def _normalized_packet_statement(statement: dict[str, Any]) -> dict[str, Any]:
     return normalized
 
 
-def build_spiritsafe_manifest_document(
-    spiritsafe_root: Union[str, Path],
-) -> dict[str, Any]:
-    """Build a manifest document from already-generated SpiritSafe artifacts.
-
-    The manifest indexes artifacts present under a local SpiritSafe checkout. It
-    does not re-query Wikibase or regenerate profile/value-list artifacts.
-    """
-
-    root = Path(spiritsafe_root).expanduser().resolve()
-    layout = resolve_spiritsafe_layout(root)
-    profiles_dir = layout.profiles_dir(root)
-    cache_entities_dir = layout.entities_dir(root)
-    queries_dir = layout.value_list_queries_dir(root)
-    cache_queries_dir = layout.value_list_cache_dir(root)
-
-    entity_label_index: dict[str, str] = {}
-    entity_qids: list[str] = []
-    for entity_path in sorted(cache_entities_dir.glob("*.json")):
-        entity_doc = json.loads(entity_path.read_text(encoding="utf-8"))
-        entity_id = str(entity_doc.get("entity_id") or entity_path.stem)
-        entity_qids.append(entity_id)
-        entity_label_index[entity_id] = _label_from_cache_entity(entity_doc)
-
-    profiles: list[dict[str, Any]] = []
-    for profile_path in sorted(profiles_dir.glob("*.json")):
-        profile_doc = json.loads(profile_path.read_text(encoding="utf-8"))
-        metadata = profile_doc.get("metadata", {})
-        entity_uri = _entity_uri_from_reference(profile_doc.get("entity"))
-        qid = _entity_id_from_reference(entity_uri) or profile_path.stem
-        raw_value_list_graph = metadata.get("value_list_graph", [])
-        value_list_graph: list[dict[str, Any]] = []
-        if isinstance(raw_value_list_graph, list):
-            for entry in raw_value_list_graph:
-                if not isinstance(entry, dict):
-                    continue
-                normalized_entry = dict(entry)
-                value_list_id = normalized_entry.get("value_list_id")
-                if not isinstance(value_list_id, str) or not value_list_id:
-                    cache_path = normalized_entry.get("cache_path")
-                    if isinstance(cache_path, str) and cache_path:
-                        value_list_id = Path(cache_path).stem.upper()
-                if isinstance(value_list_id, str) and value_list_id:
-                    normalized_entry["value_list_id"] = value_list_id
-                normalized_entry.pop("cache_path", None)
-                value_list_graph.append(normalized_entry)
-
-        profiles.append(
-            {
-                "entity": entity_uri,
-                "qid": qid,
-                "labels": metadata.get("labels", {}),
-                "descriptions": metadata.get("descriptions", {}),
-                "statement_count": metadata.get(
-                    "statement_count", len(profile_doc.get("statements", []))
-                ),
-                "profile_graph": metadata.get("profile_graph", []),
-                "value_list_graph": value_list_graph,
-            }
-        )
-
-    queries = [
-        {
-            "qid": query_path.stem,
-            "path": f"{layout.value_list_queries_path}/{query_path.name}",
-        }
-        for query_path in sorted(queries_dir.glob("*.sparql"))
-    ]
-
-    value_lists: list[dict[str, Any]] = []
-    for cache_path in sorted(cache_queries_dir.glob("*.json")):
-        cache_doc = json.loads(cache_path.read_text(encoding="utf-8"))
-        metadata = cache_doc.get("metadata", {})
-        qid = cache_path.stem
-        entity_uri = _entity_uri_from_reference(metadata.get("entity")) or (
-            f"{SPIRITSAFE_ENTITY_URI_PREFIX}{qid}"
-        )
-        value_lists.append(
-            {
-                "entity": entity_uri,
-                "qid": qid,
-                "label": (
-                    metadata.get("label")
-                    or entity_label_index.get(qid)
-                    or _profile_label_from_map(metadata.get("labels", {}))
-                ),
-                "path": f"{layout.value_list_cache_path}/{cache_path.name}",
-                "item_count": metadata.get("count", len(cache_doc.get("items", []))),
-            }
-        )
-
-    return {
-        "generated_at": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
-        "source": _manifest_source_url(),
-        "profiles": profiles,
-        "entities": {
-            "count": len(entity_qids),
-            "qids": sorted(entity_qids),
-        },
-        "queries": queries,
-        "value_lists": value_lists,
-    }
-
-
-def export_spiritsafe_manifest(
-    spiritsafe_root: Union[str, Path],
-    output_path: Optional[Union[str, Path]] = None,
-) -> dict[str, Any]:
-    """Build and write the SpiritSafe artifact manifest.
-
-    Returns the manifest document that was written to disk.
-    """
-
-    root = Path(spiritsafe_root).expanduser().resolve()
-    layout = resolve_spiritsafe_layout(root)
-    destination = (
-        Path(output_path).expanduser().resolve()
-        if output_path is not None
-        else layout.manifest_file(root)
-    )
-    manifest_document = build_spiritsafe_manifest_document(root)
-    destination.parent.mkdir(parents=True, exist_ok=True)
-    destination.write_text(json.dumps(manifest_document, indent=2), encoding="utf-8")
-    return manifest_document
-
-
-@dataclass(frozen=True)
-class Manifest:
-    """Container for a loaded URI-keyed SpiritSafe artifact manifest."""
-
-    generated_at: str
-    source: str
-    profiles: list[dict[str, Any]]
-    entities: dict[str, Any]
-    queries: list[dict[str, Any]]
-    value_lists: list[dict[str, Any]]
-    raw_manifest: dict[str, Any]
-
-    @property
-    def profile_qids(self) -> list[str]:
-        """List the QIDs indexed in the manifest profile section."""
-
-        qids: list[str] = []
-        for profile in self.profiles:
-            qid = _entity_id_from_reference(profile.get("qid") or profile.get("entity"))
-            if qid:
-                qids.append(qid)
-        return qids
-
-    def get_profile_entry(self, qid_or_uri: str) -> Optional[dict[str, Any]]:
-        """Retrieve a manifest profile entry by QID or full entity URI."""
-
-        requested_qid = _entity_id_from_reference(qid_or_uri)
-        requested_uri = _entity_uri_from_reference(qid_or_uri)
-        for profile in self.profiles:
-            profile_qid = _entity_id_from_reference(
-                profile.get("qid") or profile.get("entity")
-            )
-            profile_uri = _entity_uri_from_reference(profile.get("entity"))
-            if requested_qid and profile_qid == requested_qid:
-                return profile
-            if requested_uri and profile_uri == requested_uri:
-                return profile
-        return None
-
-
-_MANIFEST_CACHE: Optional[tuple[str, Manifest]] = None
-
-
-def load_manifest(
-    source_mode: Optional[SpiritSafeSourceMode] = None,
-    github_repo: Optional[str] = None,
-    github_ref: Optional[str] = None,
-    local_root: Optional[Union[str, Path]] = None,
-    use_cache: bool = True,
-) -> Manifest:
-    """Load the SpiritSafe artifact manifest with optional caching."""
-
-    global _MANIFEST_CACHE
-
-    if source_mode is not None or github_repo is not None or local_root is not None:
-        source = SpiritSafeSourceConfig(
-            mode=source_mode or get_spirit_safe_source().mode,
-            github_repo=github_repo or get_spirit_safe_source().github_repo,
-            github_ref=github_ref or get_spirit_safe_source().github_ref,
-            local_root=(
-                Path(local_root).expanduser().resolve()
-                if local_root
-                else get_spirit_safe_source().local_root
-            ),
-        )
-    else:
-        source = get_spirit_safe_source()
-
-    cache_key = (
-        f"{source.mode}:{source.github_repo}:{source.github_ref}:{source.local_root}"
-    )
-    if use_cache and _MANIFEST_CACHE is not None:
-        cached_key, cached_manifest = _MANIFEST_CACHE
-        if cached_key == cache_key:
-            return cached_manifest
-
-    if source.mode == "local" and source.local_root is not None:
-        layout = resolve_spiritsafe_layout(source.local_root)
-        relative_manifest_path = layout.manifest_path
-    else:
-        relative_manifest_path = "cache/manifest.json"
-
-    manifest_path = source.resolve_relative(relative_manifest_path)
-
-    try:
-        manifest_data = _load_json_from_resolved_path(manifest_path)
-    except FileNotFoundError as exc:
-        raise FileNotFoundError(
-            f"Manifest not found at {manifest_path}. Ensure SpiritSafe artifacts are built."
-        ) from exc
-    except Exception as exc:
-        raise RuntimeError(f"Failed to load manifest: {exc}") from exc
-
-    manifest = Manifest(
-        generated_at=str(manifest_data.get("generated_at", "")),
-        source=str(manifest_data.get("source", "")),
-        profiles=manifest_data.get("profiles", []),
-        entities=manifest_data.get("entities", {}),
-        queries=manifest_data.get("queries", []),
-        value_lists=manifest_data.get("value_lists", []),
-        raw_manifest=manifest_data,
-    )
-
-    if use_cache:
-        _MANIFEST_CACHE = (cache_key, manifest)
-
-    return manifest
-
-
 def load_profile(
-    profile_id: str, manifest: Optional[Manifest] = None
+    profile_id: str, manifest: Optional[object] = None
 ) -> dict[str, Any]:
     """Load a single JSON entity profile by QID or entity URI."""
 
@@ -3741,9 +3188,10 @@ def load_profile(
     source = get_spirit_safe_source()
     if source.mode == "local" and source.local_root is not None:
         layout = resolve_spiritsafe_layout(source.local_root)
-        relative_path = f"{layout.profiles_path}/{entity_id}.json"
     else:
-        relative_path = f"profiles/{entity_id}.json"
+        layout = get_wikibase_runtime_config().spiritsafe_layout
+
+    relative_path = f"{layout.profiles_path}/{entity_id}.json"
 
     resolved_path = source.resolve_relative(relative_path)
 
@@ -3791,7 +3239,7 @@ def _load_profile_documents_for_depth(
 
 
 def load_profile_package(
-    profile_id: str, depth: int = 1, manifest: Optional[Manifest] = None
+    profile_id: str, depth: int = 1, manifest: Optional[object] = None
 ) -> dict[str, Any]:
     """Load a JSON profile plus related JSON profiles from embedded graph metadata."""
 
@@ -3827,7 +3275,7 @@ def load_profile_package(
 def resolve_profile_link(
     source_profile_id: str,
     statement_id: str,
-    manifest: Optional[Manifest] = None,
+    manifest: Optional[object] = None,
 ) -> Optional[dict[str, Any]]:
     """Resolve a profile-graph edge by source profile and linking statement URI/QID."""
 

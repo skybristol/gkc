@@ -60,7 +60,6 @@ nav:
       - Overview: architecture/SpiritSafe/index.md
       - Profile Loading: architecture/SpiritSafe/profile-loading.md
       - SpiritSafe Models & API: architecture/SpiritSafe/spirit_safe_models.md
-      - SpiritSafe Entity Index: architecture/SpiritSafe/spiritsafe-entity-index.md
       - SpiritSafe Testing: architecture/SpiritSafe/SpiritSafe-testing.md
     - Validation Architecture: architecture/validation-architecture.md
   - GKC Documentation:

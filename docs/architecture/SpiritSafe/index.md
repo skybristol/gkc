@@ -2,13 +2,12 @@
 
 SpiritSafe is the artifact registry for GKC Entity Profiles and value-list caches.
 
-This section covers the SpiritSafe side of the architecture from registry purpose and artifact layout through profile loading, runtime integration models, entity-index structure, and testing strategy.
+This section covers the SpiritSafe side of the architecture from registry purpose and artifact layout through profile loading, runtime integration models, and testing strategy.
 
 In this section:
 
 - [Profile Loading Architecture](profile-loading.md)
 - [SpiritSafe Integration Architecture](spirit_safe_models.md)
-- [SpiritSafe Entity Index Architecture](spiritsafe-entity-index.md)
 - [SpiritSafe Testing Architecture](SpiritSafe-testing.md)
 
 For the authored semantic side of the architecture, see [Meta-Wikibase Architecture](../meta-wikibase/index.md).
@@ -25,67 +24,45 @@ SpiritSafe provides deterministic, version-controlled artifacts consumed by `gkc
 
 SpiritSafe stores the **materialized/actionable forms** of the core architectural components:
 
-- Entity Profiles: `profiles/<QID>.json`
+- Entity Profiles: `still/profiles/<QID>.json`
 - Entity Statements: embedded in profile artifacts and represented in cache/index metadata
 - Value Lists: query definitions + hydrated cache payloads
 - Curation Packet foundations: profile graph/value-list graph metadata used by packet builders
 
 ## Repository Shape
 
-- `profiles/<QID>.json` - JSON Entity Profiles.
-- `queries/<QID>.sparql` - value-list query definitions.
-- `cache/entities/*.json` - Wikibase cache substrate.
-- `cache/queries/<QID>.json` - hydrated value-list artifacts.
-- `cache/manifest.json` - URI-keyed artifact index.
-- `cache/entity_index.json` - Normalized entity metadata and class-index partition for efficient runtime lookups.
+- `still/profiles/<QID>.json` - JSON Entity Profiles.
+- `still/value_lists/queries/<QID>.sparql` - value-list query definitions.
+- `still/entities/*.json` - Wikibase cache substrate.
+- `still/value_lists/cache/<QID>.json` - hydrated value-list artifacts.
+- `config/semantic_anchors.json` - semantic name-to-entity lookup artifact.
+- `partners/wikimedia_sites.json` - partner-facing sitelink source artifact.
 
 ## Build Pipeline
 
-1. Refresh `cache/entities` from Wikibase.
-2. Export JSON profiles to `profiles/<QID>.json`.
-3. Export and hydrate value-list queries.
-4. Build `cache/manifest.json` and normalized `cache/entity_index.json` from artifacts.
-
-`cache/manifest.json` and `cache/entity_index.json` are built by:
-
-```bash
-gkc --json spiritsafe manifest build --source local --local-root .
-```
-
-Both artifacts are generated in a single operation and are kept in sync.
+1. Refresh `still/entities` from Wikibase.
+2. Export JSON profiles to `still/profiles/<QID>.json`.
+3. Export and hydrate value-list queries under `still/value_lists/`.
+4. Build supporting generated artifacts such as `config/semantic_anchors.json` and `partners/wikimedia_sites.json` when needed.
 
 ## Runtime Consumption Model
 
 `gkc` consumes:
 
-- profile definitions from `profiles/<QID>.json`
-- value-list items from `cache/queries/<QID>.json`
-- manifest index from `cache/manifest.json` for registry/discovery tooling
-- entity metadata index from `cache/entity_index.json` for efficient lookups of entity metadata, class membership, and semantic relationships
+- profile definitions from `still/profiles/<QID>.json`
+- value-list items from `still/value_lists/cache/<QID>.json`
+- profile metadata embedded in `still/profiles/*.json` for registry/discovery tooling
+- semantic-anchor data from `config/semantic_anchors.json`
 
-**Entity Index Role**: The entity index provides pre-normalized access to Wikibase semantics without traversing raw JSON. Validation engines and form generators use it to:
-- Retrieve normalized entity metadata (labels, identifiers, guidance messages)
-- Perform O(1) class membership lookups via the class-index partition
-- Access link relationships with pre-extracted scope metadata (profile/statement applicability)
+SpiritSafe also stores the semantic-anchor artifact used by anchor-backed runtime workflows. The semantic-anchor concept itself belongs to the Meta-Wikibase side of the architecture, but the built artifact lives under `config/semantic_anchors.json` as part of the SpiritSafe materialization layer. See [Semantic Anchors](../meta-wikibase/semantic-anchors.md).
 
-See [SpiritSafe Entity Index Architecture](spiritsafe-entity-index.md) for detailed schema and consumption patterns.
-
-SpiritSafe also stores the semantic-anchor artifact used by anchor-backed runtime workflows. The semantic-anchor concept itself belongs to the Meta-Wikibase side of the architecture, but the built artifact lives under `cache/config/semantic_anchors.json` as part of the SpiritSafe materialization layer. See [Semantic Anchors](../meta-wikibase/semantic-anchors.md).
-
-Packet assembly routes in `still_charger.create_curation_packet` do not require manifest or entity index lookups; they consume profile JSON directly.
+Packet assembly routes in `still_charger.create_curation_packet` consume profile JSON directly.
 
 Curation packets themselves are generated by `gkc` at runtime, not stored as SpiritSafe artifacts. SpiritSafe provides the rule and lookup substrate from which packets are assembled and charged.
 
-## Manifest Sections
+## Registry Discovery
 
-- `generated_at`
-- `source`
-- `profiles`
-- `entities`
-- `queries`
-- `value_lists`
-
-This structure supports CLI registry operations and downstream wizard discovery without rehydrating source data.
+CLI registry operations and downstream discovery now enumerate `still/profiles/*.json` directly and read the embedded `metadata` blocks for labels, descriptions, profile-graph edges, and value-list linkage summaries.
 
 ## Governance Notes
 
@@ -94,5 +71,4 @@ This structure supports CLI registry operations and downstream wizard discovery 
 
 ## Theoretical Design Notes
 
-- Additional manifest facets for UI-index optimization are possible but not currently committed.
-- Future registry analytics may derive from manifest deltas, but this remains exploratory.
+- Additional registry-optimization artifacts may be introduced later if packet-pipeline performance requires them, but the current runtime contract is profile-document-first.

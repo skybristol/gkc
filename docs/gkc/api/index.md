@@ -182,7 +182,6 @@ Own profile/materialization orchestration for Data Distillery semantics in runti
 **Key functions:**
 
 - `export_entity_profile_json_documents()`
-- `export_spiritsafe_manifest()`
 - `hydrate_value_lists_from_cache()`
 
 ---

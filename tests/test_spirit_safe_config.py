@@ -61,11 +61,11 @@ def test_github_mode_relative_resolution():
             github_ref="main",
         )
         source = gkc.get_spirit_safe_source()
-        resolved = source.resolve_relative("profiles/Example.yaml")
+        resolved = source.resolve_relative("still/profiles/Q4.json")
         assert isinstance(resolved, str)
         assert resolved == (
             "https://raw.githubusercontent.com/"
-            "skybristol/SpiritSafe/main/profiles/Example.yaml"
+            "skybristol/SpiritSafe/main/still/profiles/Q4.json"
         )
     finally:
         gkc.set_spirit_safe_source(
@@ -216,23 +216,20 @@ def test_resolve_query_ref_only_tries_root_for_flat_profile_paths(tmp_path: Path
 
 
 def test_list_profiles_returns_available_profiles(tmp_path: Path):
-    """list_profiles() discovers profile directories from SpiritSafe source."""
+    """list_profiles() discovers JSON profiles from the configured layout."""
     spirit_safe_root = tmp_path / "SpiritSafe"
-    profiles_dir = spirit_safe_root / "profiles"
-    (profiles_dir / "ProfileA").mkdir(parents=True)
-    (profiles_dir / "ProfileB").mkdir(parents=True)
-    (profiles_dir / "ProfileC").mkdir(parents=True)
-    # Add profile.yaml files so they're valid
-    (profiles_dir / "ProfileA" / "profile.yaml").write_text("name: A", encoding="utf-8")
-    (profiles_dir / "ProfileB" / "profile.yaml").write_text("name: B", encoding="utf-8")
-    (profiles_dir / "ProfileC" / "profile.yaml").write_text("name: C", encoding="utf-8")
+    profiles_dir = spirit_safe_root / "still" / "profiles"
+    profiles_dir.mkdir(parents=True)
+    (profiles_dir / "Q4.json").write_text("{}", encoding="utf-8")
+    (profiles_dir / "Q39.json").write_text("{}", encoding="utf-8")
+    (profiles_dir / "Q51.json").write_text("{}", encoding="utf-8")
 
     previous = gkc.get_spirit_safe_source()
     try:
         gkc.set_spirit_safe_source(mode="local", local_root=spirit_safe_root)
         profiles = gkc.list_profiles()
 
-        assert profiles == ["ProfileA", "ProfileB", "ProfileC"]
+        assert profiles == ["Q4", "Q39", "Q51"]
     finally:
         gkc.set_spirit_safe_source(
             mode=previous.mode,
@@ -242,22 +239,21 @@ def test_list_profiles_returns_available_profiles(tmp_path: Path):
         )
 
 
-def test_list_profiles_ignores_hidden_directories(tmp_path: Path):
-    """list_profiles() ignores dotfiles and hidden directories."""
+def test_list_profiles_ignores_hidden_files(tmp_path: Path):
+    """list_profiles() ignores hidden files and non-JSON content."""
     spirit_safe_root = tmp_path / "SpiritSafe"
-    profiles_dir = spirit_safe_root / "profiles"
-    (profiles_dir / "VisibleProfile").mkdir(parents=True)
-    (profiles_dir / ".hidden").mkdir(parents=True)
-    (profiles_dir / "VisibleProfile" / "profile.yaml").write_text(
-        "name: V", encoding="utf-8"
-    )
+    profiles_dir = spirit_safe_root / "still" / "profiles"
+    profiles_dir.mkdir(parents=True)
+    (profiles_dir / "Q4.json").write_text("{}", encoding="utf-8")
+    (profiles_dir / ".hidden.json").write_text("{}", encoding="utf-8")
+    (profiles_dir / "README.md").write_text("ignore me", encoding="utf-8")
 
     previous = gkc.get_spirit_safe_source()
     try:
         gkc.set_spirit_safe_source(mode="local", local_root=spirit_safe_root)
         profiles = gkc.list_profiles()
 
-        assert profiles == ["VisibleProfile"]
+        assert profiles == ["Q4"]
         assert ".hidden" not in profiles
     finally:
         gkc.set_spirit_safe_source(
@@ -269,17 +265,17 @@ def test_list_profiles_ignores_hidden_directories(tmp_path: Path):
 
 
 def test_profile_exists_returns_true_for_valid_profile(tmp_path: Path):
-    """profile_exists() returns True when profile directory and profile.yaml exist."""
+    """profile_exists() returns True when a JSON profile document exists."""
     spirit_safe_root = tmp_path / "SpiritSafe"
-    profile_dir = spirit_safe_root / "profiles" / "TestProfile"
+    profile_dir = spirit_safe_root / "still" / "profiles"
     profile_dir.mkdir(parents=True)
-    (profile_dir / "profile.yaml").write_text("name: Test", encoding="utf-8")
+    (profile_dir / "Q99.json").write_text("{}", encoding="utf-8")
 
     previous = gkc.get_spirit_safe_source()
     try:
         gkc.set_spirit_safe_source(mode="local", local_root=spirit_safe_root)
 
-        assert gkc.profile_exists("TestProfile") is True
+        assert gkc.profile_exists("Q99") is True
     finally:
         gkc.set_spirit_safe_source(
             mode=previous.mode,

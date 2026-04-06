@@ -25,8 +25,8 @@ Contract clarification:
 The current pipeline is:
 
 1. Data Distillery Wikibase semantics are developed and documented within the working "meta-wikibase".
-2. `gkc.spirit_safe` caches and updates raw Data Distillery Wikibase entity content periodically (currently a manual process while development progresses) within `SpiritSafe/cache/entities`. (reference `SpiritSafe/.github/workflows/cache-from-wikibase.yml` and `SpiritSafe/.github/workflows/cache-wikibase-and-build-profiles.yml`)
-3. `gkc.spirit_safe` generates JSON Entity Profiles under `SpiritSafe/profiles/<QID>.json`. (reference `SpiritSafe/.github/workflows/cache-wikibase-and-build-profiles.yml`)
+2. `gkc.spirit_safe` caches and updates raw Data Distillery Wikibase entity content periodically (currently a manual process while development progresses) within `SpiritSafe/still/entities`. (reference `SpiritSafe/.github/workflows/cache-from-wikibase.yml` and `SpiritSafe/.github/workflows/cache-wikibase-and-build-profiles.yml`)
+3. `gkc.spirit_safe` generates JSON Entity Profiles under `SpiritSafe/still/profiles/<QID>.json`. (reference `SpiritSafe/.github/workflows/cache-wikibase-and-build-profiles.yml`)
 4. `gkc.still_charger.build_curation_packet_from_json_profile(...)` generates a Curation Packet scaffold and seeds default/fixed values from profile definitions.
 5. `gkc.still_charger.charge_packet_from_wikidata_items(...)` retrieves data from one or more Wikidata items, builds the `data` structure within the packet with those items verbatim, and runs `fermenter` processing to evaluate the items and produce a `conformance` object with reporting details on alignment with the profiles.
 6. Bottling transforms packet content to destination-specific payloads.

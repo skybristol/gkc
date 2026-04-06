@@ -1,4 +1,4 @@
-"""Tests for next-generation SpiritSafe manifest and JSON profile workflows."""
+"""Tests for SpiritSafe JSON profile and semantic-anchor workflows."""
 
 import json
 from pathlib import Path
@@ -7,13 +7,8 @@ from shutil import copytree
 import pytest
 
 from gkc.spirit_safe import (
-    build_spiritsafe_entity_index_document,
-    build_spiritsafe_manifest_document,
     build_spiritsafe_semantic_anchor_document,
-    export_spiritsafe_entity_index,
-    export_spiritsafe_manifest,
     export_spiritsafe_semantic_anchors,
-    load_manifest,
     load_profile,
     load_profile_package,
     resolve_profile_link,
@@ -28,29 +23,6 @@ def fixture_root() -> Path:
     return Path(__file__).resolve().parent / "fixtures" / "spiritsafe"
 
 
-def _default_semantic_anchor_document() -> dict:
-    return {
-        "entities": {
-            "_instance_of": {"id": "P1", "datatype": "wikibase-item"},
-            "_name_identifier": {"id": "P214", "datatype": "string"},
-            "_same_as": {"id": "P5", "datatype": "url"},
-            "_has_statement": {"id": "P157", "datatype": "wikibase-item"},
-            "_has_value": {"id": "P161", "datatype": "wikibase-item"},
-            "_has_qualifier": {"id": "P158", "datatype": "wikibase-item"},
-            "_has_reference": {"id": "P211", "datatype": "wikibase-item"},
-            "_applies_to_profile": {"id": "P205", "datatype": "wikibase-item"},
-            "_applies_to_statement": {"id": "P163", "datatype": "wikibase-item"},
-            "_statement_type": {"id": "P194", "datatype": "wikibase-item"},
-            "_max_count": {"id": "P182", "datatype": "quantity"},
-            "_statement_prompt": {"id": "P171", "datatype": "monolingualtext"},
-            "_statement_guidance": {"id": "P169", "datatype": "monolingualtext"},
-            "_consequences_message": {"id": "P170", "datatype": "monolingualtext"},
-            "_error_message": {"id": "P168", "datatype": "monolingualtext"},
-            "_derives_default_value_from": {"id": "P213", "datatype": "wikibase-item"},
-        }
-    }
-
-
 @pytest.fixture(autouse=True)
 def setup_local_source(fixture_root: Path):
     """Configure SpiritSafe access to use deterministic local fixture artifacts."""
@@ -58,84 +30,6 @@ def setup_local_source(fixture_root: Path):
     set_spirit_safe_source(mode="local", local_root=str(fixture_root))
     yield
     set_spirit_safe_source(mode="github")
-
-
-def test_build_spiritsafe_manifest_document(fixture_root: Path):
-    """Manifest builder should index generated SpiritSafe artifacts."""
-
-    manifest = build_spiritsafe_manifest_document(fixture_root)
-
-    assert manifest["source"] == "https://github.com/skybristol/SpiritSafe"
-    assert {profile["qid"] for profile in manifest["profiles"]} == {"Q4", "Q39"}
-    assert manifest["entities"] == {"count": 1, "qids": ["Q4"]}
-    assert manifest["queries"] == [
-        {"qid": "Q28", "path": "still/value_lists/queries/Q28.sparql"}
-    ]
-    assert manifest["value_lists"] == [
-        {
-            "entity": "https://datadistillery.wikibase.cloud/entity/Q28",
-            "qid": "Q28",
-            "label": "List of Federal Register Sources",
-            "path": "still/value_lists/cache/Q28.json",
-            "item_count": 2,
-        }
-    ]
-
-    q4_profile = next(
-        profile for profile in manifest["profiles"] if profile["qid"] == "Q4"
-    )
-    assert q4_profile["value_list_graph"] == [
-        {
-            "entity": "https://datadistillery.wikibase.cloud/entity/Q28",
-            "label": "List of Federal Register Sources",
-            "via_statement": "https://datadistillery.wikibase.cloud/entity/Q16",
-            "value_list_id": "Q28",
-        }
-    ]
-
-
-def test_export_spiritsafe_manifest(fixture_root: Path, tmp_path: Path):
-    """Manifest export should write JSON to the requested path."""
-
-    output_path = tmp_path / "manifest.json"
-    manifest = export_spiritsafe_manifest(fixture_root, output_path)
-
-    assert output_path.exists()
-    assert {profile["qid"] for profile in manifest["profiles"]} == {"Q4", "Q39"}
-
-
-def test_build_spiritsafe_entity_index_document(fixture_root: Path):
-    """Entity index builder should normalize cached entity artifacts."""
-
-    index = build_spiritsafe_entity_index_document(
-        fixture_root,
-        semantic_anchor_document=_default_semantic_anchor_document(),
-    )
-
-    assert index["source"] == "https://github.com/skybristol/SpiritSafe"
-    assert index["entity_count"] == 1
-    assert "Q4" in index["entities"]
-    q4 = index["entities"]["Q4"]
-    assert q4["id"] == "Q4"
-    assert q4["entity"] == "https://datadistillery.wikibase.cloud/entity/Q4"
-    assert q4["label"] == "Tribal Government in the United States"
-    assert q4["classes"] == []
-    assert q4["links"]["statements"] == []
-
-
-def test_export_spiritsafe_entity_index(fixture_root: Path, tmp_path: Path):
-    """Entity index export should write JSON to the requested path."""
-
-    output_path = tmp_path / "entity_index.json"
-    index = export_spiritsafe_entity_index(
-        fixture_root,
-        output_path,
-        semantic_anchor_document=_default_semantic_anchor_document(),
-    )
-
-    assert output_path.exists()
-    assert index["entity_count"] == 1
-    assert index["class_index"] == {}
 
 
 def test_build_spiritsafe_semantic_anchor_document(tmp_path: Path, fixture_root: Path):
@@ -165,8 +59,6 @@ spiritsafe:
         semantic_anchors: config/semantic_anchors.json
         logs: still/logs
         wikimedia_sites: partners/wikimedia_sites.json
-        manifest: still/manifest.json
-        entity_index: still/entity_index.json
 """.strip()
         + "\n",
         encoding="utf-8",
@@ -232,8 +124,6 @@ spiritsafe:
         semantic_anchors: config/semantic_anchors.json
         logs: still/logs
         wikimedia_sites: partners/wikimedia_sites.json
-        manifest: still/manifest.json
-        entity_index: still/entity_index.json
 """.strip()
         + "\n",
         encoding="utf-8",
@@ -308,8 +198,6 @@ spiritsafe:
         semantic_anchors: config/semantic_anchors.json
         logs: still/logs
         wikimedia_sites: partners/wikimedia_sites.json
-        manifest: still/manifest.json
-        entity_index: still/entity_index.json
 """.strip()
         + "\n",
         encoding="utf-8",
@@ -380,8 +268,6 @@ spiritsafe:
         semantic_anchors: config/semantic_anchors.json
         logs: still/logs
         wikimedia_sites: partners/wikimedia_sites.json
-        manifest: still/manifest.json
-        entity_index: still/entity_index.json
 """.strip()
         + "\n",
         encoding="utf-8",
@@ -421,21 +307,6 @@ spiritsafe:
     }
 
 
-def test_load_manifest_reads_new_shape():
-    """Manifest loader should parse the artifact-index shape."""
-
-    manifest = load_manifest(use_cache=False)
-
-    assert manifest.generated_at
-    assert manifest.source == "https://github.com/skybristol/SpiritSafe"
-    assert manifest.profile_qids == ["Q4", "Q39"]
-    assert manifest.get_profile_entry("Q4") is not None
-    assert (
-        manifest.get_profile_entry("https://datadistillery.wikibase.cloud/entity/Q39")
-        is not None
-    )
-
-
 def test_load_profile_reads_json_profile_document():
     """JSON profile loading should work by QID and preserve profile metadata."""
 
@@ -444,6 +315,27 @@ def test_load_profile_reads_json_profile_document():
     assert profile["entity"] == "https://datadistillery.wikibase.cloud/entity/Q4"
     assert profile["metadata"]["statement_count"] == 2
     assert len(profile["statements"]) == 2
+
+
+def test_load_profile_uses_runtime_layout_for_github_mode(monkeypatch):
+    """GitHub-mode profile loading should resolve against the configured layout path."""
+
+    captured: dict[str, str] = {}
+
+    def fake_load_json_from_resolved_path(resolved_path):
+        captured["resolved_path"] = str(resolved_path)
+        return {"entity": "https://datadistillery.wikibase.cloud/entity/Q4"}
+
+    monkeypatch.setattr(
+        "gkc.spirit_safe._load_json_from_resolved_path",
+        fake_load_json_from_resolved_path,
+    )
+    set_spirit_safe_source(mode="github", github_repo="skybristol/SpiritSafe")
+
+    profile = load_profile("Q4")
+
+    assert profile["entity"] == "https://datadistillery.wikibase.cloud/entity/Q4"
+    assert captured["resolved_path"].endswith("/still/profiles/Q4.json")
 
 
 def test_load_profile_package_uses_embedded_profile_graph():

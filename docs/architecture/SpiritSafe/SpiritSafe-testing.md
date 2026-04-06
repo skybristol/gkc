@@ -24,7 +24,7 @@ This document describes:
 GKC's profile registry and curation functionality (and beyond) requires:
 
 - **Profile loading**: Load JSON profile artifacts + metadata
-- **Manifest operations**: Discover profiles, query registry metadata
+- **Registry operations**: Discover profiles and query embedded profile metadata
 - **Profile graphs**: Traverse relationships between profiles
 - **Curation packets**: Create multi-entity work units with cross-references
 - **Query hydration**: Load SPARQL queries and cached results for allowed-items lists
@@ -33,7 +33,7 @@ GKC's profile registry and curation functionality (and beyond) requires:
 Testing these features requires access to:
 
 1. Multiple interconnected profiles (with real linkage metadata)
-2. A valid manifest.json (generated from profiles)
+2. A valid set of JSON profile documents with embedded metadata
 3. SPARQL query files (for choice lists)
 4. Cached query results (for hydration testing)
 5. Profile metadata objects embedded in profile JSON artifacts (for version/authorship info)
@@ -46,23 +46,24 @@ This is a **complete mirror** of the SpiritSafe repository structure, containing
 
 ```
 tests/fixtures/spiritsafe/
-├── profiles/
-│   ├── Q4.json                        # Tribal Government profile artifact
-│   ├── Q39.json                       # Office profile artifact
-│   └── ...
-├── cache/
+├── still/
+│   ├── profiles/
+│   │   ├── Q4.json                    # Tribal Government profile artifact
+│   │   ├── Q39.json                   # Office profile artifact
+│   │   └── ...
 │   ├── entities/                      # Raw Wikibase cache entities
-│   ├── queries/                       # Hydrated value-list results
-│   ├── manifest.json                  # Generated artifact manifest
-│   └── entity_index.json              # Normalized derived index
-└── queries/                           # SPARQL query files
+│   └── value_lists/
+│       ├── queries/                   # SPARQL query files
+│       └── cache/                     # Hydrated value-list results
+└── config/
+    └── dd-wikibase.yaml               # Layout contract fixture
 ```
 
 **Benefits**:
 
 - ✅ **No network dependency**: Tests run offline, fast, and reliably
 - ✅ **Version stability**: Fixtures are pinned to specific profile versions (via sync process)
-- ✅ **Complete coverage**: All GKC features can be tested (manifest, graphs, packets, queries)
+- ✅ **Complete coverage**: All GKC features can be tested (registry, graphs, packets, queries)
 - ✅ **Reproducible**: Every developer and CI environment gets identical fixtures
 - ✅ **Self-contained**: No external dependencies on GitHub API or live SpiritSafe repo
 
@@ -123,7 +124,7 @@ These provide realistic test scenarios for:
 
 - Profiles in SpiritSafe evolve with schema changes
 - CI ensures profiles remain valid
-- Manifest is auto-generated on every commit
+- Generated artifacts remain in sync with the authored layout contract
 
 ### Sync Process
 
@@ -134,7 +135,7 @@ GKC's `tests/fixtures/spiritsafe/` is a **periodic snapshot** of the SpiritSafe 
 - After SpiritSafe profile schema changes (linkage metadata and metadata graph extensions)
 - When new test profiles are added to SpiritSafe
 - When production profiles are significantly updated (new statements, restructured metadata)
-- When manifest format changes
+- When registry metadata shape changes
 
 **How to sync**:
 
@@ -169,7 +170,7 @@ poetry run pytest tests/ -k spiritsafe -v
 
 **Process**:
 
-1. Check SpiritSafe manifest for new commit SHA
+1. Check SpiritSafe for new commit SHA
 2. If SHA differs from last sync, clone SpiritSafe
 3. Copy profiles/, cache/, queries/ to gkc/tests/fixtures/spiritsafe/
 4. Run gkc test suite to verify fixtures
@@ -177,7 +178,7 @@ poetry run pytest tests/ -k spiritsafe -v
 6. PR description includes:
    - SpiritSafe commit SHA
    - List of changed profiles
-   - Manifest diff summary
+    - Registry/profile diff summary
 
 **Benefits**:
 
@@ -258,27 +259,18 @@ def test_profile_linkage_metadata(spiritsafe_local_source):
     assert any(edge.get("target_profile") for edge in profile_graph)
 ```
 
-### Example Test: Manifest Loading
+### Example Test: Registry Metadata Loading
 
 ```python
-def test_manifest_loading(spiritsafe_local_source):
-    """Load manifest and verify profile graph metadata."""
-    from gkc.spirit_safe import load_manifest
-    
-    manifest = load_manifest()
-    
-    # Verify manifest structure
-    assert "profiles" in manifest
-    assert len(manifest["profiles"]) >= 2  # At least TribalGovernmentUS, OfficeHeldByHeadOfState
-    
-    # Find TribalGovernmentUS in manifest
-    tribal_profile = next(
-        (p for p in manifest["profiles"] if p["id"] == "TribalGovernmentUS"),
-        None
-    )
-    assert tribal_profile is not None
-    assert "profile_graph" in tribal_profile
-    assert "OfficeHeldByHeadOfState" in tribal_profile["profile_graph"]["neighbors"]
+def test_profile_registry_metadata(spiritsafe_local_source):
+    """Load profile JSON and verify registry metadata."""
+    from gkc.spirit_safe import load_profile
+
+    profile = load_profile("Q4")
+
+    assert profile["entity"].endswith("/Q4")
+    assert profile["metadata"]["statement_count"] >= 1
+    assert isinstance(profile["metadata"].get("profile_graph", []), list)
 ```
 
 ### Example Test: Profile Graph Traversal
@@ -302,7 +294,7 @@ With the complete local SpiritSafe replica, tests should cover:
 - ✅ JSON Entity Profile loading (all datatypes, statements, qualifiers, references)
 - ✅ Linkage metadata extraction from statements
 - ✅ Profile metadata loading (version, authors, profile_graph)
-- ✅ Manifest loading and integrity validation
+- ✅ Registry metadata loading and integrity validation
 - ✅ Profile graph construction and traversal
 - ✅ Cardinality constraint validation
 - ✅ Curation packet creation (single and multi-entity)
@@ -318,7 +310,7 @@ With the complete local SpiritSafe replica, tests should cover:
 **Symptoms**:
 
 - GKC tests fail after SpiritSafe profile schema changes
-- Manifest format evolves and fixtures are out of date
+- Registry metadata shape evolves and fixtures are out of date
 - New profile features not reflected in test fixtures
 
 **Solution**: Re-sync fixtures using manual process or trigger GitHub Action
@@ -369,7 +361,7 @@ tests/fixtures/
 **Steps**:
 
 1. **Check for updates**:
-   - Fetch SpiritSafe manifest.json
+    - Fetch current SpiritSafe profile metadata examples
    - Compare commit SHA with `tests/fixtures/spiritsafe/SYNC_SHA.txt`
    - If same, exit early (no changes)
 
@@ -398,7 +390,7 @@ tests/fixtures/
      - TribalGovernmentUS (linkage metadata updated)
      - EntityProfileExemplar (new statements added)
 
-     ### Manifest Changes
+    ### Registry Changes
      - 2 profiles updated
      - Commit SHA: abc123def → def456ghi
      ```
@@ -457,7 +449,7 @@ profiles/
 The SpiritSafe testing architecture provides GKC with robust, fast, and network-independent testing by maintaining a complete local replica of the SpiritSafe registry. By leveraging purpose-built test profiles in the canonical SpiritSafe repository and syncing them periodically (manually or via automation), we ensure:
 
 - **Realistic tests**: Using production profile structures, not synthetic mocks
-- **Complete coverage**: All GKC features (manifest, graphs, packets, CLI) testable locally
+- **Complete coverage**: All GKC features (registry, graphs, packets, CLI) testable locally
 - **Maintainability**: Single source of truth (SpiritSafe main), clear sync process
 - **Quality**: Test profiles validated in SpiritSafe CI before use in GKC tests
 

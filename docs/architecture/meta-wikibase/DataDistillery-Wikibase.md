@@ -381,7 +381,7 @@ Current contract:
 
 - Offline-first operation is a hard requirement.
 - Network access to Data Distillery is an optional enhancement, not a runtime dependency for core profile-driven workflows.
-- SpiritSafe cache and manifest artifacts support deterministic fallback behavior.
+- SpiritSafe cache and generated support artifacts support deterministic fallback behavior.
 
 ### SpiritSafe Synchronization Boundary
 
