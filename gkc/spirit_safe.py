@@ -3174,9 +3174,7 @@ def _normalized_packet_statement(statement: dict[str, Any]) -> dict[str, Any]:
     return normalized
 
 
-def load_profile(
-    profile_id: str, manifest: Optional[object] = None
-) -> dict[str, Any]:
+def load_profile(profile_id: str, manifest: Optional[object] = None) -> dict[str, Any]:
     """Load a single JSON entity profile by QID or entity URI."""
 
     del manifest

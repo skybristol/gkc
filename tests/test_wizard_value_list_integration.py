@@ -87,7 +87,7 @@ def test_materialize_value_list_cache_from_local_source(
     monkeypatch, tmp_path: Path
 ) -> None:
     spirit_safe_root = tmp_path / "SpiritSafe"
-    source_file = spirit_safe_root / "cache" / "queries" / "Q28.json"
+    source_file = spirit_safe_root / "still" / "value_lists" / "cache" / "Q28.json"
     source_file.parent.mkdir(parents=True, exist_ok=True)
     source_file.write_text(
         '{"items": [{"item": "http://www.wikidata.org/entity/Q42", "itemLabel": "Douglas Adams"}]}',
@@ -118,7 +118,7 @@ def test_value_list_widget_kwargs_uses_statement_local_value_list_id(
     monkeypatch, tmp_path: Path
 ) -> None:
     spirit_safe_root = tmp_path / "SpiritSafe"
-    source_file = spirit_safe_root / "cache" / "queries" / "Q28.json"
+    source_file = spirit_safe_root / "still" / "value_lists" / "cache" / "Q28.json"
     source_file.parent.mkdir(parents=True, exist_ok=True)
     source_file.write_text(
         '{"items": [{"item": "http://www.wikidata.org/entity/Q1", "itemLabel": "Universe"}]}',
@@ -174,7 +174,7 @@ def test_value_list_widget_kwargs_does_not_fallback_to_route_only(
     monkeypatch, tmp_path: Path
 ) -> None:
     spirit_safe_root = tmp_path / "SpiritSafe"
-    source_file = spirit_safe_root / "cache" / "queries" / "Q28.json"
+    source_file = spirit_safe_root / "still" / "value_lists" / "cache" / "Q28.json"
     source_file.parent.mkdir(parents=True, exist_ok=True)
     source_file.write_text(
         '{"items": [{"item": "http://www.wikidata.org/entity/Q1", "itemLabel": "Universe"}]}',

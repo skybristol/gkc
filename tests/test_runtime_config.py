@@ -29,8 +29,7 @@ def test_runtime_config_defaults(monkeypatch):
     )
     assert config.spiritsafe_layout.logs_path == "still/logs"
     assert (
-        config.spiritsafe_layout.wikimedia_sites_path
-        == "partners/wikimedia_sites.json"
+        config.spiritsafe_layout.wikimedia_sites_path == "partners/wikimedia_sites.json"
     )
 
 

@@ -2113,8 +2113,8 @@ def _handle_registry_list(args: argparse.Namespace) -> dict[str, Any]:
                 {
                     "qid": profile_id,
                     "entity": profile.get("entity"),
-                        "label": _preferred_profile_text(metadata.get("labels", {})),
-                        "description": _preferred_profile_text(
+                    "label": _preferred_profile_text(metadata.get("labels", {})),
+                    "description": _preferred_profile_text(
                         metadata.get("descriptions", {})
                     ),
                     "statement_count": metadata.get(
