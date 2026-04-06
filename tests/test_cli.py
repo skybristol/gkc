@@ -561,6 +561,7 @@ def test_mash_eid_basic(monkeypatch, capsys):
     assert result["ok"] is True
     assert data["id"] == "E502"
 
+
 def test_registry_list_json_uses_profile_documents(capsys):
     """registry list should emit QID-based profile entries from JSON profiles."""
 

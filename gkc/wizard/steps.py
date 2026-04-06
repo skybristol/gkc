@@ -12,7 +12,10 @@ import streamlit as st
 
 import gkc
 from gkc.fermenter import validate_inline_value
-from gkc.runtime_config import resolve_spiritsafe_layout_for_root
+from gkc.runtime_config import (
+    get_wikibase_runtime_config,
+    resolve_spiritsafe_layout_for_root,
+)
 from gkc.wikibase import canonicalize_wikibase_datatype, is_wikibase_item_datatype
 from gkc.wizard.step_base import Step
 from gkc.wizard.widgets import WidgetFactory
@@ -297,7 +300,8 @@ def _materialize_value_list_cache(cache_ref: str) -> tuple[Path | None, str | No
                 )
             )
         else:
-            cache_ref_clean = f"cache/queries/{cache_ref_clean}.json"
+            layout = get_wikibase_runtime_config().spiritsafe_layout
+            cache_ref_clean = f"{layout.value_list_cache_path}/{cache_ref_clean}.json"
 
     local_cache_path = _wizard_value_list_cache_root() / cache_ref_clean
     local_cache_path.parent.mkdir(parents=True, exist_ok=True)

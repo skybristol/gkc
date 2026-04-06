@@ -21,8 +21,9 @@ FIXTURE_PATH = (
     Path(__file__).resolve().parent
     / "fixtures"
     / "spiritsafe"
+    / "still"
+    / "value_lists"
     / "cache"
-    / "queries"
     / "Q28.json"
 )
 
