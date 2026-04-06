@@ -14,7 +14,7 @@ GKC architecture is best understood through two coordinated lenses:
 Infrastructure components:
 
 1. **Meta-wikibase** — semantic authoring system of record for profiles, statements, value lists, and linkage semantics.
-2. **SpiritSafe repository** — materialized artifact registry (JSON profiles, query files, hydrated caches, manifest, entity index).
+2. **SpiritSafe repository** — materialized artifact registry (JSON profiles, query files, hydrated caches, and supporting generated artifacts).
 3. **GKC Python package** — runtime engine that consumes SpiritSafe artifacts to assemble packets (`still_charger`), validate/coerce (`fermenter`), plan writes, and ship.
 
 Architectural components:
@@ -53,12 +53,12 @@ SpiritSafe is the artifact registry. It stores the **materialized/actionable for
 
 SpiritSafe publishes:
 
-- `profiles/<QID>.json` JSON Entity Profile artifacts.
-- `queries/<QID>.sparql` value-list query definitions.
-- `cache/entities/*.json` raw semantic cache snapshots.
-- `cache/queries/<QID>.json` hydrated value-list artifacts.
-- `cache/manifest.json` artifact inventory index.
-- `cache/entity_index.json` normalized runtime lookup index.
+- `still/profiles/<QID>.json` JSON Entity Profile artifacts.
+- `still/value_lists/queries/<QID>.sparql` value-list query definitions.
+- `still/entities/*.json` raw semantic cache snapshots.
+- `still/value_lists/cache/<QID>.json` hydrated value-list artifacts.
+- `config/semantic_anchors.json` semantic lookup artifact.
+- `partners/wikimedia_sites.json` sitelink source artifact.
 
 ### GKC Python Package
 
@@ -90,7 +90,7 @@ Multiple platforms contribute to and consume a single GKC Entity:
 
 **Definition:** GKC Entity Profiles are declarative definitions of the canonical structure, semantics, and cross-platform meaning of a real-world entity in the Global Knowledge Commons.
 
-**Implementation:** Profiles are materialized as JSON Entity Profile artifacts in SpiritSafe (`profiles/<QID>.json`) and consumed directly by runtime modules, serving as the authoritative source of truth for:
+**Implementation:** Profiles are materialized as JSON Entity Profile artifacts in SpiritSafe (`still/profiles/<QID>.json`) and consumed directly by runtime modules, serving as the authoritative source of truth for:
 
 - **Entity structure** — What statements, qualifiers, and references constitute the entity
 - **Validation rules** — Constraints, datatypes, cardinality, required vs optional fields
@@ -118,9 +118,9 @@ Multiple platforms contribute to and consume a single GKC Entity:
 
 **Materialized form in SpiritSafe:**
 
-- Query definitions in `queries/<QID>.sparql`.
-- Hydrated results in `cache/queries/<QID>.json`.
-- Linkage metadata in profile `metadata.value_list_graph` and `cache/entity_index.json`.
+- Query definitions in `still/value_lists/queries/<QID>.sparql`.
+- Hydrated results in `still/value_lists/cache/<QID>.json`.
+- Linkage metadata in profile `metadata.value_list_graph`.
 
 **Runtime role in gkc:** Value Lists provide deterministic allowed-item sets for validation, UX guidance, and offline operation.
 
@@ -191,27 +191,15 @@ This enables dependency ordering (ship entities depth-first), audit trails, and 
 
 ### SpiritSafe
 
-**SpiritSafe** is the profile registry and supporting query/cache infrastructure. It stores materialized profile artifacts (`profiles/<QID>.json`), query files (`queries/*.sparql`), cache artifacts (`cache/entities`, `cache/queries`, `cache/manifest.json`), and the normalized index (`cache/entity_index.json`) used by runtime loading in local or GitHub-backed modes.
+**SpiritSafe** is the profile registry and supporting query/cache infrastructure. It stores materialized profile artifacts (`still/profiles/<QID>.json`), query files (`still/value_lists/queries/*.sparql`), cache artifacts (`still/entities`, `still/value_lists/cache`), and supporting generated artifacts such as `config/semantic_anchors.json` used by runtime loading in local or GitHub-backed modes.
 
 For complete documentation on SpiritSafe, see [SpiritSafe Registry](SpiritSafe/index.md).
 
-### SpiritSafe Entity Index
+### SpiritSafe Registry Metadata
 
-**Purpose:** The SpiritSafe Entity Index is a normalized, derived artifact that enables efficient runtime lookups of entity metadata and relationships without traversing raw Wikibase JSON.
+**Purpose:** Registry/discovery workflows read profile metadata directly from `still/profiles/*.json` instead of relying on a separate manifest or entity-index artifact.
 
-**Implementation:** Built during the `spiritsafe manifest build` operation, it provides:
-
-- **Normalized per-entity metadata** — Labels, identifiers, guidance messages, class membership organized for fast access
-- **Class-index partition** — O(1) lookups for queries like "what are all profiles?" or "what entities are value lists?"
-- **Pre-extracted link relationships** — Statement linkages, qualifier linkages, reference definitions, value sets with scope metadata pre-computed
-
-**Usage:** Validation engines and form generators consume the entity index to:
-- Retrieve entity metadata for UI rendering (labels, prompts, guidance)
-- Perform class membership checks without full JSON traversal
-- Determine applicable statements/qualifiers/references by profile and context
-- Discover value sets and reference options
-
-For detailed schema, consumption patterns, and examples, see [SpiritSafe Entity Index Architecture](SpiritSafe/spiritsafe-entity-index.md).
+**Usage:** Validation engines, packet builders, and CLI discovery commands consume the embedded profile metadata to render labels, traverse profile graphs, and discover value-list routes without a second indexing layer.
 
 ---
 

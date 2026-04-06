@@ -23,12 +23,15 @@ def test_runtime_config_defaults(monkeypatch):
     assert config.api_url == DEFAULT_WIKIBASE_API_URL
     assert config.sparql_endpoint == DEFAULT_SPARQL_ENDPOINT
     assert config.config_path is None
-    assert config.spiritsafe_layout.entities_path == "cache/entities"
+    assert config.spiritsafe_layout.entities_path == "still/entities"
     assert (
         config.spiritsafe_layout.semantic_anchors_path == "config/semantic_anchors.json"
     )
-    assert config.spiritsafe_layout.manifest_path == "cache/manifest.json"
-    assert config.spiritsafe_layout.entity_index_path == "cache/entity_index.json"
+    assert config.spiritsafe_layout.logs_path == "still/logs"
+    assert (
+        config.spiritsafe_layout.wikimedia_sites_path
+        == "partners/wikimedia_sites.json"
+    )
 
 
 def test_runtime_config_env_overrides(monkeypatch):
@@ -84,8 +87,6 @@ spiritsafe:
         semantic_anchors: config/semantic_anchors.json
         logs: still/logs
         wikimedia_sites: partners/wikimedia_sites.json
-        manifest: still/manifest.json
-        entity_index: still/entity_index.json
 """.strip()
         + "\n",
         encoding="utf-8",
@@ -116,14 +117,12 @@ spiritsafe:
     assert (
         config.spiritsafe_layout.wikimedia_sites_path == "partners/wikimedia_sites.json"
     )
-    assert config.spiritsafe_layout.manifest_path == "still/manifest.json"
-    assert config.spiritsafe_layout.entity_index_path == "still/entity_index.json"
 
 
 def test_runtime_config_autodiscovers_config_file(monkeypatch, tmp_path):
     """Runtime config auto-discovers config/dd-wikibase.yaml from parent directories."""
     root_dir = tmp_path / "SpiritSafe"
-    nested_dir = root_dir / "cache" / "entities"
+    nested_dir = root_dir / "still" / "entities"
     nested_dir.mkdir(parents=True)
     config_dir = root_dir / "config"
     config_dir.mkdir()
@@ -147,7 +146,7 @@ def test_runtime_config_autodiscovers_config_file(monkeypatch, tmp_path):
 def test_runtime_config_autodiscovers_root_fallback_config(monkeypatch, tmp_path):
     """Runtime config still supports root-level dd-wikibase.yaml as a fallback."""
     root_dir = tmp_path / "SpiritSafe"
-    nested_dir = root_dir / "cache" / "entities"
+    nested_dir = root_dir / "still" / "entities"
     nested_dir.mkdir(parents=True)
     config_path = root_dir / "dd-wikibase.yaml"
     config_path.write_text(

@@ -1,6 +1,6 @@
 # Profiles CLI
 
-Plain meaning: Work with SpiritSafe-backed Entity Profiles and manifest artifacts from the command line.
+Plain meaning: Work with SpiritSafe-backed Entity Profiles and value-list artifacts from the command line.
 
 ## Overview
 
@@ -19,10 +19,10 @@ Current subcommands:
 
 ### `gkc profile export-json`
 
-Build JSON Entity Profiles from `cache/entities` and write `<QID>.json` files.
+Build JSON Entity Profiles from `still/entities` and write `<QID>.json` files.
 
 ```bash
-gkc profile export-json --source local --local-root /path/to/SpiritSafe --output /path/to/SpiritSafe/profiles
+gkc profile export-json --source local --local-root /path/to/SpiritSafe --output /path/to/SpiritSafe/still/profiles
 ```
 
 Common options:
@@ -36,11 +36,11 @@ Common options:
 - `--repo`: GitHub repository slug when using `--source github`.
 - `--ref`: Git ref when using `--source github`.
 
-When `--cache-entities-dir` points into a normal local SpiritSafe checkout, this route loads `cache/config/semantic_anchors.json` and local Meta-Wikibase semantic conventions automatically. If you point it at an ad hoc cache directory outside that layout, use the Python API instead and pass an explicit semantic-anchor document.
+When `--cache-entities-dir` points into a normal local SpiritSafe checkout, this route loads `config/semantic_anchors.json` and local Meta-Wikibase semantic conventions automatically. If you point it at an ad hoc cache directory outside that layout, use the Python API instead and pass an explicit semantic-anchor document.
 
 ### `gkc profile value-lists hydrate`
 
-Export value-list queries and hydrate `cache/queries/<QID>.json`.
+Export value-list queries and hydrate `still/value_lists/cache/<QID>.json`.
 
 ```bash
 gkc profile value-lists hydrate --source local --local-root /path/to/SpiritSafe
@@ -106,5 +106,4 @@ Most `gkc profile` routes support:
 ## Related Commands
 
 - `gkc packet build`
-- `gkc spiritsafe manifest build`
 - `gkc wizard`

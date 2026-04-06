@@ -132,7 +132,7 @@ Authentication for revision-check/cache operations is optional by default and is
 gkc mash check-wikibase-revisions --since 2026-03-13T16:00:00Z
 
 # Data Distillery cache refresh
-gkc mash cache-wikibase-revisions --cache-dir /path/to/SpiritSafe/cache/entities
+gkc mash cache-wikibase-revisions --cache-dir /path/to/SpiritSafe/still/entities
 ```
 
 ## Making Authenticated API Requests

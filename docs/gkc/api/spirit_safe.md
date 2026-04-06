@@ -2,13 +2,13 @@
 
 ## Overview
 
-`gkc.spirit_safe` provides SpiritSafe source configuration, lookup hydration, JSON Entity Profile export, value-list hydration, artifact-manifest indexing, and curation packet scaffolding.
+`gkc.spirit_safe` provides SpiritSafe source configuration, lookup hydration, JSON Entity Profile export, value-list hydration, and curation packet scaffolding.
 
 Current architecture:
 
-- Runtime packet assembly loads `profiles/<QID>.json` directly.
-- `cache/manifest.json` is a tooling/discovery index.
-- Value lists are materialized in `cache/queries/<QID>.json` and consumed as cache artifacts.
+- Runtime packet assembly loads `still/profiles/<QID>.json` directly.
+- Registry/discovery tooling enumerates `still/profiles/*.json` directly.
+- Value lists are materialized in `still/value_lists/cache/<QID>.json` and consumed as cache artifacts.
 
 ## Quick Start
 
@@ -59,32 +59,6 @@ print(get_spirit_safe_source())
 from gkc.spirit_safe import set_spirit_safe_source
 
 set_spirit_safe_source(mode="local", local_root="/path/to/SpiritSafe")
-```
-
-### Build and Export Artifact Manifest
-
-```python
-from gkc.spirit_safe import (
-    build_spiritsafe_manifest_document,
-    export_spiritsafe_manifest,
-)
-
-manifest_doc = build_spiritsafe_manifest_document("/path/to/SpiritSafe")
-print(manifest_doc["entities"]["count"])
-
-written = export_spiritsafe_manifest("/path/to/SpiritSafe")
-print(len(written["profiles"]))
-```
-
-### Load Manifest for Registry Tooling
-
-```python
-from gkc.spirit_safe import load_manifest
-
-manifest = load_manifest()
-print(manifest.generated_at)
-print(manifest.profile_qids)
-print(manifest.get_profile_entry("Q4"))
 ```
 
 ### Load JSON Profiles and Build Profile Packages
@@ -143,13 +117,13 @@ See [Still Charger API](still_charger.md) for complete documentation on charging
 from gkc.spirit_safe import export_entity_profile_json_documents
 
 result = export_entity_profile_json_documents(
-    cache_entities_dir="/path/to/SpiritSafe/cache/entities",
-    output_dir="/path/to/SpiritSafe/profiles",
+    cache_entities_dir="/path/to/SpiritSafe/still/entities",
+    output_dir="/path/to/SpiritSafe/still/profiles",
 )
 print(result.written_ids)
 ```
 
-When `cache_entities_dir` is part of a normal SpiritSafe checkout, the exporter loads `cache/config/semantic_anchors.json` and the local meta-wikibase config automatically and uses them to resolve internal ontology concepts such as profile class, statement links, prompts, and value-list classification.
+When `cache_entities_dir` is part of a normal SpiritSafe checkout, the exporter loads `config/semantic_anchors.json` and the local meta-wikibase config automatically and uses them to resolve internal ontology concepts such as profile class, statement links, prompts, and value-list classification.
 
 For the full concept, lifecycle, and runtime boundary, see [Semantic Anchors](../../architecture/meta-wikibase/semantic-anchors.md).
 
@@ -168,7 +142,7 @@ anchors = {
 }
 
 documents = build_entity_profile_json_documents(
-    cache_entities_dir="/tmp/cache/entities",
+    cache_entities_dir="/tmp/still/entities",
     semantic_anchor_document=anchors,
 )
 ```
@@ -179,9 +153,9 @@ documents = build_entity_profile_json_documents(
 from gkc.spirit_safe import hydrate_value_lists_from_cache
 
 result = hydrate_value_lists_from_cache(
-    cache_entities_dir="/path/to/SpiritSafe/cache/entities",
-    queries_dir="/path/to/SpiritSafe/queries",
-    cache_queries_dir="/path/to/SpiritSafe/cache/queries",
+    cache_entities_dir="/path/to/SpiritSafe/still/entities",
+    queries_dir="/path/to/SpiritSafe/still/value_lists/queries",
+    cache_queries_dir="/path/to/SpiritSafe/still/value_lists/cache",
 )
 print(result.hydrated_ids)
 ```
@@ -230,15 +204,7 @@ print(result.hydrated_ids)
 
 ::: gkc.spirit_safe.hydrate_value_lists_from_cache
 
-### Manifest and Packet Workflows
-
-::: gkc.spirit_safe.Manifest
-
-::: gkc.spirit_safe.build_spiritsafe_manifest_document
-
-::: gkc.spirit_safe.export_spiritsafe_manifest
-
-::: gkc.spirit_safe.load_manifest
+### Packet Workflows
 
 ::: gkc.spirit_safe.load_profile
 

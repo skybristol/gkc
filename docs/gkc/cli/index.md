@@ -70,11 +70,7 @@ gkc packet charge --packet-file /tmp/packet.json --qid Q195562 -o /tmp/charged.j
 
 ### [SpiritSafe](spiritsafe.md)
 
-Build SpiritSafe support artifacts such as manifests, sitelink sources, and semantic anchors.
-
-```bash
-gkc spiritsafe manifest build --source local --local-root /path/to/SpiritSafe
-```
+Build SpiritSafe support artifacts such as sitelink sources and semantic anchors.
 
 ```bash
 gkc spiritsafe sitelinks sync-wikimedia-sites --source local --local-root /path/to/SpiritSafe
@@ -86,7 +82,7 @@ gkc spiritsafe semantic-anchors build --source local --local-root /path/to/Spiri
 
 ### Registry
 
-The live CLI also includes `gkc registry` for registry inspection and validation. That command group is currently transitional and its cleanup notes are being tracked outside the published CLI pages.
+The live CLI also includes `gkc registry` for registry inspection and validation against `still/profiles/*.json`.
 
 ### [Wizard](wizard.md)
 
@@ -102,7 +98,7 @@ Check Data Distillery Wikibase recentchanges and refresh SpiritSafe entity cache
 
 ```bash
 gkc mash check-wikibase-revisions --since 2026-03-13T16:00:00Z
-gkc mash cache-wikibase-revisions --cache-dir /path/to/SpiritSafe/cache/entities
+gkc mash cache-wikibase-revisions --cache-dir /path/to/SpiritSafe/still/entities
 ```
 
 ## Quick Start Examples

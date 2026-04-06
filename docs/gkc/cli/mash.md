@@ -54,7 +54,7 @@ Refresh SpiritSafe entity cache files from recentchanges-derived entity IDs.
 
 ### Common options
 
-- `--cache-dir <path>`: Required cache directory (for example `cache/entities`)
+- `--cache-dir <path>`: Required cache directory (for example `still/entities`)
 - `--since <ISO8601>`: Explicit watermark timestamp
 - `--api-url <url>`: Override Data Distillery API URL
 - `--source-endpoint <url>`: Optional metadata label for cache records

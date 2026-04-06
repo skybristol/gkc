@@ -45,7 +45,7 @@ Current anchor surface:
 
 Responsibility:
 
-- Load SpiritSafe profile/manifest sources (GitHub or local).
+- Load SpiritSafe profile sources (GitHub or local).
 - Build JSON Entity Profiles from SpiritSafe cache entities.
 - Extract value-list SPARQL query files from value-list talk pages.
 - Hydrate value-list cache artifacts from extracted SPARQL queries.
@@ -65,7 +65,6 @@ Current anchor surface:
 - `discover_value_list_ids`
 - `export_value_list_sparql_queries`
 - `hydrate_value_lists_from_cache`
-- `load_manifest`
 - `load_profile`
 
 Transition-only legacy surface (deferred removal):
@@ -265,8 +264,8 @@ Current anchor surface:
 ### Flow 2.6: SpiritSafe JSON Profile Materialization (Active)
 
 1. `mash` refreshes and reconciles per-entity cache files.
-2. `spirit_safe` builds JSON Entity Profiles from `cache/entities` artifacts.
-3. `spirit_safe` exports per-profile JSON files (for example `profiles/Q4.json`).
+2. `spirit_safe` builds JSON Entity Profiles from `still/entities` artifacts.
+3. `spirit_safe` exports per-profile JSON files (for example `still/profiles/Q4.json`).
 4. Downstream packet/hydration stages consume exported profile artifacts.
 
 ### Flow 2.7: Value-List Query Hydration (Active)

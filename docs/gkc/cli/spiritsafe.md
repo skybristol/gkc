@@ -10,36 +10,11 @@ If you need the concept before the commands, see [Semantic Anchors](../../archit
 
 Current subcommands:
 
-- `gkc spiritsafe manifest build`
 - `gkc spiritsafe sitelinks sync-wikimedia-sites`
 - `gkc spiritsafe semantic-anchors build`
 - `gkc spiritsafe semantic-anchors validate`
 
 These routes are oriented toward local SpiritSafe maintenance workflows.
-
-## `gkc spiritsafe manifest build`
-
-Build `cache/manifest.json` from local SpiritSafe artifacts.
-
-```bash
-gkc spiritsafe manifest build --source local --local-root /path/to/SpiritSafe
-```
-
-Write the manifest to a specific path:
-
-```bash
-gkc spiritsafe manifest build --source local --local-root /path/to/SpiritSafe --output /tmp/manifest.json
-```
-
-Common options:
-
-- `--source`: Source override, either `github` or `local`.
-- `--local-root`: Local SpiritSafe root when using `--source local`.
-- `--repo`: GitHub repository slug when using `--source github`.
-- `--ref`: Git ref when using `--source github`.
-- `-o`, `--output`: Optional output path for the manifest JSON file.
-
-This command is primarily useful in local maintenance mode, where the generated manifest is written back into the SpiritSafe artifact tree.
 
 ## `gkc spiritsafe sitelinks sync-wikimedia-sites`
 
@@ -58,7 +33,7 @@ Common options:
 - `--local-root`: Local SpiritSafe root when using `--source local`.
 - `--repo`: GitHub repository slug when using `--source github`.
 - `--ref`: Git ref when using `--source github`.
-- `-o`, `--output`: Optional output path. By default this writes to `cache/config/wikimedia_sites.json` under the local SpiritSafe root.
+- `-o`, `--output`: Optional output path. By default this writes to `partners/wikimedia_sites.json` under the local SpiritSafe root.
 
 ## `gkc spiritsafe semantic-anchors build`
 
@@ -76,7 +51,7 @@ Common options:
 - `--local-root`: Local SpiritSafe root when using `--source local`.
 - `--repo`: GitHub repository slug when using `--source github`.
 - `--ref`: Git ref when using `--source github`.
-- `-o`, `--output`: Optional output path. By default this writes to `cache/config/semantic_anchors.json` under the local SpiritSafe root, unless a workflow overrides it.
+- `-o`, `--output`: Optional output path. By default this writes to `config/semantic_anchors.json` under the local SpiritSafe root, unless a workflow overrides it.
 
 ## `gkc spiritsafe semantic-anchors validate`
 
@@ -99,8 +74,8 @@ gkc spiritsafe semantic-anchors validate --local-root /path/to/SpiritSafe --chec
 Common options:
 
 - `--artifact-file`: Path to an existing semantic-anchor JSON artifact.
-- `--local-root`: Local SpiritSafe root. When `--artifact-file` is omitted, the command defaults to `cache/config/semantic_anchors.json` under this root.
-- `--check-current-cache`: Rebuild the current semantic-anchor document from `cache/entities` and compare it to the artifact being validated.
+- `--local-root`: Local SpiritSafe root. When `--artifact-file` is omitted, the command defaults to `config/semantic_anchors.json` under this root.
+- `--check-current-cache`: Rebuild the current semantic-anchor document from `still/entities` and compare it to the artifact being validated.
 
 This command checks the runtime contract only:
 

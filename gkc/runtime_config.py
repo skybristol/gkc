@@ -34,15 +34,13 @@ class SpiritSafeLayout:
     layout_version: int = 1
     materialized_root: Optional[str] = None
     partners_root: Optional[str] = None
-    entities_path: str = "cache/entities"
-    profiles_path: str = "profiles"
-    value_list_queries_path: str = "queries"
-    value_list_cache_path: str = "cache/queries"
+    entities_path: str = "still/entities"
+    profiles_path: str = "still/profiles"
+    value_list_queries_path: str = "still/value_lists/queries"
+    value_list_cache_path: str = "still/value_lists/cache"
     semantic_anchors_path: str = "config/semantic_anchors.json"
-    logs_path: str = "cache/refresh"
-    wikimedia_sites_path: str = "cache/config/wikimedia_sites.json"
-    manifest_path: str = "cache/manifest.json"
-    entity_index_path: str = "cache/entity_index.json"
+    logs_path: str = "still/logs"
+    wikimedia_sites_path: str = "partners/wikimedia_sites.json"
 
     def _resolve(self, spiritsafe_root: str | Path, relative_path: str) -> Path:
         return Path(spiritsafe_root).expanduser().resolve() / relative_path
@@ -80,12 +78,6 @@ class SpiritSafeLayout:
 
     def wikimedia_sites_file(self, spiritsafe_root: str | Path) -> Path:
         return self._resolve(spiritsafe_root, self.wikimedia_sites_path)
-
-    def manifest_file(self, spiritsafe_root: str | Path) -> Path:
-        return self._resolve(spiritsafe_root, self.manifest_path)
-
-    def entity_index_file(self, spiritsafe_root: str | Path) -> Path:
-        return self._resolve(spiritsafe_root, self.entity_index_path)
 
 
 @dataclass(frozen=True)
@@ -213,13 +205,6 @@ def _load_spiritsafe_layout(raw_config: dict[object, object]) -> SpiritSafeLayou
         wikimedia_sites_path=(
             _read_optional_string(paths, "wikimedia_sites")
             or default_layout.wikimedia_sites_path
-        ),
-        manifest_path=(
-            _read_optional_string(paths, "manifest") or default_layout.manifest_path
-        ),
-        entity_index_path=(
-            _read_optional_string(paths, "entity_index")
-            or default_layout.entity_index_path
         ),
     )
 
