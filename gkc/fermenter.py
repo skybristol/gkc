@@ -27,8 +27,12 @@ from gkc.runtime_config import resolve_spiritsafe_layout_for_root
 from gkc.wikibase import (
     build_meta_wikibase_semantic_anchor_contract,
     canonicalize_wikibase_datatype,
+    compare_meta_wikibase_entity_views,
+    compile_meta_wikibase_seed,
+    get_meta_wikibase_init_contract_digest,
     get_wikibase_datatype_spec,
     is_wikibase_item_datatype,
+    normalize_meta_wikibase_required_entity_view,
 )
 
 
@@ -98,14 +102,28 @@ class ValidationPolicyConfig:
 
 
 @dataclass
+class SemanticAnchorEntityValidation:
+    """Per-entity semantic-anchor validation outcome."""
+
+    status: str
+    notices: list[ConformanceNotice] = field(default_factory=list)
+
+
+@dataclass
 class SemanticAnchorValidationResult:
     """Validation outcome for a semantic-anchor artifact."""
 
     valid: bool
+    status: str
     required_anchor_count: int
     matched_anchor_count: int
     evaluated_anchor_count: int
     notices: list[ConformanceNotice] = field(default_factory=list)
+    entity_results: dict[str, SemanticAnchorEntityValidation] = field(
+        default_factory=dict
+    )
+    error_count: int = 0
+    warning_count: int = 0
     freshness_checked: bool = False
     freshness_match: Optional[bool] = None
 
@@ -154,24 +172,36 @@ def validate_semantic_anchor_document(
     contract = build_meta_wikibase_semantic_anchor_contract(
         internal_name_identifier_prefix=internal_name_identifier_prefix
     )
+    compilation = compile_meta_wikibase_seed()
+    required_views = {
+        internal_name_identifier: normalize_meta_wikibase_required_entity_view(
+            compiled_entity.payload
+        )
+        for internal_name_identifier, compiled_entity in (
+            compilation.by_internal_name_identifier.items()
+        )
+    }
     notices: list[ConformanceNotice] = []
+    entity_results: dict[str, SemanticAnchorEntityValidation] = {}
     required_anchor_count = len(contract.requirements)
+    contract_digest = get_meta_wikibase_init_contract_digest()
 
     if not isinstance(anchor_document, dict):
         notices.append(
-            ConformanceNotice(
-                severity="error",
-                entity_ref="semantic_anchors",
-                code="artifact_shape_invalid",
-                message="Semantic anchor document must be a JSON object",
+            _semantic_anchor_notice(
+                "error", "semantic_anchors", "artifact_shape_invalid"
             )
         )
         return SemanticAnchorValidationResult(
             valid=False,
+            status="error",
             required_anchor_count=required_anchor_count,
             matched_anchor_count=0,
             evaluated_anchor_count=0,
             notices=notices,
+            entity_results=entity_results,
+            error_count=1,
+            warning_count=0,
             freshness_checked=current_anchor_document is not None,
             freshness_match=None,
         )
@@ -181,29 +211,42 @@ def validate_semantic_anchor_document(
 
     if not isinstance(metadata, dict):
         notices.append(
-            ConformanceNotice(
-                severity="error",
-                entity_ref="semantic_anchors",
-                code="artifact_shape_invalid",
-                message="Semantic anchor document is missing metadata",
+            _semantic_anchor_notice(
+                "error", "semantic_anchors", "artifact_shape_invalid"
             )
         )
+    else:
+        artifact_contract_digest = metadata.get("contract_digest")
+        if isinstance(artifact_contract_digest, str) and artifact_contract_digest:
+            if artifact_contract_digest != contract_digest:
+                notices.append(
+                    _semantic_anchor_notice(
+                        "error",
+                        "semantic_anchors",
+                        "contract_digest_mismatch",
+                        normalized_value={
+                            "expected": contract_digest,
+                            "actual": artifact_contract_digest,
+                        },
+                    )
+                )
 
     if not isinstance(entities, dict):
         notices.append(
-            ConformanceNotice(
-                severity="error",
-                entity_ref="semantic_anchors",
-                code="artifact_shape_invalid",
-                message="Semantic anchor document is missing entities",
+            _semantic_anchor_notice(
+                "error", "semantic_anchors", "artifact_shape_invalid"
             )
         )
         return SemanticAnchorValidationResult(
             valid=False,
+            status="error",
             required_anchor_count=required_anchor_count,
             matched_anchor_count=0,
             evaluated_anchor_count=0,
             notices=notices,
+            entity_results=entity_results,
+            error_count=sum(1 for notice in notices if notice.severity == "error"),
+            warning_count=sum(1 for notice in notices if notice.severity == "warning"),
             freshness_checked=current_anchor_document is not None,
             freshness_match=None,
         )
@@ -215,26 +258,24 @@ def validate_semantic_anchor_document(
     for anchor_name, payload in entities.items():
         if not isinstance(anchor_name, str) or not anchor_name:
             notices.append(
-                ConformanceNotice(
-                    severity="error",
-                    entity_ref="semantic_anchors",
-                    code="anchor_identifier_invalid",
-                    message="Semantic anchor keys must be non-empty strings",
+                _semantic_anchor_notice(
+                    "error",
+                    "semantic_anchors",
+                    "anchor_identifier_invalid",
                 )
             )
             continue
 
         if not anchor_name.startswith(active_prefix):
-            notices.append(
-                ConformanceNotice(
-                    severity="error",
-                    entity_ref=anchor_name,
-                    code="anchor_identifier_invalid",
-                    message=(
-                        f"Internal name identifier '{anchor_name}' must start with "
-                        f"configured prefix '{active_prefix}'"
-                    ),
-                )
+            anchor_notice = _semantic_anchor_notice(
+                "error",
+                anchor_name,
+                "anchor_identifier_invalid",
+            )
+            notices.append(anchor_notice)
+            entity_results[anchor_name] = SemanticAnchorEntityValidation(
+                status="error",
+                notices=[anchor_notice],
             )
             continue
 
@@ -242,134 +283,157 @@ def validate_semantic_anchor_document(
         if not remainder or not _INTERNAL_NAME_IDENTIFIER_BODY_PATTERN.fullmatch(
             remainder
         ):
-            notices.append(
-                ConformanceNotice(
-                    severity="error",
-                    entity_ref=anchor_name,
-                    code="anchor_identifier_invalid",
-                    message=(
-                        f"Internal name identifier '{anchor_name}' has an invalid "
-                        "body after the configured prefix"
-                    ),
-                )
+            anchor_notice = _semantic_anchor_notice(
+                "error",
+                anchor_name,
+                "anchor_identifier_invalid",
+            )
+            notices.append(anchor_notice)
+            entity_results[anchor_name] = SemanticAnchorEntityValidation(
+                status="error",
+                notices=[anchor_notice],
             )
 
         if not isinstance(payload, dict):
-            notices.append(
-                ConformanceNotice(
-                    severity="error",
-                    entity_ref=anchor_name,
-                    code="anchor_shape_invalid",
-                    message="Semantic anchor entries must be JSON objects",
-                )
+            anchor_notice = _semantic_anchor_notice(
+                "error",
+                anchor_name,
+                "anchor_shape_invalid",
+            )
+            notices.append(anchor_notice)
+            entity_results[anchor_name] = SemanticAnchorEntityValidation(
+                status="error",
+                notices=[anchor_notice],
             )
 
     for anchor_name, requirement in contract.requirements.items():
         payload = entities.get(anchor_name)
+        entity_notices: list[ConformanceNotice] = []
+        required_view = required_views.get(anchor_name, {})
         if not isinstance(payload, dict):
-            notices.append(
-                ConformanceNotice(
-                    severity="error",
-                    entity_ref=anchor_name,
-                    code="anchor_missing",
-                    message=f"Required semantic anchor '{anchor_name}' is missing",
-                )
+            entity_notices.append(
+                _semantic_anchor_notice("error", anchor_name, "anchor_missing")
             )
+            entity_results[anchor_name] = SemanticAnchorEntityValidation(
+                status="error",
+                notices=entity_notices,
+            )
+            notices.extend(entity_notices)
             continue
 
         matched_anchor_count += 1
         anchor_id = payload.get("id")
-        if not isinstance(anchor_id, str) or not anchor_id:
-            notices.append(
-                ConformanceNotice(
-                    severity="error",
-                    entity_ref=anchor_name,
-                    code="anchor_id_missing",
-                    message=f"Semantic anchor '{anchor_name}' is missing its id",
+        entity_uri, entity_id = _normalize_semantic_anchor_reference(anchor_id)
+        if not entity_uri or not entity_id:
+            entity_notices.append(
+                _semantic_anchor_notice("error", anchor_name, "anchor_id_missing")
+            )
+        else:
+            expected_prefix = "P" if requirement.kind == "property" else "Q"
+            if not entity_id.startswith(expected_prefix):
+                entity_notices.append(
+                    _semantic_anchor_notice(
+                        "error",
+                        anchor_name,
+                        "anchor_kind_mismatch",
+                        normalized_value={
+                            "id": entity_uri,
+                            "expected_kind": requirement.kind,
+                        },
+                    )
+                )
+
+        if requirement.kind == "property":
+            datatype = payload.get("datatype")
+            if not isinstance(datatype, str) or not datatype.strip():
+                entity_notices.append(
+                    _semantic_anchor_notice(
+                        "error",
+                        anchor_name,
+                        "anchor_datatype_missing",
+                    )
+                )
+            else:
+                try:
+                    normalized_datatype = canonicalize_wikibase_datatype(
+                        datatype,
+                        strict=True,
+                    )
+                except KeyError:
+                    entity_notices.append(
+                        _semantic_anchor_notice(
+                            "error",
+                            anchor_name,
+                            "anchor_datatype_invalid",
+                        )
+                    )
+                else:
+                    if normalized_datatype != requirement.datatype:
+                        entity_notices.append(
+                            _semantic_anchor_notice(
+                                "error",
+                                anchor_name,
+                                "anchor_datatype_mismatch",
+                                normalized_value={
+                                    "expected": requirement.datatype,
+                                    "actual": normalized_datatype,
+                                },
+                            )
+                        )
+
+        resolved_view = payload.get("resolved")
+        if isinstance(resolved_view, dict):
+            drift_codes = compare_meta_wikibase_entity_views(
+                required_view,
+                resolved_view,
+            )
+            for code in drift_codes:
+                entity_notices.append(
+                    _semantic_anchor_notice(
+                        _semantic_anchor_drift_severity(
+                            anchor_name, required_view, code
+                        ),
+                        anchor_name,
+                        code,
+                    )
+                )
+        elif isinstance(entity_uri, str) and entity_uri:
+            entity_notices.append(
+                _semantic_anchor_notice(
+                    "warning",
+                    anchor_name,
+                    "resolved_missing",
                 )
             )
-            continue
 
-        expected_prefix = "P" if requirement.kind == "property" else "Q"
-        if not (anchor_id.startswith(expected_prefix) and anchor_id[1:].isdigit()):
-            notices.append(
-                ConformanceNotice(
-                    severity="error",
-                    entity_ref=anchor_name,
-                    code="anchor_kind_mismatch",
-                    message=(
-                        f"Semantic anchor '{anchor_name}' must resolve to a "
-                        f"{requirement.kind} id"
-                    ),
-                    normalized_value={
-                        "id": anchor_id,
-                        "expected_kind": requirement.kind,
-                    },
-                )
-            )
-
-        if requirement.kind != "property":
-            continue
-
-        datatype = payload.get("datatype")
-        if not isinstance(datatype, str) or not datatype.strip():
-            notices.append(
-                ConformanceNotice(
-                    severity="error",
-                    entity_ref=anchor_name,
-                    code="anchor_datatype_missing",
-                    message=f"Property anchor '{anchor_name}' is missing datatype",
-                )
-            )
-            continue
-
-        try:
-            normalized_datatype = canonicalize_wikibase_datatype(datatype, strict=True)
-        except KeyError:
-            notices.append(
-                ConformanceNotice(
-                    severity="error",
-                    entity_ref=anchor_name,
-                    code="anchor_datatype_invalid",
-                    message=(
-                        f"Property anchor '{anchor_name}' uses unknown datatype "
-                        f"'{datatype}'"
-                    ),
-                )
-            )
-            continue
-
-        if normalized_datatype != requirement.datatype:
-            notices.append(
-                ConformanceNotice(
-                    severity="error",
-                    entity_ref=anchor_name,
-                    code="anchor_datatype_mismatch",
-                    message=(
-                        f"Property anchor '{anchor_name}' must use datatype "
-                        f"'{requirement.datatype}', found '{normalized_datatype}'"
-                    ),
-                    normalized_value={
-                        "expected": requirement.datatype,
-                        "actual": normalized_datatype,
-                    },
-                )
-            )
+        entity_status = _semantic_anchor_status_from_notices(entity_notices)
+        entity_results[anchor_name] = SemanticAnchorEntityValidation(
+            status=entity_status,
+            notices=entity_notices,
+        )
+        notices.extend(entity_notices)
 
     extra_anchors = sorted(set(entities) - set(contract.requirements))
     if extra_anchors:
         notices.append(
-            ConformanceNotice(
-                severity="info",
-                entity_ref="semantic_anchors",
-                code="anchor_extra",
-                message=(
-                    f"Semantic anchor artifact contains {len(extra_anchors)} "
-                    "non-required internal anchors"
-                ),
+            _semantic_anchor_notice(
+                "warning",
+                "semantic_anchors",
+                "anchor_extra",
                 normalized_value=extra_anchors,
             )
         )
+        for anchor_name in extra_anchors:
+            payload = entities.get(anchor_name)
+            extra_notice = _semantic_anchor_notice(
+                "warning",
+                anchor_name,
+                "anchor_extra",
+            )
+            entity_results[anchor_name] = SemanticAnchorEntityValidation(
+                status="warning",
+                notices=[extra_notice],
+            )
 
     freshness_checked = current_anchor_document is not None
     freshness_match: Optional[bool] = None
@@ -377,42 +441,34 @@ def validate_semantic_anchor_document(
         current_entities = current_anchor_document.get("entities")
         if not isinstance(current_entities, dict):
             notices.append(
-                ConformanceNotice(
-                    severity="error",
-                    entity_ref="semantic_anchors",
-                    code="freshness_source_invalid",
-                    message="Current semantic anchor comparison source is missing entities",
+                _semantic_anchor_notice(
+                    "error",
+                    "semantic_anchors",
+                    "freshness_source_invalid",
                 )
             )
             freshness_match = None
         else:
-            freshness_match = entities == current_entities
-            if freshness_match:
-                notices.append(
-                    ConformanceNotice(
-                        severity="info",
-                        entity_ref="semantic_anchors",
-                        code="artifact_current",
-                        message="Semantic anchor artifact matches the current cache-derived document",
-                    )
+            comparable_entities = _semantic_anchor_comparable_entities(entities)
+            comparable_current = _semantic_anchor_comparable_entities(current_entities)
+            freshness_match = comparable_entities == comparable_current
+            if not freshness_match:
+                missing_in_artifact = sorted(
+                    set(comparable_current) - set(comparable_entities)
                 )
-            else:
-                missing_in_artifact = sorted(set(current_entities) - set(entities))
-                extra_in_artifact = sorted(set(entities) - set(current_entities))
+                extra_in_artifact = sorted(
+                    set(comparable_entities) - set(comparable_current)
+                )
                 changed_entries = sorted(
                     key
-                    for key in (set(entities) & set(current_entities))
-                    if entities[key] != current_entities[key]
+                    for key in (set(comparable_entities) & set(comparable_current))
+                    if comparable_entities[key] != comparable_current[key]
                 )
                 notices.append(
-                    ConformanceNotice(
-                        severity="error",
-                        entity_ref="semantic_anchors",
-                        code="artifact_stale",
-                        message=(
-                            "Semantic anchor artifact does not match the current "
-                            "cache-derived document"
-                        ),
+                    _semantic_anchor_notice(
+                        "error",
+                        "semantic_anchors",
+                        "artifact_stale",
                         normalized_value={
                             "missing_in_artifact": missing_in_artifact,
                             "extra_in_artifact": extra_in_artifact,
@@ -421,16 +477,121 @@ def validate_semantic_anchor_document(
                     )
                 )
 
-    valid = not any(notice.severity == "error" for notice in notices)
+    error_count = sum(1 for notice in notices if notice.severity == "error")
+    warning_count = sum(1 for notice in notices if notice.severity == "warning")
+    status = _semantic_anchor_status_from_notices(notices)
+    valid = error_count == 0
     return SemanticAnchorValidationResult(
         valid=valid,
+        status=status,
         required_anchor_count=required_anchor_count,
         matched_anchor_count=matched_anchor_count,
         evaluated_anchor_count=evaluated_anchor_count,
         notices=notices,
+        entity_results=entity_results,
+        error_count=error_count,
+        warning_count=warning_count,
         freshness_checked=freshness_checked,
         freshness_match=freshness_match,
     )
+
+
+def _semantic_anchor_notice(
+    severity: str,
+    entity_ref: str,
+    code: str,
+    *,
+    normalized_value: Any = None,
+) -> ConformanceNotice:
+    return ConformanceNotice(
+        severity=severity,
+        entity_ref=entity_ref,
+        code=code,
+        message=code,
+        normalized_value=normalized_value,
+    )
+
+
+def _semantic_anchor_status_from_notices(notices: list[ConformanceNotice]) -> str:
+    if any(notice.severity == "error" for notice in notices):
+        return "error"
+    if any(notice.severity == "warning" for notice in notices):
+        return "warning"
+    return "valid"
+
+
+def _normalize_semantic_anchor_reference(
+    reference: Any,
+) -> tuple[str | None, str | None]:
+    if not isinstance(reference, str) or not reference.strip():
+        return None, None
+
+    candidate = reference.strip()
+    if candidate.startswith("http://") or candidate.startswith("https://"):
+        entity_uri = candidate.rstrip("/")
+        entity_id = entity_uri.rsplit("/", 1)[-1]
+        if entity_id[:1] in {"P", "Q"} and entity_id[1:].isdigit():
+            return entity_uri, entity_id
+        return None, None
+
+    if candidate[:1] in {"P", "Q"} and candidate[1:].isdigit():
+        return f"https://datadistillery.wikibase.cloud/entity/{candidate}", candidate
+
+    return None, None
+
+
+def _semantic_anchor_requires_structural_integrity(
+    required_view: dict[str, Any],
+) -> bool:
+    claims = required_view.get("claims")
+    if not isinstance(claims, dict):
+        return False
+
+    instance_of_claims = claims.get("_instance_of")
+    if not isinstance(instance_of_claims, list):
+        return False
+
+    for claim in instance_of_claims:
+        if not isinstance(claim, dict):
+            continue
+        value = claim.get("mainsnak", {}).get("datavalue", {}).get("value", {})
+        if not isinstance(value, dict):
+            continue
+        if value.get("id") in {"_entity_profile", "_entity_statement"}:
+            return True
+
+    return False
+
+
+def _semantic_anchor_drift_severity(
+    anchor_name: str,
+    required_view: dict[str, Any],
+    code: str,
+) -> str:
+    if code in {"type", "datatype"}:
+        return "error"
+
+    if code == "claims" and _semantic_anchor_requires_structural_integrity(
+        required_view
+    ):
+        return "error"
+
+    return "warning"
+
+
+def _semantic_anchor_comparable_entities(
+    entities: dict[str, Any],
+) -> dict[str, Any]:
+    comparable: dict[str, Any] = {}
+    for anchor_name, payload in entities.items():
+        if not isinstance(payload, dict):
+            continue
+        comparable[anchor_name] = {
+            key: value
+            for key, value in payload.items()
+            if key in {"id", "kind", "datatype", "required", "resolved"}
+        }
+    return comparable
 
 
 def _coerce_wikibase_item_reference(

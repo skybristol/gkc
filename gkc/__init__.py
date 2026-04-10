@@ -158,15 +158,20 @@ from gkc.utilities import (
 
 # Wikibase-specific helpers
 from gkc.wikibase import (
+    MetaWikibaseCompiledEntity,
     MetaWikibaseInitEntity,
     MetaWikibaseInitIndex,
     MetaWikibaseInitMetadata,
+    MetaWikibaseSeedCompilation,
+    MetaWikibaseSeedPlan,
+    MetaWikibaseSeedPlanEntry,
     MetaWikibaseSemanticAnchorContract,
     MetaWikibaseSemanticAnchorRequirement,
     WikibaseDatatypeSpec,
     build_meta_wikibase_init_index,
     build_meta_wikibase_semantic_anchor_contract,
     canonicalize_wikibase_datatype,
+    compile_meta_wikibase_seed,
     get_meta_wikibase_init_entity,
     get_wikibase_datatype_spec,
     is_known_wikibase_datatype,
@@ -176,6 +181,7 @@ from gkc.wikibase import (
     load_wikibase_datatype_registry,
     load_wikibase_datatype_registry_json,
     normalize_meta_wikibase_init_document,
+    plan_meta_wikibase_seed_baseline,
 )
 
 # Language Configuration
@@ -219,15 +225,20 @@ __all__ = [
     # Runtime Configuration
     "DEFAULT_USER_AGENT",
     # Wikibase-specific helpers
+    "MetaWikibaseCompiledEntity",
     "MetaWikibaseInitEntity",
     "MetaWikibaseInitIndex",
     "MetaWikibaseInitMetadata",
     "MetaWikibaseSemanticAnchorContract",
     "MetaWikibaseSemanticAnchorRequirement",
+    "MetaWikibaseSeedCompilation",
+    "MetaWikibaseSeedPlan",
+    "MetaWikibaseSeedPlanEntry",
     "WikibaseDatatypeSpec",
     "build_meta_wikibase_init_index",
     "build_meta_wikibase_semantic_anchor_contract",
     "canonicalize_wikibase_datatype",
+    "compile_meta_wikibase_seed",
     "get_meta_wikibase_init_entity",
     "get_wikibase_datatype_spec",
     "is_known_wikibase_datatype",
@@ -237,6 +248,7 @@ __all__ = [
     "load_wikibase_datatype_registry",
     "load_wikibase_datatype_registry_json",
     "normalize_meta_wikibase_init_document",
+    "plan_meta_wikibase_seed_baseline",
     # Language Configuration
     "get_languages",
     "set_languages",

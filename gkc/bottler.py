@@ -22,13 +22,52 @@ class DataTypeTransformer:
     @staticmethod
     def to_wikibase_item(qid: str) -> dict:
         """Convert a QID string to wikibase-entityid datavalue."""
-        numeric_id = int(qid[1:])  # Remove 'Q' prefix
+        return DataTypeTransformer.to_wikibase_entity_reference(
+            qid,
+            entity_type="item",
+        )
+
+    @staticmethod
+    def to_wikibase_entity_reference(
+        entity_id: str,
+        *,
+        entity_type: Optional[str] = None,
+    ) -> dict:
+        """Convert a resolved or symbolic entity identifier to a datavalue.
+
+        Real Wikibase IDs such as ``Q5`` and ``P31`` include ``numeric-id``.
+        Symbolic pre-resolution identifiers such as ``_instance_of`` omit it.
+        """
+        normalized_entity_id = str(entity_id).strip()
+        if not normalized_entity_id:
+            raise ValueError("entity_id must be a non-empty string")
+
+        inferred_entity_type = entity_type
+        numeric_id: int | None = None
+
+        if normalized_entity_id.startswith("Q") and normalized_entity_id[1:].isdigit():
+            inferred_entity_type = inferred_entity_type or "item"
+            numeric_id = int(normalized_entity_id[1:])
+        elif (
+            normalized_entity_id.startswith("P") and normalized_entity_id[1:].isdigit()
+        ):
+            inferred_entity_type = inferred_entity_type or "property"
+            numeric_id = int(normalized_entity_id[1:])
+
+        if inferred_entity_type not in {"item", "property"}:
+            raise ValueError(
+                "entity_type must be 'item' or 'property' for symbolic entity references"
+            )
+
+        value = {
+            "entity-type": inferred_entity_type,
+            "id": normalized_entity_id,
+        }
+        if numeric_id is not None:
+            value["numeric-id"] = numeric_id
+
         return {
-            "value": {
-                "entity-type": "item",
-                "numeric-id": numeric_id,
-                "id": qid,
-            },
+            "value": value,
             "type": "wikibase-entityid",
         }
 
@@ -196,6 +235,14 @@ class SnakBuilder:
             "datavalue": datavalue,
         }
 
+    def create_snak_from_datavalue(self, property_id: str, datavalue: dict) -> dict:
+        """Create a snak from a prebuilt datavalue structure."""
+        return {
+            "snaktype": "value",
+            "property": property_id,
+            "datavalue": datavalue,
+        }
+
 
 class ClaimBuilder:
     """Builds complete claim structures with qualifiers and references."""
@@ -221,6 +268,46 @@ class ClaimBuilder:
             "type": "statement",
             "rank": rank,
         }
+
+        return self._attach_claim_metadata(
+            claim,
+            qualifiers=qualifiers,
+            references=references,
+        )
+
+    def create_claim_from_datavalue(
+        self,
+        property_id: str,
+        datavalue: dict,
+        *,
+        qualifiers: list[dict] = None,
+        references: list[dict] = None,
+        rank: str = "normal",
+    ) -> dict:
+        """Create a complete claim structure from a prebuilt datavalue."""
+        claim = {
+            "mainsnak": self.snak_builder.create_snak_from_datavalue(
+                property_id,
+                datavalue,
+            ),
+            "type": "statement",
+            "rank": rank,
+        }
+
+        return self._attach_claim_metadata(
+            claim,
+            qualifiers=qualifiers,
+            references=references,
+        )
+
+    def _attach_claim_metadata(
+        self,
+        claim: dict,
+        *,
+        qualifiers: list[dict] = None,
+        references: list[dict] = None,
+    ) -> dict:
+        """Attach qualifier and reference groups to an existing claim."""
 
         # Add qualifiers if provided
         if qualifiers:

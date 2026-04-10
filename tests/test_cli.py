@@ -145,6 +145,263 @@ def test_wikiverse_token_redacted(monkeypatch, capsys):
     assert data["details"]["token"] == "<redacted>"
 
 
+def test_wikibase_init_preview_json_uses_language_override(capsys):
+    exit_code = cli.main(
+        [
+            "--json",
+            "wikibase",
+            "init",
+            "--language",
+            "fr",
+            "--show-entity",
+            "entity_profile",
+        ]
+    )
+
+    assert exit_code == 0
+    payload = json.loads(capsys.readouterr().out.strip())
+    assert payload["command"] == "wikibase.init"
+    assert payload["ok"] is True
+    assert payload["details"]["label_language"] == "fr"
+    assert payload["details"]["value_language"] == "mul"
+    assert payload["details"]["summary"]["created"] > 0
+    sample_payload = payload["details"]["sample_entity"]["payload"]
+    assert sample_payload["labels"]["fr"]["value"] == "GKC Entity Profile"
+
+
+def test_wikibase_init_preview_can_compare_live_state(monkeypatch, capsys, tmp_path):
+    class FakeWikibaseApiClient:
+        def __init__(self, api_url):
+            self.api_url = api_url
+
+        def get_entities(self, entity_ids):
+            assert "Q50" in entity_ids
+            return {
+                "Q50": {
+                    "id": "Q50",
+                    "type": "item",
+                    "labels": {"en": {"language": "en", "value": "wikibase-item"}},
+                    "descriptions": {
+                        "en": {
+                            "language": "en",
+                            "value": "wikibase item property template used to set a data type for a statement, reference, or qualifier and any additional specifications",
+                        }
+                    },
+                    "claims": {
+                        "P1": [
+                            {
+                                "mainsnak": {
+                                    "snaktype": "value",
+                                    "property": "P1",
+                                    "datavalue": {
+                                        "type": "wikibase-entityid",
+                                        "value": {
+                                            "entity-type": "item",
+                                            "id": "Q99",
+                                            "numeric-id": 99,
+                                        },
+                                    },
+                                },
+                                "type": "statement",
+                                "rank": "normal",
+                            }
+                        ],
+                        "P214": [
+                            {
+                                "mainsnak": {
+                                    "snaktype": "value",
+                                    "property": "P214",
+                                    "datavalue": {
+                                        "type": "string",
+                                        "value": "_wikibase-item",
+                                    },
+                                },
+                                "type": "statement",
+                                "rank": "normal",
+                            }
+                        ],
+                        "P168": [
+                            {
+                                "mainsnak": {
+                                    "snaktype": "value",
+                                    "property": "P168",
+                                    "datavalue": {
+                                        "type": "monolingualtext",
+                                        "value": {
+                                            "language": "mul",
+                                            "text": "Item must be or resolve to a valid QID identifier.",
+                                        },
+                                    },
+                                },
+                                "type": "statement",
+                                "rank": "normal",
+                            }
+                        ],
+                    },
+                }
+            }
+
+    monkeypatch.setattr(
+        cli,
+        "resolve_spiritsafe_meta_wikibase_config",
+        lambda local_root: (
+            Path(local_root) / "config" / "dd-wikibase.yaml",
+            {
+                "name_identifier_property_id": "P214",
+                "sparql_endpoint": "https://example.org/query/sparql",
+            },
+        ),
+    )
+    monkeypatch.setattr(
+        cli,
+        "execute_sparql",
+        lambda query, endpoint=None, format="json": {
+            "results": {
+                "bindings": [
+                    {
+                        "entity": {"value": "https://example.org/entity/P1"},
+                        "nameIdentifier": {"value": "_instance_of"},
+                    },
+                    {
+                        "entity": {"value": "https://example.org/entity/P168"},
+                        "nameIdentifier": {"value": "_error_message"},
+                    },
+                    {
+                        "entity": {"value": "https://example.org/entity/P214"},
+                        "nameIdentifier": {"value": "_name_identifier"},
+                    },
+                    {
+                        "entity": {"value": "https://example.org/entity/Q50"},
+                        "nameIdentifier": {"value": "_wikibase-item"},
+                    },
+                    {
+                        "entity": {"value": "https://example.org/entity/Q99"},
+                        "nameIdentifier": {"value": "_wikibase_statement_type"},
+                    },
+                ]
+            }
+        },
+    )
+    monkeypatch.setattr(cli, "WikibaseApiClient", FakeWikibaseApiClient)
+
+    exit_code = cli.main(
+        [
+            "--json",
+            "wikibase",
+            "init",
+            "--local-root",
+            str(tmp_path / "SpiritSafe"),
+        ]
+    )
+
+    assert exit_code == 0
+    payload = json.loads(capsys.readouterr().out.strip())
+    assert (
+        payload["details"]["comparison_source"]["mode"]
+        == "live-compare-name-identifier"
+    )
+    assert payload["details"]["summary"]["skipped"] == 1
+    assert payload["details"]["summary"]["updated"] == 0
+
+
+def test_wikibase_init_uses_anchor_hints_when_sparql_misses_entity(
+    monkeypatch, capsys, tmp_path
+):
+    local_root = tmp_path / "SpiritSafe"
+    artifact_path = local_root / "config" / "semantic_anchors.json"
+    artifact_path.parent.mkdir(parents=True, exist_ok=True)
+    artifact_path.write_text(
+        json.dumps(
+            {
+                "metadata": {},
+                "entities": {
+                    "_alias_guidance": {
+                        "id": "P187",
+                        "entity": "https://example.org/entity/P187",
+                        "datatype": "monolingualtext",
+                    }
+                },
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    class FakeWikibaseApiClient:
+        def __init__(self, api_url):
+            self.api_url = api_url
+
+        def get_entities(self, entity_ids):
+            assert "P187" in entity_ids
+            return {
+                "P187": {
+                    "id": "P187",
+                    "type": "property",
+                    "datatype": "monolingualtext",
+                    "labels": {"en": {"language": "en", "value": "alias guidance"}},
+                    "descriptions": {
+                        "en": {
+                            "language": "en",
+                            "value": "longer guidance statement provided as instructions for creating aliases for a GKC Entity",
+                        }
+                    },
+                    "claims": {
+                        "P214": [
+                            {
+                                "mainsnak": {
+                                    "snaktype": "value",
+                                    "property": "P214",
+                                    "datavalue": {
+                                        "type": "string",
+                                        "value": "_alias_guidance",
+                                    },
+                                },
+                                "type": "statement",
+                                "rank": "normal",
+                            }
+                        ]
+                    },
+                }
+            }
+
+    monkeypatch.setattr(
+        cli,
+        "resolve_spiritsafe_meta_wikibase_config",
+        lambda local_root: (
+            Path(local_root) / "config" / "dd-wikibase.yaml",
+            {
+                "name_identifier_property_id": "P214",
+                "sparql_endpoint": "https://example.org/query/sparql",
+            },
+        ),
+    )
+    monkeypatch.setattr(
+        cli,
+        "execute_sparql",
+        lambda query, endpoint=None, format="json": {"results": {"bindings": []}},
+    )
+    monkeypatch.setattr(cli, "WikibaseApiClient", FakeWikibaseApiClient)
+
+    exit_code = cli.main(
+        [
+            "--json",
+            "wikibase",
+            "init",
+            "--local-root",
+            str(local_root),
+        ]
+    )
+
+    assert exit_code == 0
+    payload = json.loads(capsys.readouterr().out.strip())
+    assert payload["details"]["comparison_source"]["anchor_hint_count"] == 1
+    alias_guidance_action = next(
+        action
+        for action in payload["details"]["actions"]
+        if action["internal_name_identifier"] == "_alias_guidance"
+    )
+    assert alias_guidance_action["action"] == "skip"
+
+
 def test_osm_status_json(monkeypatch, capsys):
     """OSM status returns JSON output."""
     monkeypatch.setattr(cli, "OpenStreetMapAuth", FakeOpenStreetMapAuth)

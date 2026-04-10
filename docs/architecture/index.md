@@ -17,6 +17,8 @@ Infrastructure components:
 2. **SpiritSafe repository** — materialized artifact registry (JSON profiles, query files, hydrated caches, and supporting generated artifacts).
 3. **GKC Python package** — runtime engine that consumes SpiritSafe artifacts to assemble packets (`still_charger`), validate/coerce (`fermenter`), plan writes, and ship.
 
+For the Commons-specific extension layer built on top of this Wikidata-first foundation, see [Wikimedia Commons Architecture](wikimedia-commons.md).
+
 Architectural components:
 
 1. **GKC Entity Profiles** — declarative definitions of entity structure and context.

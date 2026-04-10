@@ -43,6 +43,14 @@ from gkc.runtime_config import (
     resolve_spiritsafe_layout_for_root,
 )
 from gkc.sparql import SPARQLQuery, paginate_query, read_sparql_query_file
+from gkc.wikibase import (
+    build_meta_wikibase_init_index,
+    build_meta_wikibase_semantic_anchor_contract,
+    compile_meta_wikibase_seed,
+    get_meta_wikibase_init_contract_digest,
+    normalize_meta_wikibase_current_entity_view,
+    normalize_meta_wikibase_required_entity_view,
+)
 
 RefreshPolicy = Literal["manual", "daily", "weekly", "on_release"]
 SpiritSafeSourceMode = Literal["github", "local"]
@@ -1307,44 +1315,12 @@ class EntityProfileJsonBuilder:
         identification = profile_doc.get("identification", {})
 
         labels = metadata.get("labels", {}) if isinstance(metadata, dict) else {}
-        descriptions = (
-            metadata.get("descriptions", {}) if isinstance(metadata, dict) else {}
-        )
-        aliases = metadata.get("aliases", {}) if isinstance(metadata, dict) else {}
 
         if not self._metadata_has_label(labels, language):
             missing.append(f"metadata.labels.{language}")
 
-        if not self._metadata_has_description(descriptions, language):
-            if language == "mul":
-                missing.append("metadata.descriptions.mul_or_en")
-            else:
-                missing.append(f"metadata.descriptions.{language}")
-
-        if aliases and not self._metadata_has_alias(aliases, language):
-            missing.append(f"metadata.aliases.{language}")
-
         if not self._identification_has_prompt(identification, "labels", language):
             missing.append(f"identification.labels.{language}.prompt")
-
-        if not self._identification_has_prompt(
-            identification, "descriptions", language
-        ):
-            missing.append(f"identification.descriptions.{language}.prompt")
-
-        if not self._identification_has_prompt(identification, "aliases", language):
-            missing.append(f"identification.aliases.{language}.prompt")
-
-        statements = profile_doc.get("statements", [])
-        for statement in self._iter_statement_nodes(statements):
-            entity = statement.get("entity", "<unknown>")
-            messages = statement.get("messages", {})
-            if not isinstance(messages, dict):
-                missing.append(f"statement:{entity}.messages.{language}.prompt")
-                continue
-            prompt = messages.get(language, {}).get("prompt")
-            if not isinstance(prompt, str) or not prompt.strip():
-                missing.append(f"statement:{entity}.messages.{language}.prompt")
 
         return sorted(set(missing))
 
@@ -2781,22 +2757,22 @@ def build_spiritsafe_semantic_anchor_resolver(
                 f"Semantic anchor '{anchor_name}' must map to an object payload"
             )
 
-        entity_id = str(payload.get("id") or "").strip()
-        if not entity_id:
+        entity_reference = str(payload.get("id") or "").strip()
+        if not entity_reference:
             raise RuntimeError(
                 f"Semantic anchor '{anchor_name}' is missing required field 'id'"
             )
-        if not (entity_id[0] in {"P", "Q"} and entity_id[1:].isdigit()):
+
+        entity_uri = _entity_uri_from_reference(entity_reference)
+        entity_id = _entity_id_from_reference(entity_reference)
+        if not entity_uri or not entity_id:
             raise RuntimeError(
-                f"Semantic anchor '{anchor_name}' has invalid entity id '{entity_id}'"
+                f"Semantic anchor '{anchor_name}' has invalid entity id '{entity_reference}'"
             )
 
         kind: Literal["property", "item"] = (
             "property" if entity_id.startswith("P") else "item"
         )
-        entity_uri = payload.get("entity")
-        if not isinstance(entity_uri, str) or not entity_uri:
-            entity_uri = f"{SPIRITSAFE_ENTITY_URI_PREFIX}{entity_id}"
 
         datatype = payload.get("datatype")
         if datatype is not None and not isinstance(datatype, str):
@@ -3026,6 +3002,11 @@ def _build_semantic_anchor_entry(
     *,
     name_identifier_property_id: str,
     internal_prefix: str,
+    required_view: dict[str, Any],
+    entity_id_to_internal_name_identifier: dict[str, str],
+    label_language: str,
+    required_value_language: str,
+    required_monolingualtext_properties: set[str],
 ) -> Optional[dict[str, Any]]:
     entity = entity_doc.get("entity", {})
     entity_id = str(entity_doc.get("entity_id") or entity.get("id") or "")
@@ -3047,9 +3028,22 @@ def _build_semantic_anchor_entry(
     if not (internal_prefix and name_identifier.startswith(internal_prefix)):
         return None
 
+    expected_property_ids = set(required_view.get("claims", {}).keys())
+    resolved_view, _issues = normalize_meta_wikibase_current_entity_view(
+        entity,
+        entity_id_to_internal_name_identifier=entity_id_to_internal_name_identifier,
+        label_language=label_language,
+        required_value_language=required_value_language,
+        required_monolingualtext_properties=required_monolingualtext_properties,
+        expected_property_ids=expected_property_ids,
+    )
+
     entry = {
-        "id": entity_id,
-        "entity": f"{SPIRITSAFE_ENTITY_URI_PREFIX}{entity_id}",
+        "id": f"{SPIRITSAFE_ENTITY_URI_PREFIX}{entity_id}",
+        "kind": entity.get("type")
+        or ("property" if entity_id.startswith("P") else "item"),
+        "required": required_view,
+        "resolved": resolved_view,
     }
 
     if entity.get("type") == "property" and isinstance(entity.get("datatype"), str):
@@ -3061,7 +3055,7 @@ def _build_semantic_anchor_entry(
 def build_spiritsafe_semantic_anchor_document(
     spiritsafe_root: Union[str, Path],
 ) -> dict[str, Any]:
-    """Build a thin semantic anchor artifact from cached SpiritSafe entities."""
+    """Build a semantic-anchor artifact from cached SpiritSafe entities."""
 
     root = Path(spiritsafe_root).expanduser().resolve()
     layout = resolve_spiritsafe_layout(root)
@@ -3069,12 +3063,27 @@ def build_spiritsafe_semantic_anchor_document(
     _config_path, name_identifier_property_id, internal_prefix = (
         _require_spiritsafe_meta_wikibase_semantics(root)
     )
+    label_language = "en"
+    required_value_language = "mul"
+    contract = build_meta_wikibase_semantic_anchor_contract(
+        internal_name_identifier_prefix=internal_prefix
+    )
+    compilation = compile_meta_wikibase_seed(label_language=label_language)
+    contract_digest = get_meta_wikibase_init_contract_digest()
+    required_monolingualtext_properties: set[str] = {
+        entity.internal_name_identifier
+        for entity in build_meta_wikibase_init_index().properties.values()
+        if entity.datatype == "monolingualtext"
+    }
 
-    anchors: dict[str, dict[str, Any]] = {}
+    current_entities_by_internal_name_identifier: dict[str, dict[str, Any]] = {}
+    entity_id_to_internal_name_identifier: dict[str, str] = {}
 
     for entity_path in sorted(cache_entities_dir.glob("*.json")):
         entity_doc = json.loads(entity_path.read_text(encoding="utf-8"))
         claims = entity_doc.get("entity", {}).get("claims", {})
+        entity = entity_doc.get("entity", {})
+        entity_id = str(entity_doc.get("entity_id") or entity.get("id") or "")
         name_identifier = next(
             (
                 value
@@ -3086,37 +3095,121 @@ def build_spiritsafe_semantic_anchor_document(
             ),
             None,
         )
-        entry = _build_semantic_anchor_entry(
-            entity_doc,
-            name_identifier_property_id=name_identifier_property_id,
-            internal_prefix=internal_prefix,
+        if not name_identifier:
+            continue
+        if not (internal_prefix and name_identifier.startswith(internal_prefix)):
+            continue
+        current_entities_by_internal_name_identifier[name_identifier] = entity_doc
+        if entity_id:
+            entity_id_to_internal_name_identifier[entity_id] = name_identifier
+
+    anchors: dict[str, dict[str, Any]] = {}
+    for anchor_name, requirement in sorted(contract.requirements.items()):
+        compiled_entity = compilation.by_internal_name_identifier[anchor_name]
+        required_view = normalize_meta_wikibase_required_entity_view(
+            compiled_entity.payload
         )
-        if not entry or not name_identifier:
+        current_entity_doc = current_entities_by_internal_name_identifier.get(
+            anchor_name
+        )
+        if current_entity_doc is None:
+            anchors[anchor_name] = {
+                "id": None,
+                "kind": requirement.kind,
+                **(
+                    {"datatype": requirement.datatype}
+                    if requirement.kind == "property"
+                    and requirement.datatype is not None
+                    else {}
+                ),
+                "required": required_view,
+                "resolved": None,
+            }
             continue
 
-        anchors[name_identifier] = entry
+        entry = _build_semantic_anchor_entry(
+            current_entity_doc,
+            name_identifier_property_id=name_identifier_property_id,
+            internal_prefix=internal_prefix,
+            required_view=required_view,
+            entity_id_to_internal_name_identifier=entity_id_to_internal_name_identifier,
+            label_language=label_language,
+            required_value_language=required_value_language,
+            required_monolingualtext_properties=required_monolingualtext_properties,
+        )
+        if entry is None:
+            anchors[anchor_name] = {
+                "id": None,
+                "kind": requirement.kind,
+                **(
+                    {"datatype": requirement.datatype}
+                    if requirement.kind == "property"
+                    and requirement.datatype is not None
+                    else {}
+                ),
+                "required": required_view,
+                "resolved": None,
+            }
+            continue
+        anchors[anchor_name] = entry
 
     property_count = sum(
         1
         for entry in anchors.values()
-        if isinstance(entry.get("id"), str) and entry["id"].startswith("P")
+        if _entity_id_from_reference(entry.get("id") or "")
+        and _entity_id_from_reference(entry.get("id") or "").startswith("P")
     )
     item_count = sum(
         1
         for entry in anchors.values()
-        if isinstance(entry.get("id"), str) and entry["id"].startswith("Q")
+        if _entity_id_from_reference(entry.get("id") or "")
+        and _entity_id_from_reference(entry.get("id") or "").startswith("Q")
     )
 
-    return {
+    semantic_anchor_document = {
         "metadata": {
             "generated_at": datetime.now(timezone.utc)
             .isoformat()
             .replace("+00:00", "Z"),
+            "contract_digest": contract_digest,
             "property_count": property_count,
             "item_count": item_count,
         },
         "entities": anchors,
     }
+
+    validation_result = validate_semantic_anchor_document(
+        semantic_anchor_document,
+        internal_name_identifier_prefix=internal_prefix,
+    )
+    semantic_anchor_document["validation"] = {
+        "status": validation_result.status,
+        "checked_at": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
+        "required_anchor_count": validation_result.required_anchor_count,
+        "matched_anchor_count": validation_result.matched_anchor_count,
+        "evaluated_anchor_count": validation_result.evaluated_anchor_count,
+        "error_count": validation_result.error_count,
+        "warning_count": validation_result.warning_count,
+        "freshness_checked": validation_result.freshness_checked,
+        "freshness_match": validation_result.freshness_match,
+    }
+
+    for anchor_name, entity_result in validation_result.entity_results.items():
+        entry = semantic_anchor_document["entities"].get(anchor_name)
+        if not isinstance(entry, dict):
+            continue
+        entry["validation"] = {
+            "status": entity_result.status,
+            "notices": [
+                {
+                    "severity": notice.severity,
+                    "code": notice.code,
+                }
+                for notice in entity_result.notices
+            ],
+        }
+
+    return semantic_anchor_document
 
 
 def export_spiritsafe_semantic_anchors(

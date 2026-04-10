@@ -49,6 +49,7 @@ nav:
     - Tribal Governments: tribes.md
   - Architecture:
     - Overview: architecture/index.md
+    - Wikimedia Commons: architecture/wikimedia-commons.md
     - Meta-Wikibase:
       - Overview: architecture/meta-wikibase/index.md
       - Data Distillery Wikibase: architecture/meta-wikibase/DataDistillery-Wikibase.md

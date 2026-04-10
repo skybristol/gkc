@@ -16,6 +16,7 @@ from gkc.spirit_safe import (
     validate_packet_structure,
 )
 from gkc.still_charger import create_curation_packet
+from gkc.wikibase import get_meta_wikibase_init_contract_digest
 
 
 @pytest.fixture
@@ -33,7 +34,7 @@ def setup_local_source(fixture_root: Path):
 
 
 def test_build_spiritsafe_semantic_anchor_document(tmp_path: Path, fixture_root: Path):
-    """Semantic anchor builder should emit metadata plus underscore mappings."""
+    """Semantic anchor builder should emit the richer artifact contract."""
 
     root = tmp_path / "spiritsafe"
     copytree(fixture_root, root)
@@ -72,7 +73,7 @@ spiritsafe:
                 "snaktype": "value",
                 "property": "P214",
                 "datavalue": {
-                    "value": "_TribalGovernmentInTheUnitedStates",
+                    "value": "_entity",
                     "type": "string",
                 },
                 "datatype": "string",
@@ -89,12 +90,19 @@ spiritsafe:
     assert anchors["metadata"]["property_count"] == 0
     assert anchors["metadata"]["item_count"] == 1
     assert isinstance(anchors["metadata"]["generated_at"], str)
-    assert anchors["entities"] == {
-        "_TribalGovernmentInTheUnitedStates": {
-            "id": "Q4",
-            "entity": "https://datadistillery.wikibase.cloud/entity/Q4",
-        }
-    }
+    assert (
+        anchors["metadata"]["contract_digest"]
+        == get_meta_wikibase_init_contract_digest()
+    )
+    assert anchors["validation"]["status"] in {"valid", "warning", "error"}
+    assert (
+        anchors["entities"]["_entity"]["id"]
+        == "https://datadistillery.wikibase.cloud/entity/Q4"
+    )
+    assert anchors["entities"]["_entity"]["kind"] == "item"
+    assert isinstance(anchors["entities"]["_entity"]["required"], dict)
+    assert isinstance(anchors["entities"]["_entity"]["resolved"], dict)
+    assert isinstance(anchors["entities"]["_entity"]["validation"], dict)
 
 
 def test_build_spiritsafe_semantic_anchor_document_includes_property_datatype(
@@ -162,13 +170,14 @@ spiritsafe:
 
     assert anchors["metadata"]["property_count"] == 1
     assert anchors["metadata"]["item_count"] == 0
-    assert anchors["entities"] == {
-        "_time": {
-            "id": "P192",
-            "entity": "https://datadistillery.wikibase.cloud/entity/P192",
-            "datatype": "time",
-        }
-    }
+    assert (
+        anchors["entities"]["_time"]["id"]
+        == "https://datadistillery.wikibase.cloud/entity/P192"
+    )
+    assert anchors["entities"]["_time"]["kind"] == "property"
+    assert anchors["entities"]["_time"]["datatype"] == "time"
+    assert isinstance(anchors["entities"]["_time"]["required"], dict)
+    assert isinstance(anchors["entities"]["_time"]["resolved"], dict)
 
 
 def test_build_spiritsafe_semantic_anchor_document_marks_internal_entries(
@@ -227,7 +236,8 @@ spiritsafe:
 
     assert anchors["metadata"]["property_count"] == 0
     assert anchors["metadata"]["item_count"] == 0
-    assert anchors["entities"] == {}
+    assert anchors["entities"]["_entity"]["id"] is None
+    assert anchors["entities"]["_entity"]["resolved"] is None
 
 
 def test_build_spiritsafe_semantic_anchor_document_requires_config(
@@ -281,7 +291,7 @@ spiritsafe:
                 "snaktype": "value",
                 "property": "P214",
                 "datavalue": {
-                    "value": "_TribalGovernmentInTheUnitedStates",
+                    "value": "_entity",
                     "type": "string",
                 },
                 "datatype": "string",
@@ -299,12 +309,12 @@ spiritsafe:
     assert output_path.exists()
     assert anchors["metadata"]["property_count"] == 0
     assert anchors["metadata"]["item_count"] == 1
-    assert anchors["entities"] == {
-        "_TribalGovernmentInTheUnitedStates": {
-            "id": "Q4",
-            "entity": "https://datadistillery.wikibase.cloud/entity/Q4",
-        }
-    }
+    assert anchors["validation"]["error_count"] >= 0
+    assert (
+        anchors["entities"]["_entity"]["id"]
+        == "https://datadistillery.wikibase.cloud/entity/Q4"
+    )
+    assert anchors["entities"]["_entity"]["kind"] == "item"
 
 
 def test_load_profile_reads_json_profile_document():

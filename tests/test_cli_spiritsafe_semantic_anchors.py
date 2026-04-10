@@ -19,11 +19,16 @@ def test_spiritsafe_semantic_anchors_build_json(monkeypatch, capsys, tmp_path):
                 "property_count": 1,
                 "item_count": 1,
             },
+            "validation": {
+                "status": "warning",
+                "error_count": 0,
+                "warning_count": 1,
+            },
             "entities": {
-                "_foo": {"id": "Q1", "entity": "https://example.org/entity/Q1"},
+                "_foo": {"id": "https://example.org/entity/Q1", "kind": "item"},
                 "_bar": {
-                    "id": "P1",
-                    "entity": "https://example.org/entity/P1",
+                    "id": "https://example.org/entity/P1",
+                    "kind": "property",
                     "datatype": "string",
                 },
             },
@@ -51,6 +56,8 @@ def test_spiritsafe_semantic_anchors_build_json(monkeypatch, capsys, tmp_path):
     assert payload["details"]["anchor_count"] == 2
     assert payload["details"]["property_count"] == 1
     assert payload["details"]["item_count"] == 1
+    assert payload["details"]["validation_status"] == "warning"
+    assert payload["details"]["warning_count"] == 1
 
 
 def test_spiritsafe_semantic_anchors_build_requires_local_root(capsys):
@@ -78,12 +85,16 @@ def test_spiritsafe_semantic_anchors_validate_json(monkeypatch, capsys, tmp_path
 
     class FakeResult:
         valid = True
+        status = "valid"
         required_anchor_count = 2
         matched_anchor_count = 2
         evaluated_anchor_count = 1
+        error_count = 0
+        warning_count = 0
         freshness_checked = False
         freshness_match = None
         notices = []
+        entity_results = {}
 
     monkeypatch.setattr(
         cli, "validate_semantic_anchor_document", lambda *args, **kwargs: FakeResult()
@@ -105,6 +116,7 @@ def test_spiritsafe_semantic_anchors_validate_json(monkeypatch, capsys, tmp_path
     assert payload["command"] == "spiritsafe.semantic-anchors.validate"
     assert payload["ok"] is True
     assert payload["details"]["artifact_path"] == str(artifact_path)
+    assert payload["details"]["status"] == "valid"
     assert payload["details"]["required_anchor_count"] == 2
 
 
@@ -135,12 +147,16 @@ def test_spiritsafe_semantic_anchors_validate_can_compare_current_cache(
 
     class FakeResult:
         valid = True
+        status = "valid"
         required_anchor_count = 2
         matched_anchor_count = 2
         evaluated_anchor_count = 1
+        error_count = 0
+        warning_count = 0
         freshness_checked = True
         freshness_match = True
         notices = []
+        entity_results = {}
 
     monkeypatch.setattr(
         cli, "validate_semantic_anchor_document", lambda *args, **kwargs: FakeResult()

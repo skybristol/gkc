@@ -36,10 +36,11 @@ from gkc.sitelinks import (
     DEFAULT_WIKIMEDIA_SITEMATRIX_URL,
     export_wikimedia_sites_artifact,
 )
-from gkc.sparql import fetch_entity_labels
+from gkc.sparql import execute_sparql, fetch_entity_labels
 from gkc.spirit_safe import (
     build_entity_profile_json_documents,
     build_spiritsafe_semantic_anchor_document,
+    build_spiritsafe_semantic_anchor_resolver,
     export_entity_profile_json_documents,
     export_spiritsafe_semantic_anchors,
     get_spirit_safe_source,
@@ -749,6 +750,56 @@ def _build_parser() -> argparse.ArgumentParser:
     registry_validate.set_defaults(
         handler=_handle_registry_validate,
         command_path="registry.validate",
+    )
+
+    wikibase_parser = subparsers.add_parser(
+        "wikibase", help="Meta-Wikibase bootstrap and preview operations"
+    )
+    wikibase_subparsers = wikibase_parser.add_subparsers(dest="wikibase_command")
+
+    wikibase_init = wikibase_subparsers.add_parser(
+        "init",
+        help=("Preview the Meta-Wikibase seed compilation and dry-run baseline plan"),
+    )
+    wikibase_init.add_argument(
+        "--api-url",
+        default=runtime_config.api_url,
+        help=(
+            "Override the configured Wikibase API URL when live comparison is used "
+            "(default: META_WB_API_URL env var, config file, or Data Distillery API)"
+        ),
+    )
+    wikibase_init.add_argument(
+        "--local-root",
+        help=(
+            "Optional local SpiritSafe root used to load and validate semantic anchors "
+            "for live comparison"
+        ),
+    )
+    wikibase_init.add_argument(
+        "--artifact-file",
+        help=(
+            "Optional semantic_anchors.json artifact used for live comparison; "
+            "when provided without --local-root it is loaded directly"
+        ),
+    )
+    wikibase_init.add_argument(
+        "--show-entity",
+        help=(
+            "Optional seed entity key or internal name identifier whose compiled payload "
+            "should be included in the output"
+        ),
+    )
+    wikibase_init.add_argument(
+        "--language",
+        help=(
+            "Optional override for the package-level language used for labels, descriptions, "
+            "and aliases in the compiled seed preview"
+        ),
+    )
+    wikibase_init.set_defaults(
+        handler=_handle_wikibase_init,
+        command_path="wikibase.init",
     )
 
     spiritsafe_parser = subparsers.add_parser(
@@ -2304,6 +2355,9 @@ def _handle_spiritsafe_semantic_anchors_build(
             "anchor_count": len(entities) if isinstance(entities, dict) else 0,
             "property_count": metadata.get("property_count", 0),
             "item_count": metadata.get("item_count", 0),
+            "validation_status": artifact.get("validation", {}).get("status"),
+            "error_count": artifact.get("validation", {}).get("error_count", 0),
+            "warning_count": artifact.get("validation", {}).get("warning_count", 0),
         }
         return {
             "command": args.command_path,
@@ -2384,18 +2438,35 @@ def _handle_spiritsafe_semantic_anchors_validate(
         warning_count = sum(
             1 for notice in result.notices if notice.severity == "warning"
         )
-        info_count = sum(1 for notice in result.notices if notice.severity == "info")
+        entity_results_payload = {
+            anchor_name: {
+                "status": entity_result.status,
+                "notices": [
+                    {
+                        "severity": notice.severity,
+                        "entity_ref": notice.entity_ref,
+                        "statement_ref": notice.statement_ref,
+                        "code": notice.code,
+                        "message": notice.message,
+                        "normalized_value": notice.normalized_value,
+                    }
+                    for notice in entity_result.notices
+                ],
+            }
+            for anchor_name, entity_result in result.entity_results.items()
+        }
         details = {
             "artifact_path": str(artifact_path),
+            "status": result.status,
             "required_anchor_count": result.required_anchor_count,
             "matched_anchor_count": result.matched_anchor_count,
             "evaluated_anchor_count": result.evaluated_anchor_count,
             "freshness_checked": result.freshness_checked,
             "freshness_match": result.freshness_match,
-            "notices_error": error_count,
-            "notices_warning": warning_count,
-            "notices_info": info_count,
+            "error_count": error_count,
+            "warning_count": warning_count,
             "notices": notices_payload,
+            "entity_results": entity_results_payload,
         }
         message = (
             f"Validated SpiritSafe semantic anchor artifact at {artifact_path}"
@@ -3109,6 +3180,449 @@ def _handle_mash_full_sync_wikibase(args: argparse.Namespace) -> dict[str, Any]:
         raise
     except Exception as exc:
         raise CLIError(str(exc)) from exc
+
+
+def _handle_wikibase_init(args: argparse.Namespace) -> dict[str, Any]:
+    """Preview Meta-Wikibase seed compilation and dry-run init actions."""
+
+    original_languages = gkc.get_languages()
+    if args.language:
+        gkc.set_languages(args.language)
+
+    try:
+        compilation = gkc.compile_meta_wikibase_seed(
+            label_language=args.language,
+        )
+        current_entities: dict[str, dict[str, Any]] | None = None
+        entity_id_to_internal_name_identifier: dict[str, str] | None = None
+        comparison_source: dict[str, Any] = {"mode": "compiled-only"}
+
+        if args.local_root:
+            (
+                current_entities,
+                entity_id_to_internal_name_identifier,
+                comparison_source,
+            ) = _load_wikibase_init_current_entities_from_local_root(
+                compilation=compilation,
+                local_root=args.local_root,
+                api_url=args.api_url,
+            )
+        elif args.artifact_file:
+            resolver = _load_wikibase_init_anchor_resolver(
+                local_root=None,
+                artifact_file=args.artifact_file,
+            )
+            current_entities, entity_id_to_internal_name_identifier = (
+                _load_wikibase_init_current_entities_from_resolver(
+                    compilation=compilation,
+                    resolver=resolver,
+                    api_url=args.api_url,
+                )
+            )
+            comparison_source = {
+                "mode": "live-compare-anchor-artifact",
+                "api_url": args.api_url,
+                "local_root": None,
+                "artifact_file": resolver.artifact_path,
+                "resolved_entity_count": len(current_entities),
+            }
+
+        plan = gkc.plan_meta_wikibase_seed_baseline(
+            current_entities_by_internal_name_identifier=current_entities,
+            entity_id_to_internal_name_identifier=entity_id_to_internal_name_identifier,
+            label_language=args.language,
+            required_value_language="mul",
+        )
+
+        action_rows: list[dict[str, Any]] = []
+        for operation in plan.operations:
+            compiled_entity = compilation.by_internal_name_identifier[
+                operation.internal_name_identifier
+            ]
+            action_rows.append(
+                {
+                    "action": operation.action,
+                    "kind": operation.entity_type,
+                    "label": _wikibase_init_entity_label(compiled_entity.payload),
+                    "entity_id": operation.current_entity_id,
+                    "details": operation.details,
+                    "changed_fields": operation.changed_fields,
+                    "request_payload": operation.payload,
+                    "internal_name_identifier": operation.internal_name_identifier,
+                    "key": operation.key,
+                }
+            )
+
+        summary = {
+            "created": sum(
+                1 for operation in plan.operations if operation.action == "create"
+            ),
+            "updated": sum(
+                1 for operation in plan.operations if operation.action == "update"
+            ),
+            "skipped": sum(
+                1 for operation in plan.operations if operation.action == "skip"
+            ),
+            "dry_run": len(plan.operations),
+        }
+
+        details: dict[str, Any] = {
+            "summary": summary,
+            "seed_entity_count": len(compilation.entities),
+            "label_language": _resolve_command_language(args.language),
+            "value_language": "mul",
+            "comparison_source": comparison_source,
+            "actions": action_rows,
+        }
+
+        if args.show_entity:
+            sample_entity = _select_wikibase_init_sample_entity(
+                compilation, args.show_entity
+            )
+            details["sample_entity"] = {
+                "key": sample_entity.key,
+                "internal_name_identifier": sample_entity.internal_name_identifier,
+                "payload": sample_entity.payload,
+            }
+
+        return {
+            "command": args.command_path,
+            "ok": True,
+            "message": (
+                f"Prepared Meta-Wikibase dry-run plan for {len(plan.operations)} seed entities"
+            ),
+            "details": details,
+        }
+    except CLIError:
+        raise
+    except Exception as exc:
+        raise CLIError(str(exc)) from exc
+    finally:
+        if args.language:
+            gkc.set_languages(original_languages)
+
+
+def _load_wikibase_init_anchor_resolver(
+    *,
+    local_root: str | None,
+    artifact_file: str | None,
+):
+    """Load the semantic-anchor resolver used for live seed comparison."""
+
+    if artifact_file:
+        artifact_path = Path(artifact_file).expanduser().resolve()
+        if not artifact_path.is_file():
+            raise CLIError(f"Semantic anchor artifact not found at {artifact_path}")
+        try:
+            anchor_document = json.loads(artifact_path.read_text(encoding="utf-8"))
+        except Exception as exc:
+            raise CLIError(
+                f"Failed to load semantic anchor artifact {artifact_path}: {exc}"
+            ) from exc
+        return build_spiritsafe_semantic_anchor_resolver(
+            anchor_document,
+            artifact_path=artifact_path,
+        )
+
+    raise CLIError("Anchor-artifact comparison requires --artifact-file")
+
+
+def _load_wikibase_init_current_entities_from_resolver(
+    *,
+    compilation,
+    resolver,
+    api_url: str,
+) -> tuple[dict[str, dict[str, Any]], dict[str, str]]:
+    """Fetch the current Wikibase entities referenced by the active anchors."""
+
+    api_client = WikibaseApiClient(api_url=api_url)
+    entity_id_to_internal_name_identifier = {
+        anchor.entity_id: anchor_name
+        for anchor_name, anchor in resolver.anchors.items()
+    }
+
+    entity_ids = sorted(
+        {
+            resolver.anchors[internal_name_identifier].entity_id
+            for internal_name_identifier in compilation.by_internal_name_identifier.keys()
+            if internal_name_identifier in resolver.anchors
+        }
+    )
+    fetched_entities = api_client.get_entities(entity_ids)
+
+    current_entities: dict[str, dict[str, Any]] = {}
+    for internal_name_identifier in compilation.by_internal_name_identifier.keys():
+        anchor = resolver.anchors.get(internal_name_identifier)
+        if anchor is None:
+            continue
+        entity_payload = fetched_entities.get(anchor.entity_id)
+        if isinstance(entity_payload, dict):
+            current_entities[internal_name_identifier] = entity_payload
+
+    return current_entities, entity_id_to_internal_name_identifier
+
+
+def _load_wikibase_init_current_entities_from_local_root(
+    *,
+    compilation,
+    local_root: str,
+    api_url: str,
+) -> tuple[dict[str, dict[str, Any]], dict[str, str], dict[str, Any]]:
+    """Fetch current entities by internal name identifier for bootstrap-safe dry runs."""
+
+    resolved_local_root = Path(local_root).expanduser().resolve()
+    _config_path, config_values = resolve_spiritsafe_meta_wikibase_config(
+        resolved_local_root
+    )
+    name_identifier_property_id = config_values.get("name_identifier_property_id")
+    if not name_identifier_property_id:
+        raise CLIError(
+            "Meta-wikibase config is missing semantic_conventions.name_identifier_property_id"
+        )
+
+    sparql_endpoint = config_values.get("sparql_endpoint")
+    if not sparql_endpoint:
+        raise CLIError(
+            "Meta-wikibase config is missing sparql_endpoint, required for bootstrap dry-run comparison"
+        )
+
+    entity_id_to_internal_name_identifier = (
+        _discover_meta_wikibase_entities_by_name_identifier(
+            internal_name_identifiers=sorted(
+                compilation.by_internal_name_identifier.keys()
+            ),
+            name_identifier_property_id=name_identifier_property_id,
+            sparql_endpoint=sparql_endpoint,
+        )
+    )
+    anchor_hint_entity_id_to_internal_name_identifier = (
+        _load_wikibase_init_anchor_hints_from_local_root(
+            local_root=resolved_local_root,
+            compilation=compilation,
+        )
+    )
+
+    api_client = WikibaseApiClient(api_url=api_url)
+    candidate_entity_ids = sorted(
+        set(entity_id_to_internal_name_identifier.keys())
+        | set(anchor_hint_entity_id_to_internal_name_identifier.keys())
+    )
+    fetched_entities = api_client.get_entities(candidate_entity_ids)
+    current_entities: dict[str, dict[str, Any]] = {}
+    validated_entity_id_to_internal_name_identifier: dict[str, str] = {}
+
+    for entity_id, entity_payload in fetched_entities.items():
+        if not isinstance(entity_payload, dict):
+            continue
+        name_identifier_values = _extract_name_identifier_values_from_entity(
+            entity_payload,
+            name_identifier_property_id=name_identifier_property_id,
+        )
+        for internal_name_identifier in name_identifier_values:
+            if internal_name_identifier in compilation.by_internal_name_identifier:
+                current_entities[internal_name_identifier] = entity_payload
+                validated_entity_id_to_internal_name_identifier[entity_id] = (
+                    internal_name_identifier
+                )
+
+    for (
+        entity_id,
+        internal_name_identifier,
+    ) in anchor_hint_entity_id_to_internal_name_identifier.items():
+        if internal_name_identifier in current_entities:
+            continue
+        entity_payload = fetched_entities.get(entity_id)
+        if isinstance(entity_payload, dict):
+            current_entities[internal_name_identifier] = entity_payload
+            validated_entity_id_to_internal_name_identifier[entity_id] = (
+                internal_name_identifier
+            )
+
+    comparison_source = {
+        "mode": "live-compare-name-identifier",
+        "api_url": api_url,
+        "local_root": str(resolved_local_root),
+        "artifact_file": None,
+        "name_identifier_property_id": name_identifier_property_id,
+        "sparql_endpoint": sparql_endpoint,
+        "sparql_candidate_count": len(entity_id_to_internal_name_identifier),
+        "anchor_hint_count": len(anchor_hint_entity_id_to_internal_name_identifier),
+        "resolved_entity_count": len(current_entities),
+    }
+    comparison_entity_id_to_internal_name_identifier = {}
+    if "_name_identifier" in compilation.by_internal_name_identifier:
+        comparison_entity_id_to_internal_name_identifier[
+            name_identifier_property_id
+        ] = "_name_identifier"
+    comparison_entity_id_to_internal_name_identifier.update(
+        anchor_hint_entity_id_to_internal_name_identifier
+    )
+    comparison_entity_id_to_internal_name_identifier.update(
+        entity_id_to_internal_name_identifier
+    )
+    comparison_entity_id_to_internal_name_identifier.update(
+        validated_entity_id_to_internal_name_identifier
+    )
+    return (
+        current_entities,
+        comparison_entity_id_to_internal_name_identifier,
+        comparison_source,
+    )
+
+
+def _load_wikibase_init_anchor_hints_from_local_root(
+    *,
+    local_root: Path,
+    compilation,
+) -> dict[str, str]:
+    """Load non-authoritative entity-id hints from local semantic anchors when present."""
+
+    layout = resolve_spiritsafe_layout(local_root)
+    artifact_path = layout.semantic_anchors_file(local_root)
+    if not artifact_path.is_file():
+        return {}
+
+    try:
+        anchor_document = json.loads(artifact_path.read_text(encoding="utf-8"))
+        resolver = build_spiritsafe_semantic_anchor_resolver(
+            anchor_document,
+            artifact_path=artifact_path,
+        )
+    except Exception:
+        return {}
+
+    hints: dict[str, str] = {}
+    for internal_name_identifier in compilation.by_internal_name_identifier.keys():
+        anchor = resolver.anchors.get(internal_name_identifier)
+        if anchor is None:
+            continue
+        hints[anchor.entity_id] = internal_name_identifier
+    return hints
+
+
+def _discover_meta_wikibase_entities_by_name_identifier(
+    *,
+    internal_name_identifiers: list[str],
+    name_identifier_property_id: str,
+    sparql_endpoint: str,
+) -> dict[str, str]:
+    """Resolve live entity ids by querying the configured name_identifier property."""
+
+    if not internal_name_identifiers:
+        return {}
+
+    results: dict[str, str] = {}
+    batch_size = 25
+    for start in range(0, len(internal_name_identifiers), batch_size):
+        batch = internal_name_identifiers[start : start + batch_size]
+        values = " ".join(json.dumps(value) for value in batch)
+        query = (
+            "SELECT ?entity ?nameIdentifier WHERE { "
+            f"VALUES ?nameIdentifier {{ {values} }} "
+            f"?entity wdt:{name_identifier_property_id} ?nameIdentifier . "
+            "}"
+        )
+        payload = execute_sparql(query, endpoint=sparql_endpoint)
+        bindings = payload.get("results", {}).get("bindings", [])
+        if not isinstance(bindings, list):
+            continue
+        for binding in bindings:
+            if not isinstance(binding, dict):
+                continue
+            entity_value = binding.get("entity", {}).get("value")
+            name_identifier = binding.get("nameIdentifier", {}).get("value")
+            entity_id = _entity_id_from_wikibase_uri(entity_value)
+            if entity_id and isinstance(name_identifier, str) and name_identifier:
+                results[entity_id] = name_identifier
+
+    return results
+
+
+def _entity_id_from_wikibase_uri(entity_uri: Any) -> str | None:
+    """Extract a Q/P identifier from a Wikibase entity URI."""
+
+    if not isinstance(entity_uri, str) or not entity_uri:
+        return None
+    candidate = entity_uri.rstrip("/").split("/")[-1]
+    if candidate[:1] in {"Q", "P"} and candidate[1:].isdigit():
+        return candidate
+    return None
+
+
+def _extract_name_identifier_values_from_entity(
+    entity_payload: dict[str, Any],
+    *,
+    name_identifier_property_id: str,
+) -> set[str]:
+    """Extract string name_identifier values from one fetched Wikibase entity."""
+
+    claims = entity_payload.get("claims")
+    if not isinstance(claims, dict):
+        return set()
+
+    raw_claims = claims.get(name_identifier_property_id)
+    if not isinstance(raw_claims, list):
+        return set()
+
+    values: set[str] = set()
+    for claim in raw_claims:
+        if not isinstance(claim, dict):
+            continue
+        datavalue = claim.get("mainsnak", {}).get("datavalue", {})
+        value = datavalue.get("value")
+        if isinstance(value, str) and value:
+            values.add(value)
+
+    return values
+
+
+def _select_wikibase_init_sample_entity(compilation, selector: str):
+    """Resolve one compiled entity by key or internal name identifier."""
+
+    sample_entity = compilation.entities.get(selector)
+    if sample_entity is not None:
+        return sample_entity
+
+    sample_entity = compilation.by_internal_name_identifier.get(selector)
+    if sample_entity is not None:
+        return sample_entity
+
+    raise CLIError(
+        f"Unknown seed entity '{selector}'. Use a fixture key like 'entity_profile' "
+        "or an internal name identifier like '_entity_profile'."
+    )
+
+
+def _wikibase_init_entity_label(payload: dict[str, Any]) -> str:
+    """Return a human-facing label for one compiled seed payload."""
+
+    labels = payload.get("labels")
+    if isinstance(labels, dict):
+        for language_payload in labels.values():
+            if isinstance(language_payload, dict):
+                value = language_payload.get("value")
+                if isinstance(value, str) and value:
+                    return value
+    return ""
+
+
+def _resolve_command_language(configured_language: str | None) -> str:
+    """Resolve the language used by the command after optional overrides."""
+
+    if isinstance(configured_language, str) and configured_language.strip():
+        return configured_language.strip()
+
+    current_languages = gkc.get_languages()
+    if isinstance(current_languages, str):
+        candidate = current_languages.strip()
+        return candidate if candidate and candidate != "all" else "en"
+    if isinstance(current_languages, list):
+        for candidate in current_languages:
+            if isinstance(candidate, str):
+                candidate = candidate.strip()
+                if candidate and candidate != "all":
+                    return candidate
+    return "en"
 
 
 def _emit_output(output: dict[str, Any], json_output: bool, verbose: bool) -> None:
