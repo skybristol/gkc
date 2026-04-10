@@ -38,7 +38,7 @@ At this layer, we are defining concepts and expected datatypes, not binding to a
 
 ### 2. SpiritSafe Semantic-Anchor Artifact
 
-`cache/config/semantic_anchors.json` is the materialized artifact that maps those internal names to the concrete IDs currently present in the Meta-Wikibase-backed cache.
+`config/semantic_anchors.json` is the materialized artifact that maps those internal names to the concrete IDs currently present in the Meta-Wikibase-backed cache.
 
 Typical shape:
 
@@ -46,24 +46,50 @@ Typical shape:
 {
   "metadata": {
     "generated_at": "2026-04-04T00:00:00Z",
+    "contract_digest": "4c9f...",
     "property_count": 12,
     "item_count": 8
   },
+  "validation": {
+    "status": "warning",
+    "checked_at": "2026-04-04T00:00:01Z",
+    "required_anchor_count": 20,
+    "matched_anchor_count": 20,
+    "evaluated_anchor_count": 20,
+    "error_count": 0,
+    "warning_count": 2,
+    "freshness_checked": false,
+    "freshness_match": null
+  },
   "entities": {
     "_has_statement": {
-      "id": "P157",
-      "entity": "https://datadistillery.wikibase.cloud/entity/P157",
-      "datatype": "wikibase-item"
+      "id": "https://datadistillery.wikibase.cloud/entity/P157",
+      "kind": "property",
+      "datatype": "wikibase-item",
+      "required": {"kind": "property"},
+      "resolved": {"kind": "property"},
+      "validation": {
+        "status": "valid",
+        "notices": []
+      }
     },
     "_entity_profile": {
-      "id": "Q3",
-      "entity": "https://datadistillery.wikibase.cloud/entity/Q3"
+      "id": "https://datadistillery.wikibase.cloud/entity/Q3",
+      "kind": "item",
+      "required": {"kind": "item"},
+      "resolved": {"kind": "item"},
+      "validation": {
+        "status": "warning",
+        "notices": [
+          {"severity": "warning", "code": "label_missing"}
+        ]
+      }
     }
   }
 }
 ```
 
-This is the runtime-facing lookup document.
+This is both the runtime-facing lookup document and the operator-facing conformance report.
 
 ### 3. Runtime Resolver
 
@@ -81,7 +107,7 @@ The intended flow is:
 
 3. Materialize cache entities in SpiritSafe.
 
-4. Build `cache/config/semantic_anchors.json` from those cached entities.
+4. Build `config/semantic_anchors.json` from those cached entities.
 
 5. Validate that artifact against the package-owned contract.
 
@@ -95,13 +121,14 @@ Semantic anchors do:
 
 - map internal semantic names to concrete property and item IDs
 - preserve expected property datatypes for runtime checks
+- keep a contract digest and per-entity validation status close to the resolved binding
 - give runtime consumers one stable lookup mechanism
 - let tests and ad hoc callers provide a synthetic anchor document explicitly when they are not operating inside a full SpiritSafe checkout
 
 Semantic anchors do not:
 
 - replace the authored ontology in the Meta-Wikibase
-- validate the full ontology hierarchy or all semantic modeling choices
+- validate every modeling choice in the authored ontology
 - define endpoint URLs, credentials, or other environment configuration
 - eliminate the need for SpiritSafe materialization
 
@@ -110,14 +137,14 @@ Semantic anchors do not:
 Anchor-backed runtime workflows assume two things are present under a local SpiritSafe root:
 
 - `config/dd-wikibase.yaml` or another supported Meta-Wikibase config filename under `config/`
-- `cache/config/semantic_anchors.json`
+- `config/semantic_anchors.json`
 
 The config file supplies the semantic convention needed to interpret internal names:
 
 - `semantic_conventions.name_identifier_property_id`
 - `semantic_conventions.internal_name_identifier_prefix`
 
-The semantic-anchor artifact supplies the actual ID bindings.
+The semantic-anchor artifact supplies the actual ID bindings plus the latest build-time validation state.
 
 When both are available, runtime consumers such as profile export, value-list hydration, and entity-index generation can resolve internal ontology labels consistently.
 
@@ -135,7 +162,7 @@ Use that route when:
 - exercising one runtime helper in isolation
 - running outside the standard SpiritSafe directory layout
 
-Do not treat that override path as the normal production contract. The normal production contract is the validated artifact under `cache/config/semantic_anchors.json`.
+Do not treat that override path as the normal production contract. The normal production contract is the validated artifact under `config/semantic_anchors.json`.
 
 ## Where To Look In The Codebase
 

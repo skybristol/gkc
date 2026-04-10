@@ -62,6 +62,18 @@ entities:
         datatype: wikibase-item
         kind: property
 
+      has_fixed_value:
+        label: has fixed value
+        description: links a statement directly to the canonical external identifier that must be used as its exact value when no local GKC value entity is needed
+        datatype: url
+        kind: property
+
+      has_fixed_value_label:
+        label: has fixed value label
+        description: human-readable label accompanying a fixed external value identifier for profile export and display use
+        datatype: string
+        kind: property
+
       has_qualifier:
         label: has qualifier
         description: links a statement that is required as a qualifier on the subject statement
@@ -164,6 +176,12 @@ entities:
         datatype: wikibase-item
         kind: property
 
+      regex:
+        label: format as a regular expression
+        description: regex describing the format or shape of a value in PCRE syntax
+        datatype: string
+        kind: property
+
     items:
       entity:
         label: entity
@@ -203,7 +221,7 @@ entities:
       manual_refresh_policy:
         label: manual refresh
         description: refresh policy where something is only refreshed manually and not on a schedule
-        instance_of: refresh_policy
+        instance_of: value_list_refresh_policy
         kind: item
 
       wikibase_statement_type:
@@ -301,3 +319,435 @@ entities:
         error_message: Provide a valid Commons Data namespace tabular-data reference.
         instance_of: wikibase_statement_type
         kind: item
+
+      commons_media_object:
+        label: Commons Media Object
+        description: profile laying out the specifications and statements used in documenting media items in Wikimedia Commons with structured data content
+        instance_of: entity_profile
+        kind: item
+        label_prompt: caption used for the media object
+        label_guidance: Provide a short but descriptive caption for the image file or other media object that will be used widely whereve the media is displayed
+        has_statement:
+          - depicts
+          - copyright_status
+          - copyright_license
+          - inception
+          - media_type
+          - height
+          - width
+          - data_size
+          - checksum
+          - coordinates_of_the_point_of_view
+
+      format_specification:
+        label: Format Specification
+        description: items in this class contain specific format constraints or specifications for string values
+        subclass_of: entity
+        kind: item
+
+      depicts:
+        label: depicts
+        description: entity visually depicted in an image, literarily described in a work, or otherwise incorporated into an audiovisual or other medium
+        instance_of: entity_statement
+        kind: item
+        same_as: http://www.wikidata.org/entity/P180
+        statement_type: wikibase-item
+        statement_prompt: enter or choose the Wikidata item that the subject image portrays or depicts
+        statement_guidance: Select the Wikidata item that the subject media object depicts
+        error_message: Failure to identify a Wikidata item that is a subject of the media object will degarade the full functionallity of the information content
+        # null encodes a DD Wikibase novalue claim on max_count, meaning 0-n values are allowed.
+        max_count: null
+
+      copyright_status:
+        label: copyright status
+        description: copyright status for intellectual creations like works of art, publications, software, etc.
+        instance_of: entity_statement
+        kind: item
+        same_as: http://www.wikidata.org/entity/P6216
+        statement_type: wikibase-item
+        has_value: copyright_status_values
+        statement_prompt: enter or select the Wikidata item specifying copyright status for the subject media item
+        statement_guidance: Link to the Wikidata item from a controlled list representing the copyright status for the subject media item to clarify legal use of the media object
+        error_message: Failure to select a valid copyright status value for a media object means the legal uses for the object will be ambiguous or unclear
+        max_count: 1
+
+      copyright_license:
+        label: copyright license
+        description: license under which this copyrighted work is released
+        instance_of: entity_statement
+        kind: item
+        same_as: http://www.wikidata.org/entity/P275
+        statement_type: wikibase-item
+        has_value: copyright_license_values
+        statement_prompt: enter or select the Wikidata item specifying the specific license the subject item is released under
+        statement_guidance: Link to the Wikidata item from a controlled list representing the license governing usage of the subject item
+        error_message: Failure to select a valid license designation for a media object means the legal uses for the object will be ambiguous or unclear
+        max_count: 1
+
+      inception:
+        label: inception
+        description: time when an entity begins to exist
+        instance_of: entity_statement
+        kind: item
+        same_as: http://www.wikidata.org/entity/P571
+        statement_type: time
+        has_qualifier: datetime_precision
+        statement_prompt: enter the date that the subject entity began to exist
+        statement_guidance: Enter the date that the subject item came into existence or was established, citing a reliable reference.
+        error_message: Without a value, the founding or creation date is unknown, making chronological ordering and timeline display impossible.
+        max_count: null
+
+      media_type:
+        label: media type
+        description: IANA-registered identifier for a file type
+        instance_of: entity_statement
+        kind: item
+        same_as: http://www.wikidata.org/entity/P1163
+        statement_type: string
+        has_value: iana_media_type
+        statement_prompt: specify the media type for the subject media object using an approved value from IANA
+        statement_guidance: Provide the official file object type from the Internet Assigned Numbers Authority
+        error_message: Failure to include a media type string may result in an inability for certain applications to use the information in the most efficient way
+        max_count: 1
+
+      height:
+        label: height
+        description: vertical length of an entity
+        instance_of: entity_statement
+        kind: item
+        same_as: http://www.wikidata.org/entity/P2048
+        statement_type: quantity
+        has_qualifier: height_units
+        statement_prompt: enter a value for height of the subject item
+        statement_guidance: Enter a value for the height of the subject and specify an appropriate unit of measure
+        error_message: Failure to provide a height measurement with the appropriate unit of measure may result in a reduced ability to determine appropriate use of the information
+        max_count: null
+
+      width:
+        label: width
+        description: horizontal length of an object
+        instance_of: entity_statement
+        kind: item
+        same_as: http://www.wikidata.org/entity/P2049
+        statement_type: quantity
+        has_qualifier: width_units
+        statement_prompt: enter a value for width of the subject item
+        statement_guidance: Enter a value for the width of the subject and specify an appropriate unit of measure
+        error_message: Failure to provide a width measurement with the appropriate unit of measure may result in a reduced ability to determine appropriate use of the information
+        max_count: null
+
+      data_size:
+        label: data size
+        description: size of a software, dataset, neural network, or individual file
+        instance_of: entity_statement
+        kind: item
+        same_as: http://www.wikidata.org/entity/P3575
+        statement_type: quantity
+        has_qualifier: data_size_units
+        statement_prompt: enter a value for total size of the data item
+        statement_guidance: Enter a value for the data size of the subject and specify an appropriate unit of measure
+        error_message: Failure to provide a data size with the appropriate unit of measure may result in a reduced ability to determine appropriate use of the information
+        max_count: null
+
+      checksum:
+        label: checksum
+        description: small-sized datum derived from a block of digital data for the purpose of detecting errors
+        instance_of: entity_statement
+        kind: item
+        same_as: http://www.wikidata.org/entity/P4092
+        statement_type: string
+        has_value: checksum_format
+        statement_prompt: provide the checksum string for the subject item
+        statement_guidance: Provide the generated checksum and specify the determination method (e.g., sha1) in the associated qualifier
+        error_message: Failure to include the checksum may result in lack of trustworthiness in the veracity of the subject data
+        max_count: 1
+
+      coordinates_of_the_point_of_view:
+        label: coordinates of the point of view
+        description: point from which the scene depicted by the element is seen (element can be a photo, a painting, etc.)
+        instance_of: entity_statement
+        kind: item
+        same_as: http://www.wikidata.org/entity/P1259
+        statement_type: globe-coordinate
+        has_qualifier: coordinate_precision
+        statement_prompt: provide the coordinates from which the subject entity was observed or captured in a media object
+        statement_guidance: Record the coordinates for a point on earth where an image was recorded or created
+        error_message: Failure to provide the point of view location may result in reduced usability for the subject item
+        max_count: 1
+
+      datetime_precision:
+        label: datetime precision
+        description: specialized qualifier/modifier used to set the time precision value for Wikibase data representations; generally set dynamically through coercion code
+        instance_of: entity_statement
+        additional_instance_of:
+          - wikibase_statement_modifier
+        kind: item
+        has_value: time_precision_values
+        statement_prompt: set the time precision value for the datetime statement
+        statement_guidance: Time precision values will be computed dynamically in most cases
+        error_message: Statements with time values must include a precision value or they will be rejected when submitted to a Wikibase instance
+        max_count: 1
+
+      coordinate_precision:
+        label: coordinate precision
+        description: specialized qualifier/modifier used to set the globe-coordinate precision value for Wikibase data representations; generally set dynamically through coercion code
+        instance_of: entity_statement
+        additional_instance_of:
+          - wikibase_statement_modifier
+        kind: item
+        has_value: coordinate_precision_values
+        statement_prompt: set the coordinate precision value for the globe-coordinate statement
+        statement_guidance: Coordinate precision values will be computed dynamically in most cases
+        error_message: Statements with globe-coordinate values must include a precision value or they will be rejected when submitted to a Wikibase instance
+        max_count: 1
+
+      iana_media_type:
+        label: IANA media type value
+        description: format specification containing a regular expression that controls values applied to media type statements
+        instance_of: format_specification
+        kind: item
+        regex: '(application|audio|chemical|example|font|image|message|model|multipart|text|video)/[a-zA-Z0-9+.-]+'
+
+      checksum_format:
+        label: checksum string format
+        description: regex formatter for checksum values pulled from Wikidata property constraints
+        instance_of: format_specification
+        kind: item
+        regex: '[a-z\d]{128}|[a-z\d]{64}|[a-z\d]{40}|[a-z\d]{32}|[a-z\d]{16}|[a-z\d]{8}(-[a-z\d]{4}){3}-[a-z\d]{12}'
+
+      copyright_status_values:
+        label: List of Copyright Status Values
+        description: value list of valid copyright status values from Wikidata
+        instance_of: value_list
+        kind: item
+        refresh_policy: manual_refresh_policy
+        query_fixture: copyright_status_values
+
+      copyright_license_values:
+        label: List of Copyright Licenses
+        description: list of copyright license values from Wikidata for use in copyright license statements
+        instance_of: value_list
+        kind: item
+        refresh_policy: manual_refresh_policy
+        query_fixture: copyright_license_values
+
+      height_units:
+        label: List of Units for Height
+        description: list of units for height statements pulled from property constraints
+        instance_of: value_list
+        kind: item
+        refresh_policy: manual_refresh_policy
+        query_fixture: height_units
+
+      width_units:
+        label: List of Units for Width
+        description: list of units for width statements pulled from Wikidata property constraints
+        instance_of: value_list
+        kind: item
+        refresh_policy: manual_refresh_policy
+        query_fixture: width_units
+
+      data_size_units:
+        label: List of Units for Data Size
+        description: list of units for data size statements pulled from Wikidata property constraint
+        instance_of: value_list
+        kind: item
+        refresh_policy: manual_refresh_policy
+        query_fixture: data_size_units
+
+      time_precision_values:
+        label: Time Precision Values
+        description: value list of time precision numerical values and labels for use in setting time precision qualifiers/modifiers
+        instance_of: value_list
+        kind: item
+        error_message: The time value provided requires a qualifier specifying the precision (e.g., year, month, day, etc.). Please select from the list provided or consult the query source for more context.
+        query_fixture: time_precision_values
+
+      coordinate_precision_values:
+        label: Coordinate Precision Values
+        description: value list of time precision values and labels for use in setting globe-coordinate precision qualifiers/modifiers
+        instance_of: value_list
+        kind: item
+        error_message: The geographic coordinates provided require a precision qualifier. Please select from the list provided or consult the query source for more context.
+        query_fixture: coordinate_precision_values
+
+value_list_query_fixtures:
+  copyright_status_values:
+    value_list: copyright_status_values
+    storage_mode: item_talk_page
+    content_type: application/sparql-query
+    endpoint: https://query.wikidata.org/sparql
+    expected_vars:
+      - item
+      - itemLabel
+    query: |
+      # Purpose: value list for copyright status statements
+      # Expected vars: ?item ?itemLabel
+
+      PREFIX wd: <http://www.wikidata.org/entity/>
+      PREFIX wdt: <http://www.wikidata.org/prop/direct/>
+      PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+
+      SELECT ?item ?itemLabel
+      WHERE {
+        ?item wdt:P31 wd:Q50424085 ;
+              rdfs:label ?itemLabel .
+        FILTER(LANG(?itemLabel) = "en")
+        FILTER NOT EXISTS {
+          ?item wdt:P31 wd:Q21286738 .
+        }
+      }
+
+  copyright_license_values:
+    value_list: copyright_license_values
+    storage_mode: item_talk_page
+    content_type: application/sparql-query
+    endpoint: https://query.wikidata.org/sparql
+    expected_vars:
+      - item
+      - itemLabel
+    query: |
+      # Purpose: value list for copyright license statements
+      # Expected vars: ?item ?itemLabel
+
+      PREFIX wd: <http://www.wikidata.org/entity/>
+      PREFIX wdt: <http://www.wikidata.org/prop/direct/>
+      PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+
+      SELECT ?item ?itemLabel
+      WHERE {
+        ?item wdt:P31/wdt:P279 wd:Q77205602 ; # instance or subclass of copyright license
+              rdfs:label ?itemLabel .
+        FILTER(LANG(?itemLabel) = "en")
+        FILTER NOT EXISTS {
+          ?item wdt:P31 wd:Q21286738 .
+        }
+      }
+
+  height_units:
+    value_list: height_units
+    storage_mode: item_talk_page
+    content_type: application/sparql-query
+    endpoint: https://query.wikidata.org/sparql
+    expected_vars:
+      - item
+      - itemLabel
+    query: |
+      # Purpose: value list from height property constraint allowed items
+      # Expected vars: ?item ?itemLabel
+
+      PREFIX wd: <http://www.wikidata.org/entity/>
+      PREFIX wdt: <http://www.wikidata.org/prop/direct/>
+
+      SELECT ?item ?itemLabel WHERE {
+        VALUES ?property { wd:P2048 }   # height
+        ?property p:P2302 ?constraintStatement .
+        ?constraintStatement ps:P2302 wd:Q21514353 .   # allowed units constraint
+        ?constraintStatement pq:P2305 ?item . # item of property constraint
+        SERVICE wikibase:label { bd:serviceParam wikibase:language "en". }
+      }
+
+  width_units:
+    value_list: width_units
+    storage_mode: item_talk_page
+    content_type: application/sparql-query
+    endpoint: https://query.wikidata.org/sparql
+    expected_vars:
+      - item
+      - itemLabel
+    query: |
+      # Purpose: value list from width property constraint allowed items
+      # Expected vars: ?item ?itemLabel
+
+      PREFIX wd: <http://www.wikidata.org/entity/>
+      PREFIX wdt: <http://www.wikidata.org/prop/direct/>
+
+      SELECT ?item ?itemLabel WHERE {
+        VALUES ?property { wd:P2049 }   # width
+        ?property p:P2302 ?constraintStatement .
+        ?constraintStatement ps:P2302 wd:Q21514353 .   # allowed units constraint
+        ?constraintStatement pq:P2305 ?item . # item of property constraint
+        SERVICE wikibase:label { bd:serviceParam wikibase:language "en". }
+      }
+
+  data_size_units:
+    value_list: data_size_units
+    storage_mode: item_talk_page
+    content_type: application/sparql-query
+    endpoint: https://query.wikidata.org/sparql
+    expected_vars:
+      - item
+      - itemLabel
+    query: |
+      # Purpose: value list from data size property constraint allowed items
+      # Expected vars: ?item ?itemLabel
+
+      PREFIX wd: <http://www.wikidata.org/entity/>
+      PREFIX wdt: <http://www.wikidata.org/prop/direct/>
+
+      SELECT ?item ?itemLabel WHERE {
+        VALUES ?property { wd:P3575 }   # data size
+        ?property p:P2302 ?constraintStatement .
+        ?constraintStatement ps:P2302 wd:Q21514353 .   # allowed units constraint
+        ?constraintStatement pq:P2305 ?item . # item of property constraint
+        SERVICE wikibase:label { bd:serviceParam wikibase:language "en". }
+      }
+
+  time_precision_values:
+    value_list: time_precision_values
+    storage_mode: item_talk_page
+    content_type: application/sparql-query
+    expected_vars:
+      - item
+      - itemLabel
+    result_cast: integer
+    query: |
+      # Time Precision value list
+      # Static enumeration of Wikibase time precision codes (integer 0-14).
+      # Fermenter should cast selected item to integer for time.precision.
+
+      SELECT ?item ?itemLabel WHERE {
+        VALUES (?item ?itemLabel) {
+          ("0"  "Gigayear (10^9 years)"@en)
+          ("1"  "100 Megayears (10^8 years)"@en)
+          ("2"  "10 Megayears (10^7 years)"@en)
+          ("3"  "Megayear (10^6 years)"@en)
+          ("4"  "100 Kiloyears (10^5 years)"@en)
+          ("5"  "10 Kiloyears (10^4 years)"@en)
+          ("6"  "millennium"@en)
+          ("7"  "century"@en)
+          ("8"  "decade"@en)
+          ("9"  "year"@en)
+          ("10" "month"@en)
+          ("11" "day"@en)
+          ("12" "hour"@en)
+          ("13" "minute"@en)
+          ("14" "second"@en)
+        }
+      }
+
+  coordinate_precision_values:
+    value_list: coordinate_precision_values
+    storage_mode: item_talk_page
+    content_type: application/sparql-query
+    expected_vars:
+      - item
+      - itemLabel
+    result_cast: float
+    query: |
+      # Globe-Coordinate Precision value list
+      # Static enumeration of coordinate precision levels in decimal degrees.
+      # Fermenter should cast selected item to float for coordinate.precision.
+
+      SELECT ?item ?itemLabel WHERE {
+        VALUES (?item ?itemLabel) {
+          ("10"       "10 degrees"@en)
+          ("1"        "1 degree (~111 km)"@en)
+          ("0.1"      "0.1 degree (~11 km)"@en)
+          ("0.01667"  "1 arcminute (~1.85 km)"@en)
+          ("0.00278"  "10 arcseconds (~300 m)"@en)
+          ("0.000278" "1 arcsecond (~30 m)"@en)
+          ("0.0001"   "0.0001 degree (~11 m)"@en)
+          ("0.00001"  "0.00001 degree (~1 m)"@en)
+        }
+      }

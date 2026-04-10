@@ -411,7 +411,12 @@ def test_linkage_index_maps_statement_property_and_target_profile(tmp_path):
         semantic_anchor_document=_default_semantic_anchor_document(),
     )
 
-    linkage_index = docs[0]["metadata"]["linkage_index"]
+    source_doc = next(
+        doc
+        for doc in docs
+        if doc["id"] == "https://datadistillery.wikibase.cloud/entity/Q4"
+    )
+    linkage_index = source_doc["metadata"]["linkage_index"]
     assert linkage_index == {
         "outbound_by_statement": {
             "https://datadistillery.wikibase.cloud/entity/Q40": {
@@ -1082,8 +1087,8 @@ def test_profile_level_max_count_overrides_statement_level_baseline(tmp_path):
     assert by_entity["Q17"]["max_count"] == 2
 
 
-def test_export_json_skips_profile_when_mul_language_coverage_fails(tmp_path):
-    """Invalid mul coverage should skip writing profile and report failure."""
+def test_export_json_skips_profile_when_mul_label_prompt_coverage_fails(tmp_path):
+    """Missing mul label prompt should skip writing a profile."""
 
     cache_entities_dir = tmp_path / "cache" / "entities"
     cache_entities_dir.mkdir(parents=True, exist_ok=True)
@@ -1096,9 +1101,7 @@ def test_export_json_skips_profile_when_mul_language_coverage_fails(tmp_path):
             "aliases": {},
             "claims": {
                 "P1": [_build_entity_claim_entity_id("Q3")],
-                "P188": [_build_entity_claim_monolingual("Enter label")],
                 "P189": [_build_entity_claim_monolingual("Enter description")],
-                # Intentionally missing P190 mul prompt.
             },
         },
     }
@@ -1115,12 +1118,12 @@ def test_export_json_skips_profile_when_mul_language_coverage_fails(tmp_path):
     assert result.skipped_ids == ["Q4"]
     assert len(result.failures) == 1
     assert result.failures[0]["profile_id"] == "Q4"
-    assert "identification.aliases.mul.prompt" in result.failures[0]["missing_paths"]
+    assert "identification.labels.mul.prompt" in result.failures[0]["missing_paths"]
     assert not (output_dir / "Q4.json").exists()
 
 
-def test_export_json_filters_incomplete_non_mul_language(tmp_path):
-    """Incomplete non-mul languages should be excluded from written JSON profile."""
+def test_export_json_filters_languages_missing_label_prompt(tmp_path):
+    """Languages without label prompts should be excluded from written JSON profile."""
 
     cache_entities_dir = tmp_path / "cache" / "entities"
     cache_entities_dir.mkdir(parents=True, exist_ok=True)
@@ -1141,14 +1144,8 @@ def test_export_json_filters_incomplete_non_mul_language(tmp_path):
                 "P1": [_build_entity_claim_entity_id("Q3")],
                 "P188": [
                     _build_entity_claim_monolingual("Enter label", "mul"),
-                    _build_entity_claim_monolingual("Ingrese etiqueta", "es"),
+                    _build_entity_claim_monolingual("Enter label", "en"),
                 ],
-                "P189": [
-                    _build_entity_claim_monolingual("Enter description", "mul"),
-                    _build_entity_claim_monolingual("Ingrese descripcion", "es"),
-                ],
-                # Include only mul alias prompt so es is filtered as incomplete.
-                "P190": [_build_entity_claim_monolingual("Enter aliases", "mul")],
             },
         },
     }
@@ -1169,7 +1166,7 @@ def test_export_json_filters_incomplete_non_mul_language(tmp_path):
         entry["language"]
         for entry in result.language_filtering[0]["excluded_languages"]
     }
-    assert "es" in excluded
+    assert excluded == {"en", "es"}
 
     written = json.loads((output_dir / "Q4.json").read_text(encoding="utf-8"))
     assert written["metadata"]["languages"] == ["mul"]

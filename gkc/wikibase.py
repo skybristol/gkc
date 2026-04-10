@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import hashlib
 import json
 from dataclasses import dataclass
 from functools import lru_cache
@@ -69,6 +70,51 @@ class MetaWikibaseSemanticAnchorContract:
 
     internal_name_identifier_prefix: str
     requirements: dict[str, MetaWikibaseSemanticAnchorRequirement]
+
+
+@dataclass(frozen=True)
+class MetaWikibaseCompiledEntity:
+    """Compiled symbolic Wikibase payload for one init-fixture entity."""
+
+    key: str
+    kind: str
+    internal_name_identifier: str
+    entity_type: str
+    datatype: str | None
+    claims: dict[str, list[dict[str, Any]]]
+    payload: dict[str, Any]
+
+
+@dataclass(frozen=True)
+class MetaWikibaseSeedCompilation:
+    """Compiled symbolic Wikibase payload set derived from the init fixture."""
+
+    metadata: MetaWikibaseInitMetadata
+    entities: dict[str, MetaWikibaseCompiledEntity]
+    by_internal_name_identifier: dict[str, MetaWikibaseCompiledEntity]
+
+
+@dataclass(frozen=True)
+class MetaWikibaseSeedPlanEntry:
+    """One dry-run baseline action derived from the compiled init fixture."""
+
+    action: str
+    key: str
+    internal_name_identifier: str
+    entity_type: str
+    datatype: str | None
+    payload: dict[str, Any]
+    current_entity_id: str | None = None
+    changed_fields: list[str] | None = None
+    details: str | None = None
+
+
+@dataclass(frozen=True)
+class MetaWikibaseSeedPlan:
+    """Dry-run baseline plan for the package-owned Meta-Wikibase seed."""
+
+    metadata: MetaWikibaseInitMetadata
+    operations: list[MetaWikibaseSeedPlanEntry]
 
 
 @dataclass(frozen=True)
@@ -403,17 +449,766 @@ def build_meta_wikibase_semantic_anchor_contract(
     )
 
 
+def get_meta_wikibase_init_contract_digest(
+    document: dict[str, Any] | None = None,
+) -> str:
+    """Return a stable digest for the normalized Meta-Wikibase init contract."""
+
+    normalized_document = (
+        load_meta_wikibase_init_document()
+        if document is None
+        else normalize_meta_wikibase_init_document(document)
+    )
+    serialized = json.dumps(
+        normalized_document,
+        sort_keys=True,
+        separators=(",", ":"),
+    )
+    return hashlib.sha256(serialized.encode("utf-8")).hexdigest()
+
+
+def compile_meta_wikibase_seed(
+    document: dict[str, Any] | None = None,
+    *,
+    label_language: str | None = None,
+) -> MetaWikibaseSeedCompilation:
+    """Compile the init fixture into symbolic Wikibase JSON payloads.
+
+    The compiled payloads use internal name identifiers such as ``_instance_of``
+    as unresolved placeholders for entity references. This keeps the output in a
+    deterministic dry-run form that can be inspected before any live baseline
+    orchestration resolves or writes entities.
+    """
+
+    from gkc.bottler import (
+        ClaimBuilder,
+        DataTypeTransformer,
+        EntityShellBuilder,
+        SnakBuilder,
+    )
+
+    index = build_meta_wikibase_init_index(document)
+    entity_shell_builder = EntityShellBuilder()
+    claim_builder = ClaimBuilder(SnakBuilder(DataTypeTransformer()))
+    resolved_label_language = _resolve_meta_wikibase_label_language(label_language)
+
+    compiled_entities: dict[str, MetaWikibaseCompiledEntity] = {}
+    compiled_by_internal_name_identifier: dict[str, MetaWikibaseCompiledEntity] = {}
+
+    for entity in index.entities.values():
+        symbolic_claims = _compile_meta_wikibase_entity_claims(
+            entity,
+            index=index,
+            claim_builder=claim_builder,
+        )
+
+        shell = entity_shell_builder.build_entity_shell(
+            {
+                "labels": {resolved_label_language: entity.label},
+                "descriptions": {resolved_label_language: entity.description},
+                "statement_pids": sorted(symbolic_claims.keys()),
+            }
+        )
+        payload = dict(shell)
+        payload["type"] = entity.kind
+        if entity.kind == "property" and entity.datatype is not None:
+            payload["datatype"] = entity.datatype
+
+        if symbolic_claims:
+            payload_claims = payload.setdefault("claims", {})
+            for property_id in sorted(symbolic_claims.keys()):
+                payload_claims[property_id] = list(symbolic_claims[property_id])
+
+        compiled_entity = MetaWikibaseCompiledEntity(
+            key=entity.key,
+            kind=entity.kind,
+            internal_name_identifier=entity.internal_name_identifier,
+            entity_type=entity.kind,
+            datatype=entity.datatype,
+            claims=symbolic_claims,
+            payload=payload,
+        )
+        compiled_entities[entity.key] = compiled_entity
+        compiled_by_internal_name_identifier[entity.internal_name_identifier] = (
+            compiled_entity
+        )
+
+    return MetaWikibaseSeedCompilation(
+        metadata=index.metadata,
+        entities=compiled_entities,
+        by_internal_name_identifier=compiled_by_internal_name_identifier,
+    )
+
+
+def plan_meta_wikibase_seed_baseline(
+    document: dict[str, Any] | None = None,
+    *,
+    current_entities_by_internal_name_identifier: (
+        dict[str, dict[str, Any]] | None
+    ) = None,
+    entity_id_to_internal_name_identifier: dict[str, str] | None = None,
+    label_language: str | None = None,
+    required_value_language: str = "mul",
+) -> MetaWikibaseSeedPlan:
+    """Return a dry-run baseline plan for the package-owned init fixture."""
+
+    compilation = compile_meta_wikibase_seed(
+        document,
+        label_language=label_language,
+    )
+    operations: list[MetaWikibaseSeedPlanEntry] = []
+    resolved_label_language = _resolve_meta_wikibase_label_language(label_language)
+    required_monolingualtext_properties = {
+        entity.internal_name_identifier
+        for entity in build_meta_wikibase_init_index(document).properties.values()
+        if entity.datatype == "monolingualtext"
+    }
+
+    for entity in compilation.entities.values():
+        current_entity = None
+        if current_entities_by_internal_name_identifier is not None:
+            current_entity = current_entities_by_internal_name_identifier.get(
+                entity.internal_name_identifier
+            )
+
+        if current_entity is None:
+            operations.append(
+                MetaWikibaseSeedPlanEntry(
+                    action="create",
+                    key=entity.key,
+                    internal_name_identifier=entity.internal_name_identifier,
+                    entity_type=entity.entity_type,
+                    datatype=entity.datatype,
+                    current_entity_id=None,
+                    changed_fields=None,
+                    details="missing from current state",
+                    payload=entity.payload,
+                )
+            )
+            continue
+
+        comparison = _compare_meta_wikibase_compiled_to_current(
+            entity.payload,
+            current_entity=current_entity,
+            entity_id_to_internal_name_identifier=(
+                entity_id_to_internal_name_identifier or {}
+            ),
+            label_language=resolved_label_language,
+            required_value_language=required_value_language,
+            required_monolingualtext_properties=required_monolingualtext_properties,
+        )
+        operations.append(
+            MetaWikibaseSeedPlanEntry(
+                action="skip" if comparison["matches"] else "update",
+                key=entity.key,
+                internal_name_identifier=entity.internal_name_identifier,
+                entity_type=entity.entity_type,
+                datatype=entity.datatype,
+                current_entity_id=str(current_entity.get("id") or "").strip() or None,
+                changed_fields=comparison["changed_fields"] or None,
+                details=comparison["details"],
+                payload=entity.payload,
+            )
+        )
+
+    operations.sort(key=lambda operation: operation.internal_name_identifier)
+    return MetaWikibaseSeedPlan(
+        metadata=compilation.metadata,
+        operations=operations,
+    )
+
+
+def normalize_meta_wikibase_required_entity_view(
+    payload: dict[str, Any],
+) -> dict[str, Any]:
+    """Return the canonical comparable view for one compiled seed payload."""
+
+    return _normalize_meta_wikibase_compiled_payload(payload)
+
+
+def normalize_meta_wikibase_current_entity_view(
+    entity: dict[str, Any],
+    *,
+    entity_id_to_internal_name_identifier: dict[str, str],
+    label_language: str,
+    required_value_language: str,
+    required_monolingualtext_properties: set[str],
+    expected_property_ids: set[str],
+) -> tuple[dict[str, Any], list[str]]:
+    """Return the canonical comparable view for one current Wikibase entity."""
+
+    return _normalize_meta_wikibase_live_entity(
+        entity,
+        entity_id_to_internal_name_identifier=entity_id_to_internal_name_identifier,
+        label_language=label_language,
+        required_value_language=required_value_language,
+        required_monolingualtext_properties=required_monolingualtext_properties,
+        expected_property_ids=expected_property_ids,
+    )
+
+
+def compare_meta_wikibase_entity_views(
+    required_view: dict[str, Any],
+    current_view: dict[str, Any],
+    *,
+    issues: list[str] | None = None,
+) -> list[str]:
+    """Compare canonical required and current views and return changed-field codes."""
+
+    changed_fields: list[str] = []
+    for field_name in (
+        "type",
+        "datatype",
+        "labels",
+        "descriptions",
+        "aliases",
+        "claims",
+    ):
+        if required_view.get(field_name) != current_view.get(field_name):
+            changed_fields.append(field_name)
+
+    for issue in issues or []:
+        if issue not in changed_fields:
+            changed_fields.append(issue)
+
+    return changed_fields
+
+
+def _compare_meta_wikibase_compiled_to_current(
+    compiled_payload: dict[str, Any],
+    *,
+    current_entity: dict[str, Any],
+    entity_id_to_internal_name_identifier: dict[str, str],
+    label_language: str,
+    required_value_language: str,
+    required_monolingualtext_properties: set[str],
+) -> dict[str, Any]:
+    """Compare one compiled symbolic payload against one live Wikibase entity."""
+
+    expected = _normalize_meta_wikibase_compiled_payload(compiled_payload)
+    current, issues = _normalize_meta_wikibase_live_entity(
+        current_entity,
+        entity_id_to_internal_name_identifier=entity_id_to_internal_name_identifier,
+        label_language=label_language,
+        required_value_language=required_value_language,
+        required_monolingualtext_properties=required_monolingualtext_properties,
+        expected_property_ids=set(expected.get("claims", {}).keys()),
+    )
+
+    changed_fields: list[str] = []
+    for field_name in (
+        "type",
+        "datatype",
+        "labels",
+        "descriptions",
+        "aliases",
+        "claims",
+    ):
+        if expected.get(field_name) != current.get(field_name):
+            changed_fields.append(field_name)
+
+    if issues:
+        changed_fields.extend(issue for issue in issues if issue not in changed_fields)
+
+    details = "matches current state"
+    if changed_fields:
+        details = "fields changed: " + ", ".join(changed_fields)
+
+    return {
+        "matches": not changed_fields,
+        "changed_fields": changed_fields,
+        "details": details,
+    }
+
+
+def _normalize_meta_wikibase_compiled_payload(
+    payload: dict[str, Any],
+) -> dict[str, Any]:
+    """Normalize a compiled symbolic payload to a comparable canonical form."""
+
+    normalized: dict[str, Any] = {
+        "type": payload.get("type"),
+    }
+    if "datatype" in payload:
+        normalized["datatype"] = payload.get("datatype")
+
+    labels = payload.get("labels")
+    descriptions = payload.get("descriptions")
+    aliases = payload.get("aliases")
+    claims = payload.get("claims")
+
+    if isinstance(labels, dict) and labels:
+        normalized["labels"] = _normalize_meta_wikibase_language_block(labels)
+    if isinstance(descriptions, dict) and descriptions:
+        normalized["descriptions"] = _normalize_meta_wikibase_language_block(
+            descriptions
+        )
+    if isinstance(aliases, dict) and aliases:
+        normalized["aliases"] = _normalize_meta_wikibase_alias_block(aliases)
+    if isinstance(claims, dict) and claims:
+        normalized["claims"] = _normalize_meta_wikibase_claims(claims)
+
+    return normalized
+
+
+def _normalize_meta_wikibase_live_entity(
+    entity: dict[str, Any],
+    *,
+    entity_id_to_internal_name_identifier: dict[str, str],
+    label_language: str,
+    required_value_language: str,
+    required_monolingualtext_properties: set[str],
+    expected_property_ids: set[str],
+) -> tuple[dict[str, Any], list[str]]:
+    """Normalize one fetched Wikibase entity into comparable symbolic form."""
+
+    normalized: dict[str, Any] = {
+        "type": entity.get("type"),
+    }
+    datatype = entity.get("datatype")
+    if isinstance(datatype, str) and datatype:
+        normalized["datatype"] = canonicalize_wikibase_datatype(datatype)
+
+    labels = _normalize_meta_wikibase_language_block(
+        entity.get("labels"),
+        allowed_languages={label_language},
+    )
+    descriptions = _normalize_meta_wikibase_language_block(
+        entity.get("descriptions"),
+        allowed_languages={label_language},
+    )
+    aliases = _normalize_meta_wikibase_alias_block(
+        entity.get("aliases"),
+        allowed_languages={label_language},
+    )
+    claims, issues = _normalize_meta_wikibase_claims(
+        entity.get("claims"),
+        entity_id_to_internal_name_identifier=entity_id_to_internal_name_identifier,
+        expected_property_ids=expected_property_ids,
+        required_monolingualtext_properties=required_monolingualtext_properties,
+        required_value_language=required_value_language,
+    )
+
+    if labels:
+        normalized["labels"] = labels
+    if descriptions:
+        normalized["descriptions"] = descriptions
+    if aliases:
+        normalized["aliases"] = aliases
+    if claims:
+        normalized["claims"] = claims
+
+    return normalized, issues
+
+
+def _normalize_meta_wikibase_language_block(
+    block: Any,
+    *,
+    allowed_languages: set[str] | None = None,
+) -> dict[str, dict[str, str]]:
+    """Normalize a labels/descriptions block to comparable minimal form."""
+
+    if not isinstance(block, dict):
+        return {}
+
+    normalized: dict[str, dict[str, str]] = {}
+    for language in sorted(block.keys()):
+        if allowed_languages is not None and language not in allowed_languages:
+            continue
+        payload = block.get(language)
+        if not isinstance(payload, dict):
+            continue
+        value = payload.get("value")
+        if isinstance(language, str) and language and isinstance(value, str) and value:
+            normalized[language] = {"language": language, "value": value}
+    return normalized
+
+
+def _normalize_meta_wikibase_alias_block(
+    block: Any,
+    *,
+    allowed_languages: set[str] | None = None,
+) -> dict[str, list[dict[str, str]]]:
+    """Normalize an aliases block to comparable minimal form."""
+
+    if not isinstance(block, dict):
+        return {}
+
+    normalized: dict[str, list[dict[str, str]]] = {}
+    for language in sorted(block.keys()):
+        if allowed_languages is not None and language not in allowed_languages:
+            continue
+        payloads = block.get(language)
+        if not isinstance(payloads, list):
+            continue
+        values: list[dict[str, str]] = []
+        for payload in payloads:
+            if not isinstance(payload, dict):
+                continue
+            value = payload.get("value")
+            if isinstance(value, str) and value:
+                values.append({"language": language, "value": value})
+        if values:
+            values.sort(key=lambda payload: payload["value"])
+            normalized[language] = values
+    return normalized
+
+
+def _normalize_meta_wikibase_claims(
+    claims: Any,
+    *,
+    entity_id_to_internal_name_identifier: dict[str, str] | None = None,
+    expected_property_ids: set[str] | None = None,
+    required_monolingualtext_properties: set[str] | None = None,
+    required_value_language: str = "mul",
+) -> Any:
+    """Normalize claims to a comparable deterministic symbolic form."""
+
+    if not isinstance(claims, dict):
+        return ({}, []) if entity_id_to_internal_name_identifier is not None else {}
+
+    issues: list[str] = []
+    normalized: dict[str, list[dict[str, Any]]] = {}
+
+    for property_id in sorted(claims.keys()):
+        symbolic_property_id = (
+            entity_id_to_internal_name_identifier.get(property_id, property_id)
+            if entity_id_to_internal_name_identifier is not None
+            else property_id
+        )
+        if (
+            expected_property_ids is not None
+            and symbolic_property_id not in expected_property_ids
+        ):
+            continue
+
+        raw_claims = claims.get(property_id)
+        if not isinstance(raw_claims, list):
+            continue
+
+        normalized_claims: list[dict[str, Any]] = []
+        for claim in raw_claims:
+            normalized_claim = _normalize_meta_wikibase_claim(
+                claim,
+                symbolic_property_id=symbolic_property_id,
+                entity_id_to_internal_name_identifier=(
+                    entity_id_to_internal_name_identifier or {}
+                ),
+                required_value_language=required_value_language,
+                require_mul=symbolic_property_id
+                in (required_monolingualtext_properties or set()),
+            )
+            if normalized_claim is None:
+                continue
+            if "issue" in normalized_claim:
+                issues.append(str(normalized_claim.pop("issue")))
+            normalized_claims.append(normalized_claim)
+
+        if normalized_claims:
+            normalized_claims.sort(key=lambda claim: json.dumps(claim, sort_keys=True))
+            normalized[symbolic_property_id] = normalized_claims
+
+    if entity_id_to_internal_name_identifier is not None:
+        return normalized, issues
+    return normalized
+
+
+def _normalize_meta_wikibase_claim(
+    claim: Any,
+    *,
+    symbolic_property_id: str,
+    entity_id_to_internal_name_identifier: dict[str, str],
+    required_value_language: str,
+    require_mul: bool,
+) -> dict[str, Any] | None:
+    """Normalize one claim to comparable canonical form."""
+
+    if not isinstance(claim, dict):
+        return None
+    mainsnak = claim.get("mainsnak")
+    if not isinstance(mainsnak, dict) or mainsnak.get("snaktype") != "value":
+        return None
+    datavalue = mainsnak.get("datavalue")
+    if not isinstance(datavalue, dict):
+        return None
+
+    normalized_datavalue, issue = _normalize_meta_wikibase_datavalue(
+        datavalue,
+        entity_id_to_internal_name_identifier=entity_id_to_internal_name_identifier,
+        required_value_language=required_value_language,
+        require_mul=require_mul,
+        property_id=symbolic_property_id,
+    )
+    normalized_claim = {
+        "mainsnak": {
+            "snaktype": "value",
+            "property": symbolic_property_id,
+            "datavalue": normalized_datavalue,
+        },
+        "type": claim.get("type", "statement"),
+        "rank": claim.get("rank", "normal"),
+    }
+    if issue is not None:
+        normalized_claim["issue"] = issue
+    return normalized_claim
+
+
+def _normalize_meta_wikibase_datavalue(
+    datavalue: dict[str, Any],
+    *,
+    entity_id_to_internal_name_identifier: dict[str, str],
+    required_value_language: str,
+    require_mul: bool,
+    property_id: str,
+) -> tuple[dict[str, Any], str | None]:
+    """Normalize one datavalue block to symbolic comparable form."""
+
+    datavalue_type = datavalue.get("type")
+    value = datavalue.get("value")
+
+    if datavalue_type == "wikibase-entityid" and isinstance(value, dict):
+        entity_id = value.get("id")
+        if isinstance(entity_id, str) and entity_id:
+            entity_id = entity_id_to_internal_name_identifier.get(entity_id, entity_id)
+        return (
+            {
+                "type": "wikibase-entityid",
+                "value": {
+                    "entity-type": value.get("entity-type"),
+                    "id": entity_id,
+                },
+            },
+            None,
+        )
+
+    if datavalue_type == "monolingualtext":
+        normalized_value = _normalize_meta_wikibase_monolingualtext(value)
+        if normalized_value is None:
+            return datavalue, f"{property_id}.invalid_monolingualtext"
+        issue = None
+        if require_mul and normalized_value["language"] != required_value_language:
+            issue = f"{property_id}.language"
+        return (
+            {"type": "monolingualtext", "value": normalized_value},
+            issue,
+        )
+
+    return ({"type": datavalue_type, "value": value}, None)
+
+
+def _resolve_meta_wikibase_label_language(
+    configured_language: str | None = None,
+) -> str:
+    """Resolve the display language for labels, descriptions, and aliases."""
+
+    if isinstance(configured_language, str) and configured_language.strip():
+        return configured_language.strip()
+
+    try:
+        from gkc import get_languages
+
+        languages = get_languages()
+    except Exception:
+        return "en"
+
+    if isinstance(languages, str):
+        candidate = languages.strip()
+        return candidate if candidate and candidate != "all" else "en"
+
+    if isinstance(languages, list):
+        for candidate in languages:
+            if isinstance(candidate, str):
+                candidate = candidate.strip()
+                if candidate and candidate != "all":
+                    return candidate
+
+    return "en"
+
+
+def _compile_meta_wikibase_entity_claims(
+    entity: MetaWikibaseInitEntity,
+    *,
+    index: MetaWikibaseInitIndex,
+    claim_builder: Any,
+) -> dict[str, list[dict[str, Any]]]:
+    """Compile the symbolic claim set for one init-fixture entity."""
+
+    claims: dict[str, list[dict[str, Any]]] = {}
+
+    _append_meta_wikibase_claim(
+        claims,
+        index.properties["name_identifier"].internal_name_identifier,
+        claim_builder.create_claim(
+            index.properties["name_identifier"].internal_name_identifier,
+            entity.internal_name_identifier,
+            "string",
+        ),
+    )
+
+    if isinstance(entity.instance_of, str) and entity.instance_of:
+        _append_meta_wikibase_claim(
+            claims,
+            index.properties["instance_of"].internal_name_identifier,
+            _build_symbolic_entity_reference_claim(
+                claim_builder,
+                property_id=index.properties["instance_of"].internal_name_identifier,
+                value_internal_name_identifier=(
+                    index.entities[entity.instance_of].internal_name_identifier
+                ),
+                entity_type="item",
+            ),
+        )
+
+    if isinstance(entity.subclass_of, str) and entity.subclass_of:
+        _append_meta_wikibase_claim(
+            claims,
+            index.properties["subclass_of"].internal_name_identifier,
+            _build_symbolic_entity_reference_claim(
+                claim_builder,
+                property_id=index.properties["subclass_of"].internal_name_identifier,
+                value_internal_name_identifier=(
+                    index.entities[entity.subclass_of].internal_name_identifier
+                ),
+                entity_type="item",
+            ),
+        )
+
+    for attribute_key, attribute_value in sorted((entity.attributes or {}).items()):
+        property_entity = index.properties.get(attribute_key)
+        if property_entity is None:
+            continue
+        claim = _build_meta_wikibase_attribute_claim(
+            claim_builder,
+            property_entity=property_entity,
+            attribute_value=attribute_value,
+            index=index,
+        )
+        if claim is None:
+            continue
+        _append_meta_wikibase_claim(
+            claims,
+            property_entity.internal_name_identifier,
+            claim,
+        )
+
+    return {property_id: claims[property_id] for property_id in sorted(claims.keys())}
+
+
+def _build_meta_wikibase_attribute_claim(
+    claim_builder: Any,
+    *,
+    property_entity: MetaWikibaseInitEntity,
+    attribute_value: Any,
+    index: MetaWikibaseInitIndex,
+) -> dict[str, Any] | None:
+    """Compile one authored attribute into a symbolic claim when supported."""
+
+    if property_entity.datatype == "wikibase-item":
+        if (
+            not isinstance(attribute_value, str)
+            or attribute_value not in index.entities
+        ):
+            return None
+        return _build_symbolic_entity_reference_claim(
+            claim_builder,
+            property_id=property_entity.internal_name_identifier,
+            value_internal_name_identifier=(
+                index.entities[attribute_value].internal_name_identifier
+            ),
+            entity_type="item",
+        )
+
+    if property_entity.datatype == "monolingualtext":
+        normalized_value = _normalize_meta_wikibase_monolingualtext(attribute_value)
+        if normalized_value is None:
+            return None
+        return claim_builder.create_claim(
+            property_entity.internal_name_identifier,
+            normalized_value["text"],
+            "monolingualtext",
+            {"language": normalized_value["language"]},
+        )
+
+    if property_entity.datatype in {"string", "url", "quantity", "time"}:
+        return claim_builder.create_claim(
+            property_entity.internal_name_identifier,
+            attribute_value,
+            property_entity.datatype,
+        )
+
+    return None
+
+
+def _build_symbolic_entity_reference_claim(
+    claim_builder: Any,
+    *,
+    property_id: str,
+    value_internal_name_identifier: str,
+    entity_type: str,
+) -> dict[str, Any]:
+    """Build a symbolic entity-reference claim using bottler primitives."""
+
+    from gkc.bottler import DataTypeTransformer
+
+    datavalue = DataTypeTransformer.to_wikibase_entity_reference(
+        value_internal_name_identifier,
+        entity_type=entity_type,
+    )
+    return claim_builder.create_claim_from_datavalue(
+        property_id,
+        datavalue,
+    )
+
+
+def _append_meta_wikibase_claim(
+    claims: dict[str, list[dict[str, Any]]],
+    property_id: str,
+    claim: dict[str, Any],
+) -> None:
+    """Append one compiled claim to the per-property claim bucket."""
+
+    claims.setdefault(property_id, []).append(claim)
+
+
+def _normalize_meta_wikibase_monolingualtext(
+    value: Any,
+) -> dict[str, str] | None:
+    """Normalize authored monolingualtext fixture values to text/language pairs."""
+
+    from gkc.fermenter import validate_monolingualtext
+
+    validation = validate_monolingualtext(value)
+    if not validation.valid or not isinstance(validation.value, dict):
+        return None
+
+    language = validation.value.get("language")
+    text = validation.value.get("text")
+    if not isinstance(language, str) or not language:
+        return None
+    if not isinstance(text, str) or not text:
+        return None
+
+    return {"text": text, "language": language}
+
+
 __all__ = [
     "MetaWikibaseInitEntity",
     "MetaWikibaseInitIndex",
     "MetaWikibaseInitMetadata",
+    "MetaWikibaseCompiledEntity",
     "MetaWikibaseSemanticAnchorContract",
     "MetaWikibaseSemanticAnchorRequirement",
+    "MetaWikibaseSeedCompilation",
+    "MetaWikibaseSeedPlan",
+    "MetaWikibaseSeedPlanEntry",
     "WikibaseDatatypeSpec",
     "build_meta_wikibase_init_index",
     "build_meta_wikibase_semantic_anchor_contract",
     "canonicalize_wikibase_datatype",
+    "compare_meta_wikibase_entity_views",
+    "compile_meta_wikibase_seed",
     "get_meta_wikibase_init_entity",
+    "get_meta_wikibase_init_contract_digest",
     "get_wikibase_datatype_spec",
     "is_known_wikibase_datatype",
     "is_wikibase_item_datatype",
@@ -421,5 +1216,8 @@ __all__ = [
     "load_meta_wikibase_init_document",
     "load_wikibase_datatype_registry",
     "load_wikibase_datatype_registry_json",
+    "normalize_meta_wikibase_current_entity_view",
     "normalize_meta_wikibase_init_document",
+    "normalize_meta_wikibase_required_entity_view",
+    "plan_meta_wikibase_seed_baseline",
 ]
