@@ -331,6 +331,7 @@ class WikibaseShipper(Shipper):
         tags: Optional[list[str]] = None,
         bot: bool = False,
         metadata: Optional[dict[str, Any]] = None,
+        base_revision_id: Optional[int] = None,
     ) -> WriteResult:
         """Create or update a Wikibase item.
 
@@ -391,6 +392,7 @@ class WikibaseShipper(Shipper):
             csrf_token=csrf_token,
             tags=tags,
             bot=bot,
+            base_revision_id=base_revision_id,
         )
 
         response = self.auth.session.post(self.api_url, data=request_data)
@@ -434,6 +436,7 @@ class WikibaseShipper(Shipper):
         tags: Optional[list[str]] = None,
         bot: bool = False,
         metadata: Optional[dict[str, Any]] = None,
+        base_revision_id: Optional[int] = None,
     ) -> WriteResult:
         """Create or update a Wikibase property.
 
@@ -500,6 +503,7 @@ class WikibaseShipper(Shipper):
             csrf_token=csrf_token,
             tags=tags,
             bot=bot,
+            base_revision_id=base_revision_id,
         )
 
         response = self.auth.session.post(self.api_url, data=request_data)
@@ -606,14 +610,15 @@ class WikibaseShipper(Shipper):
                 request_payload=None,
             )
 
-        is_valid, warnings = self._validate_payload(payload)
+        normalized_payload = self._normalize_payload(payload)
+        is_valid, warnings = self._validate_payload(normalized_payload)
         if not is_valid:
             return DiffOperation(
                 kind=kind,
                 label=label,
                 status="blocked",
                 reasons=warnings,
-                request_payload=copy.deepcopy(payload),
+                request_payload=copy.deepcopy(normalized_payload),
             )
 
         entity_type = "property" if kind == "property" else "item"
@@ -658,7 +663,7 @@ class WikibaseShipper(Shipper):
                     label=label,
                     status="blocked",
                     reasons=["datatype is required to create a property"],
-                    request_payload=copy.deepcopy(payload),
+                    request_payload=copy.deepcopy(normalized_payload),
                 )
 
             create_reasons.append("No matching entity found by exact label")
@@ -668,14 +673,14 @@ class WikibaseShipper(Shipper):
                 status="create",
                 entity_id=None,
                 reasons=create_reasons,
-                request_payload=copy.deepcopy(payload),
+                request_payload=copy.deepcopy(normalized_payload),
                 metadata={"datatype": datatype} if datatype else {},
             )
 
         existing = api.get_entity(target_id)
         patch, diff_reasons = self._build_patch_payload(
             existing=existing,
-            desired=payload,
+            desired=normalized_payload,
             language=language,
             kind=kind,
             desired_datatype=datatype,
@@ -815,16 +820,34 @@ class WikibaseShipper(Shipper):
                 patch["descriptions"] = descriptions_patch
                 reasons.append("descriptions differ")
 
-        desired_claims = desired.get("claims")
-        if isinstance(desired_claims, list) and desired_claims:
+        desired_claims = self._flatten_claims_payload(desired.get("claims"))
+        if desired_claims:
             existing_claims = existing.get("claims", {})
-            missing_claims = [
-                claim
-                for claim in desired_claims
-                if not self._entity_has_matching_claim(existing_claims, claim)
-            ]
-            if missing_claims:
-                patch["claims"] = missing_claims
+            claim_patches: list[dict[str, Any]] = []
+            for claim in desired_claims:
+                if self._entity_has_matching_claim(existing_claims, claim):
+                    continue
+
+                replacement_claim = copy.deepcopy(claim)
+                desired_property = replacement_claim.get("mainsnak", {}).get("property")
+                existing_property_claims = (
+                    existing_claims.get(desired_property, [])
+                    if isinstance(existing_claims, dict)
+                    else []
+                )
+                if isinstance(existing_property_claims, list):
+                    for existing_claim in existing_property_claims:
+                        if not isinstance(existing_claim, dict):
+                            continue
+                        existing_claim_id = existing_claim.get("id")
+                        if isinstance(existing_claim_id, str) and existing_claim_id:
+                            replacement_claim["id"] = existing_claim_id
+                            break
+
+                claim_patches.append(replacement_claim)
+
+            if claim_patches:
+                patch["claims"] = claim_patches
                 reasons.append("claims differ")
 
         if kind == "property" and desired_datatype:
@@ -856,21 +879,30 @@ class WikibaseShipper(Shipper):
         """
         desired_mainsnak = desired_claim.get("mainsnak", {})
         desired_property = desired_mainsnak.get("property")
-        desired_datavalue = desired_mainsnak.get("datavalue", {})
-        desired_value = desired_datavalue.get("value")
 
         if not desired_property:
             return False
 
+        desired_value = self._claim_comparison_value(desired_claim)
         existing_property_claims = existing_claims.get(desired_property) or []
         for existing_claim in existing_property_claims:
-            existing_value = (
-                existing_claim.get("mainsnak", {}).get("datavalue", {}).get("value")
-            )
-            if existing_value == desired_value:
+            if self._claim_comparison_value(existing_claim) == desired_value:
                 return True
 
         return False
+
+    def _claim_comparison_value(self, claim: dict[str, Any]) -> Any:
+        """Return a stable comparison value for a claim mainsnak."""
+
+        mainsnak = claim.get("mainsnak", {}) if isinstance(claim, dict) else {}
+        snaktype = mainsnak.get("snaktype")
+        if snaktype == "novalue":
+            return {"snaktype": "novalue"}
+
+        datavalue = mainsnak.get("datavalue", {})
+        if isinstance(datavalue, dict):
+            return datavalue.get("value")
+        return None
 
     def _normalize_payload(self, payload: dict) -> dict:
         """Create a deep copy of a payload for safe internal manipulation.
@@ -884,7 +916,36 @@ class WikibaseShipper(Shipper):
         Returns:
             Deep copy of the payload
         """
-        return copy.deepcopy(payload)
+        normalized = copy.deepcopy(payload)
+        claims = normalized.get("claims")
+        if isinstance(claims, dict):
+            normalized["claims"] = self._flatten_claims_payload(claims)
+        return normalized
+
+    def _flatten_claims_payload(self, claims: Any) -> list[dict[str, Any]]:
+        """Convert claim mappings or lists into the wbeditentity list format."""
+
+        if isinstance(claims, list):
+            return [copy.deepcopy(claim) for claim in claims if isinstance(claim, dict)]
+
+        if not isinstance(claims, dict):
+            return []
+
+        flattened: list[dict[str, Any]] = []
+        for property_id in sorted(claims.keys()):
+            property_claims = claims.get(property_id)
+            if not isinstance(property_claims, list):
+                continue
+            for claim in property_claims:
+                if not isinstance(claim, dict):
+                    continue
+                normalized_claim = copy.deepcopy(claim)
+                mainsnak = normalized_claim.get("mainsnak")
+                if isinstance(mainsnak, dict) and not mainsnak.get("property"):
+                    mainsnak["property"] = property_id
+                flattened.append(normalized_claim)
+
+        return flattened
 
     def _validate_payload(self, payload: dict) -> tuple[bool, list[str]]:
         """Validate a Wikibase entity payload.
@@ -931,6 +992,7 @@ class WikibaseShipper(Shipper):
         csrf_token: str,
         tags: Optional[list[str]],
         bot: bool,
+        base_revision_id: Optional[int] = None,
     ) -> dict:
         """Build MediaWiki API request parameters for item create/update.
 
@@ -972,6 +1034,9 @@ class WikibaseShipper(Shipper):
         if bot:
             request_data["bot"] = "1"
 
+        if base_revision_id is not None:
+            request_data["baserevid"] = int(base_revision_id)
+
         return request_data
 
     def _build_property_request_data(
@@ -983,6 +1048,7 @@ class WikibaseShipper(Shipper):
         csrf_token: str,
         tags: Optional[list[str]],
         bot: bool,
+        base_revision_id: Optional[int] = None,
     ) -> dict:
         """Build MediaWiki API request parameters for property create/update.
 
@@ -1027,6 +1093,9 @@ class WikibaseShipper(Shipper):
 
         if bot:
             request_data["bot"] = "1"
+
+        if base_revision_id is not None:
+            request_data["baserevid"] = int(base_revision_id)
 
         return request_data
 

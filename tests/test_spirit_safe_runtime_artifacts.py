@@ -6,13 +6,16 @@ from shutil import copytree
 
 import pytest
 
+from gkc.shipper import WriteResult
 from gkc.spirit_safe import (
+    build_spiritsafe_meta_wikibase_conformance_report,
     build_spiritsafe_semantic_anchor_document,
     export_spiritsafe_semantic_anchors,
     load_profile,
     load_profile_package,
     resolve_profile_link,
     set_spirit_safe_source,
+    sync_spiritsafe_meta_wikibase_seed,
     validate_packet_structure,
 )
 from gkc.still_charger import create_curation_packet
@@ -180,6 +183,368 @@ spiritsafe:
     assert isinstance(anchors["entities"]["_time"]["resolved"], dict)
 
 
+def test_build_spiritsafe_meta_wikibase_conformance_report_flags_missing_sparql_talk_page(
+    tmp_path: Path, fixture_root: Path, monkeypatch
+):
+    """Conformance report should flag missing SPARQL talk-page content."""
+
+    root = tmp_path / "spiritsafe"
+    copytree(fixture_root, root)
+    config_dir = root / "config"
+    (config_dir / "dd-wikibase.yaml").write_text(
+        """
+meta_wikibase:
+  api_url: https://example.test/w/api.php
+  semantic_conventions:
+    name_identifier_property_id: P214
+    internal_name_identifier_prefix: "_"
+spiritsafe:
+    layout_version: 2
+    roots:
+        materialized: still
+        partners: partners
+    paths:
+        entities: still/entities
+        profiles: still/profiles
+        value_list_queries: still/value_lists/queries
+        value_list_cache: still/value_lists/cache
+        semantic_anchors: config/semantic_anchors.json
+        logs: still/logs
+        wikimedia_sites: partners/wikimedia_sites.json
+""".strip()
+        + "\n",
+        encoding="utf-8",
+    )
+
+    item_path = root / "still" / "entities" / "Q43.json"
+    item_doc = {
+        "entity_id": "Q43",
+        "entity": {
+            "id": "Q43",
+            "type": "item",
+            "labels": {"en": {"language": "en", "value": "List of World Countries"}},
+            "descriptions": {
+                "en": {
+                    "language": "en",
+                    "value": "SPARQL query returning list of countries of the world for country statements in items",
+                }
+            },
+            "claims": {
+                "P214": [
+                    {
+                        "id": "Q43$internal-name",
+                        "mainsnak": {
+                            "snaktype": "value",
+                            "property": "P214",
+                            "datavalue": {
+                                "type": "string",
+                                "value": "_world_countries",
+                            },
+                        },
+                        "type": "statement",
+                        "rank": "normal",
+                    }
+                ]
+            },
+        },
+    }
+    item_path.write_text(json.dumps(item_doc, indent=2), encoding="utf-8")
+
+    class FakeApiClient:
+        def __init__(self, api_url, session=None, timeout=20):
+            self.api_url = api_url
+
+        def request(self, params):
+            return {
+                "query": {"pages": [{"title": params.get("titles"), "missing": True}]}
+            }
+
+    monkeypatch.setattr("gkc.spirit_safe.WikibaseApiClient", FakeApiClient)
+
+    report = build_spiritsafe_meta_wikibase_conformance_report(root)
+    row = next(
+        action
+        for action in report["actions"]
+        if action["name_identifier"] == "_world_countries"
+    )
+
+    assert row["action"] == "update"
+    assert "talk_page.sparql" in (row["changed_fields"] or [])
+    assert row["talk_page"]["status"] == "missing"
+    assert (
+        row["differences"]["talk_page.sparql"]["expected"]["title"] == "Item_talk:Q43"
+    )
+
+
+def test_build_spiritsafe_meta_wikibase_conformance_report_uses_materialized_cache_artifacts(
+    tmp_path: Path, fixture_root: Path, monkeypatch
+):
+    """Conformance should compare against SpiritSafe files, not live talk pages."""
+
+    root = tmp_path / "spiritsafe"
+    copytree(fixture_root, root)
+    config_dir = root / "config"
+    (config_dir / "dd-wikibase.yaml").write_text(
+        """
+meta_wikibase:
+  api_url: https://example.test/w/api.php
+  semantic_conventions:
+    name_identifier_property_id: P214
+    internal_name_identifier_prefix: "_"
+spiritsafe:
+    layout_version: 2
+    roots:
+        materialized: still
+        partners: partners
+    paths:
+        entities: still/entities
+        profiles: still/profiles
+        value_list_queries: still/value_lists/queries
+        value_list_cache: still/value_lists/cache
+        semantic_anchors: config/semantic_anchors.json
+        logs: still/logs
+        wikimedia_sites: partners/wikimedia_sites.json
+""".strip()
+        + "\n",
+        encoding="utf-8",
+    )
+
+    item_path = root / "still" / "entities" / "Q43.json"
+    item_doc = {
+        "entity_id": "Q43",
+        "entity": {
+            "id": "Q43",
+            "type": "item",
+            "labels": {"en": {"language": "en", "value": "List of World Countries"}},
+            "descriptions": {
+                "en": {
+                    "language": "en",
+                    "value": "SPARQL query returning list of countries of the world for country statements in items",
+                }
+            },
+            "claims": {
+                "P1": [
+                    {
+                        "id": "Q43$instance-of",
+                        "mainsnak": {
+                            "snaktype": "value",
+                            "property": "P1",
+                            "datavalue": {
+                                "type": "wikibase-entityid",
+                                "value": {"id": "Q7", "entity-type": "item"},
+                            },
+                        },
+                        "type": "statement",
+                        "rank": "normal",
+                    }
+                ],
+                "P214": [
+                    {
+                        "id": "Q43$internal-name",
+                        "mainsnak": {
+                            "snaktype": "value",
+                            "property": "P214",
+                            "datavalue": {
+                                "type": "string",
+                                "value": "_world_countries",
+                            },
+                        },
+                        "type": "statement",
+                        "rank": "normal",
+                    }
+                ],
+            },
+        },
+    }
+    item_path.write_text(json.dumps(item_doc, indent=2), encoding="utf-8")
+
+    queries_dir = root / "still" / "value_lists" / "queries"
+    queries_dir.mkdir(parents=True, exist_ok=True)
+    (queries_dir / "Q43.sparql").write_text(
+        "SELECT ?item WHERE { ?item wdt:P31 wd:Q5 }\n",
+        encoding="utf-8",
+    )
+
+    def _unexpected_fetch(*args, **kwargs):
+        raise AssertionError("Conformance should not call the live talk-page API")
+
+    monkeypatch.setattr(
+        "gkc.spirit_safe.fetch_mediawiki_page_wikitext", _unexpected_fetch
+    )
+
+    report = build_spiritsafe_meta_wikibase_conformance_report(root)
+    row = next(
+        action
+        for action in report["actions"]
+        if action["name_identifier"] == "_world_countries"
+    )
+
+    assert row["action"] == "update"
+    assert "talk_page.sparql" in (row["changed_fields"] or [])
+    assert row["talk_page"]["status"] == "drift"
+    assert (
+        "SELECT ?item WHERE"
+        in row["differences"]["talk_page.sparql"]["current"]["content"]
+    )
+
+
+def test_sync_spiritsafe_meta_wikibase_seed_routes_updates_through_shipper(
+    tmp_path: Path, fixture_root: Path, monkeypatch
+):
+    """Sync helper should turn cache drift into shipper dry-run calls."""
+
+    root = tmp_path / "spiritsafe"
+    copytree(fixture_root, root)
+    config_dir = root / "config"
+    (config_dir / "dd-wikibase.yaml").write_text(
+        """
+meta_wikibase:
+  semantic_conventions:
+    name_identifier_property_id: P214
+    internal_name_identifier_prefix: "_"
+spiritsafe:
+    layout_version: 2
+    roots:
+        materialized: still
+        partners: partners
+    paths:
+        entities: still/entities
+        profiles: still/profiles
+        value_list_queries: still/value_lists/queries
+        value_list_cache: still/value_lists/cache
+        semantic_anchors: config/semantic_anchors.json
+        logs: still/logs
+        wikimedia_sites: partners/wikimedia_sites.json
+""".strip()
+        + "\n",
+        encoding="utf-8",
+    )
+
+    property_path = root / "still" / "entities" / "P1.json"
+    property_doc = {
+        "entity_id": "P1",
+        "entity": {
+            "id": "P1",
+            "type": "property",
+            "datatype": "wikibase-item",
+            "lastrevid": 321,
+            "labels": {"en": {"language": "en", "value": "instance of"}},
+            "descriptions": {"en": {"language": "en", "value": "wrong description"}},
+            "claims": {
+                "P214": [
+                    {
+                        "id": "P1$internal-name",
+                        "mainsnak": {
+                            "snaktype": "value",
+                            "property": "P214",
+                            "datavalue": {
+                                "type": "string",
+                                "value": "_instance_of",
+                            },
+                        },
+                        "type": "statement",
+                        "rank": "normal",
+                    }
+                ]
+            },
+        },
+    }
+    property_path.write_text(json.dumps(property_doc, indent=2), encoding="utf-8")
+
+    class FakeApiClient:
+        def __init__(self, api_url, session=None, timeout=20):
+            self.api_url = api_url
+
+        def get_entity(self, entity_id):
+            return json.loads(property_path.read_text(encoding="utf-8"))["entity"]
+
+    monkeypatch.setattr("gkc.spirit_safe.WikibaseApiClient", FakeApiClient)
+
+    class FakeShipper:
+        def __init__(self):
+            self.api_url = "https://example.test/w/api.php"
+            self.auth = None
+            self.calls = []
+
+        def write_property(
+            self,
+            payload,
+            summary,
+            datatype,
+            entity_id=None,
+            dry_run=None,
+            validate_only=False,
+            tags=None,
+            bot=False,
+            metadata=None,
+            base_revision_id=None,
+        ):
+            self.calls.append(
+                {
+                    "kind": "property",
+                    "payload": payload,
+                    "entity_id": entity_id,
+                    "datatype": datatype,
+                    "dry_run": dry_run,
+                    "base_revision_id": base_revision_id,
+                    "summary": summary,
+                }
+            )
+            return WriteResult(
+                entity_id=entity_id,
+                revision_id=base_revision_id,
+                status="dry_run" if dry_run else "submitted",
+                request_payload=payload,
+            )
+
+        def write_item(
+            self,
+            payload,
+            summary,
+            entity_id=None,
+            dry_run=None,
+            validate_only=False,
+            tags=None,
+            bot=False,
+            metadata=None,
+            base_revision_id=None,
+        ):
+            self.calls.append(
+                {
+                    "kind": "item",
+                    "payload": payload,
+                    "entity_id": entity_id,
+                    "dry_run": dry_run,
+                    "base_revision_id": base_revision_id,
+                    "summary": summary,
+                }
+            )
+            return WriteResult(
+                entity_id=entity_id,
+                revision_id=base_revision_id,
+                status="dry_run" if dry_run else "submitted",
+                request_payload=payload,
+            )
+
+    fake_shipper = FakeShipper()
+    result = sync_spiritsafe_meta_wikibase_seed(
+        root, shipper=fake_shipper, dry_run=True
+    )
+
+    assert result["summary"]["dry_run"] > 0
+    assert any(call["entity_id"] == "P1" for call in fake_shipper.calls)
+    assert any(
+        call["base_revision_id"] == 321
+        for call in fake_shipper.calls
+        if call["entity_id"] == "P1"
+    )
+    assert any(
+        action["write_status"] == "dry_run"
+        for action in result["actions"]
+        if action["action"] != "skip"
+    )
+
+
 def test_build_spiritsafe_semantic_anchor_document_marks_internal_entries(
     tmp_path: Path, fixture_root: Path
 ):
@@ -238,6 +603,366 @@ spiritsafe:
     assert anchors["metadata"]["item_count"] == 0
     assert anchors["entities"]["_entity"]["id"] is None
     assert anchors["entities"]["_entity"]["resolved"] is None
+
+
+def test_build_spiritsafe_meta_wikibase_conformance_report_uses_entity_cache(
+    tmp_path: Path, fixture_root: Path
+):
+    """Cache report should compare current cached entities against the seed contract."""
+
+    root = tmp_path / "spiritsafe"
+    copytree(fixture_root, root)
+    config_dir = root / "config"
+    (config_dir / "dd-wikibase.yaml").write_text(
+        """
+meta_wikibase:
+  semantic_conventions:
+    name_identifier_property_id: P214
+    internal_name_identifier_prefix: "_"
+spiritsafe:
+    layout_version: 2
+    roots:
+        materialized: still
+        partners: partners
+    paths:
+        entities: still/entities
+        profiles: still/profiles
+        value_list_queries: still/value_lists/queries
+        value_list_cache: still/value_lists/cache
+        semantic_anchors: config/semantic_anchors.json
+        logs: still/logs
+        wikimedia_sites: partners/wikimedia_sites.json
+""".strip()
+        + "\n",
+        encoding="utf-8",
+    )
+
+    entity_docs = {
+        "P1": {
+            "entity_id": "P1",
+            "entity": {
+                "id": "P1",
+                "type": "property",
+                "datatype": "wikibase-item",
+                "labels": {"en": {"language": "en", "value": "instance of"}},
+                "descriptions": {
+                    "en": {
+                        "language": "en",
+                        "value": "type to which this subject belongs or corresponds",
+                    }
+                },
+                "claims": {
+                    "P214": [
+                        {
+                            "mainsnak": {
+                                "snaktype": "value",
+                                "property": "P214",
+                                "datavalue": {
+                                    "type": "string",
+                                    "value": "_instance_of",
+                                },
+                            },
+                            "type": "statement",
+                            "rank": "normal",
+                        }
+                    ]
+                },
+            },
+        },
+        "P168": {
+            "entity_id": "P168",
+            "entity": {
+                "id": "P168",
+                "type": "property",
+                "datatype": "monolingualtext",
+                "labels": {"en": {"language": "en", "value": "error message"}},
+                "descriptions": {
+                    "en": {
+                        "language": "en",
+                        "value": "monolingual text template for error presentation with placeholders resolved by fermenter",
+                    }
+                },
+                "claims": {
+                    "P214": [
+                        {
+                            "mainsnak": {
+                                "snaktype": "value",
+                                "property": "P214",
+                                "datavalue": {
+                                    "type": "string",
+                                    "value": "_error_message",
+                                },
+                            },
+                            "type": "statement",
+                            "rank": "normal",
+                        }
+                    ]
+                },
+            },
+        },
+        "P214": {
+            "entity_id": "P214",
+            "entity": {
+                "id": "P214",
+                "type": "property",
+                "datatype": "string",
+                "labels": {"en": {"language": "en", "value": "name identifier"}},
+                "descriptions": {
+                    "en": {
+                        "language": "en",
+                        "value": "human-readable identifier for entities in this Wikibase used as a unique identifier in the JSON translations used by and within the SpiritSafe and gkc software package",
+                    }
+                },
+                "claims": {
+                    "P214": [
+                        {
+                            "mainsnak": {
+                                "snaktype": "value",
+                                "property": "P214",
+                                "datavalue": {
+                                    "type": "string",
+                                    "value": "_name_identifier",
+                                },
+                            },
+                            "type": "statement",
+                            "rank": "normal",
+                        }
+                    ]
+                },
+            },
+        },
+        "Q99": {
+            "entity_id": "Q99",
+            "entity": {
+                "id": "Q99",
+                "type": "item",
+                "labels": {
+                    "en": {"language": "en", "value": "Wikibase Statement Type"}
+                },
+                "descriptions": {
+                    "en": {
+                        "language": "en",
+                        "value": "classification of items describing the basic data type aligned with the Wikibase framework",
+                    }
+                },
+                "claims": {
+                    "P214": [
+                        {
+                            "mainsnak": {
+                                "snaktype": "value",
+                                "property": "P214",
+                                "datavalue": {
+                                    "type": "string",
+                                    "value": "_wikibase_statement_type",
+                                },
+                            },
+                            "type": "statement",
+                            "rank": "normal",
+                        }
+                    ],
+                    "P1": [
+                        {
+                            "mainsnak": {
+                                "snaktype": "value",
+                                "property": "P1",
+                                "datavalue": {
+                                    "type": "wikibase-entityid",
+                                    "value": {
+                                        "entity-type": "item",
+                                        "id": "Q4",
+                                        "numeric-id": 4,
+                                    },
+                                },
+                            },
+                            "type": "statement",
+                            "rank": "normal",
+                        }
+                    ],
+                },
+            },
+        },
+        "Q50": {
+            "entity_id": "Q50",
+            "entity": {
+                "id": "Q50",
+                "type": "item",
+                "labels": {"en": {"language": "en", "value": "wikibase-item"}},
+                "descriptions": {
+                    "en": {
+                        "language": "en",
+                        "value": "wikibase item property template used to set a data type for a statement, reference, or qualifier and any additional specifications",
+                    }
+                },
+                "claims": {
+                    "P1": [
+                        {
+                            "mainsnak": {
+                                "snaktype": "value",
+                                "property": "P1",
+                                "datavalue": {
+                                    "type": "wikibase-entityid",
+                                    "value": {
+                                        "entity-type": "item",
+                                        "id": "Q99",
+                                        "numeric-id": 99,
+                                    },
+                                },
+                            },
+                            "type": "statement",
+                            "rank": "normal",
+                        }
+                    ],
+                    "P214": [
+                        {
+                            "mainsnak": {
+                                "snaktype": "value",
+                                "property": "P214",
+                                "datavalue": {
+                                    "type": "string",
+                                    "value": "_wikibase-item",
+                                },
+                            },
+                            "type": "statement",
+                            "rank": "normal",
+                        }
+                    ],
+                    "P168": [
+                        {
+                            "mainsnak": {
+                                "snaktype": "value",
+                                "property": "P168",
+                                "datavalue": {
+                                    "type": "monolingualtext",
+                                    "value": {
+                                        "language": "mul",
+                                        "text": "Item must be or resolve to a valid QID identifier.",
+                                    },
+                                },
+                            },
+                            "type": "statement",
+                            "rank": "normal",
+                        }
+                    ],
+                },
+            },
+        },
+    }
+
+    entities_dir = root / "still" / "entities"
+    for entity_id, entity_doc in entity_docs.items():
+        (entities_dir / f"{entity_id}.json").write_text(
+            json.dumps(entity_doc, indent=2), encoding="utf-8"
+        )
+
+    report = build_spiritsafe_meta_wikibase_conformance_report(root)
+
+    assert report["comparison_source"]["mode"] == "cache-entities"
+    assert report["summary"]["skipped"] >= 1
+    assert report["summary"]["created"] >= 1
+    wikibase_item = next(
+        action
+        for action in report["actions"]
+        if action["name_identifier"] == "_wikibase-item"
+    )
+    assert wikibase_item["action"] == "skip"
+    assert wikibase_item["id"] == "https://datadistillery.wikibase.cloud/entity/Q50"
+    assert (
+        wikibase_item["required"]["claims"]["_instance_of"][0]["mainsnak"]["datavalue"][
+            "value"
+        ]["name_identifier"]
+        == "_wikibase_statement_type"
+    )
+    assert (
+        wikibase_item["current"]["claims"]["_instance_of"][0]["mainsnak"]["datavalue"][
+            "value"
+        ]["id"]
+        == "https://datadistillery.wikibase.cloud/entity/Q99"
+    )
+
+
+def test_build_spiritsafe_meta_wikibase_conformance_report_rejects_ambiguous_cache_matches(
+    tmp_path: Path, fixture_root: Path
+):
+    """Cache conformance should hard-stop when two entities claim the same internal name identifier."""
+
+    root = tmp_path / "spiritsafe"
+    copytree(fixture_root, root)
+    config_dir = root / "config"
+    (config_dir / "dd-wikibase.yaml").write_text(
+        """
+meta_wikibase:
+  semantic_conventions:
+    name_identifier_property_id: P214
+    internal_name_identifier_prefix: "_"
+spiritsafe:
+    layout_version: 2
+    roots:
+        materialized: still
+        partners: partners
+    paths:
+        entities: still/entities
+        profiles: still/profiles
+        value_list_queries: still/value_lists/queries
+        value_list_cache: still/value_lists/cache
+        semantic_anchors: config/semantic_anchors.json
+        logs: still/logs
+        wikimedia_sites: partners/wikimedia_sites.json
+""".strip()
+        + "\n",
+        encoding="utf-8",
+    )
+
+    duplicate_payload = {
+        "type": "item",
+        "labels": {"en": {"language": "en", "value": "wikibase-item"}},
+        "descriptions": {
+            "en": {
+                "language": "en",
+                "value": "duplicate cache test entity",
+            }
+        },
+        "claims": {
+            "P214": [
+                {
+                    "mainsnak": {
+                        "snaktype": "value",
+                        "property": "P214",
+                        "datavalue": {
+                            "type": "string",
+                            "value": "_wikibase-item",
+                        },
+                    },
+                    "type": "statement",
+                    "rank": "normal",
+                }
+            ]
+        },
+    }
+
+    entities_dir = root / "still" / "entities"
+    (entities_dir / "Q50.json").write_text(
+        json.dumps(
+            {
+                "entity_id": "Q50",
+                "entity": {"id": "Q50", **duplicate_payload},
+            },
+            indent=2,
+        ),
+        encoding="utf-8",
+    )
+    (entities_dir / "Q51.json").write_text(
+        json.dumps(
+            {
+                "entity_id": "Q51",
+                "entity": {"id": "Q51", **duplicate_payload},
+            },
+            indent=2,
+        ),
+        encoding="utf-8",
+    )
+
+    with pytest.raises(RuntimeError, match="Multiple cached entities resolve"):
+        build_spiritsafe_meta_wikibase_conformance_report(root)
 
 
 def test_build_spiritsafe_semantic_anchor_document_requires_config(

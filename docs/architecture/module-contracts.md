@@ -47,7 +47,7 @@ Responsibility:
 
 - Load SpiritSafe profile sources (GitHub or local).
 - Build JSON Entity Profiles from SpiritSafe cache entities.
-- Extract value-list SPARQL query files from value-list talk pages.
+- Extract value-list talk-page payload blocks based on value-list classification.
 - Hydrate value-list cache artifacts from extracted SPARQL queries.
 - Export profile JSON artifacts for downstream packet assembly and hydration.
 - Provide profile graph metadata and profile-loading utilities.
@@ -270,11 +270,13 @@ Current anchor surface:
 
 ### Flow 2.7: Value-List Query Hydration (Active)
 
-1. `spirit_safe` discovers value-list entities from cache (`P1 -> Q7`).
-2. `mash` reads value-list talk pages and extracts the first `<sparql>` block.
-3. `spirit_safe` writes query files (`queries/QID.sparql`).
-4. `sparql` executes paginated query hydration to `cache/queries/QID.json`.
-5. Failed hydration does not overwrite an existing cache file for that value list.
+1. `spirit_safe` discovers value-list entities and resolves list class semantics.
+2. `mash` reads value-list talk pages and extracts class-coupled payload blocks.
+3. For `sparql_value_list`, `spirit_safe` writes the first `<sparql>` block to `still/value_lists/queries/<QID>.sparql`.
+4. For `embedded_value_list`, `spirit_safe` writes the first `<syntaxhighlight lang="json">` block to `still/value_lists/cache/<QID>.json`.
+5. If a watched talk-page block is deleted, the corresponding materialized artifact is removed on the next sync.
+6. SPARQL hydration runs as a separate step for SPARQL-backed lists and does not overwrite cache on failed refresh.
+7. Meta-Wikibase conformance checks compare against the materialized SpiritSafe query/cache artifacts rather than the live Wikibase talk pages.
 
 ### Flow 2.8: Packet Re-entry and Forward Migration (Planned)
 

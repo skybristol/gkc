@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import re
 from dataclasses import dataclass
 from functools import lru_cache
 from importlib.resources import files
@@ -287,49 +288,66 @@ def normalize_meta_wikibase_init_document(document: dict[str, Any]) -> dict[str,
     if not isinstance(entities, dict):
         raise RuntimeError("meta_wb_init document is missing entities")
 
-    wikibase_entities = entities.get("wikibase_entities")
-    if not isinstance(wikibase_entities, dict):
-        raise RuntimeError(
-            "meta_wb_init document is missing entities.wikibase_entities"
-        )
+    metadata_languages = _normalize_meta_wikibase_languages(metadata)
 
+    normalized_entities: dict[str, dict[str, Any]] = {}
     normalized_properties: dict[str, dict[str, Any]] = {}
-    raw_properties = wikibase_entities.get("properties", {})
-    if not isinstance(raw_properties, dict):
-        raise RuntimeError("meta_wb_init properties must be a mapping")
-    for key, payload in raw_properties.items():
-        if not isinstance(payload, dict):
-            raise RuntimeError(f"meta_wb_init property '{key}' must be a mapping")
-        normalized_payload = dict(payload)
-        normalized_payload["kind"] = "property"
-        datatype = normalized_payload.get("datatype")
-        if not isinstance(datatype, str) or not datatype.strip():
-            raise RuntimeError(f"meta_wb_init property '{key}' is missing datatype")
-        normalized_payload["datatype"] = canonicalize_wikibase_datatype(
-            datatype,
-            strict=True,
-        )
-        normalized_properties[key] = normalized_payload
 
-    normalized_items: dict[str, dict[str, Any]] = {}
-    raw_items = wikibase_entities.get("items", {})
-    if not isinstance(raw_items, dict):
-        raise RuntimeError("meta_wb_init items must be a mapping")
-    for key, payload in raw_items.items():
+    for key, payload in entities.items():
         if not isinstance(payload, dict):
-            raise RuntimeError(f"meta_wb_init item '{key}' must be a mapping")
+            raise RuntimeError(f"meta_wb_init entity '{key}' must be a mapping")
         normalized_payload = dict(payload)
-        normalized_payload["kind"] = "item"
-        normalized_items[key] = normalized_payload
+        kind = normalized_payload.get("kind")
+        if kind not in {"property", "item"}:
+            raise RuntimeError(
+                f"meta_wb_init entity '{key}' must define kind 'property' or 'item'"
+            )
+
+        normalized_payload["label"] = _normalize_meta_wikibase_authored_text(
+            normalized_payload,
+            field_name="label",
+            languages=metadata_languages,
+            entity_key=key,
+        )
+        normalized_payload["description"] = _normalize_meta_wikibase_authored_text(
+            normalized_payload,
+            field_name="description",
+            languages=metadata_languages,
+            entity_key=key,
+        )
+
+        if kind == "property":
+            datatype = normalized_payload.get("datatype")
+            if not isinstance(datatype, str) or not datatype.strip():
+                raise RuntimeError(f"meta_wb_init property '{key}' is missing datatype")
+            normalized_payload["datatype"] = canonicalize_wikibase_datatype(
+                datatype,
+                strict=True,
+            )
+            normalized_properties[key] = normalized_payload
+
+        normalized_entities[key] = normalized_payload
+
+    property_datatypes = {
+        property_key: str(property_payload["datatype"])
+        for property_key, property_payload in normalized_properties.items()
+    }
+
+    for key, payload in normalized_entities.items():
+        normalized_entities[key] = _normalize_meta_wikibase_entity_attributes(
+            payload,
+            property_datatypes=property_datatypes,
+            metadata_languages=metadata_languages,
+        )
+
+    _validate_meta_wikibase_value_list_contract(normalized_entities)
+
+    normalized_metadata = dict(metadata)
+    normalized_metadata["languages"] = metadata_languages
 
     return {
-        "metadata": dict(metadata),
-        "entities": {
-            "wikibase_entities": {
-                "properties": normalized_properties,
-                "items": normalized_items,
-            }
-        },
+        "metadata": normalized_metadata,
+        "entities": normalized_entities,
     }
 
 
@@ -354,50 +372,45 @@ def build_meta_wikibase_init_index(
         ),
     )
 
-    entities_block = normalized_document["entities"]["wikibase_entities"]
+    entities_block = normalized_document["entities"]
     entities: dict[str, MetaWikibaseInitEntity] = {}
     properties: dict[str, MetaWikibaseInitEntity] = {}
     items: dict[str, MetaWikibaseInitEntity] = {}
     by_internal_name_identifier: dict[str, MetaWikibaseInitEntity] = {}
 
-    for kind, bucket in (
-        ("property", entities_block["properties"]),
-        ("item", entities_block["items"]),
-    ):
-        for key, payload in bucket.items():
-            internal_name_identifier = (
-                f"{metadata.internal_name_identifier_prefix}{key}"
-            )
-            attributes = {
-                attr_key: attr_value
-                for attr_key, attr_value in payload.items()
-                if attr_key
-                not in {
-                    "kind",
-                    "label",
-                    "description",
-                    "datatype",
-                    "instance_of",
-                    "subclass_of",
-                }
+    for key, payload in entities_block.items():
+        kind = str(payload.get("kind", "")).strip()
+        internal_name_identifier = f"{metadata.internal_name_identifier_prefix}{key}"
+        attributes = {
+            attr_key: attr_value
+            for attr_key, attr_value in payload.items()
+            if attr_key
+            not in {
+                "kind",
+                "label",
+                "description",
+                "datatype",
+                "instance_of",
+                "subclass_of",
             }
-            entity = MetaWikibaseInitEntity(
-                key=key,
-                kind=kind,
-                label=str(payload.get("label", "")).strip(),
-                description=str(payload.get("description", "")).strip(),
-                internal_name_identifier=internal_name_identifier,
-                datatype=payload.get("datatype"),
-                instance_of=payload.get("instance_of"),
-                subclass_of=payload.get("subclass_of"),
-                attributes=attributes or None,
-            )
-            entities[key] = entity
-            by_internal_name_identifier[internal_name_identifier] = entity
-            if kind == "property":
-                properties[key] = entity
-            else:
-                items[key] = entity
+        }
+        entity = MetaWikibaseInitEntity(
+            key=key,
+            kind=kind,
+            label=str(payload.get("label", "")).strip(),
+            description=str(payload.get("description", "")).strip(),
+            internal_name_identifier=internal_name_identifier,
+            datatype=payload.get("datatype"),
+            instance_of=payload.get("instance_of"),
+            subclass_of=payload.get("subclass_of"),
+            attributes=attributes or None,
+        )
+        entities[key] = entity
+        by_internal_name_identifier[internal_name_identifier] = entity
+        if kind == "property":
+            properties[key] = entity
+        elif kind == "item":
+            items[key] = entity
 
     return MetaWikibaseInitIndex(
         metadata=metadata,
@@ -656,14 +669,15 @@ def compare_meta_wikibase_entity_views(
     """Compare canonical required and current views and return changed-field codes."""
 
     changed_fields: list[str] = []
-    for field_name in (
-        "type",
-        "datatype",
-        "labels",
-        "descriptions",
-        "aliases",
-        "claims",
-    ):
+    for field_name in _declared_meta_wikibase_fields(required_view):
+        if field_name == "claims":
+            changed_fields.extend(
+                _compare_meta_wikibase_claim_field_changes(
+                    required_view.get("claims"),
+                    current_view.get("claims"),
+                )
+            )
+            continue
         if required_view.get(field_name) != current_view.get(field_name):
             changed_fields.append(field_name)
 
@@ -672,6 +686,84 @@ def compare_meta_wikibase_entity_views(
             changed_fields.append(issue)
 
     return changed_fields
+
+
+def _declared_meta_wikibase_fields(required_view: dict[str, Any]) -> tuple[str, ...]:
+    """Return the managed fields explicitly declared by the authored contract."""
+
+    return tuple(
+        field_name
+        for field_name in (
+            "type",
+            "datatype",
+            "labels",
+            "descriptions",
+            "aliases",
+            "claims",
+        )
+        if field_name in required_view
+    )
+
+
+def _compare_meta_wikibase_claim_field_changes(
+    expected_claims: Any,
+    current_claims: Any,
+) -> list[str]:
+    """Return property-level claim difference codes for comparable claim blocks."""
+
+    expected = expected_claims if isinstance(expected_claims, dict) else {}
+    current = current_claims if isinstance(current_claims, dict) else {}
+
+    changed_fields: list[str] = []
+    for property_id in sorted(set(expected.keys()) | set(current.keys())):
+        if expected.get(property_id) != current.get(property_id):
+            changed_fields.append(f"claims.{property_id}")
+    return changed_fields
+
+
+def _restrict_expected_meta_wikibase_claims_to_resolved_properties(
+    expected: dict[str, Any],
+    *,
+    current_entity: dict[str, Any],
+    entity_id_to_internal_name_identifier: dict[str, str],
+) -> dict[str, Any]:
+    """Limit claim comparison to properties that can be resolved from current evidence."""
+
+    expected_claims = expected.get("claims")
+    current_claims = current_entity.get("claims")
+    if not isinstance(expected_claims, dict) or not expected_claims:
+        return expected
+    if not isinstance(current_claims, dict) or not current_claims:
+        normalized = dict(expected)
+        normalized.pop("claims", None)
+        return normalized
+
+    comparable_property_ids: set[str] = set()
+    for property_id in current_claims.keys():
+        if not isinstance(property_id, str) or not property_id:
+            continue
+        comparable_property_ids.add(
+            entity_id_to_internal_name_identifier.get(property_id, property_id)
+        )
+
+    comparable_property_ids.update(
+        internal_name
+        for internal_name in entity_id_to_internal_name_identifier.values()
+        if isinstance(internal_name, str) and internal_name
+    )
+
+    restricted_claims = {
+        property_id: payload
+        for property_id, payload in expected_claims.items()
+        if property_id in comparable_property_ids
+    }
+
+    normalized = dict(expected)
+    if restricted_claims:
+        normalized["claims"] = restricted_claims
+    else:
+        normalized.pop("claims", None)
+    return normalized
 
 
 def _compare_meta_wikibase_compiled_to_current(
@@ -686,6 +778,11 @@ def _compare_meta_wikibase_compiled_to_current(
     """Compare one compiled symbolic payload against one live Wikibase entity."""
 
     expected = _normalize_meta_wikibase_compiled_payload(compiled_payload)
+    expected = _restrict_expected_meta_wikibase_claims_to_resolved_properties(
+        expected,
+        current_entity=current_entity,
+        entity_id_to_internal_name_identifier=entity_id_to_internal_name_identifier,
+    )
     current, issues = _normalize_meta_wikibase_live_entity(
         current_entity,
         entity_id_to_internal_name_identifier=entity_id_to_internal_name_identifier,
@@ -696,14 +793,15 @@ def _compare_meta_wikibase_compiled_to_current(
     )
 
     changed_fields: list[str] = []
-    for field_name in (
-        "type",
-        "datatype",
-        "labels",
-        "descriptions",
-        "aliases",
-        "claims",
-    ):
+    for field_name in _declared_meta_wikibase_fields(expected):
+        if field_name == "claims":
+            changed_fields.extend(
+                _compare_meta_wikibase_claim_field_changes(
+                    expected.get("claims"),
+                    current.get("claims"),
+                )
+            )
+            continue
         if expected.get(field_name) != current.get(field_name):
             changed_fields.append(field_name)
 
@@ -926,8 +1024,29 @@ def _normalize_meta_wikibase_claim(
     if not isinstance(claim, dict):
         return None
     mainsnak = claim.get("mainsnak")
-    if not isinstance(mainsnak, dict) or mainsnak.get("snaktype") != "value":
+    if not isinstance(mainsnak, dict):
         return None
+
+    snaktype = mainsnak.get("snaktype")
+    if snaktype == "novalue":
+        normalized_claim = {
+            "mainsnak": {
+                "snaktype": "novalue",
+                "property": symbolic_property_id,
+            },
+            "type": claim.get("type", "statement"),
+            "rank": claim.get("rank", "normal"),
+        }
+        datatype = mainsnak.get("datatype")
+        if isinstance(datatype, str) and datatype:
+            normalized_claim["mainsnak"]["datatype"] = canonicalize_wikibase_datatype(
+                datatype
+            )
+        return normalized_claim
+
+    if snaktype != "value":
+        return None
+
     datavalue = mainsnak.get("datavalue")
     if not isinstance(datavalue, dict):
         return None
@@ -1045,7 +1164,11 @@ def _compile_meta_wikibase_entity_claims(
         ),
     )
 
-    if isinstance(entity.instance_of, str) and entity.instance_of:
+    if (
+        isinstance(entity.instance_of, str)
+        and entity.instance_of
+        and entity.instance_of != "novalue"
+    ):
         _append_meta_wikibase_claim(
             claims,
             index.properties["instance_of"].internal_name_identifier,
@@ -1059,7 +1182,11 @@ def _compile_meta_wikibase_entity_claims(
             ),
         )
 
-    if isinstance(entity.subclass_of, str) and entity.subclass_of:
+    if (
+        isinstance(entity.subclass_of, str)
+        and entity.subclass_of
+        and entity.subclass_of != "novalue"
+    ):
         _append_meta_wikibase_claim(
             claims,
             index.properties["subclass_of"].internal_name_identifier,
@@ -1103,6 +1230,12 @@ def _build_meta_wikibase_attribute_claim(
 ) -> dict[str, Any] | None:
     """Compile one authored attribute into a symbolic claim when supported."""
 
+    if attribute_value == "novalue":
+        return _build_meta_wikibase_novalue_claim(
+            property_id=property_entity.internal_name_identifier,
+            datatype=property_entity.datatype,
+        )
+
     if property_entity.datatype == "wikibase-item":
         if (
             not isinstance(attribute_value, str)
@@ -1139,6 +1272,27 @@ def _build_meta_wikibase_attribute_claim(
     return None
 
 
+def _build_meta_wikibase_novalue_claim(
+    *,
+    property_id: str,
+    datatype: str | None,
+) -> dict[str, Any]:
+    """Build a claim payload for authored novalue requirements."""
+
+    mainsnak: dict[str, Any] = {
+        "snaktype": "novalue",
+        "property": property_id,
+    }
+    if isinstance(datatype, str) and datatype:
+        mainsnak["datatype"] = datatype
+
+    return {
+        "mainsnak": mainsnak,
+        "type": "statement",
+        "rank": "normal",
+    }
+
+
 def _build_symbolic_entity_reference_claim(
     claim_builder: Any,
     *,
@@ -1168,6 +1322,142 @@ def _append_meta_wikibase_claim(
     """Append one compiled claim to the per-property claim bucket."""
 
     claims.setdefault(property_id, []).append(claim)
+
+
+def _normalize_meta_wikibase_languages(metadata: dict[str, Any]) -> list[str]:
+    raw_languages = metadata.get("languages")
+    if not isinstance(raw_languages, list) or not raw_languages:
+        return ["en"]
+
+    normalized_languages: list[str] = []
+    for language in raw_languages:
+        if not isinstance(language, str) or not language.strip():
+            continue
+        normalized_languages.append(language.strip())
+
+    return normalized_languages or ["en"]
+
+
+def _normalize_meta_wikibase_authored_text(
+    payload: dict[str, Any],
+    *,
+    field_name: str,
+    languages: list[str],
+    entity_key: str,
+) -> str:
+    direct_value = payload.get(field_name)
+    if isinstance(direct_value, str) and direct_value.strip():
+        return direct_value.strip()
+
+    for language in languages:
+        localized_key = f"{field_name}_{language}"
+        localized_value = payload.get(localized_key)
+        if isinstance(localized_value, str) and localized_value.strip():
+            return localized_value.strip()
+
+    raise RuntimeError(
+        f"meta_wb_init entity '{entity_key}' is missing {field_name} text"
+    )
+
+
+def _normalize_meta_wikibase_entity_attributes(
+    payload: dict[str, Any],
+    *,
+    property_datatypes: dict[str, str],
+    metadata_languages: list[str],
+) -> dict[str, Any]:
+    skipped_keys = {
+        "kind",
+        "label",
+        "description",
+        "datatype",
+        "instance_of",
+        "subclass_of",
+    }
+    skipped_keys.update(f"label_{language}" for language in metadata_languages)
+    skipped_keys.update(f"description_{language}" for language in metadata_languages)
+
+    grouped_localized: dict[str, dict[str, Any]] = {}
+    passthrough: dict[str, Any] = {}
+
+    for key, value in payload.items():
+        if key in skipped_keys:
+            continue
+
+        match = re.match(r"^(?P<base>.+)_(?P<lang>[a-z]{2,3}(?:-[a-z0-9]+)*)$", key)
+        if match:
+            base_key = str(match.group("base"))
+            language = str(match.group("lang"))
+            if language in metadata_languages and base_key in property_datatypes:
+                grouped_localized.setdefault(base_key, {})[language] = value
+                continue
+
+        passthrough[key] = value
+
+    normalized_payload: dict[str, Any] = {}
+    for key in (
+        "kind",
+        "label",
+        "description",
+        "datatype",
+        "instance_of",
+        "subclass_of",
+    ):
+        if key in payload:
+            normalized_payload[key] = payload[key]
+
+    for key, value in passthrough.items():
+        normalized_payload[key] = value
+
+    for base_key, localized_values in grouped_localized.items():
+        _ = property_datatypes.get(base_key)
+        for language in metadata_languages:
+            if language in localized_values:
+                localized_value = localized_values[language]
+                if isinstance(localized_value, str):
+                    normalized_payload[base_key] = localized_value.strip()
+                else:
+                    normalized_payload[base_key] = localized_value
+                break
+
+    return normalized_payload
+
+
+def _validate_meta_wikibase_value_list_contract(
+    entities: dict[str, dict[str, Any]],
+) -> None:
+    for entity_key, payload in entities.items():
+        if not isinstance(payload, dict):
+            continue
+
+        instance_of = payload.get("instance_of")
+        if instance_of == "sparql_value_list":
+            sparql_endpoint = payload.get("sparql_endpoint")
+            query = payload.get("query")
+            if not isinstance(sparql_endpoint, str) or not sparql_endpoint.strip():
+                raise RuntimeError(
+                    f"meta_wb_init entity '{entity_key}' requires 'sparql_endpoint' and 'query'"
+                )
+            if not isinstance(query, str) or not query.strip():
+                raise RuntimeError(
+                    f"meta_wb_init entity '{entity_key}' requires 'sparql_endpoint' and 'query'"
+                )
+
+        if instance_of == "embedded_value_list":
+            value_list = payload.get("value_list")
+            if not isinstance(value_list, list) or not value_list:
+                raise RuntimeError(
+                    f"meta_wb_init entity '{entity_key}' requires 'value_list'"
+                )
+            for row in value_list:
+                if not isinstance(row, dict):
+                    raise RuntimeError(
+                        f"meta_wb_init entity '{entity_key}' requires 'value_list' rows with 'item' and 'itemLabel'"
+                    )
+                if "item" not in row or "itemLabel" not in row:
+                    raise RuntimeError(
+                        f"meta_wb_init entity '{entity_key}' requires 'value_list' rows with 'item' and 'itemLabel'"
+                    )
 
 
 def _normalize_meta_wikibase_monolingualtext(

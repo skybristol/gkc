@@ -99,12 +99,12 @@ Current runtime use is limited to endpoint resolution plus preservation of seman
 
 In addition to the instance-targeting config file, `gkc` now ships a package-owned Meta-Wikibase initialization fixture under `gkc/registry/meta_wb_init.yaml`.
 
-This fixture is not environment config. It is a package artifact that defines the authored backbone terms needed to bootstrap a clean Meta-Wikibase with the minimum ontology required by `gkc` and SpiritSafe.
+This fixture is not environment config. It is the source ontology contract used to drive convergence and semantic-anchor artifact generation.
 
 The current fixture covers:
 
 - backbone properties such as `instance_of`, `subclass_of`, `name_identifier`, and profile/statement linkage terms
-- backbone item classes such as `entity`, `entity_profile`, `entity_statement`, and `value_list`
+- backbone item classes such as `entity`, `entity_profile`, `entity_statement`, `sparql_value_list`, and `embedded_value_list`
 - datatype template items such as `wikibase-item`, `url`, `time`, and `monolingualtext`
 
 ## Datatype Contract In The Init Fixture
@@ -133,6 +133,7 @@ The initial helper surface includes:
 - normalizing authored datatype values against the canonical datatype registry
 - building a typed index over properties, items, and derived internal name identifiers
 - compiling the typed index into a required internal semantic-anchor contract using the active internal prefix
+- preparing normalized contract views for dry-run conformance planning and optional execution
 
 This keeps the fixture, datatype registry, and later ontology-init logic aligned behind one Wikibase-specific access layer.
 
@@ -140,52 +141,42 @@ This keeps the fixture, datatype registry, and later ontology-init logic aligned
 
 For the conceptual overview, lifecycle, and runtime usage model, see [Semantic Anchors](semantic-anchors.md).
 
-The current implementation treats semantic-anchor evaluation as a narrow conformance problem.
+Semantic-anchor processing is a contract-convergence workflow.
 
-The package-owned init fixture defines the required internal ontology backbone. The SpiritSafe semantic-anchor artifact is then validated against that backbone for runtime use.
+The package-owned init fixture defines required ontology semantics. Live Meta-Wikibase state is evaluated against that contract through cache-backed planning, with report-first behavior and optional execution.
 
-The validation boundary is intentionally small:
+The conformance boundary includes:
 
-- load the package-owned ontology seed
-- compile the required internal semantic-anchor contract
-- load a semantic-anchor document
-- validate required internal names, kinds, and property datatypes
-- emit machine-readable results plus fermenter-style notices
-
-This implementation does not attempt to validate class hierarchy, solve ontology-init ordering, or perform a separate live SPARQL conformance pass.
+- load and normalize `meta_wb_init.yaml`
+- resolve each declared internal entity against current state
+- emit dry-run create/update/no-op requirements
+- optionally execute corrections through standard write boundaries
+- transform resolved state to `config/semantic_anchors.json`
+- validate artifact completeness and datatype/kind conformance
 
 The implementation split is:
 
-- `gkc.wikibase` compiles the required semantic-anchor contract from `meta_wb_init.yaml`
-- `gkc.fermenter` validates semantic-anchor documents against that contract
-- `gkc spiritsafe semantic-anchors validate` exposes the operator-facing CLI entry point
+- `gkc.wikibase` normalizes the source contract and compiles required anchor requirements
+- `gkc.spirit_safe` owns planning/execution orchestration and runtime resolver loading
+- `gkc.fermenter` validates semantic-anchor documents against the compiled requirements
 
-When a local SpiritSafe root is available, workflows may also rebuild semantic anchors from current cache entities and compare them with a stored artifact to detect staleness.
+When a local SpiritSafe root is available, workflows may rebuild semantic anchors from current cache entities and compare them with the stored artifact to detect drift.
 
 Current runtime consumers in `gkc.spirit_safe` now resolve internal ontology concepts through a shared semantic-anchor lookup layer rather than carrying inline DD-specific P/Q ids. That keeps profile/entity-index generation aligned with the generated SpiritSafe artifact and confines anchor loading/validation to one integration boundary.
 
-## Continuing Work on Semantic Definition
+## Value-List Classifications
 
-The current `meta_wb_init.yaml` fixture is intended to capture the minimum authored backbone needed to bootstrap the Meta-Wikibase and support the present runtime architecture.
+Value-list semantics are class-driven:
 
-This means the seed intentionally includes:
+- `sparql_value_list` requires a SPARQL talk-page block and endpoint semantics
+- `embedded_value_list` requires a JSON talk-page block
 
-- core entity/profile/statement/value-list concepts
-- backbone linkage properties
-- datatype template items aligned to the canonical runtime datatype registry
-- selected operational guidance terms already exercised in code and workflow design
+Both list classes still resolve to the same runtime candidate row shape:
 
-It also intentionally defers some deeper semantic layers until they are hardened through real use cases.
+- `item`
+- `itemLabel`
 
-In particular, `gkc` is not currently trying to fully enumerate:
-
-- richer cardinality concepts beyond the lightweight limits already in use
-- separate ontology terms for every value-constraint or coercion mode
-- the full class hierarchy needed to distinguish abstract statement definitions from profile-context-specific statement use
-
-This is a deliberate design choice, not an omission by accident.
-
-The expectation is that these concepts will be added as contribution workflows, validation primitives, and cross-system shipping behavior become concrete enough to justify stable semantic labels in the Meta-Wikibase and its reference implementation.
+SPARQL hydration stays separate from talk-page extraction.
 
 ## Boundary
 

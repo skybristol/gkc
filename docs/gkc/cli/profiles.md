@@ -6,11 +6,12 @@ Plain meaning: Work with SpiritSafe-backed Entity Profiles and value-list artifa
 
 The `gkc profile` command group handles profile export, value-list hydration, and profile package loading.
 
-Profile export and value-list hydration now rely on semantic anchors to resolve internal ontology concepts. For background, see [Semantic Anchors](../../architecture/meta-wikibase/semantic-anchors.md).
+Profile export and value-list processing rely on semantic anchors to resolve internal ontology concepts and value-list classifications. For background, see [Semantic Anchors](../../architecture/meta-wikibase/semantic-anchors.md).
 
 Current subcommands:
 
 - `gkc profile export-json`
+- `gkc profile value-lists sync`
 - `gkc profile value-lists hydrate`
 - `gkc profile package load`
 - `gkc profile package validate`
@@ -38,31 +39,49 @@ Common options:
 
 When `--cache-entities-dir` points into a normal local SpiritSafe checkout, this route loads `config/semantic_anchors.json` and local Meta-Wikibase semantic conventions automatically. If you point it at an ad hoc cache directory outside that layout, use the Python API instead and pass an explicit semantic-anchor document.
 
-### `gkc profile value-lists hydrate`
+### `gkc profile value-lists sync`
 
-Export value-list queries and hydrate `still/value_lists/cache/<QID>.json`.
+Sync only the materialized SpiritSafe value-list artifacts from the watched talk-page blocks.
 
 ```bash
-gkc profile value-lists hydrate --source local --local-root /path/to/SpiritSafe
+gkc profile value-lists sync --source local --local-root /path/to/SpiritSafe
 ```
 
 Common options:
 
 - `--cache-entities-dir`: Override the cache entity directory.
 - `--queries-dir`: Override the output directory for exported SPARQL query files.
-- `--cache-queries-dir`: Override the hydrated value-list cache directory.
-- `--value-list-id`: Restrict hydration to one or more specific value-list QIDs.
+- `--cache-queries-dir`: Override the embedded JSON value-list cache directory.
+- `--value-list-id`: Restrict sync to one or more specific value-list QIDs.
 - `--api-url`: API URL used for talk-page retrieval.
-- `--endpoint`: SPARQL endpoint used for hydration.
-- `--page-size`: Query page size for pagination.
-- `--max-results`: Maximum total results per value list query.
-- `--continue-on-error`: Keep hydrating other value lists if one fails.
+- `--continue-on-error`: Keep syncing other value lists if one fails.
 - `--source`: Source override, either `github` or `local`.
 - `--local-root`: Local SpiritSafe root when using `--source local`.
 - `--repo`: GitHub repository slug when using `--source github`.
 - `--ref`: Git ref when using `--source github`.
 
-Like profile export, this route expects semantic-anchor-backed local context when operating from a SpiritSafe checkout.
+### `gkc profile value-lists hydrate`
+
+Run the same artifact sync and then hydrate SPARQL-backed value-list caches.
+
+```bash
+gkc profile value-lists hydrate --source local --local-root /path/to/SpiritSafe
+```
+
+Additional hydration options:
+
+- `--endpoint`: SPARQL endpoint used for hydration.
+- `--page-size`: Query page size for pagination.
+- `--max-results`: Maximum total results per value list query.
+
+Contract notes:
+
+- `sparql_value_list` items are expected to provide a talk-page `<sparql>` block.
+- `embedded_value_list` items are expected to provide a talk-page `<syntaxhighlight lang="json">` block.
+- For each block type, only the first matching block is extracted.
+- SPARQL hydration is a separate stage and applies only to SPARQL-backed lists.
+
+Like profile export, these routes expect semantic-anchor-backed local context when operating from a SpiritSafe checkout.
 
 ### `gkc profile package load`
 

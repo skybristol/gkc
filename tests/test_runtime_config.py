@@ -73,6 +73,14 @@ meta_wikibase:
   semantic_conventions:
     name_identifier_property_id: P214
     internal_name_identifier_prefix: "_"
+  value_list_talk_pages:
+    rules:
+      - class_name_identifier: _sparql_value_list
+        block_type: sparql
+        artifact_store: value_list_queries
+      - class_name_identifier: _embedded_value_list
+        block_type: json
+        artifact_store: value_list_cache
 spiritsafe:
     layout_version: 2
     roots:
@@ -116,6 +124,19 @@ spiritsafe:
     assert (
         config.spiritsafe_layout.wikimedia_sites_path == "partners/wikimedia_sites.json"
     )
+    assert len(config.value_list_talk_page_rules) == 2
+    assert (
+        config.value_list_talk_page_rules[0].class_name_identifier
+        == "_sparql_value_list"
+    )
+    assert config.value_list_talk_page_rules[0].block_type == "sparql"
+    assert config.value_list_talk_page_rules[0].artifact_store == "value_list_queries"
+    assert (
+        config.value_list_talk_page_rules[1].class_name_identifier
+        == "_embedded_value_list"
+    )
+    assert config.value_list_talk_page_rules[1].block_type == "json"
+    assert config.value_list_talk_page_rules[1].artifact_store == "value_list_cache"
 
 
 def test_runtime_config_autodiscovers_config_file(monkeypatch, tmp_path):

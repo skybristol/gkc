@@ -1,200 +1,111 @@
 # Semantic Anchors
 
-Semantic anchors are the bridge between the authored internal ontology in the Meta-Wikibase and the stable IDs that runtime code needs to use.
+Semantic anchors are the transformed runtime artifact that binds authored ontology semantics in `meta_wb_init.yaml` to concrete Meta-Wikibase entity URIs.
 
-Plain meaning: a semantic anchor says that an internal concept such as `_entity_profile`, `_has_statement`, or `_value_list` currently resolves to a specific Wikibase entity ID such as `Q3`, `P157`, or `Q7`.
+Plain meaning: runtime code resolves internal names such as `_has_statement` and `_name_identifier` from one deterministic artifact file, instead of hardcoding P/Q ids.
 
-They exist so that runtime code can depend on semantic names instead of baking Data Distillery-specific `P` and `Q` IDs into implementation logic.
+## Source Contract And Artifact
 
-## Why They Exist
+The architecture has two distinct layers that must stay synchronized.
 
-The project needs three things at once:
+### Source Contract
 
-- an authored ontology that lives in a Meta-Wikibase
-- deterministic runtime artifacts that can be stored in SpiritSafe
-- runtime code that stays aligned with the authored ontology even if concrete IDs change
+`gkc/registry/meta_wb_init.yaml` is the source contract.
 
-Semantic anchors are the narrow contract that connects those layers.
+It defines the required ontology entities, required authored fields, expected datatypes for properties, and value-list classes.
 
-Instead of asking runtime code to know that `_has_value` means `P161`, we generate and validate an artifact that says so explicitly.
+### Transformed Artifact
 
-## Core Idea
+`SpiritSafe/config/semantic_anchors.json` is the transformed runtime artifact.
 
-There are three different things involved, and keeping them separate matters.
+It is generated from the source contract plus live Meta-Wikibase resolution and contains stable runtime lookup records keyed by internal name identifier.
 
-### 1. Package-Owned Ontology Seed
+The artifact stores `id` as the full entity URI.
 
-`gkc/registry/meta_wb_init.yaml` defines the minimum authored ontology backbone that `gkc` expects to exist.
+If a simple QID/PID token is needed, resolver helpers derive that from the URI.
 
-This layer defines internal semantic names such as:
+## Operational Lifecycle
 
-- `_entity`
-- `_entity_profile`
-- `_has_statement`
-- `_has_value`
-- `_value_list`
+The contract lifecycle is:
 
-At this layer, we are defining concepts and expected datatypes, not binding to a specific running Wikibase instance.
+1. Load and normalize `meta_wb_init.yaml`.
 
-### 2. SpiritSafe Semantic-Anchor Artifact
+2. Resolve each declared entity against Meta-Wikibase state (via SpiritSafe cache-backed workflows).
 
-`config/semantic_anchors.json` is the materialized artifact that maps those internal names to the concrete IDs currently present in the Meta-Wikibase-backed cache.
+3. Produce a conformance plan and report required corrections.
 
-Typical shape:
+4. Optionally execute corrective actions.
 
-```json
-{
-  "metadata": {
-    "generated_at": "2026-04-04T00:00:00Z",
-    "contract_digest": "4c9f...",
-    "property_count": 12,
-    "item_count": 8
-  },
-  "validation": {
-    "status": "warning",
-    "checked_at": "2026-04-04T00:00:01Z",
-    "required_anchor_count": 20,
-    "matched_anchor_count": 20,
-    "evaluated_anchor_count": 20,
-    "error_count": 0,
-    "warning_count": 2,
-    "freshness_checked": false,
-    "freshness_match": null
-  },
-  "entities": {
-    "_has_statement": {
-      "id": "https://datadistillery.wikibase.cloud/entity/P157",
-      "kind": "property",
-      "datatype": "wikibase-item",
-      "required": {"kind": "property"},
-      "resolved": {"kind": "property"},
-      "validation": {
-        "status": "valid",
-        "notices": []
-      }
-    },
-    "_entity_profile": {
-      "id": "https://datadistillery.wikibase.cloud/entity/Q3",
-      "kind": "item",
-      "required": {"kind": "item"},
-      "resolved": {"kind": "item"},
-      "validation": {
-        "status": "warning",
-        "notices": [
-          {"severity": "warning", "code": "label_missing"}
-        ]
-      }
-    }
-  }
-}
-```
+5. Transform resolved entities into `semantic_anchors.json` with deterministic ordering.
 
-This is both the runtime-facing lookup document and the operator-facing conformance report.
+6. Use shared resolver APIs in `gkc.spirit_safe` for all runtime semantic lookups.
 
-### 3. Runtime Resolver
+Default mode is report-only. Execution is opt-in.
 
-Runtime code in `gkc.spirit_safe` loads the semantic-anchor artifact, validates it against the package-owned contract, and resolves the IDs it needs through a shared resolver.
+## Corrective-Action Semantics
 
-That means runtime code asks for `_has_statement` or `_value_list`, not for a hardcoded `P157` or `Q7`.
+Conformance processing uses this identity precedence:
 
-## Lifecycle
+1. Match by `name identifier` claim.
 
-The intended flow is:
+2. If missing, fallback to label + description (+ datatype for properties).
 
-1. Define the required ontology backbone in `meta_wb_init.yaml`.
+3. If fallback resolves exactly one entity, repair the `name identifier` claim.
 
-2. Author and maintain the concrete ontology terms in the Meta-Wikibase.
+4. If fallback is ambiguous, stop that entity as a hard blocker.
 
-3. Materialize cache entities in SpiritSafe.
+Corrective actions may include:
 
-4. Build `config/semantic_anchors.json` from those cached entities.
+- create missing items/properties
+- repair `name identifier` claim drift
+- align labels, descriptions, and declared authored attributes
+- align `instance of` and `subclass of` semantics
+- align required talk-page payload content for value-list entities
 
-5. Validate that artifact against the package-owned contract.
+## Value-List Talk-Page Contract
 
-6. Load the artifact in runtime code and resolve internal concepts through the shared lookup layer.
+Value-list talk payload extraction is class-coupled.
 
-This keeps the authored semantic layer, the materialized artifact layer, and the runtime layer synchronized while preserving clear boundaries between them.
+- `sparql_value_list` expects a `<sparql>` block on the item talk page
+- `embedded_value_list` expects a `<syntaxhighlight lang="json">` block on the item talk page
 
-## What Semantic Anchors Do And Do Not Do
+For each block type, only the first matching block is extracted.
 
-Semantic anchors do:
+Extraction paths are:
 
-- map internal semantic names to concrete property and item IDs
-- preserve expected property datatypes for runtime checks
-- keep a contract digest and per-entity validation status close to the resolved binding
-- give runtime consumers one stable lookup mechanism
-- let tests and ad hoc callers provide a synthetic anchor document explicitly when they are not operating inside a full SpiritSafe checkout
+- first `<sparql>` -> `SpiritSafe/still/value_lists/<QID>.sparql`
+- first JSON `<syntaxhighlight>` -> `SpiritSafe/still/value_lists/cache/<QID>.json`
 
-Semantic anchors do not:
+SPARQL hydration remains a separate workflow from talk-page extraction.
 
-- replace the authored ontology in the Meta-Wikibase
-- validate every modeling choice in the authored ontology
-- define endpoint URLs, credentials, or other environment configuration
-- eliminate the need for SpiritSafe materialization
+## Runtime Boundary
 
-## Runtime Contract
+Runtime code should treat semantic anchors as a required dependency for ontology concept resolution.
 
-Anchor-backed runtime workflows assume two things are present under a local SpiritSafe root:
+Anchor-backed workflows expect:
 
-- `config/dd-wikibase.yaml` or another supported Meta-Wikibase config filename under `config/`
+- a Meta-Wikibase config file under SpiritSafe `config/`
 - `config/semantic_anchors.json`
 
-The config file supplies the semantic convention needed to interpret internal names:
+When these are unavailable, workflows should fail explicitly rather than silently falling back to stale assumptions.
 
-- `semantic_conventions.name_identifier_property_id`
-- `semantic_conventions.internal_name_identifier_prefix`
+## Module Ownership
 
-The semantic-anchor artifact supplies the actual ID bindings plus the latest build-time validation state.
+Ownership split:
 
-When both are available, runtime consumers such as profile export, value-list hydration, and entity-index generation can resolve internal ontology labels consistently.
+- `gkc.wikibase`: normalize source contract and compile required semantic requirements
+- `gkc.spirit_safe`: conformance orchestration, artifact transform, and runtime resolver loading
+- `gkc.fermenter`: semantic-anchor document validation primitives
 
-When they are not available, anchor-backed workflows fail deliberately rather than silently falling back to stale assumptions.
+## Practical Rules
 
-## Synthetic And Test-Only Use
-
-Not every caller works from a full SpiritSafe checkout.
-
-For tests or ad hoc tooling that only has a temporary `still/entities` directory, the relevant APIs accept an explicit `semantic_anchor_document` argument.
-
-Use that route when:
-
-- constructing synthetic cache fixtures in tests
-- exercising one runtime helper in isolation
-- running outside the standard SpiritSafe directory layout
-
-Do not treat that override path as the normal production contract. The normal production contract is the validated artifact under `config/semantic_anchors.json`.
-
-## Where To Look In The Codebase
-
-The main ownership split is:
-
-- `gkc.wikibase`: compile the package-owned semantic-anchor contract from `meta_wb_init.yaml`
-- `gkc.fermenter`: validate semantic-anchor documents against that contract
-- `gkc.spirit_safe`: build, load, and consume semantic-anchor artifacts during runtime workflows
-
-The main operator-facing CLI routes are:
-
-- `gkc spiritsafe semantic-anchors build`
-- `gkc spiritsafe semantic-anchors validate`
-
-The main runtime consumers currently relying on semantic anchors are:
-
-- JSON profile export
-- value-list discovery and hydration
-- SpiritSafe entity-index generation
-
-## Practical Rule Of Thumb
-
-If you are working on authored ontology structure, start with the package-owned init fixture and the Meta-Wikibase.
-
-If you are working on SpiritSafe artifact maintenance, start with the semantic-anchor build and validate routes.
-
-If you are working on runtime code, never introduce new hardcoded internal `P` or `Q` IDs when the concept should instead resolve through a semantic anchor.
+- Use `meta_wb_init.yaml` as the only authored source for required ontology backbone semantics.
+- Do not edit `SpiritSafe/config/semantic_anchors.json` by hand.
+- Do not introduce hardcoded metaWikibase P/Q ids where semantic anchors exist.
 
 ## Related Documentation
 
 - [Meta-Wikibase Architecture](index.md)
 - [SpiritSafe Architecture](../SpiritSafe/index.md)
+- [Module Contracts](../module-contracts.md)
 - [SpiritSafe CLI](../../gkc/cli/spiritsafe.md)
-- [SpiritSafe API](../../gkc/api/spirit_safe.md)
-- [Fermenter API](../../gkc/api/fermenter.md)

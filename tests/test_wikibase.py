@@ -99,48 +99,123 @@ def test_load_wikibase_datatype_registry_json_round_trips_shape():
 def test_load_meta_wikibase_init_document_uses_canonical_datatypes():
     document = load_meta_wikibase_init_document()
 
-    properties = document["entities"]["wikibase_entities"]["properties"]
-    assert properties["instance_of"]["datatype"] == "wikibase-item"
-    assert properties["name_identifier"]["datatype"] == "string"
-    assert properties["see_also"]["datatype"] == "url"
+    entities = document["entities"]
+    assert entities["instance_of"]["datatype"] == "wikibase-item"
+    assert entities["name_identifier"]["datatype"] == "string"
+    assert entities["see_also"]["datatype"] == "url"
 
 
 def test_normalize_meta_wikibase_init_document_transforms_prototype_datatypes():
     prototype = {
-        "metadata": {"internal_name_identifier_prefix": "_"},
+        "metadata": {
+            "internal_name_identifier_prefix": "_",
+            "languages": ["en"],
+        },
         "entities": {
-            "wikibase_entities": {
-                "properties": {
-                    "instance_of": {
-                        "label": "instance of",
-                        "description": "type relation",
-                        "datatype": "WikibaseItem",
-                    },
-                    "same_as": {
-                        "label": "same as",
-                        "description": "identity relation",
-                        "datatype": "http://wikiba.se/ontology#Url",
-                    },
-                },
-                "items": {
-                    "entity": {
-                        "label": "entity",
-                        "description": "root entity",
-                    }
-                },
-            }
+            "instance_of": {
+                "kind": "property",
+                "label_en": "instance of",
+                "description_en": "type relation",
+                "datatype": "WikibaseItem",
+            },
+            "same_as": {
+                "kind": "property",
+                "label_en": "same as",
+                "description_en": "identity relation",
+                "datatype": "http://wikiba.se/ontology#Url",
+            },
+            "entity": {
+                "kind": "item",
+                "label_en": "entity",
+                "description_en": "root entity",
+            },
+            "error_message": {
+                "kind": "property",
+                "label_en": "error message",
+                "description_en": "message",
+                "datatype": "monolingualtext",
+            },
+            "wikibase-item": {
+                "kind": "item",
+                "label_en": "wikibase-item",
+                "description_en": "type item",
+                "error_message_en": "Item must be or resolve to a valid QID identifier.",
+            },
         },
     }
 
     normalized = normalize_meta_wikibase_init_document(prototype)
 
-    properties = normalized["entities"]["wikibase_entities"]["properties"]
-    assert properties["instance_of"]["datatype"] == "wikibase-item"
-    assert properties["same_as"]["datatype"] == "url"
-    assert properties["instance_of"]["kind"] == "property"
+    entities = normalized["entities"]
+    assert entities["instance_of"]["datatype"] == "wikibase-item"
+    assert entities["same_as"]["datatype"] == "url"
+    assert entities["instance_of"]["kind"] == "property"
+    assert entities["entity"]["kind"] == "item"
     assert (
-        normalized["entities"]["wikibase_entities"]["items"]["entity"]["kind"] == "item"
+        entities["wikibase-item"]["error_message"]
+        == "Item must be or resolve to a valid QID identifier."
     )
+
+
+def test_normalize_meta_wikibase_init_document_requires_authored_text():
+    prototype = {
+        "metadata": {"internal_name_identifier_prefix": "_", "languages": ["en"]},
+        "entities": {
+            "instance_of": {
+                "kind": "property",
+                "description_en": "type relation",
+                "datatype": "wikibase-item",
+            }
+        },
+    }
+
+    with pytest.raises(RuntimeError, match="missing label text"):
+        normalize_meta_wikibase_init_document(prototype)
+
+
+def test_normalize_meta_wikibase_init_document_requires_sparql_fields():
+    prototype = {
+        "metadata": {"internal_name_identifier_prefix": "_", "languages": ["en"]},
+        "entities": {
+            "sparql_value_list": {
+                "kind": "item",
+                "label_en": "SPARQL-backed Value List",
+                "description_en": "list",
+            },
+            "example_values": {
+                "kind": "item",
+                "instance_of": "sparql_value_list",
+                "label_en": "Example values",
+                "description_en": "example",
+                "refresh_policy": "manual_refresh_policy",
+            },
+        },
+    }
+
+    with pytest.raises(RuntimeError, match="requires 'sparql_endpoint' and 'query'"):
+        normalize_meta_wikibase_init_document(prototype)
+
+
+def test_normalize_meta_wikibase_init_document_requires_embedded_value_list():
+    prototype = {
+        "metadata": {"internal_name_identifier_prefix": "_", "languages": ["en"]},
+        "entities": {
+            "embedded_value_list": {
+                "kind": "item",
+                "label_en": "Embedded Value List",
+                "description_en": "list",
+            },
+            "example_values": {
+                "kind": "item",
+                "instance_of": "embedded_value_list",
+                "label_en": "Example values",
+                "description_en": "example",
+            },
+        },
+    }
+
+    with pytest.raises(RuntimeError, match="requires 'value_list'"):
+        normalize_meta_wikibase_init_document(prototype)
 
 
 def test_build_meta_wikibase_init_index_provides_typed_entity_access():
@@ -161,7 +236,7 @@ def test_get_meta_wikibase_init_entity_returns_one_entry():
     assert entity.kind == "item"
     assert entity.instance_of == "wikibase_statement_type"
     assert entity.attributes == {
-        "error_message": "Item must be or resolve to a valid QID identifier."
+        "error_message_mul": "Item must be or resolve to a valid QID identifier."
     }
 
 
@@ -209,11 +284,17 @@ def test_compile_meta_wikibase_seed_builds_symbolic_payloads():
         ]
     )
 
-    error_message_claim = compilation.entities["wikibase-item"].payload["claims"][
-        "_error_message"
+    wikibase_item_claims = compilation.entities["wikibase-item"].payload["claims"]
+    assert sorted(wikibase_item_claims.keys()) == [
+        "_instance_of",
+        "_name_identifier",
+    ]
+
+    data_size_max_count = compilation.entities["data_size"].payload["claims"][
+        "_max_count"
     ][0]
-    assert error_message_claim["mainsnak"]["datavalue"]["type"] == "monolingualtext"
-    assert error_message_claim["mainsnak"]["datavalue"]["value"]["language"] == "mul"
+    assert data_size_max_count["mainsnak"]["snaktype"] == "novalue"
+    assert "datavalue" not in data_size_max_count["mainsnak"]
 
 
 def test_compile_meta_wikibase_seed_uses_package_language_for_display_text(
@@ -241,6 +322,14 @@ def test_plan_meta_wikibase_seed_baseline_compares_live_state_and_requires_mul()
                     "language": "en",
                     "value": "wikibase item property template used to set a data type for a statement, reference, or qualifier and any additional specifications",
                 }
+            },
+            "aliases": {
+                "en": [
+                    {
+                        "language": "en",
+                        "value": "_wikibase-item",
+                    }
+                ]
             },
             "claims": {
                 "P1": [
@@ -315,22 +404,205 @@ def test_plan_meta_wikibase_seed_baseline_compares_live_state_and_requires_mul()
     assert matching_entry.action == "skip"
     assert matching_entry.current_entity_id == "Q50"
 
-    invalid_current_entities = deepcopy(current_entities)
-    invalid_current_entities["_wikibase-item"]["claims"]["P168"][0]["mainsnak"][
-        "datavalue"
-    ]["value"]["language"] = "en"
+    data_size_entity = {
+        "id": "Q91",
+        "type": "item",
+        "labels": {"en": {"language": "en", "value": "data size"}},
+        "descriptions": {
+            "en": {
+                "language": "en",
+                "value": "size of a software, dataset, neural network, or individual file",
+            }
+        },
+        "claims": {
+            "P1": [
+                {
+                    "mainsnak": {
+                        "snaktype": "value",
+                        "property": "P1",
+                        "datavalue": {
+                            "type": "wikibase-entityid",
+                            "value": {
+                                "entity-type": "item",
+                                "id": "Q5",
+                                "numeric-id": 5,
+                            },
+                        },
+                    },
+                    "type": "statement",
+                    "rank": "normal",
+                }
+            ],
+            "P214": [
+                {
+                    "mainsnak": {
+                        "snaktype": "value",
+                        "property": "P214",
+                        "datavalue": {
+                            "type": "string",
+                            "value": "_data_size",
+                        },
+                    },
+                    "type": "statement",
+                    "rank": "normal",
+                }
+            ],
+            "P215": [
+                {
+                    "mainsnak": {
+                        "snaktype": "value",
+                        "property": "P215",
+                        "datavalue": {
+                            "type": "wikibase-entityid",
+                            "value": {
+                                "entity-type": "item",
+                                "id": "Q71",
+                                "numeric-id": 71,
+                            },
+                        },
+                    },
+                    "type": "statement",
+                    "rank": "normal",
+                }
+            ],
+            "P182": [
+                {
+                    "mainsnak": {
+                        "snaktype": "novalue",
+                        "property": "P182",
+                        "datatype": "quantity",
+                    },
+                    "type": "statement",
+                    "rank": "normal",
+                }
+            ],
+            "P158": [
+                {
+                    "mainsnak": {
+                        "snaktype": "value",
+                        "property": "P158",
+                        "datavalue": {
+                            "type": "wikibase-entityid",
+                            "value": {
+                                "entity-type": "item",
+                                "id": "Q90",
+                                "numeric-id": 90,
+                            },
+                        },
+                    },
+                    "type": "statement",
+                    "rank": "normal",
+                }
+            ],
+            "P171": [
+                {
+                    "mainsnak": {
+                        "snaktype": "value",
+                        "property": "P171",
+                        "datavalue": {
+                            "type": "monolingualtext",
+                            "value": {
+                                "language": "mul",
+                                "text": "enter a value for total size of the data item",
+                            },
+                        },
+                    },
+                    "type": "statement",
+                    "rank": "normal",
+                }
+            ],
+            "P169": [
+                {
+                    "mainsnak": {
+                        "snaktype": "value",
+                        "property": "P169",
+                        "datavalue": {
+                            "type": "monolingualtext",
+                            "value": {
+                                "language": "mul",
+                                "text": "Enter a value for the data size of the subject and specify an appropriate unit of measure",
+                            },
+                        },
+                    },
+                    "type": "statement",
+                    "rank": "normal",
+                }
+            ],
+            "P168": [
+                {
+                    "mainsnak": {
+                        "snaktype": "value",
+                        "property": "P168",
+                        "datavalue": {
+                            "type": "monolingualtext",
+                            "value": {
+                                "language": "mul",
+                                "text": "Failure to provide a data size with the appropriate unit of measure may result in a reduced ability to determine appropriate use of the information",
+                            },
+                        },
+                    },
+                    "type": "statement",
+                    "rank": "normal",
+                }
+            ],
+            "P5": [
+                {
+                    "mainsnak": {
+                        "snaktype": "value",
+                        "property": "P5",
+                        "datavalue": {
+                            "type": "string",
+                            "value": "http://www.wikidata.org/entity/P3575",
+                        },
+                    },
+                    "type": "statement",
+                    "rank": "normal",
+                }
+            ],
+        },
+    }
+    novalue_entities = dict(current_entities)
+    novalue_entities["_data_size"] = data_size_entity
+    novalue_entity_id_to_internal_name_identifier = {
+        **entity_id_to_internal_name_identifier,
+        "P5": "_same_as",
+        "P158": "_has_qualifier",
+        "P168": "_error_message",
+        "P169": "_statement_guidance",
+        "P171": "_statement_prompt",
+        "P182": "_max_count",
+        "P215": "_statement_type",
+        "Q5": "_entity_statement",
+        "Q71": "_quantity",
+        "Q90": "_data_size_units",
+    }
+    novalue_plan = plan_meta_wikibase_seed_baseline(
+        current_entities_by_internal_name_identifier=novalue_entities,
+        entity_id_to_internal_name_identifier=novalue_entity_id_to_internal_name_identifier,
+    )
+    novalue_entry = next(
+        operation
+        for operation in novalue_plan.operations
+        if operation.internal_name_identifier == "_data_size"
+    )
+    assert novalue_entry.action == "skip"
 
-    invalid_plan = plan_meta_wikibase_seed_baseline(
-        current_entities_by_internal_name_identifier=invalid_current_entities,
+    invalid_claim_entities = deepcopy(current_entities)
+    invalid_claim_entities["_wikibase-item"]["claims"]["P1"][0]["mainsnak"][
+        "datavalue"
+    ]["value"]["id"] = "Q100"
+
+    invalid_claim_plan = plan_meta_wikibase_seed_baseline(
+        current_entities_by_internal_name_identifier=invalid_claim_entities,
         entity_id_to_internal_name_identifier=entity_id_to_internal_name_identifier,
     )
-    invalid_entry = next(
+    invalid_claim_entry = next(
         operation
-        for operation in invalid_plan.operations
+        for operation in invalid_claim_plan.operations
         if operation.internal_name_identifier == "_wikibase-item"
     )
-    assert invalid_entry.action == "update"
-    assert "_error_message.language" in (invalid_entry.changed_fields or [])
+    assert invalid_claim_entry.action == "update"
+    assert "claims._instance_of" in (invalid_claim_entry.changed_fields or [])
 
 
 def test_compile_meta_wikibase_seed_uses_bottler_primitives(monkeypatch):

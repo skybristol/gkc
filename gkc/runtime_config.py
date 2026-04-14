@@ -8,7 +8,7 @@ from __future__ import annotations
 import os
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Optional, TypedDict
+from typing import Literal, Optional, TypedDict
 
 import yaml
 
@@ -81,6 +81,15 @@ class SpiritSafeLayout:
 
 
 @dataclass(frozen=True)
+class ValueListTalkPageRule:
+    """Class-coupled rule for materializing value-list talk-page content."""
+
+    class_name_identifier: str
+    block_type: Literal["sparql", "json"]
+    artifact_store: Literal["value_list_queries", "value_list_cache"]
+
+
+@dataclass(frozen=True)
 class WikibaseRuntimeConfig:
     """Read-only Wikibase integration settings resolved from environment."""
 
@@ -92,6 +101,7 @@ class WikibaseRuntimeConfig:
     name_identifier_property_id: Optional[str] = None
     internal_name_identifier_prefix: Optional[str] = None
     spiritsafe_layout: SpiritSafeLayout = SpiritSafeLayout()
+    value_list_talk_page_rules: tuple[ValueListTalkPageRule, ...] = ()
 
 
 class MetaWikibaseConfigValues(TypedDict):
@@ -102,6 +112,7 @@ class MetaWikibaseConfigValues(TypedDict):
     name_identifier_property_id: Optional[str]
     internal_name_identifier_prefix: Optional[str]
     spiritsafe_layout: SpiritSafeLayout
+    value_list_talk_page_rules: tuple[ValueListTalkPageRule, ...]
 
 
 def default_meta_wikibase_config_values() -> MetaWikibaseConfigValues:
@@ -113,6 +124,7 @@ def default_meta_wikibase_config_values() -> MetaWikibaseConfigValues:
         "name_identifier_property_id": None,
         "internal_name_identifier_prefix": None,
         "spiritsafe_layout": SpiritSafeLayout(),
+        "value_list_talk_page_rules": (),
     }
 
 
@@ -144,6 +156,62 @@ def _read_optional_mapping(
     if not isinstance(value, dict):
         raise RuntimeError(f"{context} field '{key}' must be a mapping")
     return value
+
+
+def _load_value_list_talk_page_rules(
+    meta_config: dict[object, object],
+) -> tuple[ValueListTalkPageRule, ...]:
+    talk_page_config = (
+        _read_optional_mapping(
+            meta_config,
+            "value_list_talk_pages",
+            context="Meta-wikibase config field 'meta_wikibase'",
+        )
+        or {}
+    )
+
+    raw_rules = talk_page_config.get("rules")
+    if raw_rules is None:
+        return ()
+    if not isinstance(raw_rules, list):
+        raise RuntimeError(
+            "Meta-wikibase config field 'meta_wikibase.value_list_talk_pages.rules' must be a list"
+        )
+
+    parsed_rules: list[ValueListTalkPageRule] = []
+    for index, rule in enumerate(raw_rules):
+        if not isinstance(rule, dict):
+            raise RuntimeError(
+                "Meta-wikibase value-list talk-page rule "
+                f"at index {index} must be a mapping"
+            )
+
+        class_name_identifier = _read_optional_string(rule, "class_name_identifier")
+        block_type = _read_optional_string(rule, "block_type")
+        artifact_store = _read_optional_string(rule, "artifact_store")
+
+        if not class_name_identifier:
+            raise RuntimeError(
+                "Meta-wikibase value-list talk-page rules require 'class_name_identifier'"
+            )
+        if block_type not in {"sparql", "json"}:
+            raise RuntimeError(
+                "Meta-wikibase value-list talk-page rules require block_type 'sparql' or 'json'"
+            )
+        if artifact_store not in {"value_list_queries", "value_list_cache"}:
+            raise RuntimeError(
+                "Meta-wikibase value-list talk-page rules require artifact_store 'value_list_queries' or 'value_list_cache'"
+            )
+
+        parsed_rules.append(
+            ValueListTalkPageRule(
+                class_name_identifier=class_name_identifier,
+                block_type=block_type,
+                artifact_store=artifact_store,
+            )
+        )
+
+    return tuple(parsed_rules)
 
 
 def _load_spiritsafe_layout(raw_config: dict[object, object]) -> SpiritSafeLayout:
@@ -278,6 +346,7 @@ def load_meta_wikibase_config(path: Path) -> MetaWikibaseConfigValues:
             semantic_conventions, "internal_name_identifier_prefix"
         ),
         "spiritsafe_layout": _load_spiritsafe_layout(raw_config),
+        "value_list_talk_page_rules": _load_value_list_talk_page_rules(meta_config),
     }
 
 
@@ -337,4 +406,5 @@ def get_wikibase_runtime_config() -> WikibaseRuntimeConfig:
             "internal_name_identifier_prefix"
         ),
         spiritsafe_layout=config_values.get("spiritsafe_layout", SpiritSafeLayout()),
+        value_list_talk_page_rules=config_values.get("value_list_talk_page_rules", ()),
     )
