@@ -36,6 +36,7 @@ from gkc.runtime_config import (
     DEFAULT_META_WB_CONFIG_SEARCH_DIRS,
     MetaWikibaseConfigValues,
     SpiritSafeLayout,
+    ValueListTalkPageRule,
     default_meta_wikibase_config_values,
     discover_meta_wikibase_config_path,
     get_wikibase_runtime_config,
@@ -50,6 +51,7 @@ from gkc.wikibase import (
     get_meta_wikibase_init_contract_digest,
     normalize_meta_wikibase_current_entity_view,
     normalize_meta_wikibase_required_entity_view,
+    plan_meta_wikibase_seed_baseline,
 )
 
 RefreshPolicy = Literal["manual", "daily", "weekly", "on_release"]
@@ -759,32 +761,116 @@ class ValueListHydrationResult:
     hydrated_ids: list[str] = field(default_factory=list)
     query_files_written: list[str] = field(default_factory=list)
     cache_files_written: list[str] = field(default_factory=list)
+    query_files_deleted: list[str] = field(default_factory=list)
+    cache_files_deleted: list[str] = field(default_factory=list)
     failures: list[dict[str, Any]] = field(default_factory=list)
 
 
-def discover_value_list_ids(
+def _extract_claim_entity_ids(claims: Any) -> set[str]:
+    entity_ids: set[str] = set()
+    if not isinstance(claims, list):
+        return entity_ids
+
+    for claim in claims:
+        value = claim.get("mainsnak", {}).get("datavalue", {}).get("value", {})
+        if isinstance(value, dict):
+            entity_id = value.get("id")
+            if isinstance(entity_id, str) and entity_id:
+                entity_ids.add(entity_id)
+
+    return entity_ids
+
+
+def _optional_anchor_item_id(
+    resolver: SpiritSafeSemanticAnchorResolver,
+    anchor_name: str,
+) -> Optional[str]:
+    anchor = resolver.get(anchor_name)
+    if anchor is None:
+        return None
+    if anchor.kind != "item":
+        raise RuntimeError(
+            f"Semantic anchor '{anchor_name}' resolves to {anchor.entity_id}, expected an item"
+        )
+    return anchor.entity_id
+
+
+def _fallback_value_list_talk_page_rules(
+    resolver: SpiritSafeSemanticAnchorResolver,
+) -> tuple[ValueListTalkPageRule, ...]:
+    """Provide a compatibility fallback when YAML rules are not yet authored."""
+
+    rules: list[ValueListTalkPageRule] = []
+
+    sparql_anchor = (
+        "_sparql_value_list" if resolver.get("_sparql_value_list") else "_value_list"
+    )
+    if resolver.get(sparql_anchor) is not None:
+        rules.append(
+            ValueListTalkPageRule(
+                class_name_identifier=sparql_anchor,
+                block_type="sparql",
+                artifact_store="value_list_queries",
+            )
+        )
+
+    if resolver.get("_embedded_value_list") is not None:
+        rules.append(
+            ValueListTalkPageRule(
+                class_name_identifier="_embedded_value_list",
+                block_type="json",
+                artifact_store="value_list_cache",
+            )
+        )
+
+    return tuple(rules)
+
+
+def _resolve_value_list_talk_page_rules(
+    cache_entities_dir: Union[str, Path],
+    *,
+    resolver: SpiritSafeSemanticAnchorResolver,
+) -> tuple[ValueListTalkPageRule, ...]:
+    cache_dir = Path(cache_entities_dir).expanduser().resolve()
+    config_path = discover_meta_wikibase_config_path(start_dir=cache_dir)
+    if config_path is not None:
+        config_values = load_meta_wikibase_config(config_path)
+        configured_rules = tuple(config_values.get("value_list_talk_page_rules", ()))
+        if configured_rules:
+            return configured_rules
+
+    return _fallback_value_list_talk_page_rules(resolver)
+
+
+def _discover_value_list_artifact_kinds(
     cache_entities_dir: Union[str, Path],
     *,
     value_list_class_id: Optional[str] = None,
     semantic_anchor_document: Optional[dict[str, Any]] = None,
-) -> list[str]:
-    """Discover all value-list entity IDs from SpiritSafe cache entities.
+) -> dict[str, Literal["sparql", "json"]]:
+    """Discover value-list entities and the expected SpiritSafe artifact type."""
 
-    Value lists are identified by `P1 -> Q7` classification in cached entity claims.
-    """
     cache_dir = Path(cache_entities_dir)
-    resolved_value_list_class_id = value_list_class_id
-    instance_of_property_id: str
-
     resolver = _resolve_semantic_anchor_resolver_for_cache_entities_dir(
         cache_dir,
         semantic_anchor_document=semantic_anchor_document,
     )
     instance_of_property_id = resolver.require_property_id("_instance_of")
-    if resolved_value_list_class_id is None:
-        resolved_value_list_class_id = resolver.require_item_id("_value_list")
+    configured_rules = list(
+        _resolve_value_list_talk_page_rules(cache_dir, resolver=resolver)
+    )
 
-    discovered: list[str] = []
+    rule_class_ids: list[tuple[str, Literal["sparql", "json"]]] = []
+    if value_list_class_id:
+        rule_class_ids.append((value_list_class_id, "sparql"))
+
+    for rule in configured_rules:
+        class_id = _optional_anchor_item_id(resolver, rule.class_name_identifier)
+        if class_id is None:
+            continue
+        rule_class_ids.append((class_id, rule.block_type))
+
+    discovered: dict[str, Literal["sparql", "json"]] = {}
 
     for path in sorted(cache_dir.glob("*.json")):
         try:
@@ -797,13 +883,56 @@ def discover_value_list_ids(
             continue
 
         claims = payload.get("entity", {}).get("claims", {})
-        p1_claims = (
+        instance_of_claims = (
             claims.get(instance_of_property_id, []) if isinstance(claims, dict) else []
         )
-        if _claims_include_entity_id(p1_claims, resolved_value_list_class_id):
-            discovered.append(entity_id)
+        class_ids = _extract_claim_entity_ids(instance_of_claims)
+        if not class_ids:
+            continue
 
-    return sorted(discovered)
+        for class_id, artifact_kind in rule_class_ids:
+            if class_id in class_ids:
+                discovered[entity_id] = artifact_kind
+                break
+
+    return {entity_id: discovered[entity_id] for entity_id in sorted(discovered)}
+
+
+def discover_value_list_ids(
+    cache_entities_dir: Union[str, Path],
+    *,
+    value_list_class_id: Optional[str] = None,
+    semantic_anchor_document: Optional[dict[str, Any]] = None,
+) -> list[str]:
+    """Discover all value-list entity IDs from SpiritSafe cache entities."""
+
+    return sorted(
+        _discover_value_list_artifact_kinds(
+            cache_entities_dir,
+            value_list_class_id=value_list_class_id,
+            semantic_anchor_document=semantic_anchor_document,
+        ).keys()
+    )
+
+
+def _is_missing_value_list_talk_page_error(exc: Exception) -> bool:
+    lowered = str(exc).lower()
+    return any(
+        marker in lowered
+        for marker in (
+            "not found",
+            "no revision content",
+            "no <sparql>",
+            "no json <syntaxhighlight>",
+        )
+    )
+
+
+def _delete_artifact_if_exists(path: Path) -> Optional[str]:
+    if not path.exists():
+        return None
+    path.unlink()
+    return str(path.resolve())
 
 
 def export_value_list_sparql_queries(
@@ -816,33 +945,48 @@ def export_value_list_sparql_queries(
 ) -> dict[str, Any]:
     """Export first `<sparql>` talk-page blocks into SpiritSafe query files.
 
-    Writes one file per value-list ID as `<queries_dir>/<QID>.sparql`.
+    Missing SPARQL blocks are treated as deletions and remove any stale local
+    `.sparql` artifact for the corresponding value-list item.
     """
-    selected_ids = sorted(
-        set(
-            value_list_ids
-            or discover_value_list_ids(
-                cache_entities_dir,
-                semantic_anchor_document=semantic_anchor_document,
-            )
-        )
+    discovered_kinds = _discover_value_list_artifact_kinds(
+        cache_entities_dir,
+        semantic_anchor_document=semantic_anchor_document,
     )
+    if value_list_ids is None:
+        selected_ids = [
+            entity_id
+            for entity_id, artifact_kind in discovered_kinds.items()
+            if artifact_kind == "sparql"
+        ]
+    else:
+        selected_ids = sorted(set(value_list_ids))
+
     out_dir = Path(queries_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
 
     api_client = WikibaseApiClient(api_url=api_url)
     written_files: list[str] = []
+    deleted_files: list[str] = []
     failures: list[dict[str, Any]] = []
 
     for entity_id in selected_ids:
+        artifact_kind = discovered_kinds.get(entity_id, "sparql")
+        if artifact_kind != "sparql":
+            continue
+
         title = f"Item_talk:{entity_id}"
+        output_path = out_dir / f"{entity_id}.sparql"
         try:
             wikitext = fetch_mediawiki_page_wikitext(api_client=api_client, title=title)
             query_text = extract_first_sparql_block(wikitext)
-            output_path = out_dir / f"{entity_id}.sparql"
             output_path.write_text(query_text.strip() + "\n", encoding="utf-8")
             written_files.append(str(output_path.resolve()))
         except Exception as exc:
+            if _is_missing_value_list_talk_page_error(exc):
+                deleted = _delete_artifact_if_exists(output_path)
+                if deleted is not None:
+                    deleted_files.append(deleted)
+                continue
             failures.append(
                 {
                     "value_list_id": entity_id,
@@ -855,6 +999,7 @@ def export_value_list_sparql_queries(
         "value_list_ids": selected_ids,
         "queries_dir": str(out_dir.resolve()),
         "query_files_written": sorted(written_files),
+        "query_files_deleted": sorted(deleted_files),
         "failures": failures,
     }
 
@@ -935,6 +1080,107 @@ def hydrate_value_list_query_caches(
     }
 
 
+def sync_value_list_artifacts_from_cache(
+    *,
+    cache_entities_dir: Union[str, Path],
+    queries_dir: Union[str, Path],
+    cache_queries_dir: Union[str, Path],
+    api_url: str,
+    value_list_ids: Optional[list[str]] = None,
+    semantic_anchor_document: Optional[dict[str, Any]] = None,
+    fail_on_error: bool = True,
+) -> ValueListHydrationResult:
+    """Sync only the talk-page-derived SpiritSafe value-list artifacts."""
+
+    query_root = Path(queries_dir)
+    cache_root = Path(cache_queries_dir)
+    query_root.mkdir(parents=True, exist_ok=True)
+    cache_root.mkdir(parents=True, exist_ok=True)
+
+    discovered_kinds = _discover_value_list_artifact_kinds(
+        cache_entities_dir,
+        semantic_anchor_document=semantic_anchor_document,
+    )
+    selected_ids = sorted(set(value_list_ids or discovered_kinds.keys()))
+    selected_kinds = {
+        entity_id: discovered_kinds.get(entity_id, "sparql")
+        for entity_id in selected_ids
+    }
+
+    api_client = WikibaseApiClient(api_url=api_url)
+    query_files_written: list[str] = []
+    cache_files_written: list[str] = []
+    query_files_deleted: list[str] = []
+    cache_files_deleted: list[str] = []
+    sync_failures: list[dict[str, Any]] = []
+
+    for entity_id in selected_ids:
+        artifact_kind = selected_kinds.get(entity_id, "sparql")
+        title = f"Item_talk:{entity_id}"
+        try:
+            wikitext = fetch_mediawiki_page_wikitext(api_client=api_client, title=title)
+            if artifact_kind == "json":
+                payload = _extract_first_json_syntaxhighlight_block(wikitext)
+                output_path = cache_root / f"{entity_id}.json"
+                output_path.write_text(
+                    json.dumps(payload, indent=2) + "\n",
+                    encoding="utf-8",
+                )
+                cache_files_written.append(str(output_path.resolve()))
+                deleted_query = _delete_artifact_if_exists(
+                    query_root / f"{entity_id}.sparql"
+                )
+                if deleted_query is not None:
+                    query_files_deleted.append(deleted_query)
+            else:
+                query_text = extract_first_sparql_block(wikitext)
+                output_path = query_root / f"{entity_id}.sparql"
+                output_path.write_text(query_text.strip() + "\n", encoding="utf-8")
+                query_files_written.append(str(output_path.resolve()))
+        except Exception as exc:
+            if _is_missing_value_list_talk_page_error(exc):
+                deleted_query = _delete_artifact_if_exists(
+                    query_root / f"{entity_id}.sparql"
+                )
+                if deleted_query is not None:
+                    query_files_deleted.append(deleted_query)
+
+                deleted_cache = _delete_artifact_if_exists(
+                    cache_root / f"{entity_id}.json"
+                )
+                if deleted_cache is not None:
+                    cache_files_deleted.append(deleted_cache)
+                continue
+
+            sync_failures.append(
+                {
+                    "value_list_id": entity_id,
+                    "artifact_kind": artifact_kind,
+                    "source_title": title,
+                    "error": str(exc),
+                }
+            )
+
+    if sync_failures and fail_on_error:
+        first = sync_failures[0]
+        raise RuntimeError(
+            "Failed to sync value-list artifact "
+            f"for {first.get('value_list_id')}: {first.get('error')}"
+        )
+
+    return ValueListHydrationResult(
+        queries_dir=str(query_root.resolve()),
+        cache_queries_dir=str(cache_root.resolve()),
+        discovered_ids=selected_ids,
+        hydrated_ids=[],
+        query_files_written=sorted(set(query_files_written)),
+        cache_files_written=sorted(set(cache_files_written)),
+        query_files_deleted=sorted(set(query_files_deleted)),
+        cache_files_deleted=sorted(set(cache_files_deleted)),
+        failures=sync_failures,
+    )
+
+
 def hydrate_value_lists_from_cache(
     *,
     cache_entities_dir: Union[str, Path],
@@ -948,40 +1194,44 @@ def hydrate_value_lists_from_cache(
     max_results: Optional[int] = None,
     fail_on_hydration_error: bool = True,
 ) -> ValueListHydrationResult:
-    """Export value-list SPARQL files and hydrate value-list cache artifacts."""
-    export_summary = export_value_list_sparql_queries(
+    """Sync talk-page-derived value-list artifacts and hydrate SPARQL caches."""
+
+    sync_result = sync_value_list_artifacts_from_cache(
         cache_entities_dir=cache_entities_dir,
         queries_dir=queries_dir,
+        cache_queries_dir=cache_queries_dir,
         api_url=api_url,
         value_list_ids=value_list_ids,
         semantic_anchor_document=semantic_anchor_document,
+        fail_on_error=fail_on_hydration_error,
     )
 
-    export_failures = list(export_summary.get("failures", []))
-    if export_failures and fail_on_hydration_error:
-        first = export_failures[0]
-        raise RuntimeError(
-            "Failed to export value-list SPARQL query "
-            f"for {first.get('value_list_id')}: {first.get('error')}"
-        )
-
-    eligible_ids = [
-        value_list_id
-        for value_list_id in export_summary["value_list_ids"]
-        if value_list_id not in {f.get("value_list_id") for f in export_failures}
+    query_root = Path(sync_result.queries_dir)
+    sparql_ids_for_hydration = [
+        entity_id
+        for entity_id in sync_result.discovered_ids
+        if (query_root / f"{entity_id}.sparql").exists()
     ]
 
-    hydrate_summary = hydrate_value_list_query_caches(
-        value_list_ids=eligible_ids,
-        queries_dir=queries_dir,
-        cache_queries_dir=cache_queries_dir,
-        endpoint=endpoint,
-        page_size=page_size,
-        max_results=max_results,
-        wikibase_api_url=api_url,
-    )
+    if sparql_ids_for_hydration:
+        hydrate_summary = hydrate_value_list_query_caches(
+            value_list_ids=sparql_ids_for_hydration,
+            queries_dir=sync_result.queries_dir,
+            cache_queries_dir=sync_result.cache_queries_dir,
+            endpoint=endpoint,
+            page_size=page_size,
+            max_results=max_results,
+            wikibase_api_url=api_url,
+        )
+    else:
+        hydrate_summary = {
+            "cache_queries_dir": str(Path(sync_result.cache_queries_dir).resolve()),
+            "hydrated_ids": [],
+            "cache_files_written": [],
+            "failures": [],
+        }
 
-    failures = export_failures + list(hydrate_summary.get("failures", []))
+    failures = list(sync_result.failures) + list(hydrate_summary.get("failures", []))
     if failures and fail_on_hydration_error:
         first = failures[0]
         raise RuntimeError(
@@ -990,12 +1240,17 @@ def hydrate_value_lists_from_cache(
         )
 
     return ValueListHydrationResult(
-        queries_dir=export_summary["queries_dir"],
-        cache_queries_dir=hydrate_summary["cache_queries_dir"],
-        discovered_ids=sorted(export_summary["value_list_ids"]),
+        queries_dir=sync_result.queries_dir,
+        cache_queries_dir=sync_result.cache_queries_dir,
+        discovered_ids=sync_result.discovered_ids,
         hydrated_ids=sorted(hydrate_summary["hydrated_ids"]),
-        query_files_written=sorted(export_summary["query_files_written"]),
-        cache_files_written=sorted(hydrate_summary["cache_files_written"]),
+        query_files_written=sync_result.query_files_written,
+        cache_files_written=sorted(
+            set(sync_result.cache_files_written)
+            | set(hydrate_summary.get("cache_files_written", []))
+        ),
+        query_files_deleted=sync_result.query_files_deleted,
+        cache_files_deleted=sync_result.cache_files_deleted,
         failures=failures,
     )
 
@@ -1161,8 +1416,9 @@ class EntityProfileJsonBuilder:
         self.name_identifier_property_id = (
             self.semantic_anchor_resolver.require_property_id("_name_identifier")
         )
-        self.value_list_class_id = self.semantic_anchor_resolver.require_item_id(
-            "_value_list"
+        self.value_list_class_id = _optional_anchor_item_id(
+            self.semantic_anchor_resolver,
+            "_value_list",
         )
         self.statement_modifier_class_id = (
             self.semantic_anchor_resolver.require_item_id(
@@ -1637,7 +1893,11 @@ class EntityProfileJsonBuilder:
                 continue
 
             type_ids = self._entity_type_ids(self._cache_index.get(value_list_id))
-            if type_ids and self.value_list_class_id not in type_ids:
+            if (
+                self.value_list_class_id is not None
+                and type_ids
+                and self.value_list_class_id not in type_ids
+            ):
                 continue
 
             key = (statement_entity, value_list_id)
@@ -2139,16 +2399,19 @@ class EntityProfileJsonBuilder:
             target_label = self._entity_label(target_id)
             target_entity = f"{self.entity_prefix}{target_id}"
 
-            if self.profile_class_id in type_ids and "profile" not in payload:
+            is_profile_target = self.profile_class_id in type_ids
+            is_value_list_target = (
+                self.value_list_class_id is not None
+                and self.value_list_class_id in type_ids
+            )
+
+            if is_profile_target and "profile" not in payload:
                 payload["profile"] = {"entity": target_entity, "label": target_label}
 
-            if self.value_list_class_id in type_ids and "value_list_id" not in payload:
+            if is_value_list_target and "value_list_id" not in payload:
                 payload["value_list_id"] = target_id
 
-            if (
-                self.profile_class_id not in type_ids
-                and self.value_list_class_id not in type_ids
-            ):
+            if not is_profile_target and not is_value_list_target:
                 wikidata_urls = self._dedupe_preserve_order(
                     self._entity_string_claim_values(
                         target_doc, self.same_as_property_id
@@ -3232,6 +3495,783 @@ def export_spiritsafe_semantic_anchors(
         json.dumps(semantic_anchor_document, indent=2), encoding="utf-8"
     )
     return semantic_anchor_document
+
+
+def _extract_name_identifier_values_from_cached_entity(
+    entity_payload: dict[str, Any],
+    *,
+    name_identifier_property_id: str,
+) -> set[str]:
+    """Extract internal name-identifier values from one cached entity payload."""
+
+    claims = entity_payload.get("claims")
+    if not isinstance(claims, dict):
+        return set()
+
+    raw_claims = claims.get(name_identifier_property_id)
+    if not isinstance(raw_claims, list):
+        return set()
+
+    values: set[str] = set()
+    for claim in raw_claims:
+        if not isinstance(claim, dict):
+            continue
+        datavalue = claim.get("mainsnak", {}).get("datavalue", {})
+        value = datavalue.get("value")
+        if isinstance(value, str) and value:
+            values.add(value)
+    return values
+
+
+def _meta_wikibase_payload_label(payload: dict[str, Any]) -> str:
+    """Return the best available human label from a compiled seed payload."""
+
+    labels = payload.get("labels")
+    if not isinstance(labels, dict):
+        return ""
+
+    for language_payload in labels.values():
+        if not isinstance(language_payload, dict):
+            continue
+        value = language_payload.get("value")
+        if isinstance(value, str) and value:
+            return value
+    return ""
+
+
+def _format_meta_wikibase_report_value(
+    value: Any,
+    *,
+    entity_id_to_internal_name_identifier: dict[str, str],
+    current_entity_ids_by_internal_name_identifier: dict[str, str],
+) -> Any:
+    """Format comparison values for human-facing reports with URI + name-identifier."""
+
+    if isinstance(value, list):
+        return [
+            _format_meta_wikibase_report_value(
+                item,
+                entity_id_to_internal_name_identifier=entity_id_to_internal_name_identifier,
+                current_entity_ids_by_internal_name_identifier=current_entity_ids_by_internal_name_identifier,
+            )
+            for item in value
+        ]
+
+    if isinstance(value, dict):
+        if value.get("type") == "wikibase-entityid" and isinstance(
+            value.get("value"), dict
+        ):
+            entity_value = value["value"]
+            raw_id = entity_value.get("id")
+            name_identifier = None
+            resolved_reference = raw_id
+
+            if isinstance(raw_id, str) and raw_id:
+                if raw_id.startswith("_"):
+                    name_identifier = raw_id
+                    resolved_reference = (
+                        current_entity_ids_by_internal_name_identifier.get(raw_id)
+                    )
+                else:
+                    resolved_entity_id = _entity_id_from_reference(raw_id)
+                    if resolved_entity_id is not None:
+                        name_identifier = entity_id_to_internal_name_identifier.get(
+                            resolved_entity_id
+                        )
+
+            return {
+                "type": "wikibase-entityid",
+                "value": {
+                    "entity-type": entity_value.get("entity-type"),
+                    "id": _entity_uri_from_reference(resolved_reference),
+                    "name_identifier": name_identifier,
+                },
+            }
+
+        return {
+            key: _format_meta_wikibase_report_value(
+                nested_value,
+                entity_id_to_internal_name_identifier=entity_id_to_internal_name_identifier,
+                current_entity_ids_by_internal_name_identifier=current_entity_ids_by_internal_name_identifier,
+            )
+            for key, nested_value in value.items()
+        }
+
+    return value
+
+
+def _build_meta_wikibase_report_differences(
+    *,
+    changed_fields: list[str] | None,
+    required_view: dict[str, Any],
+    current_view: dict[str, Any] | None,
+    entity_id_to_internal_name_identifier: dict[str, str],
+    current_entity_ids_by_internal_name_identifier: dict[str, str],
+) -> dict[str, dict[str, Any]]:
+    """Return field-by-field expected/current difference detail for report consumers."""
+
+    if not changed_fields:
+        return {}
+
+    expected_claims = required_view.get("claims", {})
+    current_claims = (current_view or {}).get("claims", {})
+    differences: dict[str, dict[str, Any]] = {}
+
+    for field_name in changed_fields:
+        if field_name.startswith("claims."):
+            property_id = field_name.split(".", 1)[1]
+            expected_value = expected_claims.get(property_id)
+            current_value = current_claims.get(property_id)
+        elif "." in field_name and field_name.split(".", 1)[0].startswith("_"):
+            property_id = field_name.split(".", 1)[0]
+            expected_value = expected_claims.get(property_id)
+            current_value = current_claims.get(property_id)
+        else:
+            expected_value = required_view.get(field_name)
+            current_value = (current_view or {}).get(field_name)
+
+        differences[field_name] = {
+            "expected": _format_meta_wikibase_report_value(
+                expected_value,
+                entity_id_to_internal_name_identifier=entity_id_to_internal_name_identifier,
+                current_entity_ids_by_internal_name_identifier=current_entity_ids_by_internal_name_identifier,
+            ),
+            "current": _format_meta_wikibase_report_value(
+                current_value,
+                entity_id_to_internal_name_identifier=entity_id_to_internal_name_identifier,
+                current_entity_ids_by_internal_name_identifier=current_entity_ids_by_internal_name_identifier,
+            ),
+        }
+
+    return differences
+
+
+def _normalize_meta_wikibase_talk_page_text(value: Any) -> Optional[str]:
+    """Normalize multiline talk-page text for stable comparison."""
+
+    if not isinstance(value, str):
+        return None
+
+    stripped = value.strip()
+    if not stripped:
+        return None
+
+    return "\n".join(line.rstrip() for line in stripped.splitlines())
+
+
+def _extract_first_json_syntaxhighlight_block(wikitext: str) -> Any:
+    """Return the first JSON syntaxhighlight block parsed as JSON."""
+
+    matches = re.findall(
+        r"<\s*syntaxhighlight(?:\s+[^>]*)?>(.*?)</\s*syntaxhighlight\s*>",
+        wikitext,
+        flags=re.IGNORECASE | re.DOTALL,
+    )
+    for match in matches:
+        snippet = match.strip()
+        if not snippet:
+            continue
+        try:
+            return json.loads(snippet)
+        except json.JSONDecodeError:
+            continue
+
+    raise RuntimeError("No JSON <syntaxhighlight> block found in page content")
+
+
+def _normalize_meta_wikibase_value_list_content(value: Any) -> Any:
+    """Normalize value-list cache payloads for stable comparison."""
+
+    if isinstance(value, dict):
+        if isinstance(value.get("items"), list):
+            value = value["items"]
+        elif isinstance(value.get("value_list"), list):
+            value = value["value_list"]
+        else:
+            return {
+                key: _normalize_meta_wikibase_value_list_content(nested_value)
+                for key, nested_value in sorted(value.items())
+            }
+
+    if isinstance(value, list):
+        normalized_items = [
+            _normalize_meta_wikibase_value_list_content(item) for item in value
+        ]
+        return sorted(
+            normalized_items,
+            key=lambda item: json.dumps(item, sort_keys=True, ensure_ascii=False),
+        )
+
+    return value
+
+
+def _build_meta_wikibase_talk_page_contract(
+    *,
+    entity_definition: Any,
+    current_entity_id: str | None,
+) -> Optional[dict[str, Any]]:
+    """Return the authored talk-page contract for one Meta-Wikibase entity."""
+
+    attributes = entity_definition.attributes or {}
+    title = f"Item_talk:{current_entity_id}" if current_entity_id else None
+
+    query_text = _normalize_meta_wikibase_talk_page_text(attributes.get("query"))
+    if query_text is not None:
+        return {
+            "title": title,
+            "block_type": "sparql",
+            "content": query_text,
+        }
+
+    value_list = attributes.get("value_list")
+    if isinstance(value_list, (list, dict)):
+        return {
+            "title": title,
+            "block_type": "json",
+            "content": _normalize_meta_wikibase_value_list_content(
+                deepcopy(value_list)
+            ),
+        }
+
+    return None
+
+
+def _assess_meta_wikibase_talk_page_conformance(
+    *,
+    entity_definition: Any,
+    current_entity_id: str | None,
+    queries_dir: Optional[Path],
+    value_list_cache_dir: Optional[Path],
+) -> Optional[dict[str, Any]]:
+    """Compare authored talk-page contracts against materialized SpiritSafe artifacts."""
+
+    contract = _build_meta_wikibase_talk_page_contract(
+        entity_definition=entity_definition,
+        current_entity_id=current_entity_id,
+    )
+    if contract is None:
+        return None
+
+    block_type = str(contract.get("block_type") or "")
+    field_name = f"talk_page.{block_type}" if block_type else "talk_page"
+    expected = {
+        "title": contract.get("title"),
+        "block_type": block_type,
+        "content": deepcopy(contract.get("content")),
+    }
+
+    if not current_entity_id:
+        return {
+            "field": field_name,
+            "status": "planned",
+            "needs_update": False,
+            "expected": expected,
+            "current": None,
+            "details": "talk page content will need to be materialized after entity creation",
+        }
+
+    if queries_dir is None or value_list_cache_dir is None:
+        return {
+            "field": field_name,
+            "status": "unavailable",
+            "needs_update": False,
+            "expected": expected,
+            "current": None,
+            "details": "materialized SpiritSafe value-list artifact paths are unavailable",
+        }
+
+    title = str(contract.get("title") or f"Item_talk:{current_entity_id}")
+
+    try:
+        if block_type == "sparql":
+            artifact_path = queries_dir / f"{current_entity_id}.sparql"
+            if not artifact_path.exists():
+                raise FileNotFoundError(
+                    f"Missing materialized SPARQL artifact for {current_entity_id}"
+                )
+            current_content = _normalize_meta_wikibase_talk_page_text(
+                artifact_path.read_text(encoding="utf-8")
+            )
+        elif block_type == "json":
+            artifact_path = value_list_cache_dir / f"{current_entity_id}.json"
+            if not artifact_path.exists():
+                raise FileNotFoundError(
+                    f"Missing materialized JSON artifact for {current_entity_id}"
+                )
+            current_content = _normalize_meta_wikibase_value_list_content(
+                json.loads(artifact_path.read_text(encoding="utf-8"))
+            )
+        else:
+            current_content = None
+    except Exception as exc:
+        message = str(exc)
+        lowered = message.lower()
+        status = (
+            "missing"
+            if "missing materialized" in lowered or "no such file" in lowered
+            else "invalid"
+        )
+        return {
+            "field": field_name,
+            "status": status,
+            "needs_update": status in {"missing", "invalid"},
+            "expected": expected,
+            "current": None,
+            "details": message,
+        }
+
+    current = {
+        "title": title,
+        "block_type": block_type,
+        "content": deepcopy(current_content),
+    }
+    if current_content != contract.get("content"):
+        return {
+            "field": field_name,
+            "status": "drift",
+            "needs_update": True,
+            "expected": expected,
+            "current": current,
+            "details": "materialized value-list artifact differs from the authored contract",
+        }
+
+    return {
+        "field": field_name,
+        "status": "match",
+        "needs_update": False,
+        "expected": expected,
+        "current": current,
+        "details": "materialized value-list artifact matches the authored contract",
+    }
+
+
+def build_spiritsafe_meta_wikibase_conformance_report(
+    spiritsafe_root: Union[str, Path],
+    *,
+    semantic_anchor_document: Optional[dict[str, Any]] = None,
+    label_language: str = "en",
+    required_value_language: str = "mul",
+    inspect_talk_pages: bool = True,
+) -> dict[str, Any]:
+    """Evaluate cached SpiritSafe entities against the Meta-Wikibase init contract."""
+
+    root = Path(spiritsafe_root).expanduser().resolve()
+    layout = resolve_spiritsafe_layout(root)
+    cache_entities_dir = layout.entities_dir(root)
+    if not cache_entities_dir.is_dir():
+        raise FileNotFoundError(
+            f"Entity cache directory not found at {cache_entities_dir}"
+        )
+
+    config_path, meta_wikibase_config = resolve_spiritsafe_meta_wikibase_config(root)
+    _config_path, name_identifier_property_id, internal_prefix = (
+        _require_spiritsafe_meta_wikibase_semantics(root)
+    )
+    compilation = compile_meta_wikibase_seed(label_language=label_language)
+    init_index = build_meta_wikibase_init_index()
+
+    current_entities_by_internal_name_identifier: dict[str, dict[str, Any]] = {}
+    current_entity_ids_by_internal_name_identifier: dict[str, str] = {}
+    entity_id_to_internal_name_identifier: dict[str, str] = {}
+    cache_read_errors: list[str] = []
+    cache_file_count = 0
+
+    def register_current_entity(
+        internal_name_identifier: str,
+        *,
+        entity_id: str,
+        entity_payload: dict[str, Any],
+    ) -> None:
+        existing_entity_id = current_entity_ids_by_internal_name_identifier.get(
+            internal_name_identifier
+        )
+        if existing_entity_id is not None and existing_entity_id != entity_id:
+            raise RuntimeError(
+                "Multiple cached entities resolve to "
+                f"'{internal_name_identifier}': {existing_entity_id}, {entity_id}"
+            )
+        current_entity_ids_by_internal_name_identifier[internal_name_identifier] = (
+            entity_id
+        )
+        current_entities_by_internal_name_identifier[internal_name_identifier] = (
+            entity_payload
+        )
+
+    try:
+        resolver = _resolve_semantic_anchor_resolver_for_cache_entities_dir(
+            cache_entities_dir,
+            semantic_anchor_document=semantic_anchor_document,
+        )
+    except Exception:
+        resolver = None
+
+    if resolver is not None:
+        for anchor_name, anchor in resolver.anchors.items():
+            entity_id_to_internal_name_identifier[anchor.entity_id] = anchor_name
+
+    for entity_path in sorted(cache_entities_dir.glob("*.json")):
+        cache_file_count += 1
+        try:
+            entity_doc = json.loads(entity_path.read_text(encoding="utf-8"))
+        except Exception as exc:
+            cache_read_errors.append(f"{entity_path.name}: {exc}")
+            continue
+
+        entity_payload = entity_doc.get("entity")
+        if not isinstance(entity_payload, dict):
+            continue
+
+        entity_id = str(
+            entity_doc.get("entity_id") or entity_payload.get("id") or ""
+        ).strip()
+        if not entity_id:
+            continue
+
+        hinted_identifier = entity_id_to_internal_name_identifier.get(entity_id)
+        if hinted_identifier in compilation.by_internal_name_identifier:
+            register_current_entity(
+                hinted_identifier,
+                entity_id=entity_id,
+                entity_payload=entity_payload,
+            )
+
+        for value in sorted(
+            _extract_name_identifier_values_from_cached_entity(
+                entity_payload,
+                name_identifier_property_id=name_identifier_property_id,
+            )
+        ):
+            if not (internal_prefix and value.startswith(internal_prefix)):
+                continue
+            existing_value = entity_id_to_internal_name_identifier.get(entity_id)
+            if existing_value is not None and existing_value != value:
+                raise RuntimeError(
+                    f"Cached entity {entity_id} resolves to multiple internal name identifiers: {existing_value}, {value}"
+                )
+            entity_id_to_internal_name_identifier[entity_id] = value
+            if value in compilation.by_internal_name_identifier:
+                register_current_entity(
+                    value,
+                    entity_id=entity_id,
+                    entity_payload=entity_payload,
+                )
+
+    plan = plan_meta_wikibase_seed_baseline(
+        current_entities_by_internal_name_identifier=current_entities_by_internal_name_identifier,
+        entity_id_to_internal_name_identifier=entity_id_to_internal_name_identifier,
+        label_language=label_language,
+        required_value_language=required_value_language,
+    )
+    required_monolingualtext_properties = {
+        entity.internal_name_identifier
+        for entity in init_index.properties.values()
+        if entity.datatype == "monolingualtext"
+    }
+
+    talk_page_checked_count = 0
+    talk_page_drift_count = 0
+    talk_page_unavailable_count = 0
+    value_list_queries_dir = layout.value_list_queries_dir(root)
+    value_list_cache_dir = layout.value_list_cache_dir(root)
+
+    action_rows: list[dict[str, Any]] = []
+    for operation in plan.operations:
+        compiled_entity = compilation.by_internal_name_identifier[
+            operation.internal_name_identifier
+        ]
+        entity_definition = init_index.entities[compiled_entity.key]
+        required_view = normalize_meta_wikibase_required_entity_view(operation.payload)
+        current_view = None
+        current_entity = current_entities_by_internal_name_identifier.get(
+            operation.internal_name_identifier
+        )
+        if isinstance(current_entity, dict):
+            current_view, _issues = normalize_meta_wikibase_current_entity_view(
+                current_entity,
+                entity_id_to_internal_name_identifier=entity_id_to_internal_name_identifier,
+                label_language=label_language,
+                required_value_language=required_value_language,
+                required_monolingualtext_properties=required_monolingualtext_properties,
+                expected_property_ids=set(required_view.get("claims", {}).keys()),
+            )
+
+        changed_fields = list(operation.changed_fields or [])
+        talk_page = _assess_meta_wikibase_talk_page_conformance(
+            entity_definition=entity_definition,
+            current_entity_id=operation.current_entity_id,
+            queries_dir=value_list_queries_dir if inspect_talk_pages else None,
+            value_list_cache_dir=value_list_cache_dir if inspect_talk_pages else None,
+        )
+        if talk_page is not None:
+            talk_page_checked_count += 1
+            if talk_page.get("needs_update"):
+                talk_page_drift_count += 1
+                field_name = talk_page.get("field")
+                if isinstance(field_name, str) and field_name not in changed_fields:
+                    changed_fields.append(field_name)
+            elif talk_page.get("status") == "unavailable":
+                talk_page_unavailable_count += 1
+
+        action_name = operation.action
+        details = operation.details
+        if operation.action != "create":
+            if changed_fields:
+                action_name = "update"
+                details = "fields changed: " + ", ".join(changed_fields)
+            else:
+                action_name = "skip"
+                details = "matches current state"
+
+        differences = _build_meta_wikibase_report_differences(
+            changed_fields=changed_fields,
+            required_view=required_view,
+            current_view=current_view,
+            entity_id_to_internal_name_identifier=entity_id_to_internal_name_identifier,
+            current_entity_ids_by_internal_name_identifier=current_entity_ids_by_internal_name_identifier,
+        )
+        if (
+            talk_page is not None
+            and talk_page.get("field")
+            and talk_page.get("needs_update")
+        ):
+            differences[str(talk_page["field"])] = {
+                "expected": _format_meta_wikibase_report_value(
+                    talk_page.get("expected"),
+                    entity_id_to_internal_name_identifier=entity_id_to_internal_name_identifier,
+                    current_entity_ids_by_internal_name_identifier=current_entity_ids_by_internal_name_identifier,
+                ),
+                "current": _format_meta_wikibase_report_value(
+                    talk_page.get("current"),
+                    entity_id_to_internal_name_identifier=entity_id_to_internal_name_identifier,
+                    current_entity_ids_by_internal_name_identifier=current_entity_ids_by_internal_name_identifier,
+                ),
+            }
+
+        required_output = _format_meta_wikibase_report_value(
+            required_view,
+            entity_id_to_internal_name_identifier=entity_id_to_internal_name_identifier,
+            current_entity_ids_by_internal_name_identifier=current_entity_ids_by_internal_name_identifier,
+        )
+        current_output = (
+            _format_meta_wikibase_report_value(
+                current_view,
+                entity_id_to_internal_name_identifier=entity_id_to_internal_name_identifier,
+                current_entity_ids_by_internal_name_identifier=current_entity_ids_by_internal_name_identifier,
+            )
+            if current_view is not None
+            else None
+        )
+
+        if talk_page is not None:
+            required_output = dict(required_output)
+            required_output["talk_page"] = _format_meta_wikibase_report_value(
+                talk_page.get("expected"),
+                entity_id_to_internal_name_identifier=entity_id_to_internal_name_identifier,
+                current_entity_ids_by_internal_name_identifier=current_entity_ids_by_internal_name_identifier,
+            )
+            if current_output is None:
+                current_output = {}
+            else:
+                current_output = dict(current_output)
+            current_output["talk_page"] = _format_meta_wikibase_report_value(
+                talk_page.get("current"),
+                entity_id_to_internal_name_identifier=entity_id_to_internal_name_identifier,
+                current_entity_ids_by_internal_name_identifier=current_entity_ids_by_internal_name_identifier,
+            )
+
+        action_rows.append(
+            {
+                "action": action_name,
+                "kind": operation.entity_type,
+                "label": _meta_wikibase_payload_label(compiled_entity.payload),
+                "id": _entity_uri_from_reference(operation.current_entity_id),
+                "name_identifier": operation.internal_name_identifier,
+                "details": details,
+                "changed_fields": changed_fields or None,
+                "differences": differences,
+                "required": required_output,
+                "current": current_output,
+                "key": operation.key,
+                "talk_page": talk_page,
+            }
+        )
+
+    summary = {
+        "created": sum(1 for row in action_rows if row["action"] == "create"),
+        "updated": sum(1 for row in action_rows if row["action"] == "update"),
+        "skipped": sum(1 for row in action_rows if row["action"] == "skip"),
+        "dry_run": len(action_rows),
+        "talk_page_updates": talk_page_drift_count,
+    }
+
+    return {
+        "metadata": {
+            "generated_at": datetime.now(timezone.utc)
+            .isoformat()
+            .replace("+00:00", "Z"),
+            "contract_digest": get_meta_wikibase_init_contract_digest(),
+            "seed_entity_count": len(compilation.entities),
+            "label_language": label_language,
+            "value_language": required_value_language,
+        },
+        "comparison_source": {
+            "mode": "cache-entities",
+            "spiritsafe_root": str(root),
+            "cache_entities_dir": str(cache_entities_dir),
+            "config_path": str(config_path) if config_path is not None else None,
+            "name_identifier_property_id": name_identifier_property_id,
+            "internal_name_identifier_prefix": internal_prefix,
+            "anchor_hint_count": len(resolver.anchors) if resolver is not None else 0,
+            "cache_file_count": cache_file_count,
+            "resolved_entity_count": len(current_entities_by_internal_name_identifier),
+            "cache_read_error_count": len(cache_read_errors),
+            "value_list_queries_dir": str(value_list_queries_dir),
+            "value_list_cache_dir": str(value_list_cache_dir),
+            "talk_page_inspection_enabled": bool(inspect_talk_pages),
+            "talk_page_checked_count": talk_page_checked_count,
+            "talk_page_unavailable_count": talk_page_unavailable_count,
+        },
+        "summary": summary,
+        "actions": action_rows,
+        "cache_read_errors": cache_read_errors,
+    }
+
+
+def sync_spiritsafe_meta_wikibase_seed(
+    spiritsafe_root: Union[str, Path],
+    *,
+    shipper: Any | None = None,
+    dry_run: bool = True,
+    label_language: str = "en",
+    required_value_language: str = "mul",
+    inspect_talk_pages: bool = True,
+    summary_prefix: str = "Sync Meta-Wikibase seed",
+    tags: Optional[list[str]] = None,
+    bot: bool = False,
+) -> dict[str, Any]:
+    """Preview or execute Meta-Wikibase seed corrections through the standard write boundary."""
+
+    report = build_spiritsafe_meta_wikibase_conformance_report(
+        spiritsafe_root,
+        label_language=label_language,
+        required_value_language=required_value_language,
+        inspect_talk_pages=inspect_talk_pages,
+    )
+    compilation = compile_meta_wikibase_seed(label_language=label_language)
+
+    api_url = getattr(shipper, "api_url", None) if shipper is not None else None
+    if not api_url:
+        _config_path, meta_config = resolve_spiritsafe_meta_wikibase_config(
+            spiritsafe_root
+        )
+        api_url = meta_config.get("api_url")
+
+    fresh_api_client = (
+        WikibaseApiClient(api_url=api_url, timeout=20)
+        if isinstance(api_url, str) and api_url
+        else None
+    )
+
+    write_dry_run_count = 0
+    write_submitted_count = 0
+    write_skipped_count = 0
+    talk_page_pending_count = 0
+
+    synced_actions: list[dict[str, Any]] = []
+    for action in report.get("actions", []):
+        enriched_action = deepcopy(action)
+        changed_fields = list(action.get("changed_fields") or [])
+        write_fields = [
+            field_name
+            for field_name in changed_fields
+            if not str(field_name).startswith("talk_page.")
+        ]
+        talk_page_fields = [
+            field_name
+            for field_name in changed_fields
+            if str(field_name).startswith("talk_page.")
+        ]
+
+        if talk_page_fields:
+            enriched_action["talk_page_write_status"] = "planned"
+            talk_page_pending_count += 1
+
+        if action.get("action") == "skip" or not write_fields or shipper is None:
+            enriched_action["write_status"] = (
+                "pending" if write_fields and shipper is None else "skip"
+            )
+            write_skipped_count += 1
+            synced_actions.append(enriched_action)
+            continue
+
+        compiled_entity = compilation.by_internal_name_identifier.get(
+            str(action.get("name_identifier") or "")
+        )
+        if compiled_entity is None:
+            enriched_action["write_status"] = "error"
+            enriched_action["write_error"] = "Compiled payload not found for action"
+            synced_actions.append(enriched_action)
+            continue
+
+        entity_id = _entity_id_from_reference(action.get("id"))
+        base_revision_id = None
+        if entity_id and fresh_api_client is not None:
+            try:
+                fresh_entity = fresh_api_client.get_entity(entity_id)
+                if isinstance(fresh_entity, dict):
+                    revision_value = fresh_entity.get("lastrevid")
+                    if isinstance(revision_value, int):
+                        base_revision_id = revision_value
+            except Exception as exc:
+                enriched_action.setdefault("warnings", []).append(
+                    f"Fresh entity fetch failed: {exc}"
+                )
+
+        summary = f"{summary_prefix}: {action.get('name_identifier')}"
+        if compiled_entity.kind == "property":
+            result = shipper.write_property(
+                payload=compiled_entity.payload,
+                summary=summary,
+                datatype=str(compiled_entity.datatype or "string"),
+                entity_id=entity_id,
+                dry_run=dry_run,
+                tags=tags,
+                bot=bot,
+                metadata={"name_identifier": action.get("name_identifier")},
+                base_revision_id=base_revision_id,
+            )
+        else:
+            result = shipper.write_item(
+                payload=compiled_entity.payload,
+                summary=summary,
+                entity_id=entity_id,
+                dry_run=dry_run,
+                tags=tags,
+                bot=bot,
+                metadata={"name_identifier": action.get("name_identifier")},
+                base_revision_id=base_revision_id,
+            )
+
+        enriched_action["write_status"] = result.status
+        enriched_action["write_result"] = (
+            result.to_dict() if hasattr(result, "to_dict") else result
+        )
+
+        if result.status == "dry_run":
+            write_dry_run_count += 1
+        elif result.status == "submitted":
+            write_submitted_count += 1
+        else:
+            write_skipped_count += 1
+
+        synced_actions.append(enriched_action)
+
+    report["actions"] = synced_actions
+    report.setdefault("summary", {})["write_dry_run"] = write_dry_run_count
+    report.setdefault("summary", {})["write_submitted"] = write_submitted_count
+    report.setdefault("summary", {})["write_skipped"] = write_skipped_count
+    report.setdefault("summary", {})["talk_page_pending"] = talk_page_pending_count
+    return report
 
 
 def _statement_id_from_definition(statement: dict[str, Any]) -> Optional[str]:

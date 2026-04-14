@@ -39,7 +39,9 @@ Common options:
 
 Build the SpiritSafe semantic anchor artifact from local cache entities.
 
-This command materializes the runtime lookup document that binds internal ontology names such as `_entity_profile` or `_has_statement` to the concrete IDs currently present in the SpiritSafe-backed Meta-Wikibase cache.
+This command materializes the transformed runtime lookup document derived from the package contract in `meta_wb_init.yaml` and current cache-backed Meta-Wikibase resolution.
+
+The artifact binds internal ontology names such as `_entity_profile` and `_has_statement` to concrete entity URIs in `config/semantic_anchors.json`.
 
 ```bash
 gkc spiritsafe semantic-anchors build --source local --local-root /path/to/SpiritSafe
@@ -80,8 +82,9 @@ Common options:
 This command checks the runtime contract only:
 
 - required internal semantic anchors are present
-- property anchors resolve to property IDs and carry the expected datatype
-- item anchors resolve to item IDs
+- property anchors resolve to property ids and carry the expected datatype
+- item anchors resolve to item ids
+- anchor `id` values use URI form for stable runtime resolution
 - the artifact shape is valid
 
 When `--check-current-cache` is used, stale-artifact drift against current cache-derived anchors is also reported.

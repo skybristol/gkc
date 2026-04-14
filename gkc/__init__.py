@@ -115,6 +115,7 @@ from gkc.spirit_safe import (
     SpiritSafeSourceConfig,
     ValueListHydrationResult,
     build_entity_profile_json_documents,
+    build_spiritsafe_meta_wikibase_conformance_report,
     build_spiritsafe_semantic_anchor_document,
     discover_value_list_ids,
     export_entity_profile_json_documents,
@@ -132,6 +133,8 @@ from gkc.spirit_safe import (
     resolve_query_ref,
     resolve_spiritsafe_meta_wikibase_config,
     set_spirit_safe_source,
+    sync_spiritsafe_meta_wikibase_seed,
+    sync_value_list_artifacts_from_cache,
     validate_packet_structure,
 )
 from gkc.still_charger import (
@@ -333,6 +336,7 @@ __all__ = [
     "LookupCache",
     "LookupFetcher",
     "build_entity_profile_json_documents",
+    "build_spiritsafe_meta_wikibase_conformance_report",
     "build_spiritsafe_semantic_anchor_document",
     "create_curation_packet",
     "discover_value_list_ids",
@@ -349,5 +353,7 @@ __all__ = [
     "resolve_profile_link",
     "resolve_profile_path",
     "resolve_query_ref",
+    "sync_spiritsafe_meta_wikibase_seed",
+    "sync_value_list_artifacts_from_cache",
     "validate_packet_structure",
 ]

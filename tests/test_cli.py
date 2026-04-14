@@ -1354,6 +1354,89 @@ meta_wikibase:
     assert exported_payload["entity"].endswith("/Q4")
 
 
+def test_profile_value_lists_sync_local_source_defaults(monkeypatch, capsys, tmp_path):
+    """profile value-lists sync resolves local default directories."""
+
+    local_root = tmp_path / "SpiritSafe"
+    (local_root / "config").mkdir(parents=True, exist_ok=True)
+    (local_root / "still" / "entities").mkdir(parents=True, exist_ok=True)
+    (local_root / "config" / "dd-wikibase.yaml").write_text(
+        """
+meta_wikibase:
+  semantic_conventions:
+    name_identifier_property_id: P214
+    internal_name_identifier_prefix: "_"
+spiritsafe:
+  layout_version: 2
+  roots:
+    materialized: still
+    partners: partners
+  paths:
+    entities: still/entities
+    profiles: still/profiles
+    value_list_queries: still/value_lists/queries
+    value_list_cache: still/value_lists/cache
+    semantic_anchors: config/semantic_anchors.json
+    logs: still/logs
+    wikimedia_sites: partners/wikimedia_sites.json
+""".strip()
+        + "\n",
+        encoding="utf-8",
+    )
+
+    def fake_discover_value_list_ids(cache_entities_dir):
+        assert str(cache_entities_dir).endswith("SpiritSafe/still/entities")
+        return ["Q4"]
+
+    def fake_sync_value_list_artifacts_from_cache(**kwargs):
+        assert str(kwargs["cache_entities_dir"]).endswith("SpiritSafe/still/entities")
+        assert str(kwargs["queries_dir"]).endswith(
+            "SpiritSafe/still/value_lists/queries"
+        )
+        assert str(kwargs["cache_queries_dir"]).endswith(
+            "SpiritSafe/still/value_lists/cache"
+        )
+        assert kwargs["value_list_ids"] == ["Q4"]
+        return gkc.ValueListHydrationResult(
+            queries_dir=str(local_root / "still" / "value_lists" / "queries"),
+            cache_queries_dir=str(local_root / "still" / "value_lists" / "cache"),
+            discovered_ids=["Q4"],
+            query_files_written=[
+                str(local_root / "still" / "value_lists" / "queries" / "Q4.sparql")
+            ],
+            cache_files_deleted=[
+                str(local_root / "still" / "value_lists" / "cache" / "Q4.json")
+            ],
+            failures=[],
+        )
+
+    monkeypatch.setattr("gkc.discover_value_list_ids", fake_discover_value_list_ids)
+    monkeypatch.setattr(
+        "gkc.sync_value_list_artifacts_from_cache",
+        fake_sync_value_list_artifacts_from_cache,
+    )
+
+    exit_code = cli.main(
+        [
+            "--json",
+            "profile",
+            "value-lists",
+            "sync",
+            "--source",
+            "local",
+            "--local-root",
+            str(local_root),
+        ]
+    )
+
+    assert exit_code == 0
+    payload = json.loads(capsys.readouterr().out.strip())
+    assert payload["command"] == "profile.value_lists.sync"
+    assert payload["ok"] is True
+    assert payload["details"]["discovered_count"] == 1
+    assert len(payload["details"]["cache_files_deleted"]) == 1
+
+
 def test_profile_value_lists_hydrate_local_source_defaults(
     monkeypatch, capsys, tmp_path
 ):

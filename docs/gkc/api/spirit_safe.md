@@ -8,7 +8,7 @@ Current architecture:
 
 - Runtime packet assembly loads `still/profiles/<QID>.json` directly.
 - Registry/discovery tooling enumerates `still/profiles/*.json` directly.
-- Value lists are materialized in `still/value_lists/cache/<QID>.json` and consumed as cache artifacts.
+- Value-list artifacts are class-coupled to ontology semantics and materialized under `still/value_lists/`.
 
 ## Quick Start
 
@@ -123,7 +123,7 @@ result = export_entity_profile_json_documents(
 print(result.written_ids)
 ```
 
-When `cache_entities_dir` is part of a normal SpiritSafe checkout, the exporter loads `config/semantic_anchors.json` and the local meta-wikibase config automatically and uses them to resolve internal ontology concepts such as profile class, statement links, prompts, and value-list classification.
+When `cache_entities_dir` is part of a normal SpiritSafe checkout, the exporter loads `config/semantic_anchors.json` and the local meta-wikibase config automatically and uses them to resolve internal ontology concepts such as profile class, statement links, prompts, and value-list classifications.
 
 For the full concept, lifecycle, and runtime boundary, see [Semantic Anchors](../../architecture/meta-wikibase/semantic-anchors.md).
 
@@ -134,10 +134,10 @@ from gkc.spirit_safe import build_entity_profile_json_documents
 
 anchors = {
     "entities": {
-        "_instance_of": {"id": "P1", "datatype": "wikibase-item"},
-        "_entity_profile": {"id": "Q3"},
-        "_has_statement": {"id": "P157", "datatype": "wikibase-item"},
-        "_name_identifier": {"id": "P214", "datatype": "string"},
+        "_instance_of": {"id": "https://datadistillery.wikibase.cloud/entity/P1", "datatype": "wikibase-item"},
+        "_entity_profile": {"id": "https://datadistillery.wikibase.cloud/entity/Q3"},
+        "_has_statement": {"id": "https://datadistillery.wikibase.cloud/entity/P157", "datatype": "wikibase-item"},
+        "_name_identifier": {"id": "https://datadistillery.wikibase.cloud/entity/P214", "datatype": "string"},
     }
 }
 
@@ -147,7 +147,7 @@ documents = build_entity_profile_json_documents(
 )
 ```
 
-### Hydrate Value Lists from Cache Entities
+### Extract And Hydrate Value Lists
 
 ```python
 from gkc.spirit_safe import hydrate_value_lists_from_cache
@@ -159,6 +159,15 @@ result = hydrate_value_lists_from_cache(
 )
 print(result.hydrated_ids)
 ```
+
+Class-coupled value-list contract:
+
+- `sparql_value_list` items are expected to provide a talk-page `<sparql>` block, which is exported to `still/value_lists/queries/<QID>.sparql`.
+- `embedded_value_list` items are expected to provide a talk-page `<syntaxhighlight lang="json">` block, which is exported to `still/value_lists/cache/<QID>.json`.
+- For each block type, only the first matching block is extracted.
+- If the relevant talk-page block is deleted, the corresponding materialized SpiritSafe artifact is removed on the next sync.
+
+SPARQL hydration remains a separate step and applies only to SPARQL-backed value lists. Meta-Wikibase conformance checks compare against these materialized SpiritSafe artifacts rather than the live talk pages.
 
 ## Public API Reference
 

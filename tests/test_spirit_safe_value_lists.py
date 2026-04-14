@@ -22,6 +22,8 @@ def _value_list_semantic_anchor_document() -> dict:
         "entities": {
             "_instance_of": {"id": "P1", "datatype": "wikibase-item"},
             "_value_list": {"id": "Q7"},
+            "_sparql_value_list": {"id": "Q7"},
+            "_embedded_value_list": {"id": "Q97"},
         }
     }
 
@@ -172,6 +174,127 @@ def test_hydrate_value_lists_keeps_existing_cache_on_failure(monkeypatch, tmp_pa
 
     payload = json.loads((cache_queries_dir / "Q4.json").read_text(encoding="utf-8"))
     assert payload == existing_payload
+
+
+def test_hydrate_value_lists_exports_embedded_json_without_hydration(
+    monkeypatch, tmp_path
+):
+    cache_entities_dir = tmp_path / "cache" / "entities"
+    queries_dir = tmp_path / "queries"
+    cache_queries_dir = tmp_path / "cache" / "queries"
+    cache_entities_dir.mkdir(parents=True, exist_ok=True)
+
+    (cache_entities_dir / "Q60.json").write_text(
+        json.dumps(
+            {
+                "entity_id": "Q60",
+                "entity": {
+                    "claims": {
+                        "P1": [_claim_entity_id("Q97")],
+                    }
+                },
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    monkeypatch.setattr(
+        "gkc.spirit_safe.fetch_mediawiki_page_wikitext",
+        lambda api_client, title: (
+            '<syntaxhighlight lang="json">'
+            '[{"item": "0.1", "itemLabel": "0.1 degree"}]'
+            "</syntaxhighlight>"
+        ),
+    )
+
+    def _unexpected_paginate(**kwargs):
+        raise AssertionError("SPARQL hydration should not run for embedded lists")
+
+    monkeypatch.setattr("gkc.spirit_safe.paginate_query", _unexpected_paginate)
+
+    result = gkc.hydrate_value_lists_from_cache(
+        cache_entities_dir=cache_entities_dir,
+        queries_dir=queries_dir,
+        cache_queries_dir=cache_queries_dir,
+        api_url="https://datadistillery.wikibase.cloud/w/api.php",
+        endpoint="https://datadistillery.wikibase.cloud/query/sparql",
+        semantic_anchor_document=_value_list_semantic_anchor_document(),
+        fail_on_hydration_error=True,
+    )
+
+    assert result.discovered_ids == ["Q60"]
+    assert result.hydrated_ids == []
+    assert result.failures == []
+    assert not (queries_dir / "Q60.sparql").exists()
+
+    cache_file = cache_queries_dir / "Q60.json"
+    assert cache_file.exists()
+    assert json.loads(cache_file.read_text(encoding="utf-8")) == [
+        {"item": "0.1", "itemLabel": "0.1 degree"}
+    ]
+
+
+def test_hydrate_value_lists_removes_deleted_talk_page_artifacts(monkeypatch, tmp_path):
+    cache_entities_dir = tmp_path / "cache" / "entities"
+    queries_dir = tmp_path / "queries"
+    cache_queries_dir = tmp_path / "cache" / "queries"
+    cache_entities_dir.mkdir(parents=True, exist_ok=True)
+    queries_dir.mkdir(parents=True, exist_ok=True)
+    cache_queries_dir.mkdir(parents=True, exist_ok=True)
+
+    (cache_entities_dir / "Q4.json").write_text(
+        json.dumps(
+            {
+                "entity_id": "Q4",
+                "entity": {
+                    "claims": {
+                        "P1": [_claim_entity_id("Q7")],
+                    }
+                },
+            }
+        ),
+        encoding="utf-8",
+    )
+    (cache_entities_dir / "Q60.json").write_text(
+        json.dumps(
+            {
+                "entity_id": "Q60",
+                "entity": {
+                    "claims": {
+                        "P1": [_claim_entity_id("Q97")],
+                    }
+                },
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    (queries_dir / "Q4.sparql").write_text("SELECT * WHERE {}\n", encoding="utf-8")
+    (cache_queries_dir / "Q60.json").write_text(
+        json.dumps([{"item": "old", "itemLabel": "Old"}], indent=2),
+        encoding="utf-8",
+    )
+
+    monkeypatch.setattr(
+        "gkc.spirit_safe.fetch_mediawiki_page_wikitext",
+        lambda api_client, title: "No relevant block here",
+    )
+
+    result = gkc.hydrate_value_lists_from_cache(
+        cache_entities_dir=cache_entities_dir,
+        queries_dir=queries_dir,
+        cache_queries_dir=cache_queries_dir,
+        api_url="https://datadistillery.wikibase.cloud/w/api.php",
+        endpoint="https://datadistillery.wikibase.cloud/query/sparql",
+        semantic_anchor_document=_value_list_semantic_anchor_document(),
+        fail_on_hydration_error=True,
+    )
+
+    assert result.discovered_ids == ["Q4", "Q60"]
+    assert result.hydrated_ids == []
+    assert result.failures == []
+    assert not (queries_dir / "Q4.sparql").exists()
+    assert not (cache_queries_dir / "Q60.json").exists()
 
 
 def test_hydrate_value_lists_fails_on_duplicate_non_core_conflict(

@@ -1,6 +1,6 @@
 # Data Distillery Wikibase
 
-Data Distillery Wikibase (`datadistillery.wikibase.cloud`) is the semantic registry for GKC ontology terms, profile metadata relationships, statement/value-list semantics, and multilingual guidance content that must be queryable and collaboratively maintained.
+Data Distillery Wikibase (`datadistillery.wikibase.cloud`) is the seminal reference implementation for the [metaWikibase infrastructure](index.md). It provides the semantic registry for GKC ontology terms, profile metadata relationships, statement/value-list semantics, and multilingual guidance content that must be queryable and collaboratively maintained.
 
 This page describes the current reference implementation of the generic [Meta-Wikibase Architecture](index.md).
 

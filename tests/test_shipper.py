@@ -145,6 +145,7 @@ def test_wikibase_shipper_write_item_submit():
         dry_run=False,
         tags=["gkc"],
         bot=True,
+        base_revision_id=41,
     )
 
     assert auth.login_called
@@ -159,6 +160,7 @@ def test_wikibase_shipper_write_item_submit():
     assert sent_data["summary"] == "Submit"
     assert sent_data["tags"] == "gkc"
     assert sent_data["bot"] == "1"
+    assert sent_data["baserevid"] == 41
     assert "data" in sent_data
 
 
@@ -226,6 +228,38 @@ def test_wikibase_shipper_write_property_canonicalizes_datatype_alias():
     sent_data = auth.session.post.call_args[1]["data"]
     posted_entity_data = json.loads(sent_data["data"])
     assert posted_entity_data["datatype"] == "wikibase-item"
+
+
+def test_wikibase_shipper_write_item_accepts_claim_dict_payload():
+    """Dry-run item writes should accept wbgetentities-style claim mappings."""
+    auth = FakeAuth()
+    shipper = WikibaseShipper(auth=auth)
+
+    payload = {
+        "labels": {"en": {"language": "en", "value": "Entity"}},
+        "claims": {
+            "P31": [
+                {
+                    "mainsnak": {
+                        "snaktype": "value",
+                        "property": "P31",
+                        "datavalue": {
+                            "type": "wikibase-entityid",
+                            "value": {"entity-type": "item", "id": "Q1"},
+                        },
+                    },
+                    "type": "statement",
+                    "rank": "normal",
+                }
+            ]
+        },
+    }
+
+    result = shipper.write_item(payload, summary="Claim dict payload", dry_run=True)
+
+    assert result.status == "dry_run"
+    assert isinstance(result.request_payload["claims"], list)
+    assert result.request_payload["claims"][0]["mainsnak"]["property"] == "P31"
 
 
 # ============================================================================
@@ -352,6 +386,78 @@ def test_wikibase_shipper_plan_batch_update_and_noop(monkeypatch):
         "descriptions": {"en": {"language": "en", "value": "New desc"}}
     }
     assert plan.operations[1].status == "noop"
+
+
+def test_wikibase_shipper_plan_batch_replaces_wrong_claim_value(monkeypatch):
+    """Plan should patch wrong claims in place instead of only appending duplicates."""
+
+    class FakeApiClient:
+        def __init__(self, api_url, session=None, timeout=20):
+            pass
+
+        def search_entities(self, label, entity_type, language):
+            return [{"id": "Q10", "label": label}]
+
+        def get_entity(self, entity_id):
+            return {
+                "id": entity_id,
+                "labels": {"en": {"language": "en", "value": "Entity"}},
+                "claims": {
+                    "P31": [
+                        {
+                            "id": "Q10$claim-1",
+                            "mainsnak": {
+                                "snaktype": "value",
+                                "property": "P31",
+                                "datavalue": {
+                                    "type": "wikibase-entityid",
+                                    "value": {"entity-type": "item", "id": "Q5"},
+                                },
+                            },
+                            "type": "statement",
+                            "rank": "normal",
+                        }
+                    ]
+                },
+            }
+
+    monkeypatch.setattr(shipper_module, "WikibaseApiClient", FakeApiClient)
+
+    auth = FakeAuth()
+    shipper = WikibaseShipper(auth=auth)
+    plan = shipper.plan_batch(
+        [
+            {
+                "kind": "item",
+                "label": "Entity",
+                "payload": {
+                    "labels": {"en": {"language": "en", "value": "Entity"}},
+                    "claims": {
+                        "P31": [
+                            {
+                                "mainsnak": {
+                                    "snaktype": "value",
+                                    "property": "P31",
+                                    "datavalue": {
+                                        "type": "wikibase-entityid",
+                                        "value": {"entity-type": "item", "id": "Q1"},
+                                    },
+                                },
+                                "type": "statement",
+                                "rank": "normal",
+                            }
+                        ]
+                    },
+                },
+            }
+        ]
+    )
+
+    assert plan.summary["update"] == 1
+    patch_claims = plan.operations[0].request_payload["claims"]
+    assert len(patch_claims) == 1
+    assert patch_claims[0]["id"] == "Q10$claim-1"
+    assert patch_claims[0]["mainsnak"]["datavalue"]["value"]["id"] == "Q1"
 
 
 def test_wikibase_shipper_plan_batch_property_requires_datatype(monkeypatch):

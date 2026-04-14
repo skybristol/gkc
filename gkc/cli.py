@@ -597,9 +597,59 @@ def _build_parser() -> argparse.ArgumentParser:
         dest="profile_value_lists_command"
     )
 
+    profile_value_lists_sync = profile_value_lists_subparsers.add_parser(
+        "sync",
+        help="Sync talk-page-derived value-list artifacts without SPARQL hydration",
+    )
+    profile_value_lists_sync.add_argument(
+        "--cache-entities-dir",
+        help=(
+            "Directory containing SpiritSafe cache entity JSON files "
+            f"(defaults to <local_root>/{layout.entities_path} when using --source local)"
+        ),
+    )
+    profile_value_lists_sync.add_argument(
+        "--queries-dir",
+        help=(
+            "Directory to write SPARQL query files "
+            f"(defaults to <local_root>/{layout.value_list_queries_path} when using --source local)"
+        ),
+    )
+    profile_value_lists_sync.add_argument(
+        "--cache-queries-dir",
+        help=(
+            "Directory to write embedded JSON value-list artifacts "
+            f"(defaults to <local_root>/{layout.value_list_cache_path} when using --source local)"
+        ),
+    )
+    profile_value_lists_sync.add_argument(
+        "--value-list-id",
+        action="append",
+        dest="value_list_ids",
+        help="Optional value list QID filter (repeatable)",
+    )
+    profile_value_lists_sync.add_argument(
+        "--api-url",
+        default=runtime_config.api_url,
+        help=(
+            "Wikibase API URL used for talk-page retrieval "
+            "(default: META_WB_API_URL env var, config file, or Data Distillery API)"
+        ),
+    )
+    profile_value_lists_sync.add_argument(
+        "--continue-on-error",
+        action="store_true",
+        help="Continue syncing other value lists when one fails",
+    )
+    _add_profile_source_args(profile_value_lists_sync)
+    profile_value_lists_sync.set_defaults(
+        handler=_handle_profile_value_lists_sync,
+        command_path="profile.value_lists.sync",
+    )
+
     profile_value_lists_hydrate = profile_value_lists_subparsers.add_parser(
         "hydrate",
-        help="Extract talk-page SPARQL queries for GKC Value Lists and hydrate cache",
+        help="Sync value-list artifacts and hydrate SPARQL-backed caches",
     )
     profile_value_lists_hydrate.add_argument(
         "--cache-entities-dir",
@@ -2037,73 +2087,135 @@ def _merge_profile_export_summary(
     return str(summary_path.resolve())
 
 
+def _resolve_profile_value_list_paths(
+    args: argparse.Namespace,
+) -> tuple[Path, Path, Path, list[str]]:
+    cache_entities_dir: Optional[Path]
+    queries_dir: Optional[Path]
+    cache_queries_dir: Optional[Path]
+
+    if args.cache_entities_dir:
+        cache_entities_dir = Path(args.cache_entities_dir)
+    else:
+        source = gkc.get_spirit_safe_source()
+        cache_entities_dir = (
+            _resolve_local_spiritsafe_layout(source.local_root).entities_dir(
+                source.local_root
+            )
+            if source.mode == "local" and source.local_root is not None
+            else None
+        )
+
+    if args.queries_dir:
+        queries_dir = Path(args.queries_dir)
+    else:
+        source = gkc.get_spirit_safe_source()
+        queries_dir = (
+            _resolve_local_spiritsafe_layout(source.local_root).value_list_queries_dir(
+                source.local_root
+            )
+            if source.mode == "local" and source.local_root is not None
+            else None
+        )
+
+    if args.cache_queries_dir:
+        cache_queries_dir = Path(args.cache_queries_dir)
+    else:
+        source = gkc.get_spirit_safe_source()
+        cache_queries_dir = (
+            _resolve_local_spiritsafe_layout(source.local_root).value_list_cache_dir(
+                source.local_root
+            )
+            if source.mode == "local" and source.local_root is not None
+            else None
+        )
+
+    if cache_entities_dir is None:
+        raise CLIError(
+            "Unable to resolve cache entities directory. Provide "
+            "--cache-entities-dir or use --source local with --local-root."
+        )
+    if queries_dir is None:
+        raise CLIError(
+            "Unable to resolve queries directory. Provide --queries-dir or use "
+            "--source local with --local-root."
+        )
+    if cache_queries_dir is None:
+        raise CLIError(
+            "Unable to resolve cache queries directory. Provide "
+            "--cache-queries-dir or use --source local with --local-root."
+        )
+
+    if not cache_entities_dir.exists():
+        raise CLIError(f"Cache entities directory not found: {cache_entities_dir}")
+
+    selected_ids = sorted(set(args.value_list_ids or []))
+    if not selected_ids:
+        selected_ids = gkc.discover_value_list_ids(cache_entities_dir)
+
+    return cache_entities_dir, queries_dir, cache_queries_dir, selected_ids
+
+
+def _handle_profile_value_lists_sync(args: argparse.Namespace) -> dict[str, Any]:
+    """Sync talk-page-derived value-list artifacts without SPARQL hydration."""
+    previous_source, source_overridden = _apply_source_override(args)
+
+    try:
+        cache_entities_dir, queries_dir, cache_queries_dir, selected_ids = (
+            _resolve_profile_value_list_paths(args)
+        )
+
+        result = gkc.sync_value_list_artifacts_from_cache(
+            cache_entities_dir=cache_entities_dir,
+            queries_dir=queries_dir,
+            cache_queries_dir=cache_queries_dir,
+            api_url=args.api_url,
+            value_list_ids=selected_ids,
+            fail_on_error=not args.continue_on_error,
+        )
+
+        failure_count = len(result.failures)
+        ok = failure_count == 0
+        message = (
+            "Synchronized value-list artifacts: "
+            f"{len(result.discovered_ids)} inspected"
+        )
+        if failure_count:
+            message += f" ({failure_count} failures)"
+
+        details = {
+            "cache_entities_dir": str(cache_entities_dir.resolve()),
+            "queries_dir": result.queries_dir,
+            "cache_queries_dir": result.cache_queries_dir,
+            "value_list_ids_requested": selected_ids,
+            "discovered_count": len(result.discovered_ids),
+            "query_files_written": result.query_files_written,
+            "cache_files_written": result.cache_files_written,
+            "query_files_deleted": result.query_files_deleted,
+            "cache_files_deleted": result.cache_files_deleted,
+            "failures": result.failures,
+        }
+
+        return {
+            "command": args.command_path,
+            "ok": ok,
+            "message": message,
+            "details": details,
+        }
+    except Exception as exc:
+        raise CLIError(str(exc)) from exc
+    finally:
+        _restore_source_override(previous_source, source_overridden)
+
+
 def _handle_profile_value_lists_hydrate(args: argparse.Namespace) -> dict[str, Any]:
     """Extract value-list SPARQL and hydrate cache/queries artifacts."""
     previous_source, source_overridden = _apply_source_override(args)
 
     try:
-        cache_entities_dir: Optional[Path]
-        queries_dir: Optional[Path]
-        cache_queries_dir: Optional[Path]
-
-        if args.cache_entities_dir:
-            cache_entities_dir = Path(args.cache_entities_dir)
-        else:
-            source = gkc.get_spirit_safe_source()
-            cache_entities_dir = (
-                _resolve_local_spiritsafe_layout(source.local_root).entities_dir(
-                    source.local_root
-                )
-                if source.mode == "local" and source.local_root is not None
-                else None
-            )
-
-        if args.queries_dir:
-            queries_dir = Path(args.queries_dir)
-        else:
-            source = gkc.get_spirit_safe_source()
-            queries_dir = (
-                _resolve_local_spiritsafe_layout(
-                    source.local_root
-                ).value_list_queries_dir(source.local_root)
-                if source.mode == "local" and source.local_root is not None
-                else None
-            )
-
-        if args.cache_queries_dir:
-            cache_queries_dir = Path(args.cache_queries_dir)
-        else:
-            source = gkc.get_spirit_safe_source()
-            cache_queries_dir = (
-                _resolve_local_spiritsafe_layout(
-                    source.local_root
-                ).value_list_cache_dir(source.local_root)
-                if source.mode == "local" and source.local_root is not None
-                else None
-            )
-
-        if cache_entities_dir is None:
-            raise CLIError(
-                "Unable to resolve cache entities directory. Provide "
-                "--cache-entities-dir or use --source local with --local-root."
-            )
-        if queries_dir is None:
-            raise CLIError(
-                "Unable to resolve queries directory. Provide --queries-dir or use "
-                "--source local with --local-root."
-            )
-        if cache_queries_dir is None:
-            raise CLIError(
-                "Unable to resolve cache queries directory. Provide "
-                "--cache-queries-dir or use --source local with --local-root."
-            )
-
-        if not cache_entities_dir.exists():
-            raise CLIError(f"Cache entities directory not found: {cache_entities_dir}")
-
-        selected_ids = sorted(set(args.value_list_ids or []))
-        if not selected_ids:
-            selected_ids = gkc.discover_value_list_ids(cache_entities_dir)
+        cache_entities_dir, queries_dir, cache_queries_dir, selected_ids = (
+            _resolve_profile_value_list_paths(args)
+        )
 
         result = gkc.hydrate_value_lists_from_cache(
             cache_entities_dir=cache_entities_dir,
@@ -2135,6 +2247,8 @@ def _handle_profile_value_lists_hydrate(args: argparse.Namespace) -> dict[str, A
             "hydrated_count": len(result.hydrated_ids),
             "query_files_written": result.query_files_written,
             "cache_files_written": result.cache_files_written,
+            "query_files_deleted": result.query_files_deleted,
+            "cache_files_deleted": result.cache_files_deleted,
             "failures": result.failures,
         }
 
