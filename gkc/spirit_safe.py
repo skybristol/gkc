@@ -3076,7 +3076,7 @@ def _format_semantic_anchor_validation_errors(notices: list[Any]) -> str:
     return preview
 
 
-def _require_spiritsafe_meta_wikibase_semantics(
+def _require_spiritsafe_wikibase_semantics(
     spiritsafe_root: Union[str, Path],
 ) -> tuple[Path, str, str]:
     """Resolve the required semantic config values for anchor-backed workflows."""
@@ -3084,20 +3084,20 @@ def _require_spiritsafe_meta_wikibase_semantics(
     config_path, config_values = resolve_spiritsafe_wikibase_config(spiritsafe_root)
     if config_path is None:
         raise FileNotFoundError(
-            "Meta-wikibase config not found under the SpiritSafe root. "
+            "Wikibase config not found under the SpiritSafe root. "
             "Semantic-anchor-backed workflows require a config file in config/."
         )
 
     name_identifier_property_id = config_values.get("name_identifier_property_id")
     if not name_identifier_property_id:
         raise RuntimeError(
-            f"Meta-wikibase config {config_path} is missing semantic_conventions.name_identifier_property_id"
+            f"Wikibase config {config_path} is missing semantic_conventions.name_identifier_property_id"
         )
 
     internal_prefix = config_values.get("internal_name_identifier_prefix")
     if not internal_prefix:
         raise RuntimeError(
-            f"Meta-wikibase config {config_path} is missing semantic_conventions.internal_name_identifier_prefix"
+            f"Wikibase config {config_path} is missing semantic_conventions.internal_name_identifier_prefix"
         )
 
     return config_path, name_identifier_property_id, internal_prefix
@@ -3113,7 +3113,7 @@ def load_spiritsafe_semantic_anchor_resolver(
     root = Path(spiritsafe_root).expanduser().resolve()
     layout = resolve_spiritsafe_layout(root)
     _config_path, _name_identifier_property_id, internal_prefix = (
-        _require_spiritsafe_meta_wikibase_semantics(root)
+        _require_spiritsafe_wikibase_semantics(root)
     )
 
     resolved_artifact_path = (
@@ -3322,7 +3322,7 @@ def build_spiritsafe_semantic_anchor_document(
     layout = resolve_spiritsafe_layout(root)
     cache_entities_dir = layout.entities_dir(root)
     _config_path, name_identifier_property_id, internal_prefix = (
-        _require_spiritsafe_meta_wikibase_semantics(root)
+        _require_spiritsafe_wikibase_semantics(root)
     )
     label_language = "en"
     required_value_language = "mul"
@@ -3519,7 +3519,7 @@ def _extract_name_identifier_values_from_cached_entity(
     return values
 
 
-def _meta_wikibase_payload_label(payload: dict[str, Any]) -> str:
+def _wikibase_payload_label(payload: dict[str, Any]) -> str:
     """Return the best available human label from a compiled seed payload."""
 
     labels = payload.get("labels")
@@ -3535,7 +3535,7 @@ def _meta_wikibase_payload_label(payload: dict[str, Any]) -> str:
     return ""
 
 
-def _format_meta_wikibase_report_value(
+def _format_wikibase_report_value(
     value: Any,
     *,
     entity_id_to_internal_name_identifier: dict[str, str],
@@ -3545,7 +3545,7 @@ def _format_meta_wikibase_report_value(
 
     if isinstance(value, list):
         return [
-            _format_meta_wikibase_report_value(
+            _format_wikibase_report_value(
                 item,
                 entity_id_to_internal_name_identifier=entity_id_to_internal_name_identifier,
                 current_entity_ids_by_internal_name_identifier=current_entity_ids_by_internal_name_identifier,
@@ -3585,7 +3585,7 @@ def _format_meta_wikibase_report_value(
             }
 
         return {
-            key: _format_meta_wikibase_report_value(
+            key: _format_wikibase_report_value(
                 nested_value,
                 entity_id_to_internal_name_identifier=entity_id_to_internal_name_identifier,
                 current_entity_ids_by_internal_name_identifier=current_entity_ids_by_internal_name_identifier,
@@ -3596,7 +3596,7 @@ def _format_meta_wikibase_report_value(
     return value
 
 
-def _build_meta_wikibase_report_differences(
+def _build_wikibase_report_differences(
     *,
     changed_fields: list[str] | None,
     required_view: dict[str, Any],
@@ -3627,12 +3627,12 @@ def _build_meta_wikibase_report_differences(
             current_value = (current_view or {}).get(field_name)
 
         differences[field_name] = {
-            "expected": _format_meta_wikibase_report_value(
+            "expected": _format_wikibase_report_value(
                 expected_value,
                 entity_id_to_internal_name_identifier=entity_id_to_internal_name_identifier,
                 current_entity_ids_by_internal_name_identifier=current_entity_ids_by_internal_name_identifier,
             ),
-            "current": _format_meta_wikibase_report_value(
+            "current": _format_wikibase_report_value(
                 current_value,
                 entity_id_to_internal_name_identifier=entity_id_to_internal_name_identifier,
                 current_entity_ids_by_internal_name_identifier=current_entity_ids_by_internal_name_identifier,
@@ -3642,7 +3642,7 @@ def _build_meta_wikibase_report_differences(
     return differences
 
 
-def _normalize_meta_wikibase_talk_page_text(value: Any) -> Optional[str]:
+def _normalize_wikibase_talk_page_text(value: Any) -> Optional[str]:
     """Normalize multiline talk-page text for stable comparison."""
 
     if not isinstance(value, str):
@@ -3675,7 +3675,7 @@ def _extract_first_json_syntaxhighlight_block(wikitext: str) -> Any:
     raise RuntimeError("No JSON <syntaxhighlight> block found in page content")
 
 
-def _normalize_meta_wikibase_value_list_content(value: Any) -> Any:
+def _normalize_wikibase_value_list_content(value: Any) -> Any:
     """Normalize value-list cache payloads for stable comparison."""
 
     if isinstance(value, dict):
@@ -3685,13 +3685,13 @@ def _normalize_meta_wikibase_value_list_content(value: Any) -> Any:
             value = value["value_list"]
         else:
             return {
-                key: _normalize_meta_wikibase_value_list_content(nested_value)
+                key: _normalize_wikibase_value_list_content(nested_value)
                 for key, nested_value in sorted(value.items())
             }
 
     if isinstance(value, list):
         normalized_items = [
-            _normalize_meta_wikibase_value_list_content(item) for item in value
+            _normalize_wikibase_value_list_content(item) for item in value
         ]
         return sorted(
             normalized_items,
@@ -3701,17 +3701,17 @@ def _normalize_meta_wikibase_value_list_content(value: Any) -> Any:
     return value
 
 
-def _build_meta_wikibase_talk_page_contract(
+def _build_wikibase_talk_page_contract(
     *,
     entity_definition: Any,
     current_entity_id: str | None,
 ) -> Optional[dict[str, Any]]:
-    """Return the authored talk-page contract for one Meta-Wikibase entity."""
+    """Return the authored talk-page contract for one Wikibase seed entity."""
 
     attributes = entity_definition.attributes or {}
     title = f"Item_talk:{current_entity_id}" if current_entity_id else None
 
-    query_text = _normalize_meta_wikibase_talk_page_text(attributes.get("query"))
+    query_text = _normalize_wikibase_talk_page_text(attributes.get("query"))
     if query_text is not None:
         return {
             "title": title,
@@ -3724,15 +3724,13 @@ def _build_meta_wikibase_talk_page_contract(
         return {
             "title": title,
             "block_type": "json",
-            "content": _normalize_meta_wikibase_value_list_content(
-                deepcopy(value_list)
-            ),
+            "content": _normalize_wikibase_value_list_content(deepcopy(value_list)),
         }
 
     return None
 
 
-def _assess_meta_wikibase_talk_page_conformance(
+def _assess_wikibase_talk_page_conformance(
     *,
     entity_definition: Any,
     current_entity_id: str | None,
@@ -3741,7 +3739,7 @@ def _assess_meta_wikibase_talk_page_conformance(
 ) -> Optional[dict[str, Any]]:
     """Compare authored talk-page contracts against materialized SpiritSafe artifacts."""
 
-    contract = _build_meta_wikibase_talk_page_contract(
+    contract = _build_wikibase_talk_page_contract(
         entity_definition=entity_definition,
         current_entity_id=current_entity_id,
     )
@@ -3785,7 +3783,7 @@ def _assess_meta_wikibase_talk_page_conformance(
                 raise FileNotFoundError(
                     f"Missing materialized SPARQL artifact for {current_entity_id}"
                 )
-            current_content = _normalize_meta_wikibase_talk_page_text(
+            current_content = _normalize_wikibase_talk_page_text(
                 artifact_path.read_text(encoding="utf-8")
             )
         elif block_type == "json":
@@ -3794,7 +3792,7 @@ def _assess_meta_wikibase_talk_page_conformance(
                 raise FileNotFoundError(
                     f"Missing materialized JSON artifact for {current_entity_id}"
                 )
-            current_content = _normalize_meta_wikibase_value_list_content(
+            current_content = _normalize_wikibase_value_list_content(
                 json.loads(artifact_path.read_text(encoding="utf-8"))
             )
         else:
@@ -3849,7 +3847,7 @@ def build_spiritsafe_wikibase_conformance_report(
     required_value_language: str = "mul",
     inspect_talk_pages: bool = True,
 ) -> dict[str, Any]:
-    """Evaluate cached SpiritSafe entities against the Meta-Wikibase init contract."""
+    """Evaluate cached SpiritSafe entities against the Wikibase init contract."""
 
     root = Path(spiritsafe_root).expanduser().resolve()
     layout = resolve_spiritsafe_layout(root)
@@ -3859,9 +3857,9 @@ def build_spiritsafe_wikibase_conformance_report(
             f"Entity cache directory not found at {cache_entities_dir}"
         )
 
-    config_path, meta_wikibase_config = resolve_spiritsafe_wikibase_config(root)
+    config_path, _config_values = resolve_spiritsafe_wikibase_config(root)
     _config_path, name_identifier_property_id, internal_prefix = (
-        _require_spiritsafe_meta_wikibase_semantics(root)
+        _require_spiritsafe_wikibase_semantics(root)
     )
     compilation = compile_wikibase_seed(label_language=label_language)
     init_index = build_wikibase_init_index()
@@ -3992,7 +3990,7 @@ def build_spiritsafe_wikibase_conformance_report(
             )
 
         changed_fields = list(operation.changed_fields or [])
-        talk_page = _assess_meta_wikibase_talk_page_conformance(
+        talk_page = _assess_wikibase_talk_page_conformance(
             entity_definition=entity_definition,
             current_entity_id=operation.current_entity_id,
             queries_dir=value_list_queries_dir if inspect_talk_pages else None,
@@ -4018,7 +4016,7 @@ def build_spiritsafe_wikibase_conformance_report(
                 action_name = "skip"
                 details = "matches current state"
 
-        differences = _build_meta_wikibase_report_differences(
+        differences = _build_wikibase_report_differences(
             changed_fields=changed_fields,
             required_view=required_view,
             current_view=current_view,
@@ -4031,25 +4029,25 @@ def build_spiritsafe_wikibase_conformance_report(
             and talk_page.get("needs_update")
         ):
             differences[str(talk_page["field"])] = {
-                "expected": _format_meta_wikibase_report_value(
+                "expected": _format_wikibase_report_value(
                     talk_page.get("expected"),
                     entity_id_to_internal_name_identifier=entity_id_to_internal_name_identifier,
                     current_entity_ids_by_internal_name_identifier=current_entity_ids_by_internal_name_identifier,
                 ),
-                "current": _format_meta_wikibase_report_value(
+                "current": _format_wikibase_report_value(
                     talk_page.get("current"),
                     entity_id_to_internal_name_identifier=entity_id_to_internal_name_identifier,
                     current_entity_ids_by_internal_name_identifier=current_entity_ids_by_internal_name_identifier,
                 ),
             }
 
-        required_output = _format_meta_wikibase_report_value(
+        required_output = _format_wikibase_report_value(
             required_view,
             entity_id_to_internal_name_identifier=entity_id_to_internal_name_identifier,
             current_entity_ids_by_internal_name_identifier=current_entity_ids_by_internal_name_identifier,
         )
         current_output = (
-            _format_meta_wikibase_report_value(
+            _format_wikibase_report_value(
                 current_view,
                 entity_id_to_internal_name_identifier=entity_id_to_internal_name_identifier,
                 current_entity_ids_by_internal_name_identifier=current_entity_ids_by_internal_name_identifier,
@@ -4060,7 +4058,7 @@ def build_spiritsafe_wikibase_conformance_report(
 
         if talk_page is not None:
             required_output = dict(required_output)
-            required_output["talk_page"] = _format_meta_wikibase_report_value(
+            required_output["talk_page"] = _format_wikibase_report_value(
                 talk_page.get("expected"),
                 entity_id_to_internal_name_identifier=entity_id_to_internal_name_identifier,
                 current_entity_ids_by_internal_name_identifier=current_entity_ids_by_internal_name_identifier,
@@ -4069,7 +4067,7 @@ def build_spiritsafe_wikibase_conformance_report(
                 current_output = {}
             else:
                 current_output = dict(current_output)
-            current_output["talk_page"] = _format_meta_wikibase_report_value(
+            current_output["talk_page"] = _format_wikibase_report_value(
                 talk_page.get("current"),
                 entity_id_to_internal_name_identifier=entity_id_to_internal_name_identifier,
                 current_entity_ids_by_internal_name_identifier=current_entity_ids_by_internal_name_identifier,
@@ -4079,7 +4077,7 @@ def build_spiritsafe_wikibase_conformance_report(
             {
                 "action": action_name,
                 "kind": operation.entity_type,
-                "label": _meta_wikibase_payload_label(compiled_entity.payload),
+                "label": _wikibase_payload_label(compiled_entity.payload),
                 "id": _entity_uri_from_reference(operation.current_entity_id),
                 "name_identifier": operation.internal_name_identifier,
                 "details": details,
@@ -4141,11 +4139,11 @@ def sync_spiritsafe_wikibase_seed(
     label_language: str = "en",
     required_value_language: str = "mul",
     inspect_talk_pages: bool = True,
-    summary_prefix: str = "Sync Meta-Wikibase seed",
+    summary_prefix: str = "Sync Wikibase seed",
     tags: Optional[list[str]] = None,
     bot: bool = False,
 ) -> dict[str, Any]:
-    """Preview or execute Meta-Wikibase seed corrections through the standard write boundary."""
+    """Preview or execute Wikibase seed corrections through the standard write boundary."""
 
     report = build_spiritsafe_wikibase_conformance_report(
         spiritsafe_root,
