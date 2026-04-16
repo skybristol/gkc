@@ -8,18 +8,18 @@ import pytest
 
 from gkc.shipper import WriteResult
 from gkc.spirit_safe import (
-    build_spiritsafe_meta_wikibase_conformance_report,
     build_spiritsafe_semantic_anchor_document,
+    build_spiritsafe_wikibase_conformance_report,
     export_spiritsafe_semantic_anchors,
     load_profile,
     load_profile_package,
     resolve_profile_link,
     set_spirit_safe_source,
-    sync_spiritsafe_meta_wikibase_seed,
+    sync_spiritsafe_wikibase_seed,
     validate_packet_structure,
 )
 from gkc.still_charger import create_curation_packet
-from gkc.wikibase import get_meta_wikibase_init_contract_digest
+from gkc.wikibase import get_wikibase_init_contract_digest
 
 
 @pytest.fixture
@@ -93,10 +93,7 @@ spiritsafe:
     assert anchors["metadata"]["property_count"] == 0
     assert anchors["metadata"]["item_count"] == 1
     assert isinstance(anchors["metadata"]["generated_at"], str)
-    assert (
-        anchors["metadata"]["contract_digest"]
-        == get_meta_wikibase_init_contract_digest()
-    )
+    assert anchors["metadata"]["contract_digest"] == get_wikibase_init_contract_digest()
     assert anchors["validation"]["status"] in {"valid", "warning", "error"}
     assert (
         anchors["entities"]["_entity"]["id"]
@@ -183,7 +180,7 @@ spiritsafe:
     assert isinstance(anchors["entities"]["_time"]["resolved"], dict)
 
 
-def test_build_spiritsafe_meta_wikibase_conformance_report_flags_missing_sparql_talk_page(
+def test_build_spiritsafe_wikibase_conformance_report_flags_missing_sparql_talk_page(
     tmp_path: Path, fixture_root: Path, monkeypatch
 ):
     """Conformance report should flag missing SPARQL talk-page content."""
@@ -261,7 +258,7 @@ spiritsafe:
 
     monkeypatch.setattr("gkc.spirit_safe.WikibaseApiClient", FakeApiClient)
 
-    report = build_spiritsafe_meta_wikibase_conformance_report(root)
+    report = build_spiritsafe_wikibase_conformance_report(root)
     row = next(
         action
         for action in report["actions"]
@@ -276,7 +273,7 @@ spiritsafe:
     )
 
 
-def test_build_spiritsafe_meta_wikibase_conformance_report_uses_materialized_cache_artifacts(
+def test_build_spiritsafe_wikibase_conformance_report_uses_materialized_cache_artifacts(
     tmp_path: Path, fixture_root: Path, monkeypatch
 ):
     """Conformance should compare against SpiritSafe files, not live talk pages."""
@@ -372,7 +369,7 @@ spiritsafe:
         "gkc.spirit_safe.fetch_mediawiki_page_wikitext", _unexpected_fetch
     )
 
-    report = build_spiritsafe_meta_wikibase_conformance_report(root)
+    report = build_spiritsafe_wikibase_conformance_report(root)
     row = next(
         action
         for action in report["actions"]
@@ -388,7 +385,7 @@ spiritsafe:
     )
 
 
-def test_sync_spiritsafe_meta_wikibase_seed_routes_updates_through_shipper(
+def test_sync_spiritsafe_wikibase_seed_routes_updates_through_shipper(
     tmp_path: Path, fixture_root: Path, monkeypatch
 ):
     """Sync helper should turn cache drift into shipper dry-run calls."""
@@ -527,9 +524,7 @@ spiritsafe:
             )
 
     fake_shipper = FakeShipper()
-    result = sync_spiritsafe_meta_wikibase_seed(
-        root, shipper=fake_shipper, dry_run=True
-    )
+    result = sync_spiritsafe_wikibase_seed(root, shipper=fake_shipper, dry_run=True)
 
     assert result["summary"]["dry_run"] > 0
     assert any(call["entity_id"] == "P1" for call in fake_shipper.calls)
@@ -605,7 +600,7 @@ spiritsafe:
     assert anchors["entities"]["_entity"]["resolved"] is None
 
 
-def test_build_spiritsafe_meta_wikibase_conformance_report_uses_entity_cache(
+def test_build_spiritsafe_wikibase_conformance_report_uses_entity_cache(
     tmp_path: Path, fixture_root: Path
 ):
     """Cache report should compare current cached entities against the seed contract."""
@@ -854,7 +849,7 @@ spiritsafe:
             json.dumps(entity_doc, indent=2), encoding="utf-8"
         )
 
-    report = build_spiritsafe_meta_wikibase_conformance_report(root)
+    report = build_spiritsafe_wikibase_conformance_report(root)
 
     assert report["comparison_source"]["mode"] == "cache-entities"
     assert report["summary"]["skipped"] >= 1
@@ -880,7 +875,7 @@ spiritsafe:
     )
 
 
-def test_build_spiritsafe_meta_wikibase_conformance_report_rejects_ambiguous_cache_matches(
+def test_build_spiritsafe_wikibase_conformance_report_rejects_ambiguous_cache_matches(
     tmp_path: Path, fixture_root: Path
 ):
     """Cache conformance should hard-stop when two entities claim the same internal name identifier."""
@@ -962,7 +957,7 @@ spiritsafe:
     )
 
     with pytest.raises(RuntimeError, match="Multiple cached entities resolve"):
-        build_spiritsafe_meta_wikibase_conformance_report(root)
+        build_spiritsafe_wikibase_conformance_report(root)
 
 
 def test_build_spiritsafe_semantic_anchor_document_requires_config(

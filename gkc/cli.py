@@ -29,7 +29,7 @@ from gkc.mash import (
 from gkc.runtime_config import (
     DEFAULT_USER_AGENT,
     SpiritSafeLayout,
-    discover_meta_wikibase_config_path,
+    discover_wikibase_config_path,
     get_wikibase_runtime_config,
 )
 from gkc.sitelinks import (
@@ -48,7 +48,7 @@ from gkc.spirit_safe import (
     load_profile,
     load_profile_package,
     resolve_spiritsafe_layout,
-    resolve_spiritsafe_meta_wikibase_config,
+    resolve_spiritsafe_wikibase_config,
     validate_packet_structure,
 )
 from gkc.still_charger import create_curation_packet
@@ -1198,7 +1198,7 @@ def _infer_local_spiritsafe_root_from_cache_entities_dir(
 ) -> Optional[Path]:
     cache_dir = cache_entities_dir.expanduser().resolve()
 
-    config_path = discover_meta_wikibase_config_path(start_dir=cache_dir)
+    config_path = discover_wikibase_config_path(start_dir=cache_dir)
     if config_path is not None:
         candidate_root = (
             config_path.parent.parent
@@ -2519,9 +2519,7 @@ def _handle_spiritsafe_semantic_anchors_validate(
 
         internal_prefix: str | None = None
         if local_root is not None:
-            _config_path, config_values = resolve_spiritsafe_meta_wikibase_config(
-                local_root
-            )
+            _config_path, config_values = resolve_spiritsafe_wikibase_config(local_root)
             internal_prefix = config_values.get("internal_name_identifier_prefix")
         else:
             runtime_config = get_wikibase_runtime_config()
@@ -3304,7 +3302,7 @@ def _handle_wikibase_init(args: argparse.Namespace) -> dict[str, Any]:
         gkc.set_languages(args.language)
 
     try:
-        compilation = gkc.compile_meta_wikibase_seed(
+        compilation = gkc.compile_wikibase_seed(
             label_language=args.language,
         )
         current_entities: dict[str, dict[str, Any]] | None = None
@@ -3341,7 +3339,7 @@ def _handle_wikibase_init(args: argparse.Namespace) -> dict[str, Any]:
                 "resolved_entity_count": len(current_entities),
             }
 
-        plan = gkc.plan_meta_wikibase_seed_baseline(
+        plan = gkc.plan_wikibase_seed_baseline(
             current_entities_by_internal_name_identifier=current_entities,
             entity_id_to_internal_name_identifier=entity_id_to_internal_name_identifier,
             label_language=args.language,
@@ -3485,7 +3483,7 @@ def _load_wikibase_init_current_entities_from_local_root(
     """Fetch current entities by internal name identifier for bootstrap-safe dry runs."""
 
     resolved_local_root = Path(local_root).expanduser().resolve()
-    _config_path, config_values = resolve_spiritsafe_meta_wikibase_config(
+    _config_path, config_values = resolve_spiritsafe_wikibase_config(
         resolved_local_root
     )
     name_identifier_property_id = config_values.get("name_identifier_property_id")
@@ -3501,7 +3499,7 @@ def _load_wikibase_init_current_entities_from_local_root(
         )
 
     entity_id_to_internal_name_identifier = (
-        _discover_meta_wikibase_entities_by_name_identifier(
+        _discover_wikibase_entities_by_name_identifier(
             internal_name_identifiers=sorted(
                 compilation.by_internal_name_identifier.keys()
             ),
@@ -3614,7 +3612,7 @@ def _load_wikibase_init_anchor_hints_from_local_root(
     return hints
 
 
-def _discover_meta_wikibase_entities_by_name_identifier(
+def _discover_wikibase_entities_by_name_identifier(
     *,
     internal_name_identifiers: list[str],
     name_identifier_property_id: str,

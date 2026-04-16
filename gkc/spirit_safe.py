@@ -37,21 +37,21 @@ from gkc.runtime_config import (
     MetaWikibaseConfigValues,
     SpiritSafeLayout,
     ValueListTalkPageRule,
-    default_meta_wikibase_config_values,
-    discover_meta_wikibase_config_path,
+    default_wikibase_config_values,
+    discover_wikibase_config_path,
     get_wikibase_runtime_config,
-    load_meta_wikibase_config,
+    load_wikibase_config,
     resolve_spiritsafe_layout_for_root,
 )
 from gkc.sparql import SPARQLQuery, paginate_query, read_sparql_query_file
 from gkc.wikibase import (
-    build_meta_wikibase_init_index,
-    build_meta_wikibase_semantic_anchor_contract,
-    compile_meta_wikibase_seed,
-    get_meta_wikibase_init_contract_digest,
-    normalize_meta_wikibase_current_entity_view,
-    normalize_meta_wikibase_required_entity_view,
-    plan_meta_wikibase_seed_baseline,
+    build_wikibase_init_index,
+    build_wikibase_semantic_anchor_contract,
+    compile_wikibase_seed,
+    get_wikibase_init_contract_digest,
+    normalize_wikibase_current_entity_view,
+    normalize_wikibase_required_entity_view,
+    plan_wikibase_seed_baseline,
 )
 
 RefreshPolicy = Literal["manual", "daily", "weekly", "on_release"]
@@ -832,9 +832,9 @@ def _resolve_value_list_talk_page_rules(
     resolver: SpiritSafeSemanticAnchorResolver,
 ) -> tuple[ValueListTalkPageRule, ...]:
     cache_dir = Path(cache_entities_dir).expanduser().resolve()
-    config_path = discover_meta_wikibase_config_path(start_dir=cache_dir)
+    config_path = discover_wikibase_config_path(start_dir=cache_dir)
     if config_path is not None:
-        config_values = load_meta_wikibase_config(config_path)
+        config_values = load_wikibase_config(config_path)
         configured_rules = tuple(config_values.get("value_list_talk_page_rules", ()))
         if configured_rules:
             return configured_rules
@@ -3081,9 +3081,7 @@ def _require_spiritsafe_meta_wikibase_semantics(
 ) -> tuple[Path, str, str]:
     """Resolve the required semantic config values for anchor-backed workflows."""
 
-    config_path, config_values = resolve_spiritsafe_meta_wikibase_config(
-        spiritsafe_root
-    )
+    config_path, config_values = resolve_spiritsafe_wikibase_config(spiritsafe_root)
     if config_path is None:
         raise FileNotFoundError(
             "Meta-wikibase config not found under the SpiritSafe root. "
@@ -3157,7 +3155,7 @@ def _infer_spiritsafe_root_from_cache_entities_dir(
 ) -> Optional[Path]:
     cache_dir = Path(cache_entities_dir).expanduser().resolve()
 
-    config_path = discover_meta_wikibase_config_path(start_dir=cache_dir)
+    config_path = discover_wikibase_config_path(start_dir=cache_dir)
     if config_path is not None:
         candidate_root = (
             config_path.parent.parent
@@ -3191,7 +3189,7 @@ def _resolve_semantic_anchor_resolver_for_cache_entities_dir(
     return load_spiritsafe_semantic_anchor_resolver(spiritsafe_root)
 
 
-def resolve_spiritsafe_meta_wikibase_config(
+def resolve_spiritsafe_wikibase_config(
     spiritsafe_root: Union[str, Path],
 ) -> tuple[Optional[Path], MetaWikibaseConfigValues]:
     root = Path(spiritsafe_root).expanduser().resolve()
@@ -3202,9 +3200,9 @@ def resolve_spiritsafe_meta_wikibase_config(
         for filename in DEFAULT_META_WB_CONFIG_FILENAMES:
             candidate = root / subdir / filename if subdir else root / filename
             if candidate.is_file():
-                return candidate, load_meta_wikibase_config(candidate)
+                return candidate, load_wikibase_config(candidate)
 
-    return None, default_meta_wikibase_config_values()
+    return None, default_wikibase_config_values()
 
 
 def resolve_spiritsafe_layout(spiritsafe_root: Union[str, Path]) -> SpiritSafeLayout:
@@ -3292,7 +3290,7 @@ def _build_semantic_anchor_entry(
         return None
 
     expected_property_ids = set(required_view.get("claims", {}).keys())
-    resolved_view, _issues = normalize_meta_wikibase_current_entity_view(
+    resolved_view, _issues = normalize_wikibase_current_entity_view(
         entity,
         entity_id_to_internal_name_identifier=entity_id_to_internal_name_identifier,
         label_language=label_language,
@@ -3328,14 +3326,14 @@ def build_spiritsafe_semantic_anchor_document(
     )
     label_language = "en"
     required_value_language = "mul"
-    contract = build_meta_wikibase_semantic_anchor_contract(
+    contract = build_wikibase_semantic_anchor_contract(
         internal_name_identifier_prefix=internal_prefix
     )
-    compilation = compile_meta_wikibase_seed(label_language=label_language)
-    contract_digest = get_meta_wikibase_init_contract_digest()
+    compilation = compile_wikibase_seed(label_language=label_language)
+    contract_digest = get_wikibase_init_contract_digest()
     required_monolingualtext_properties: set[str] = {
         entity.internal_name_identifier
-        for entity in build_meta_wikibase_init_index().properties.values()
+        for entity in build_wikibase_init_index().properties.values()
         if entity.datatype == "monolingualtext"
     }
 
@@ -3369,9 +3367,7 @@ def build_spiritsafe_semantic_anchor_document(
     anchors: dict[str, dict[str, Any]] = {}
     for anchor_name, requirement in sorted(contract.requirements.items()):
         compiled_entity = compilation.by_internal_name_identifier[anchor_name]
-        required_view = normalize_meta_wikibase_required_entity_view(
-            compiled_entity.payload
-        )
+        required_view = normalize_wikibase_required_entity_view(compiled_entity.payload)
         current_entity_doc = current_entities_by_internal_name_identifier.get(
             anchor_name
         )
@@ -3845,7 +3841,7 @@ def _assess_meta_wikibase_talk_page_conformance(
     }
 
 
-def build_spiritsafe_meta_wikibase_conformance_report(
+def build_spiritsafe_wikibase_conformance_report(
     spiritsafe_root: Union[str, Path],
     *,
     semantic_anchor_document: Optional[dict[str, Any]] = None,
@@ -3863,12 +3859,12 @@ def build_spiritsafe_meta_wikibase_conformance_report(
             f"Entity cache directory not found at {cache_entities_dir}"
         )
 
-    config_path, meta_wikibase_config = resolve_spiritsafe_meta_wikibase_config(root)
+    config_path, meta_wikibase_config = resolve_spiritsafe_wikibase_config(root)
     _config_path, name_identifier_property_id, internal_prefix = (
         _require_spiritsafe_meta_wikibase_semantics(root)
     )
-    compilation = compile_meta_wikibase_seed(label_language=label_language)
-    init_index = build_meta_wikibase_init_index()
+    compilation = compile_wikibase_seed(label_language=label_language)
+    init_index = build_wikibase_init_index()
 
     current_entities_by_internal_name_identifier: dict[str, dict[str, Any]] = {}
     current_entity_ids_by_internal_name_identifier: dict[str, str] = {}
@@ -3956,7 +3952,7 @@ def build_spiritsafe_meta_wikibase_conformance_report(
                     entity_payload=entity_payload,
                 )
 
-    plan = plan_meta_wikibase_seed_baseline(
+    plan = plan_wikibase_seed_baseline(
         current_entities_by_internal_name_identifier=current_entities_by_internal_name_identifier,
         entity_id_to_internal_name_identifier=entity_id_to_internal_name_identifier,
         label_language=label_language,
@@ -3980,13 +3976,13 @@ def build_spiritsafe_meta_wikibase_conformance_report(
             operation.internal_name_identifier
         ]
         entity_definition = init_index.entities[compiled_entity.key]
-        required_view = normalize_meta_wikibase_required_entity_view(operation.payload)
+        required_view = normalize_wikibase_required_entity_view(operation.payload)
         current_view = None
         current_entity = current_entities_by_internal_name_identifier.get(
             operation.internal_name_identifier
         )
         if isinstance(current_entity, dict):
-            current_view, _issues = normalize_meta_wikibase_current_entity_view(
+            current_view, _issues = normalize_wikibase_current_entity_view(
                 current_entity,
                 entity_id_to_internal_name_identifier=entity_id_to_internal_name_identifier,
                 label_language=label_language,
@@ -4109,7 +4105,7 @@ def build_spiritsafe_meta_wikibase_conformance_report(
             "generated_at": datetime.now(timezone.utc)
             .isoformat()
             .replace("+00:00", "Z"),
-            "contract_digest": get_meta_wikibase_init_contract_digest(),
+            "contract_digest": get_wikibase_init_contract_digest(),
             "seed_entity_count": len(compilation.entities),
             "label_language": label_language,
             "value_language": required_value_language,
@@ -4137,7 +4133,7 @@ def build_spiritsafe_meta_wikibase_conformance_report(
     }
 
 
-def sync_spiritsafe_meta_wikibase_seed(
+def sync_spiritsafe_wikibase_seed(
     spiritsafe_root: Union[str, Path],
     *,
     shipper: Any | None = None,
@@ -4151,19 +4147,17 @@ def sync_spiritsafe_meta_wikibase_seed(
 ) -> dict[str, Any]:
     """Preview or execute Meta-Wikibase seed corrections through the standard write boundary."""
 
-    report = build_spiritsafe_meta_wikibase_conformance_report(
+    report = build_spiritsafe_wikibase_conformance_report(
         spiritsafe_root,
         label_language=label_language,
         required_value_language=required_value_language,
         inspect_talk_pages=inspect_talk_pages,
     )
-    compilation = compile_meta_wikibase_seed(label_language=label_language)
+    compilation = compile_wikibase_seed(label_language=label_language)
 
     api_url = getattr(shipper, "api_url", None) if shipper is not None else None
     if not api_url:
-        _config_path, meta_config = resolve_spiritsafe_meta_wikibase_config(
-            spiritsafe_root
-        )
+        _config_path, meta_config = resolve_spiritsafe_wikibase_config(spiritsafe_root)
         api_url = meta_config.get("api_url")
 
     fresh_api_client = (

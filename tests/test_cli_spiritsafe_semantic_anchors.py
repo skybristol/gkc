@@ -133,7 +133,7 @@ def test_spiritsafe_semantic_anchors_validate_can_compare_current_cache(
 
     monkeypatch.setattr(
         cli,
-        "resolve_spiritsafe_meta_wikibase_config",
+        "resolve_spiritsafe_wikibase_config",
         lambda root: (
             Path(root) / "config" / "dd-wikibase.yaml",
             {"internal_name_identifier_prefix": "_"},

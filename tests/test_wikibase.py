@@ -14,20 +14,20 @@ from gkc.wikibase import (
     MetaWikibaseSeedPlan,
     MetaWikibaseSemanticAnchorContract,
     WikibaseDatatypeSpec,
-    build_meta_wikibase_init_index,
-    build_meta_wikibase_semantic_anchor_contract,
+    build_wikibase_init_index,
+    build_wikibase_semantic_anchor_contract,
     canonicalize_wikibase_datatype,
-    compile_meta_wikibase_seed,
-    get_meta_wikibase_init_entity,
+    compile_wikibase_seed,
     get_wikibase_datatype_spec,
+    get_wikibase_init_entity,
     is_known_wikibase_datatype,
     is_wikibase_item_datatype,
     list_wikibase_datatypes,
-    load_meta_wikibase_init_document,
     load_wikibase_datatype_registry,
     load_wikibase_datatype_registry_json,
-    normalize_meta_wikibase_init_document,
-    plan_meta_wikibase_seed_baseline,
+    load_wikibase_init_document,
+    normalize_wikibase_init_document,
+    plan_wikibase_seed_baseline,
 )
 
 
@@ -96,8 +96,8 @@ def test_load_wikibase_datatype_registry_json_round_trips_shape():
     assert "entity_value_kind" not in registry["globe-coordinate"]
 
 
-def test_load_meta_wikibase_init_document_uses_canonical_datatypes():
-    document = load_meta_wikibase_init_document()
+def test_load_wikibase_init_document_uses_canonical_datatypes():
+    document = load_wikibase_init_document()
 
     entities = document["entities"]
     assert entities["instance_of"]["datatype"] == "wikibase-item"
@@ -105,7 +105,7 @@ def test_load_meta_wikibase_init_document_uses_canonical_datatypes():
     assert entities["see_also"]["datatype"] == "url"
 
 
-def test_normalize_meta_wikibase_init_document_transforms_prototype_datatypes():
+def test_normalize_wikibase_init_document_transforms_prototype_datatypes():
     prototype = {
         "metadata": {
             "internal_name_identifier_prefix": "_",
@@ -144,7 +144,7 @@ def test_normalize_meta_wikibase_init_document_transforms_prototype_datatypes():
         },
     }
 
-    normalized = normalize_meta_wikibase_init_document(prototype)
+    normalized = normalize_wikibase_init_document(prototype)
 
     entities = normalized["entities"]
     assert entities["instance_of"]["datatype"] == "wikibase-item"
@@ -157,7 +157,7 @@ def test_normalize_meta_wikibase_init_document_transforms_prototype_datatypes():
     )
 
 
-def test_normalize_meta_wikibase_init_document_requires_authored_text():
+def test_normalize_wikibase_init_document_requires_authored_text():
     prototype = {
         "metadata": {"internal_name_identifier_prefix": "_", "languages": ["en"]},
         "entities": {
@@ -170,10 +170,10 @@ def test_normalize_meta_wikibase_init_document_requires_authored_text():
     }
 
     with pytest.raises(RuntimeError, match="missing label text"):
-        normalize_meta_wikibase_init_document(prototype)
+        normalize_wikibase_init_document(prototype)
 
 
-def test_normalize_meta_wikibase_init_document_requires_sparql_fields():
+def test_normalize_wikibase_init_document_requires_sparql_fields():
     prototype = {
         "metadata": {"internal_name_identifier_prefix": "_", "languages": ["en"]},
         "entities": {
@@ -193,10 +193,10 @@ def test_normalize_meta_wikibase_init_document_requires_sparql_fields():
     }
 
     with pytest.raises(RuntimeError, match="requires 'sparql_endpoint' and 'query'"):
-        normalize_meta_wikibase_init_document(prototype)
+        normalize_wikibase_init_document(prototype)
 
 
-def test_normalize_meta_wikibase_init_document_requires_embedded_value_list():
+def test_normalize_wikibase_init_document_requires_embedded_value_list():
     prototype = {
         "metadata": {"internal_name_identifier_prefix": "_", "languages": ["en"]},
         "entities": {
@@ -215,11 +215,11 @@ def test_normalize_meta_wikibase_init_document_requires_embedded_value_list():
     }
 
     with pytest.raises(RuntimeError, match="requires 'value_list'"):
-        normalize_meta_wikibase_init_document(prototype)
+        normalize_wikibase_init_document(prototype)
 
 
-def test_build_meta_wikibase_init_index_provides_typed_entity_access():
-    index = build_meta_wikibase_init_index()
+def test_build_wikibase_init_index_provides_typed_entity_access():
+    index = build_wikibase_init_index()
 
     assert isinstance(index, MetaWikibaseInitIndex)
     assert isinstance(index.properties["instance_of"], MetaWikibaseInitEntity)
@@ -230,8 +230,8 @@ def test_build_meta_wikibase_init_index_provides_typed_entity_access():
     assert index.by_internal_name_identifier["_string"].key == "string"
 
 
-def test_get_meta_wikibase_init_entity_returns_one_entry():
-    entity = get_meta_wikibase_init_entity("wikibase-item")
+def test_get_wikibase_init_entity_returns_one_entry():
+    entity = get_wikibase_init_entity("wikibase-item")
 
     assert entity.kind == "item"
     assert entity.instance_of == "wikibase_statement_type"
@@ -240,8 +240,8 @@ def test_get_meta_wikibase_init_entity_returns_one_entry():
     }
 
 
-def test_build_meta_wikibase_semantic_anchor_contract_uses_active_prefix():
-    contract = build_meta_wikibase_semantic_anchor_contract(
+def test_build_wikibase_semantic_anchor_contract_uses_active_prefix():
+    contract = build_wikibase_semantic_anchor_contract(
         internal_name_identifier_prefix="__"
     )
 
@@ -251,8 +251,8 @@ def test_build_meta_wikibase_semantic_anchor_contract_uses_active_prefix():
     assert contract.requirements["__has_statement"].datatype == "wikibase-item"
 
 
-def test_compile_meta_wikibase_seed_builds_symbolic_payloads():
-    compilation = compile_meta_wikibase_seed()
+def test_compile_wikibase_seed_builds_symbolic_payloads():
+    compilation = compile_wikibase_seed()
 
     assert isinstance(compilation, MetaWikibaseSeedCompilation)
     assert isinstance(compilation.entities["instance_of"], MetaWikibaseCompiledEntity)
@@ -297,12 +297,12 @@ def test_compile_meta_wikibase_seed_builds_symbolic_payloads():
     assert "datavalue" not in data_size_max_count["mainsnak"]
 
 
-def test_compile_meta_wikibase_seed_uses_package_language_for_display_text(
+def test_compile_wikibase_seed_uses_package_language_for_display_text(
     monkeypatch,
 ):
     monkeypatch.setattr(gkc, "get_languages", lambda: "fr")
 
-    compilation = compile_meta_wikibase_seed()
+    compilation = compile_wikibase_seed()
 
     payload = compilation.entities["instance_of"].payload
     assert payload["labels"]["fr"]["value"] == "instance of"
@@ -311,7 +311,7 @@ def test_compile_meta_wikibase_seed_uses_package_language_for_display_text(
     )
 
 
-def test_plan_meta_wikibase_seed_baseline_compares_live_state_and_requires_mul():
+def test_plan_wikibase_seed_baseline_compares_live_state_and_requires_mul():
     current_entities = {
         "_wikibase-item": {
             "id": "Q50",
@@ -391,7 +391,7 @@ def test_plan_meta_wikibase_seed_baseline_compares_live_state_and_requires_mul()
         "Q99": "_wikibase_statement_type",
     }
 
-    plan = plan_meta_wikibase_seed_baseline(
+    plan = plan_wikibase_seed_baseline(
         current_entities_by_internal_name_identifier=current_entities,
         entity_id_to_internal_name_identifier=entity_id_to_internal_name_identifier,
     )
@@ -576,7 +576,7 @@ def test_plan_meta_wikibase_seed_baseline_compares_live_state_and_requires_mul()
         "Q71": "_quantity",
         "Q90": "_data_size_units",
     }
-    novalue_plan = plan_meta_wikibase_seed_baseline(
+    novalue_plan = plan_wikibase_seed_baseline(
         current_entities_by_internal_name_identifier=novalue_entities,
         entity_id_to_internal_name_identifier=novalue_entity_id_to_internal_name_identifier,
     )
@@ -592,7 +592,7 @@ def test_plan_meta_wikibase_seed_baseline_compares_live_state_and_requires_mul()
         "datavalue"
     ]["value"]["id"] = "Q100"
 
-    invalid_claim_plan = plan_meta_wikibase_seed_baseline(
+    invalid_claim_plan = plan_wikibase_seed_baseline(
         current_entities_by_internal_name_identifier=invalid_claim_entities,
         entity_id_to_internal_name_identifier=entity_id_to_internal_name_identifier,
     )
@@ -605,7 +605,7 @@ def test_plan_meta_wikibase_seed_baseline_compares_live_state_and_requires_mul()
     assert "claims._instance_of" in (invalid_claim_entry.changed_fields or [])
 
 
-def test_compile_meta_wikibase_seed_uses_bottler_primitives(monkeypatch):
+def test_compile_wikibase_seed_uses_bottler_primitives(monkeypatch):
     call_counts = {"shell": 0, "claim": 0, "claim_from_datavalue": 0}
 
     original_build_entity_shell = bottler.EntityShellBuilder.build_entity_shell
@@ -669,7 +669,7 @@ def test_compile_meta_wikibase_seed_uses_bottler_primitives(monkeypatch):
         counting_create_claim_from_datavalue,
     )
 
-    compilation = compile_meta_wikibase_seed()
+    compilation = compile_wikibase_seed()
 
     assert len(compilation.entities) > 0
     assert call_counts["shell"] == len(compilation.entities)
@@ -677,8 +677,8 @@ def test_compile_meta_wikibase_seed_uses_bottler_primitives(monkeypatch):
     assert call_counts["claim_from_datavalue"] > 0
 
 
-def test_plan_meta_wikibase_seed_baseline_returns_dry_run_operations():
-    plan = plan_meta_wikibase_seed_baseline()
+def test_plan_wikibase_seed_baseline_returns_dry_run_operations():
+    plan = plan_wikibase_seed_baseline()
 
     assert isinstance(plan, MetaWikibaseSeedPlan)
     assert len(plan.operations) > 0
@@ -700,17 +700,17 @@ def test_wikibase_helpers_are_exported_from_package_namespace():
     assert hasattr(gkc, "WikibaseDatatypeSpec")
     assert hasattr(gkc, "MetaWikibaseSeedCompilation")
     assert hasattr(gkc, "MetaWikibaseSeedPlan")
-    assert hasattr(gkc, "build_meta_wikibase_init_index")
-    assert hasattr(gkc, "build_meta_wikibase_semantic_anchor_contract")
+    assert hasattr(gkc, "build_wikibase_init_index")
+    assert hasattr(gkc, "build_wikibase_semantic_anchor_contract")
     assert hasattr(gkc, "canonicalize_wikibase_datatype")
-    assert hasattr(gkc, "compile_meta_wikibase_seed")
-    assert hasattr(gkc, "get_meta_wikibase_init_entity")
+    assert hasattr(gkc, "compile_wikibase_seed")
+    assert hasattr(gkc, "get_wikibase_init_entity")
     assert hasattr(gkc, "get_wikibase_datatype_spec")
     assert hasattr(gkc, "is_known_wikibase_datatype")
     assert hasattr(gkc, "is_wikibase_item_datatype")
     assert hasattr(gkc, "list_wikibase_datatypes")
-    assert hasattr(gkc, "load_meta_wikibase_init_document")
+    assert hasattr(gkc, "load_wikibase_init_document")
     assert hasattr(gkc, "load_wikibase_datatype_registry")
     assert hasattr(gkc, "load_wikibase_datatype_registry_json")
-    assert hasattr(gkc, "normalize_meta_wikibase_init_document")
-    assert hasattr(gkc, "plan_meta_wikibase_seed_baseline")
+    assert hasattr(gkc, "normalize_wikibase_init_document")
+    assert hasattr(gkc, "plan_wikibase_seed_baseline")
