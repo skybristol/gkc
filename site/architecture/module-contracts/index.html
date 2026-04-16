@@ -1,0 +1,3363 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Data Distillery - A framework for data distillation toward the Global Knowledge Commons">
+      
+      
+      
+        <link rel="canonical" href="https://datadistillery.org/architecture/module-contracts/">
+      
+      
+        <link rel="prev" href="../meta-wikibase/wikibase-datatypes/">
+      
+      
+        <link rel="next" href="../still_charger/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../img/DataDistilleryFavIcon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.4">
+    
+    
+      
+        <title>Cross-Module Contracts - Data Distillery</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.484c7ddc.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/_mkdocstrings.css">
+    
+      <link rel="stylesheet" href="../../stylesheets/extra.css">
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    <body dir="ltr">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#cross-module-contracts-and-handoffs" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="Data Distillery" class="md-header__button md-logo" aria-label="Data Distillery" data-md-component="logo">
+      
+  <img src="../../img/DataDistilleryIconNight.png" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            Data Distillery
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Cross-Module Contracts
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/skybristol/gkc" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    skybristol/gkc
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="Data Distillery" class="md-nav__button md-logo" aria-label="Data Distillery" data-md-component="logo">
+      
+  <img src="../../img/DataDistilleryIconNight.png" alt="logo">
+
+    </a>
+    Data Distillery
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/skybristol/gkc" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    skybristol/gkc
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Data Curation Narratives
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Data Curation Narratives
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../tribes/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Tribal Governments
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Architecture
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../wikimedia-commons/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Wikimedia Commons
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3_3" id="__nav_3_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Meta-Wikibase
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Meta-Wikibase
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../meta-wikibase/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../meta-wikibase/DataDistillery-Wikibase/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Data Distillery Wikibase
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../meta-wikibase/semantic-anchors/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Semantic Anchors
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../meta-wikibase/wikibase-datatypes/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Wikibase Datatypes
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Cross-Module Contracts
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Cross-Module Contracts
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#purpose" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Purpose
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#boundary-summary" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Boundary Summary
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Boundary Summary">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#mash-gkcmash" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Mash (gkc.mash)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#spirit-safe-gkcspirit_safe" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Spirit Safe (gkc.spirit_safe)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#still-charger-gkcstill_charger" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Still Charger (gkc.still_charger)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#fermenter-gkcfermenter" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Fermenter (gkc.fermenter)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#wizard-gkcwizard" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Wizard (gkc.wizard)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#bottler-gkcbottler" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Bottler (gkc.bottler)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#shipper-gkcshipper" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Shipper (gkc.shipper)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#data-distillery-wikibase-semantics-architecture-layer" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Data Distillery Wikibase Semantics (Architecture Layer)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#handoff-flows" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Handoff Flows
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Handoff Flows">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#flow-1-semantic-cache-synchronization" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Flow 1: Semantic Cache Synchronization
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#flow-2-ontology-dogfooding-next-wave-entity-types" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Flow 2: Ontology Dogfooding (Next-Wave Entity Types)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#flow-25-shared-profile-to-write-planning-pipeline-active" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Flow 2.5: Shared Profile-to-Write Planning Pipeline (Active)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#flow-25a-profile-only-packet-wikibase-json-shell-generation-new" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Flow 2.5a: Profile-Only Packet Wikibase JSON Shell Generation (New)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#flow-26-spiritsafe-json-profile-materialization-active" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Flow 2.6: SpiritSafe JSON Profile Materialization (Active)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#flow-27-value-list-query-hydration-active" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Flow 2.7: Value-List Query Hydration (Active)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#flow-28-packet-re-entry-and-forward-migration-planned" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Flow 2.8: Packet Re-entry and Forward Migration (Planned)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#flow-3-semantic-projection-for-runtime-artifacts" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Flow 3: Semantic Projection for Runtime Artifacts
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#flow-4-sync-and-drift-management" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Flow 4: Sync and Drift Management
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#non-negotiable-contracts" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Non-Negotiable Contracts
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#decision-matrix-for-new-work" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Decision Matrix for New Work
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#current-gaps-to-revisit" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Current Gaps to Revisit
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#theoretical-design-notes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Theoretical Design Notes
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Theoretical Design Notes">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#execute-mode-safety-contract-planned" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Execute-Mode Safety Contract (Planned)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#handoff-summary-template-for-agent-to-agent-continuity" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Handoff Summary Template (for Agent-to-Agent Continuity)
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../still_charger/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Still Charger
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_6" >
+        
+          
+          <label class="md-nav__link" for="__nav_3_6" id="__nav_3_6_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SpiritSafe
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3_6">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    SpiritSafe
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../SpiritSafe/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../SpiritSafe/profile-loading/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Profile Loading
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../SpiritSafe/spirit_safe_models/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SpiritSafe Models & API
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../SpiritSafe/SpiritSafe-testing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SpiritSafe Testing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../validation-architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Validation Architecture
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    GKC Documentation
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    GKC Documentation
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../gkc/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../gkc/background/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Background
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../gkc/wikibase_ontology_orientation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Wikibase Ontology Orientation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../gkc/profiles/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Entity Profiles
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../gkc/mash/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Mash
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../gkc/entity-json-schema/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Entity JSON
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../gkc/wizard/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Wizard
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4_8" >
+        
+          
+          <label class="md-nav__link" for="__nav_4_8" id="__nav_4_8_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Getting Started
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_4_8_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4_8">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Getting Started
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../gkc/setup/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Setup and Orientation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../gkc/authentication/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Authentication
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4_9" >
+        
+          
+          <label class="md-nav__link" for="__nav_4_9" id="__nav_4_9_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Data Distillery Workflow
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_4_9_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4_9">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Data Distillery Workflow
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../gkc/shipping/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Shipping
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4_10" >
+        
+          
+          <label class="md-nav__link" for="__nav_4_10" id="__nav_4_10_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API Reference
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_4_10_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4_10">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    API Reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../gkc/api/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../gkc/api/auth/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Authentication
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../gkc/api/mash/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Mash
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../gkc/api/mash_formatters/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Mash Formatters
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../gkc/api/wikibase/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Wikibase
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../gkc/api/still_charger/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Still Charger
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../gkc/api/fermenter/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Fermenter
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../gkc/api/bottler/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Bottler
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../gkc/api/profiles/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Profiles
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../gkc/api/spirit_safe/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SpiritSafe
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../gkc/api/shex/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ShEx
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../gkc/api/shipper/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Shipper
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../gkc/api/sparql/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SPARQL
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4_11" >
+        
+          
+          <label class="md-nav__link" for="__nav_4_11" id="__nav_4_11_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Command Line Interface
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_4_11_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4_11">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Command Line Interface
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../gkc/cli/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../gkc/cli/auth/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Authentication
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../gkc/cli/mash/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Mash
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../gkc/cli/profiles/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Profile
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../gkc/cli/packet/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Packet
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../gkc/cli/spiritsafe/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SpiritSafe
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../gkc/cli/wizard/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Wizard
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../gkc/cli/shex/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ShEx
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4_12" >
+        
+          
+          <label class="md-nav__link" for="__nav_4_12" id="__nav_4_12_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Utilities and Tools
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_4_12_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4_12">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Utilities and Tools
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../gkc/utilities/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Utilities
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4_13" >
+        
+          
+          <label class="md-nav__link" for="__nav_4_13" id="__nav_4_13_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Development
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_4_13_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4_13">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Development
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../gkc/CI_CD/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CI/CD
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../gkc/RELEASE/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Release Process
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#purpose" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Purpose
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#boundary-summary" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Boundary Summary
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Boundary Summary">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#mash-gkcmash" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Mash (gkc.mash)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#spirit-safe-gkcspirit_safe" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Spirit Safe (gkc.spirit_safe)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#still-charger-gkcstill_charger" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Still Charger (gkc.still_charger)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#fermenter-gkcfermenter" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Fermenter (gkc.fermenter)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#wizard-gkcwizard" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Wizard (gkc.wizard)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#bottler-gkcbottler" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Bottler (gkc.bottler)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#shipper-gkcshipper" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Shipper (gkc.shipper)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#data-distillery-wikibase-semantics-architecture-layer" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Data Distillery Wikibase Semantics (Architecture Layer)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#handoff-flows" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Handoff Flows
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Handoff Flows">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#flow-1-semantic-cache-synchronization" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Flow 1: Semantic Cache Synchronization
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#flow-2-ontology-dogfooding-next-wave-entity-types" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Flow 2: Ontology Dogfooding (Next-Wave Entity Types)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#flow-25-shared-profile-to-write-planning-pipeline-active" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Flow 2.5: Shared Profile-to-Write Planning Pipeline (Active)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#flow-25a-profile-only-packet-wikibase-json-shell-generation-new" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Flow 2.5a: Profile-Only Packet Wikibase JSON Shell Generation (New)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#flow-26-spiritsafe-json-profile-materialization-active" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Flow 2.6: SpiritSafe JSON Profile Materialization (Active)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#flow-27-value-list-query-hydration-active" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Flow 2.7: Value-List Query Hydration (Active)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#flow-28-packet-re-entry-and-forward-migration-planned" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Flow 2.8: Packet Re-entry and Forward Migration (Planned)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#flow-3-semantic-projection-for-runtime-artifacts" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Flow 3: Semantic Projection for Runtime Artifacts
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#flow-4-sync-and-drift-management" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Flow 4: Sync and Drift Management
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#non-negotiable-contracts" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Non-Negotiable Contracts
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#decision-matrix-for-new-work" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Decision Matrix for New Work
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#current-gaps-to-revisit" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Current Gaps to Revisit
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#theoretical-design-notes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Theoretical Design Notes
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Theoretical Design Notes">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#execute-mode-safety-contract-planned" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Execute-Mode Safety Contract (Planned)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#handoff-summary-template-for-agent-to-agent-continuity" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Handoff Summary Template (for Agent-to-Agent Continuity)
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="cross-module-contracts-and-handoffs">Cross-Module Contracts and Handoffs</h1>
+<h2 id="purpose">Purpose</h2>
+<p>This document defines the current architectural contract between <code>mash</code>, <code>spirit_safe</code>, <code>still_charger</code>, <code>fermenter</code>, <code>wizard</code>, <code>bottler</code>, <code>shipper</code>, and <code>wikibase</code> for Data Distillery and broader GKC workflows.</p>
+<p>It is written as a practical anti-reinvention guide for contributors and custom agents.</p>
+<p>Infrastructure perspective for these module boundaries:</p>
+<ul>
+<li>Data Distillery Wikibase defines semantic foundation (profiles, statements, value-list semantics).</li>
+<li>SpiritSafe materializes those semantics as deterministic artifacts.</li>
+<li><code>gkc</code> modules execute packet assembly, validation/coercion, planning, and shipping from those artifacts.</li>
+</ul>
+<p>Contract clarification (active direction):</p>
+<ul>
+<li>JSON Entity Profiles materialized from DD Wikibase semantics are the only active profile runtime contract.</li>
+<li>YAML-era profile loading/validation/generation is superseded and retained only as temporary legacy surface pending removal.</li>
+<li>Runtime validation/coercion ownership is centralized in <code>fermenter</code>.</li>
+<li>Wizard runtime ownership is centralized in <code>wizard</code>.</li>
+<li>No compatibility aliasing should be introduced between <code>gkc.profiles.forms.*</code> and <code>gkc.wizard.*</code>.</li>
+</ul>
+<h2 id="boundary-summary">Boundary Summary</h2>
+<h3 id="mash-gkcmash">Mash (<code>gkc.mash</code>)</h3>
+<p>Responsibility:</p>
+<ul>
+<li>Read and retrieve source data from Wikibase/Wikidata-compatible APIs.</li>
+<li>Return stable template structures for downstream processing.</li>
+<li>Provide generic API helpers reusable across Data Distillery and Wikidata.</li>
+</ul>
+<p>Out of scope:</p>
+<ul>
+<li>Write or edit operations to remote systems.</li>
+<li>Semantic projection and packaging contracts for runtime artifacts.</li>
+</ul>
+<p>Current anchor surface:</p>
+<ul>
+<li><code>WikibaseApiClient</code></li>
+<li><code>WikibaseLoader</code></li>
+<li><code>WikipediaLoader</code></li>
+</ul>
+<h3 id="spirit-safe-gkcspirit_safe">Spirit Safe (<code>gkc.spirit_safe</code>)</h3>
+<p>Responsibility:</p>
+<ul>
+<li>Load SpiritSafe profile sources (GitHub or local).</li>
+<li>Build JSON Entity Profiles from SpiritSafe cache entities.</li>
+<li>Extract value-list talk-page payload blocks based on value-list classification.</li>
+<li>Hydrate value-list cache artifacts from extracted SPARQL queries.</li>
+<li>Export profile JSON artifacts for downstream packet assembly and hydration.</li>
+<li>Provide profile graph metadata and profile-loading utilities.</li>
+<li>Publish artifact metadata needed to compare long-lived curation packets against the SpiritSafe state from which they were minted.</li>
+</ul>
+<p>Out of scope:</p>
+<ul>
+<li>Direct write execution to Wikibase APIs.</li>
+<li>UI-specific packet interpretation behavior.</li>
+</ul>
+<p>Current anchor surface:</p>
+<ul>
+<li><code>build_entity_profile_json_documents</code></li>
+<li><code>export_entity_profile_json_documents</code></li>
+<li><code>discover_value_list_ids</code></li>
+<li><code>export_value_list_sparql_queries</code></li>
+<li><code>hydrate_value_lists_from_cache</code></li>
+<li><code>load_profile</code></li>
+</ul>
+<p>Transition-only legacy surface (deferred removal):</p>
+<ul>
+<li><code>validate_packet_structure</code></li>
+</ul>
+<h3 id="still-charger-gkcstill_charger">Still Charger (<code>gkc.still_charger</code>)</h3>
+<p>Responsibility:</p>
+<ul>
+<li>Assemble curation packet scaffolds from Entity Profile JSON documents.</li>
+<li>Charge packet entities from source values (Wikidata and other adapters).</li>
+<li>Inject per-entity source provenance into packet metadata for charged packets.</li>
+<li>Reseal packet metadata digest after charge-time metadata mutation.</li>
+<li>Orchestrate packet conformance section assembly from fermenter primitives.</li>
+</ul>
+<p>Out of scope:</p>
+<ul>
+<li>Target payload shaping for any specific destination API.</li>
+<li>API transport execution.</li>
+<li>Validation semantics and outcome interpretation.</li>
+</ul>
+<p>Current anchor surface:</p>
+<ul>
+<li><code>create_curation_packet</code></li>
+<li><code>build_curation_packet_from_json_profile</code></li>
+<li><code>charge_packet_from_wikidata_items</code> (active Wikidata charging path)</li>
+<li><code>ChargeReport</code></li>
+<li><code>ChargeIssue</code></li>
+</ul>
+<p>Legacy surface (preserved for existing integrations; new workflows should use <code>charge_packet_from_wikidata_items</code>):</p>
+<ul>
+<li><code>charge_curation_packet</code></li>
+</ul>
+<h3 id="fermenter-gkcfermenter">Fermenter (<code>gkc.fermenter</code>)</h3>
+<p>Responsibility:</p>
+<ul>
+<li>Validate and coerce inbound values using profile-defined directives.</li>
+<li>Provide atomic datatype validators and coercion primitives.</li>
+<li>Enforce fixed values, value-list constraints, and full statement-shape constraints (value + qualifiers + references).</li>
+<li>Enforce derived-value constraints (for example, reference/qualifier values sourced from parent statement values).</li>
+<li>Validate packet-level compatibility and lifecycle conformance for long-lived curation packets.</li>
+<li>Emit shared <code>ConformanceNotice</code> records with actionable feedback.</li>
+<li>Serialize packet-facing statement conformance records from atomic statement evaluations.</li>
+</ul>
+<p>Out of scope:</p>
+<ul>
+<li>Packet assembly and packet orchestration.</li>
+<li>Destination-specific payload shaping and transport execution.</li>
+</ul>
+<p>Current anchor surface:</p>
+<ul>
+<li><code>ConformanceNotice</code></li>
+<li><code>ConformanceOutcome</code> (evaluation outcome contract under active refinement; packet-facing record migration tracked in #200)</li>
+<li><code>StatementEvaluation</code></li>
+<li><code>EntityEvaluation</code></li>
+<li><code>ValidationResult</code></li>
+<li><code>validate_*</code> datatype validators</li>
+<li><code>coerce_*</code> datatype coercers</li>
+<li><code>normalize_claim_value</code></li>
+<li><code>evaluate_statement_claim</code></li>
+<li><code>evaluate_statement_instance</code></li>
+<li><code>evaluate_entity</code></li>
+<li><code>statement_evaluation_to_record</code></li>
+<li><code>conformance_notice_payloads</code></li>
+<li><code>check_packet_integrity</code></li>
+<li><code>validate_packet_inline</code></li>
+<li><code>validate_packet_from_file</code></li>
+</ul>
+<h3 id="wizard-gkcwizard">Wizard (<code>gkc.wizard</code>)</h3>
+<p>Responsibility:</p>
+<ul>
+<li>Own interactive wizard runtime and UI orchestration.</li>
+<li>Render profile-driven curation flows from packet/profile artifacts.</li>
+<li>Consume <code>still_charger</code> packet assembly/charging outputs and <code>fermenter</code> conformance outputs.</li>
+<li>Manage wizard-only state and UX helpers (for example draft persistence and packet-to-view adapters).</li>
+</ul>
+<p>Out of scope:</p>
+<ul>
+<li>Runtime validation/coercion rule ownership.</li>
+<li>Packet scaffold assembly ownership.</li>
+<li>SpiritSafe artifact translation/materialization ownership.</li>
+</ul>
+<p>Current anchor surface:</p>
+<ul>
+<li>Top-level CLI entry <code>gkc wizard</code> (public contract).</li>
+<li>Streamlit app runtime and wizard step orchestration modules.</li>
+</ul>
+<p>Implementation note:</p>
+<ul>
+<li>Wizard runtime is implemented under <code>gkc.wizard</code>.</li>
+</ul>
+<h3 id="bottler-gkcbottler">Bottler (<code>gkc.bottler</code>)</h3>
+<p>Responsibility:</p>
+<ul>
+<li>Provide canonical Wikibase JSON construction primitives for all claim/statement building.</li>
+<li>Transform values and mapping recipes into Wikibase payload structures (datavalues, snaks, claims).</li>
+<li>Build deterministic, multilingual label/description/alias blocks from profile metadata.</li>
+<li>Build Wikibase entity shells from profile metadata for profile-only packet generation.</li>
+<li>All consuming code must use bottler primitives rather than building JSON inline.</li>
+</ul>
+<p>Out of scope:</p>
+<ul>
+<li>Remote API transport and authentication session management.</li>
+<li>Registry synchronization and semantic drift management.</li>
+<li>Validation and coercion logic (handled by fermenter).</li>
+</ul>
+<p>Current anchor surface:</p>
+<ul>
+<li><code>DataTypeTransformer</code> (static methods for datatype conversion)</li>
+<li><code>SnakBuilder</code> (atomic snak construction with datatypes)</li>
+<li><code>ClaimBuilder</code> (complete statement building with qualifiers/references)</li>
+<li><code>LanguageBuilder</code> (multilingual label/description/alias block building)</li>
+<li><code>EntityShellBuilder</code> (Wikibase entity shell building from profile metadata)</li>
+<li><code>normalize_claim_datavalue</code> (value-to-datatype mapping utility)</li>
+<li><code>build_claim_from_property_and_value</code> (convenience statement builder)</li>
+<li><code>Distillate</code> (end-to-end mapping configuration container)</li>
+</ul>
+<h3 id="shipper-gkcshipper">Shipper (<code>gkc.shipper</code>)</h3>
+<p>Responsibility:</p>
+<ul>
+<li>Execute write operations against Wikibase-compatible APIs.</li>
+<li>Enforce write safety behavior (summary checks, dry-run paths, request shaping).</li>
+<li>Provide plan/preview behavior for create/update/no-op decisions.</li>
+<li>Support writes to any Wikibase instance (Wikidata, Data Distillery, etc.).</li>
+</ul>
+<p>Out of scope:</p>
+<ul>
+<li>Generic read-model ownership (belongs to mash).</li>
+<li>Semantic modeling and profile ontology design ownership (belongs to DD Wikibase ontology assets and SpiritSafe profile artifacts).</li>
+</ul>
+<p>Current anchor surface:</p>
+<ul>
+<li><code>WikibaseShipper</code> (works with any Wikibase instance)</li>
+<li><code>CommonsShipper</code> (placeholder)</li>
+<li><code>OpenStreetMapShipper</code> (placeholder)</li>
+<li><code>DiffPlan</code>, <code>DiffOperation</code>, <code>WriteResult</code></li>
+</ul>
+<h3 id="data-distillery-wikibase-semantics-architecture-layer">Data Distillery Wikibase Semantics (Architecture Layer)</h3>
+<p>Responsibility:</p>
+<ul>
+<li>Data Distillery semantic backbone and ontology governance.</li>
+<li>Authoritative semantic definitions consumed by cache/materialization pipelines.</li>
+<li>Architectural source of truth for profile semantics.</li>
+</ul>
+<p>Out of scope:</p>
+<ul>
+<li>Reimplementing generic read client logic.</li>
+<li>Reimplementing generic write transport logic.</li>
+</ul>
+<p>Current anchor surface:</p>
+<ul>
+<li>SpiritSafe cache entities and generated profile artifacts</li>
+<li>Mash recentchanges polling and cache refresh commands</li>
+<li>Shipper write execution paths when programmatic writes are required</li>
+</ul>
+<h2 id="handoff-flows">Handoff Flows</h2>
+<h3 id="flow-1-semantic-cache-synchronization">Flow 1: Semantic Cache Synchronization</h3>
+<ol>
+<li><code>mash</code> polls MediaWiki recentchanges for Wikibase entity updates.</li>
+<li><code>mash</code> refreshes per-entity cache artifacts in SpiritSafe format.</li>
+<li><code>spirit_safe</code> materializes JSON profile artifacts from cache entities.</li>
+<li>Downstream packet and validation flows consume those artifacts.</li>
+</ol>
+<h3 id="flow-2-ontology-dogfooding-next-wave-entity-types">Flow 2: Ontology Dogfooding (Next-Wave Entity Types)</h3>
+<ol>
+<li>Profile definitions describe ontology entities to provision.</li>
+<li><code>wikibase</code> orchestration resolves desired vs existing state.</li>
+<li><code>mash</code> performs lookup/reconciliation reads.</li>
+<li><code>bottler</code> and <code>wikibase</code> orchestration shape payload structures.</li>
+<li><code>shipper</code> performs dry-run/execute writes.</li>
+</ol>
+<h3 id="flow-25-shared-profile-to-write-planning-pipeline-active">Flow 2.5: Shared Profile-to-Write Planning Pipeline (Active)</h3>
+<ol>
+<li><code>spirit_safe</code> loads and exports JSON Entity Profiles and value-list cache artifacts.</li>
+<li><code>still_charger</code> assembles curation packets from profile JSON using bottler's EntityShellBuilder to build canonical Wikibase JSON entity shells for profile-only packets.</li>
+<li><code>fermenter</code> evaluates atomic statement instances (including qualifiers/references), coerces values, and serializes packet-facing conformance records.</li>
+<li><code>shipper</code> computes create/update/no-op diff plans and executes writes when enabled.</li>
+</ol>
+<h3 id="flow-25a-profile-only-packet-wikibase-json-shell-generation-new">Flow 2.5a: Profile-Only Packet Wikibase JSON Shell Generation (New)</h3>
+<ol>
+<li><code>still_charger</code> calls bottler's <code>EntityShellBuilder</code> during <code>build_curation_packet_from_json_profile</code>.</li>
+<li>For each profile in the packet, bottler extracts identification metadata (labels/descriptions/aliases) and statement property IDs.</li>
+<li>Bottler builds canonical Wikibase entity shells with:</li>
+<li>Language-keyed labels, descriptions, aliases blocks</li>
+<li>Empty claims dictionary with deterministically sorted property IDs</li>
+<li>Shells are embedded in <code>data.entities[*].entity</code> for deterministic, shape-consistent packet generation.</li>
+<li>Profile-only packets require no charging and can proceed directly to fermenter validation.</li>
+<li>Charged packets (with Wikidata values) merge this shell with charged statement instances.</li>
+</ol>
+<h3 id="flow-26-spiritsafe-json-profile-materialization-active">Flow 2.6: SpiritSafe JSON Profile Materialization (Active)</h3>
+<ol>
+<li><code>mash</code> refreshes and reconciles per-entity cache files.</li>
+<li><code>spirit_safe</code> builds JSON Entity Profiles from <code>still/entities</code> artifacts.</li>
+<li><code>spirit_safe</code> exports per-profile JSON files (for example <code>still/profiles/Q4.json</code>).</li>
+<li>Downstream packet/hydration stages consume exported profile artifacts.</li>
+</ol>
+<h3 id="flow-27-value-list-query-hydration-active">Flow 2.7: Value-List Query Hydration (Active)</h3>
+<ol>
+<li><code>spirit_safe</code> discovers value-list entities and resolves list class semantics.</li>
+<li><code>mash</code> reads value-list talk pages and extracts class-coupled payload blocks.</li>
+<li>For <code>sparql_value_list</code>, <code>spirit_safe</code> writes the first <code>&lt;sparql&gt;</code> block to <code>still/value_lists/queries/&lt;QID&gt;.sparql</code>.</li>
+<li>For <code>embedded_value_list</code>, <code>spirit_safe</code> writes the first <code>&lt;syntaxhighlight lang="json"&gt;</code> block to <code>still/value_lists/cache/&lt;QID&gt;.json</code>.</li>
+<li>If a watched talk-page block is deleted, the corresponding materialized artifact is removed on the next sync.</li>
+<li>SPARQL hydration runs as a separate step for SPARQL-backed lists and does not overwrite cache on failed refresh.</li>
+<li>Meta-Wikibase conformance checks compare against the materialized SpiritSafe query/cache artifacts rather than the live Wikibase talk pages.</li>
+</ol>
+<h3 id="flow-28-packet-re-entry-and-forward-migration-planned">Flow 2.8: Packet Re-entry and Forward Migration (Planned)</h3>
+<ol>
+<li><code>still_charger</code> or another caller loads a previously minted curation packet.</li>
+<li><code>fermenter</code> validates packet type/shape first; structural/type failures are hard blockers.</li>
+<li><code>spirit_safe</code> provides current profile/value-list artifact metadata for compatibility comparison.</li>
+<li>Network-backed semantic revision context may be added in the future when needed.</li>
+<li><code>fermenter</code> classifies drift (<code>patch_compatible</code>, <code>minor_compatible</code>, <code>migration_required</code>, <code>breaking</code>) and applies approved migration transforms when available.</li>
+<li><code>fermenter</code> re-validates the packet after migration and emits compatibility notices plus migration report data.</li>
+<li>Downstream write-planning and shipping proceed only if the packet remains structurally valid and any required migration succeeded.</li>
+</ol>
+<h3 id="flow-3-semantic-projection-for-runtime-artifacts">Flow 3: Semantic Projection for Runtime Artifacts</h3>
+<ol>
+<li><code>mash</code> retrieves semantic entities and related metadata.</li>
+<li>Runtime orchestration applies current write-planning transformations.</li>
+<li><code>bottler</code> shapes final claim/snak structures where transport payload format is required.</li>
+<li>Artifacts are validated against SpiritSafe/runtime schema contracts.</li>
+<li>Runtime manifests track projection provenance and drift metadata.</li>
+</ol>
+<h3 id="flow-4-sync-and-drift-management">Flow 4: Sync and Drift Management</h3>
+<ol>
+<li><code>mash</code> reads revision/update baselines.</li>
+<li><code>shipper.plan_batch</code> computes deterministic write-operation diffs.</li>
+<li>Runtime sync policy applies conflict strategy.</li>
+<li><code>shipper</code> executes writes when sync direction targets remote Wikibase.</li>
+<li>Reports and manifest metadata are emitted for traceability.</li>
+</ol>
+<h2 id="non-negotiable-contracts">Non-Negotiable Contracts</h2>
+<ul>
+<li>Do not add a new generic Wikibase client outside <code>gkc.mash</code>.</li>
+<li>Do not bypass <code>shipper</code> for Wikibase write execution paths.</li>
+<li>Keep SpiritSafe runtime contracts stable and testable.</li>
+<li>Preserve offline-first behavior: network-backed enhancement must not break cache-only operation.</li>
+<li>Preserve JSON profile export determinism (stable ordering and artifact path shape).</li>
+<li>Treat packet type/shape conformance as the primary hard blocker; other conformance failures should default to actionable notices unless policy explicitly escalates them.</li>
+<li>Do not add bridge/shim module aliases that preserve <code>gkc.profiles.forms.*</code> as a shadow wizard API.</li>
+<li>Do not add new runtime validation/coercion logic under <code>gkc.profiles.*</code>.</li>
+</ul>
+<h2 id="decision-matrix-for-new-work">Decision Matrix for New Work</h2>
+<p>When adding new functionality, assign ownership using this matrix:</p>
+<ul>
+<li>Need to fetch/query source entity data? -&gt; <code>mash</code></li>
+<li>Need to build/export profile JSON artifacts from SpiritSafe cache entities? -&gt; <code>spirit_safe</code></li>
+<li>Need to assemble curation packets from profile JSON and populate them with source values? -&gt; <code>still_charger</code></li>
+<li>Need atomic validation/coercion and conformance notices? -&gt; <code>fermenter</code></li>
+<li>Need to build/shape values into claim/snak/payload structures? -&gt; <code>bottler</code></li>
+<li>Need schema/specification retrieval? -&gt; <code>mash</code></li>
+<li>Need to execute write operations to external APIs? -&gt; <code>shipper</code></li>
+<li>Need Data Distillery semantic orchestration or ontology conformance? -&gt; DD Wikibase ontology + SpiritSafe artifacts</li>
+</ul>
+<h2 id="current-gaps-to-revisit">Current Gaps to Revisit</h2>
+<ul>
+<li>Boundaries between wikibase write planning and bottler transformation stages still need explicit acceptance criteria.</li>
+<li>Cross-module tests should identify failure source by layer (read, transform, payload-shape, write, orchestration).</li>
+<li>Packet compatibility metadata, change classification, and forward-migration rules for long-lived offline packets remain to be implemented.</li>
+</ul>
+<p>Additional contract-alignment gaps:</p>
+<ul>
+<li>Packet <code>data</code> remains transitional hybrid shape in current runtime implementation and must be normalized per #200 contract direction.</li>
+<li>Still charger should not patch fermenter record fields post-serialization; missing fields must be addressed in fermenter-owned serializer contracts.</li>
+</ul>
+<p>Additional active boundary cleanup:</p>
+<ul>
+<li>The old YAML-era <code>gkc.profiles</code> runtime path (<code>loaders</code>, <code>generators</code>, <code>validation</code>, and related CLI surfaces) is superseded and should be removed unless a concrete retained consumer is explicitly approved.</li>
+<li><code>GKCEntityProfile</code> should be integrated with fermenter-owned validation/coercion pathways (including Pydantic-backed validation surfaces where applicable).</li>
+<li>Core architecture classes should remain explicit and aligned with top-level components: <code>GKCEntityProfile</code>, <code>GKCEntityStatement</code>, <code>GKCValueList</code>, and <code>GKCCurationPacket</code>.</li>
+</ul>
+<h2 id="theoretical-design-notes">Theoretical Design Notes</h2>
+<h3 id="execute-mode-safety-contract-planned">Execute-Mode Safety Contract (Planned)</h3>
+<p>This section documents the intended cross-module safety contract for execute mode. It is not fully implemented yet.</p>
+<p>Required sequence:</p>
+<ol>
+<li><code>wikibase</code> builds plan artifacts through the shared packet pipeline.</li>
+<li><code>shipper.plan_batch</code> produces create/update/no-op/blocked preview.</li>
+<li>caller explicitly confirms execute intent.</li>
+<li><code>shipper</code> performs writes with summary/auth/bot context.</li>
+<li><code>wikibase</code> emits execution report with provenance and failure localization.</li>
+</ol>
+<p>Non-negotiable execution guardrails:</p>
+<ul>
+<li>no implicit writes from planning commands</li>
+<li>explicit execute flag required for write calls</li>
+<li>authenticated mode required when policy or target instance requires it</li>
+<li>dry-run report shape should mirror execute report shape for parity</li>
+<li>failures should remain attributable to layer (charge, barrel, shipper, orchestration)</li>
+</ul>
+<p>Open design questions:</p>
+<ul>
+<li>whether write execution should stop-on-first-failure or continue-and-report</li>
+<li>whether execute should consume only on-disk plan artifacts or in-memory plan results</li>
+<li>whether operation idempotency checks belong only in shipper or in both shipper and orchestration</li>
+</ul>
+<h2 id="handoff-summary-template-for-agent-to-agent-continuity">Handoff Summary Template (for Agent-to-Agent Continuity)</h2>
+<p>Use this concise structure when handing work from one module owner to another:</p>
+<ul>
+<li>Scope completed:</li>
+<li>Module touched:</li>
+<li>Public contracts used:</li>
+<li>Assumptions made:</li>
+<li>Open risks:</li>
+<li>Next owning module:</li>
+<li>Inputs required for next step:</li>
+</ul>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.instant", "navigation.sections", "navigation.top", "toc.follow", "content.code.copy"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.79ae519e.min.js"></script>
+      
+        <script src="https://unpkg.com/mermaid@10.6.1/dist/mermaid.min.js"></script>
+      
+        <script src="../../javascripts/mermaid-init.js"></script>
+      
+    
+  </body>
+</html>

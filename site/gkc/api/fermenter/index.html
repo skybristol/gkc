@@ -1,0 +1,4073 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Data Distillery - A framework for data distillation toward the Global Knowledge Commons">
+      
+      
+      
+        <link rel="canonical" href="https://datadistillery.org/gkc/api/fermenter/">
+      
+      
+        <link rel="prev" href="../still_charger/">
+      
+      
+        <link rel="next" href="../bottler/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../../img/DataDistilleryFavIcon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.4">
+    
+    
+      
+        <title>Fermenter - Data Distillery</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../../assets/stylesheets/main.484c7ddc.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../../../assets/_mkdocstrings.css">
+    
+      <link rel="stylesheet" href="../../../stylesheets/extra.css">
+    
+    <script>__md_scope=new URL("../../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    <body dir="ltr">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#fermenter-api" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../../.." title="Data Distillery" class="md-header__button md-logo" aria-label="Data Distillery" data-md-component="logo">
+      
+  <img src="../../../img/DataDistilleryIconNight.png" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            Data Distillery
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Fermenter
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/skybristol/gkc" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    skybristol/gkc
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../../.." title="Data Distillery" class="md-nav__button md-logo" aria-label="Data Distillery" data-md-component="logo">
+      
+  <img src="../../../img/DataDistilleryIconNight.png" alt="logo">
+
+    </a>
+    Data Distillery
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/skybristol/gkc" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    skybristol/gkc
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Data Curation Narratives
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Data Curation Narratives
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../tribes/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Tribal Governments
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Architecture
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../architecture/wikimedia-commons/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Wikimedia Commons
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3_3" id="__nav_3_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Meta-Wikibase
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Meta-Wikibase
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../architecture/meta-wikibase/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../architecture/meta-wikibase/DataDistillery-Wikibase/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Data Distillery Wikibase
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../architecture/meta-wikibase/semantic-anchors/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Semantic Anchors
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../architecture/meta-wikibase/wikibase-datatypes/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Wikibase Datatypes
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../architecture/module-contracts/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Cross-Module Contracts
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../architecture/still_charger/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Still Charger
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_6" >
+        
+          
+          <label class="md-nav__link" for="__nav_3_6" id="__nav_3_6_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SpiritSafe
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3_6">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    SpiritSafe
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../architecture/SpiritSafe/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../architecture/SpiritSafe/profile-loading/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Profile Loading
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../architecture/SpiritSafe/spirit_safe_models/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SpiritSafe Models & API
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../architecture/SpiritSafe/SpiritSafe-testing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SpiritSafe Testing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../architecture/validation-architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Validation Architecture
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    GKC Documentation
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    GKC Documentation
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../background/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Background
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../wikibase_ontology_orientation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Wikibase Ontology Orientation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../profiles/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Entity Profiles
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../mash/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Mash
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../entity-json-schema/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Entity JSON
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../wizard/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Wizard
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4_8" >
+        
+          
+          <label class="md-nav__link" for="__nav_4_8" id="__nav_4_8_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Getting Started
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_4_8_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4_8">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Getting Started
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../setup/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Setup and Orientation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../authentication/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Authentication
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4_9" >
+        
+          
+          <label class="md-nav__link" for="__nav_4_9" id="__nav_4_9_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Data Distillery Workflow
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_4_9_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4_9">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Data Distillery Workflow
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../shipping/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Shipping
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4_10" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_4_10" id="__nav_4_10_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API Reference
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_4_10_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_4_10">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    API Reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../auth/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Authentication
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../mash/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Mash
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../mash_formatters/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Mash Formatters
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../wikibase/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Wikibase
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../still_charger/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Still Charger
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Fermenter
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Fermenter
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#overview" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Overview
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#semantic-anchor-validation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Semantic Anchor Validation
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Semantic Anchor Validation">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#validate_semantic_anchor_documentanchor_document-internal_name_identifier_prefixnone-current_anchor_documentnone" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        validate_semantic_anchor_document(anchor_document, *, internal_name_identifier_prefix=None, current_anchor_document=None)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#conformancenotice" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ConformanceNotice
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#datatype-validators" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Datatype Validators
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Datatype Validators">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#validate_by_datatypedatatype-value" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        validate_by_datatype(datatype, value)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#validation-policy-structure-online-tiers" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Validation Policy (Structure + Online Tiers)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#validate_wikibase_itemvalue" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        validate_wikibase_item(value)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#validate_stringvalue" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        validate_string(value)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#validate_with_patternvalue-pattern-flags0" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        validate_with_pattern(value, pattern, *, flags=0)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#validate_monolingualtextvalue" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        validate_monolingualtext(value)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#validate_urlvalue" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        validate_url(value)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#validate_timevalue" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        validate_time(value)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#validate_quantityvalue" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        validate_quantity(value)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#validate_globe_coordinatevalue" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        validate_globe_coordinate(value)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#validate_commons_mediavalue" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        validate_commons_media(value)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#value-list-validation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Value List Validation
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Value List Validation">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#validate_value_from_listvalue-value_list_path-match_policy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        validate_value_from_list(value, value_list_path, match_policy)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#fixed-value-enforcement" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Fixed Value Enforcement
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Fixed Value Enforcement">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#enforce_fixed_valueuser_value-fixed_value-statement_ref" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        enforce_fixed_value(user_value, fixed_value, statement_ref)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#conformance-outcome-types" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Conformance Outcome Types
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Conformance Outcome Types">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#conformanceoutcome" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ConformanceOutcome
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#statementevaluation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        StatementEvaluation
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#entityevaluation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        EntityEvaluation
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#statement-and-entity-evaluation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Statement and Entity Evaluation
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Statement and Entity Evaluation">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#normalize_claim_valueraw_claim-data_type" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        normalize_claim_value(raw_claim, data_type)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#evaluate_statement_claimprofile_statement-raw_claim_list-entity_ref-value_list_rootnone" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        evaluate_statement_claim(profile_statement, raw_claim_list, *, entity_ref="", value_list_root=None)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#evaluate_statement_instanceprofile_statement-raw_claim-entity_ref-value_list_rootnone" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        evaluate_statement_instance(profile_statement, raw_claim, *, entity_ref="", value_list_root=None)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#statement_evaluation_to_recordevaluation-profile_statement-entity_id-json_path" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        statement_evaluation_to_record(evaluation, profile_statement, *, entity_id, json_path)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#evaluate_entityprofile_statements-wikidata_item-io_map_index-entity_ref-value_list_rootnone" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        evaluate_entity(profile_statements, wikidata_item, *, io_map_index, entity_ref="", value_list_root=None)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#packet-integrity-and-validation-entry-points" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Packet Integrity and Validation Entry Points
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Packet Integrity and Validation Entry Points">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#check_packet_integritypacket" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        check_packet_integrity(packet)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#validate_packet_inlinepacket-value_list_rootnone" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        validate_packet_inline(packet, *, value_list_root=None)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#validate_packet_from_filepath-value_list_rootnone" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        validate_packet_from_file(path, *, value_list_root=None)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#local-test-coverage" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Local Test Coverage
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../bottler/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Bottler
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../profiles/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Profiles
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../spirit_safe/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SpiritSafe
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../shex/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ShEx
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../shipper/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Shipper
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../sparql/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SPARQL
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4_11" >
+        
+          
+          <label class="md-nav__link" for="__nav_4_11" id="__nav_4_11_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Command Line Interface
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_4_11_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4_11">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Command Line Interface
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../cli/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../cli/auth/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Authentication
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../cli/mash/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Mash
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../cli/profiles/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Profile
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../cli/packet/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Packet
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../cli/spiritsafe/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SpiritSafe
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../cli/wizard/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Wizard
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../cli/shex/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ShEx
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4_12" >
+        
+          
+          <label class="md-nav__link" for="__nav_4_12" id="__nav_4_12_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Utilities and Tools
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_4_12_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4_12">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Utilities and Tools
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../utilities/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Utilities
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4_13" >
+        
+          
+          <label class="md-nav__link" for="__nav_4_13" id="__nav_4_13_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Development
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_4_13_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4_13">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Development
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../CI_CD/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CI/CD
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../RELEASE/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Release Process
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#overview" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Overview
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#semantic-anchor-validation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Semantic Anchor Validation
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Semantic Anchor Validation">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#validate_semantic_anchor_documentanchor_document-internal_name_identifier_prefixnone-current_anchor_documentnone" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        validate_semantic_anchor_document(anchor_document, *, internal_name_identifier_prefix=None, current_anchor_document=None)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#conformancenotice" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ConformanceNotice
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#datatype-validators" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Datatype Validators
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Datatype Validators">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#validate_by_datatypedatatype-value" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        validate_by_datatype(datatype, value)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#validation-policy-structure-online-tiers" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Validation Policy (Structure + Online Tiers)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#validate_wikibase_itemvalue" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        validate_wikibase_item(value)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#validate_stringvalue" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        validate_string(value)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#validate_with_patternvalue-pattern-flags0" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        validate_with_pattern(value, pattern, *, flags=0)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#validate_monolingualtextvalue" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        validate_monolingualtext(value)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#validate_urlvalue" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        validate_url(value)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#validate_timevalue" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        validate_time(value)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#validate_quantityvalue" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        validate_quantity(value)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#validate_globe_coordinatevalue" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        validate_globe_coordinate(value)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#validate_commons_mediavalue" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        validate_commons_media(value)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#value-list-validation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Value List Validation
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Value List Validation">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#validate_value_from_listvalue-value_list_path-match_policy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        validate_value_from_list(value, value_list_path, match_policy)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#fixed-value-enforcement" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Fixed Value Enforcement
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Fixed Value Enforcement">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#enforce_fixed_valueuser_value-fixed_value-statement_ref" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        enforce_fixed_value(user_value, fixed_value, statement_ref)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#conformance-outcome-types" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Conformance Outcome Types
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Conformance Outcome Types">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#conformanceoutcome" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ConformanceOutcome
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#statementevaluation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        StatementEvaluation
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#entityevaluation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        EntityEvaluation
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#statement-and-entity-evaluation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Statement and Entity Evaluation
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Statement and Entity Evaluation">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#normalize_claim_valueraw_claim-data_type" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        normalize_claim_value(raw_claim, data_type)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#evaluate_statement_claimprofile_statement-raw_claim_list-entity_ref-value_list_rootnone" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        evaluate_statement_claim(profile_statement, raw_claim_list, *, entity_ref="", value_list_root=None)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#evaluate_statement_instanceprofile_statement-raw_claim-entity_ref-value_list_rootnone" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        evaluate_statement_instance(profile_statement, raw_claim, *, entity_ref="", value_list_root=None)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#statement_evaluation_to_recordevaluation-profile_statement-entity_id-json_path" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        statement_evaluation_to_record(evaluation, profile_statement, *, entity_id, json_path)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#evaluate_entityprofile_statements-wikidata_item-io_map_index-entity_ref-value_list_rootnone" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        evaluate_entity(profile_statements, wikidata_item, *, io_map_index, entity_ref="", value_list_root=None)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#packet-integrity-and-validation-entry-points" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Packet Integrity and Validation Entry Points
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Packet Integrity and Validation Entry Points">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#check_packet_integritypacket" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        check_packet_integrity(packet)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#validate_packet_inlinepacket-value_list_rootnone" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        validate_packet_inline(packet, *, value_list_root=None)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#validate_packet_from_filepath-value_list_rootnone" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        validate_packet_from_file(path, *, value_list_root=None)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#local-test-coverage" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Local Test Coverage
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="fermenter-api">Fermenter API</h1>
+<h2 id="overview">Overview</h2>
+<p>The <code>gkc.fermenter</code> module is the atomic validation and coercion layer for GKC curation pipelines.
+It validates and normalizes individual values against profile-defined constraints.
+Both the still charger and the Wikibase write-planning layer consume it, and all wizard and CLI pipelines share its output envelope.</p>
+<p>All validation surfaces return a <code>ConformanceNotice</code> (or internal <code>ValidationResult</code>) for consistent error reporting across wizard, CLI, and bulk pipelines.</p>
+<h2 id="semantic-anchor-validation">Semantic Anchor Validation</h2>
+<p>The fermenter also owns semantic-anchor conformance validation for Meta-Wikibase runtime readiness.</p>
+<p>For the broader concept and artifact lifecycle, see <a href="../../../architecture/meta-wikibase/semantic-anchors/">Semantic Anchors</a>.</p>
+<h3 id="validate_semantic_anchor_documentanchor_document-internal_name_identifier_prefixnone-current_anchor_documentnone"><code>validate_semantic_anchor_document(anchor_document, *, internal_name_identifier_prefix=None, current_anchor_document=None)</code></h3>
+<p>Validate a semantic-anchor document against the package-owned Meta-Wikibase init contract.</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">gkc.fermenter</span><span class="w"> </span><span class="kn">import</span> <span class="n">validate_semantic_anchor_document</span>
+
+<span class="n">result</span> <span class="o">=</span> <span class="n">validate_semantic_anchor_document</span><span class="p">(</span><span class="n">anchor_document</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">result</span><span class="o">.</span><span class="n">valid</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">result</span><span class="o">.</span><span class="n">required_anchor_count</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">result</span><span class="o">.</span><span class="n">matched_anchor_count</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">result</span><span class="o">.</span><span class="n">notices</span><span class="p">)</span>
+</code></pre></div>
+<p>This validator checks:</p>
+<ul>
+<li>top-level artifact shape</li>
+<li>presence of every required internal semantic anchor</li>
+<li>property versus item ID kind alignment</li>
+<li>canonical datatype alignment for property anchors</li>
+<li>optional staleness against a separately provided current anchor document</li>
+</ul>
+<p>The primary entry point is dict-based so the same primitive can validate either:</p>
+<ul>
+<li>a semantic-anchor artifact loaded from file</li>
+<li>a semantic-anchor document generated in memory from current cache entities</li>
+</ul>
+<h2 id="conformancenotice"><code>ConformanceNotice</code></h2>
+<p>Shared result envelope for all validation and coercion operations.</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">gkc.fermenter</span><span class="w"> </span><span class="kn">import</span> <span class="n">ConformanceNotice</span>
+
+<span class="n">notice</span> <span class="o">=</span> <span class="n">ConformanceNotice</span><span class="p">(</span>
+    <span class="n">severity</span><span class="o">=</span><span class="s2">&quot;error&quot;</span><span class="p">,</span>
+    <span class="n">entity_ref</span><span class="o">=</span><span class="s2">&quot;https://datadistillery.wikibase.cloud/entity/Q4&quot;</span><span class="p">,</span>
+    <span class="n">code</span><span class="o">=</span><span class="s2">&quot;fixed_value_violation&quot;</span><span class="p">,</span>
+    <span class="n">message</span><span class="o">=</span><span class="s2">&quot;Statement requires fixed value Q7840353 but received Q9592&quot;</span><span class="p">,</span>
+    <span class="n">statement_ref</span><span class="o">=</span><span class="s2">&quot;https://datadistillery.wikibase.cloud/entity/P5&quot;</span><span class="p">,</span>
+    <span class="n">normalized_value</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+<span class="p">)</span>
+</code></pre></div>
+<p><strong>Fields:</strong></p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>severity</code></td>
+<td><code>str</code></td>
+<td><code>"error"</code>, <code>"warning"</code>, or <code>"info"</code></td>
+</tr>
+<tr>
+<td><code>entity_ref</code></td>
+<td><code>str</code></td>
+<td>Full URI or intra-packet entity ID</td>
+</tr>
+<tr>
+<td><code>code</code></td>
+<td><code>str</code></td>
+<td>Short machine-readable code (e.g., <code>fixed_value_violation</code>)</td>
+</tr>
+<tr>
+<td><code>message</code></td>
+<td><code>str</code></td>
+<td>Human-readable description</td>
+</tr>
+<tr>
+<td><code>statement_ref</code></td>
+<td><code>str \| None</code></td>
+<td>Statement entity URI, or <code>None</code> for entity-level notices</td>
+</tr>
+<tr>
+<td><code>normalized_value</code></td>
+<td><code>Any</code></td>
+<td>Coerced output if coercion succeeded, <code>None</code> otherwise</td>
+</tr>
+</tbody>
+</table>
+<p><code>ChargeIssue</code> and <code>BarrelIssue</code> are aliases for <code>ConformanceNotice</code> (transition compatibility).</p>
+<h2 id="datatype-validators">Datatype Validators</h2>
+<p>Each validator accepts a raw value and returns an internal <code>ValidationResult</code> with <code>valid</code>, <code>value</code>, <code>errors</code>, and <code>warnings</code> fields. Use <code>validate_by_datatype()</code> as the primary dispatcher.</p>
+<h3 id="validate_by_datatypedatatype-value"><code>validate_by_datatype(datatype, value)</code></h3>
+<p>Dispatch to the appropriate validator based on the Wikibase primitive datatype string.</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">gkc.fermenter</span><span class="w"> </span><span class="kn">import</span> <span class="n">validate_by_datatype</span>
+
+<span class="n">result</span> <span class="o">=</span> <span class="n">validate_by_datatype</span><span class="p">(</span><span class="s2">&quot;wikibase-item&quot;</span><span class="p">,</span> <span class="s2">&quot;Q195562&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">result</span><span class="o">.</span><span class="n">valid</span><span class="p">)</span>   <span class="c1"># True</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">result</span><span class="o">.</span><span class="n">value</span><span class="p">)</span>   <span class="c1"># {&quot;entity-type&quot;: &quot;item&quot;, &quot;numeric-id&quot;: 195562, &quot;id&quot;: &quot;Q195562&quot;}</span>
+
+<span class="n">result</span> <span class="o">=</span> <span class="n">validate_by_datatype</span><span class="p">(</span><span class="s2">&quot;url&quot;</span><span class="p">,</span> <span class="s2">&quot;not-a-url&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">result</span><span class="o">.</span><span class="n">valid</span><span class="p">)</span>   <span class="c1"># False</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">result</span><span class="o">.</span><span class="n">errors</span><span class="p">)</span>  <span class="c1"># [&quot;url must start with http:// or https://&quot;]</span>
+</code></pre></div>
+<p>Supported datatypes: <code>wikibase-item</code>, <code>string</code>, <code>monolingualtext</code>, <code>url</code>, <code>time</code>, <code>quantity</code>, <code>globe-coordinate</code>, <code>commonsMedia</code>.</p>
+<p>Returns a <code>ValidationResult(valid=False, ...)</code> with an error message for unrecognized datatypes.</p>
+<h3 id="validation-policy-structure-online-tiers">Validation Policy (Structure + Online Tiers)</h3>
+<p><code>validate_wikibase_item()</code>, <code>validate_url()</code>, and <code>validate_commons_media()</code> support staged validation through <code>ValidationPolicy</code>.</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">gkc.fermenter</span><span class="w"> </span><span class="kn">import</span> <span class="n">ValidationPolicy</span><span class="p">,</span> <span class="n">ValidationPolicyConfig</span>
+
+<span class="n">policy</span> <span class="o">=</span> <span class="n">ValidationPolicy</span><span class="o">.</span><span class="n">HEARTBEAT</span>
+<span class="n">config</span> <span class="o">=</span> <span class="n">ValidationPolicyConfig</span><span class="p">(</span>
+    <span class="n">wikibase_api_url</span><span class="o">=</span><span class="s2">&quot;https://www.wikidata.org/w/api.php&quot;</span><span class="p">,</span>
+    <span class="n">commons_api_url</span><span class="o">=</span><span class="s2">&quot;https://commons.wikimedia.org/w/api.php&quot;</span><span class="p">,</span>
+    <span class="n">timeout_seconds</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span>
+<span class="p">)</span>
+</code></pre></div>
+<p>Tiers:</p>
+<ul>
+<li><code>STRUCTURE</code>: shape and coercion checks only (default, offline)</li>
+<li><code>HEARTBEAT</code>: online resource responds to a basic alive check</li>
+<li><code>ACTIONABLE</code>: online resource can be retrieved for intended interaction context</li>
+</ul>
+<p><code>ValidationPolicyConfig</code> accepts <code>commons_api_url</code> to redirect Commons checks to an alternate MediaWiki API (useful for testing or alternative Commons deployments).</p>
+<p><code>ValidationResult</code> now includes uncertainty metadata:</p>
+<ul>
+<li><code>uncertainty</code>: float in <code>[0.0, 1.0]</code></li>
+<li><code>uncertainty_reasons</code>: list of machine-readable uncertainty causes</li>
+</ul>
+<p>This supports curator-facing decision paths where coercion and online checks are successful but confidence is not maximal.</p>
+<hr />
+<h3 id="validate_wikibase_itemvalue"><code>validate_wikibase_item(value)</code></h3>
+<p>Validates a Wikibase item reference. Accepts a QID string (coerces to full Wikibase JSON) or a dict already containing an <code>"id"</code> key.</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">gkc.fermenter</span><span class="w"> </span><span class="kn">import</span> <span class="n">validate_wikibase_item</span>
+
+<span class="c1"># From QID string</span>
+<span class="n">result</span> <span class="o">=</span> <span class="n">validate_wikibase_item</span><span class="p">(</span><span class="s2">&quot;Q195562&quot;</span><span class="p">)</span>
+<span class="c1"># result.value → {&quot;entity-type&quot;: &quot;item&quot;, &quot;numeric-id&quot;: 195562, &quot;id&quot;: &quot;Q195562&quot;}</span>
+
+<span class="c1"># From existing Wikibase dict</span>
+<span class="n">result</span> <span class="o">=</span> <span class="n">validate_wikibase_item</span><span class="p">({</span><span class="s2">&quot;entity-type&quot;</span><span class="p">:</span> <span class="s2">&quot;item&quot;</span><span class="p">,</span> <span class="s2">&quot;id&quot;</span><span class="p">:</span> <span class="s2">&quot;Q195562&quot;</span><span class="p">})</span>
+<span class="c1"># result.valid → True</span>
+
+<span class="c1"># From full entity URI (coerced to QID)</span>
+<span class="n">result</span> <span class="o">=</span> <span class="n">validate_wikibase_item</span><span class="p">(</span><span class="s2">&quot;https://www.wikidata.org/entity/Q195562&quot;</span><span class="p">)</span>
+<span class="c1"># result.valid → True, result.value[&quot;id&quot;] → &quot;Q195562&quot;</span>
+
+<span class="c1"># Online validation against custom Wikibase instance</span>
+<span class="n">config</span> <span class="o">=</span> <span class="n">ValidationPolicyConfig</span><span class="p">(</span>
+    <span class="n">wikibase_api_url</span><span class="o">=</span><span class="s2">&quot;https://datadistillery.wikibase.cloud/w/api.php&quot;</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="n">result</span> <span class="o">=</span> <span class="n">validate_wikibase_item</span><span class="p">(</span>
+    <span class="s2">&quot;Q195562&quot;</span><span class="p">,</span>
+    <span class="n">validation_policy</span><span class="o">=</span><span class="n">ValidationPolicy</span><span class="o">.</span><span class="n">HEARTBEAT</span><span class="p">,</span>
+    <span class="n">policy_config</span><span class="o">=</span><span class="n">config</span><span class="p">,</span>
+<span class="p">)</span>
+</code></pre></div>
+<p>Notes:</p>
+<ul>
+<li>Coercion accepts QIDs, full entity URIs, and dict references with <code>id</code> or <code>item</code> fields.</li>
+<li>Normalized output includes <code>wikibase-api-url</code> so downstream logic can preserve instance context.</li>
+</ul>
+<hr />
+<h3 id="validate_stringvalue"><code>validate_string(value)</code></h3>
+<p>Validates a plain string value. Coerces non-string values to string where possible and emits a warning.</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">gkc.fermenter</span><span class="w"> </span><span class="kn">import</span> <span class="n">validate_string</span>
+
+<span class="n">result</span> <span class="o">=</span> <span class="n">validate_string</span><span class="p">(</span><span class="s2">&quot;Cherokee Nation&quot;</span><span class="p">)</span>
+<span class="c1"># result.valid → True, result.value → &quot;Cherokee Nation&quot;</span>
+
+<span class="n">result</span> <span class="o">=</span> <span class="n">validate_string</span><span class="p">(</span><span class="mi">12345</span><span class="p">)</span>
+<span class="c1"># result.valid → True, result.value → &quot;12345&quot;, result.warnings → [&quot;Coerced int to string&quot;]</span>
+</code></pre></div>
+<hr />
+<h3 id="validate_with_patternvalue-pattern-flags0"><code>validate_with_pattern(value, pattern, *, flags=0)</code></h3>
+<p>Validates a string-like value against a regex pattern sourced from profile or statement constraints.</p>
+<p>This validator first applies <code>validate_string()</code> and then checks the normalized value with
+<code>re.search</code>, so profile-authored patterns can control whether matching is anchored or partial.</p>
+<div class="highlight"><pre><span></span><code><span class="kn">import</span><span class="w"> </span><span class="nn">re</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">gkc.fermenter</span><span class="w"> </span><span class="kn">import</span> <span class="n">validate_with_pattern</span>
+
+<span class="n">result</span> <span class="o">=</span> <span class="n">validate_with_pattern</span><span class="p">(</span><span class="s2">&quot;AB-1234&quot;</span><span class="p">,</span> <span class="sa">r</span><span class="s2">&quot;^[A-Z]</span><span class="si">{2}</span><span class="s2">-\d</span><span class="si">{4}</span><span class="s2">$&quot;</span><span class="p">)</span>
+<span class="c1"># result.valid -&gt; True</span>
+
+<span class="n">result</span> <span class="o">=</span> <span class="n">validate_with_pattern</span><span class="p">(</span><span class="mi">2024</span><span class="p">,</span> <span class="sa">r</span><span class="s2">&quot;^2024$&quot;</span><span class="p">)</span>
+<span class="c1"># result.valid -&gt; True</span>
+<span class="c1"># result.value -&gt; &quot;2024&quot;</span>
+
+<span class="n">result</span> <span class="o">=</span> <span class="n">validate_with_pattern</span><span class="p">(</span>
+    <span class="s2">&quot;cherokee nation&quot;</span><span class="p">,</span>
+    <span class="sa">r</span><span class="s2">&quot;CHEROKEE&quot;</span><span class="p">,</span>
+    <span class="n">flags</span><span class="o">=</span><span class="n">re</span><span class="o">.</span><span class="n">IGNORECASE</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="c1"># result.valid -&gt; True</span>
+
+<span class="n">result</span> <span class="o">=</span> <span class="n">validate_with_pattern</span><span class="p">(</span><span class="s2">&quot;invalid&quot;</span><span class="p">,</span> <span class="sa">r</span><span class="s2">&quot;^[A-Z]</span><span class="si">{2}</span><span class="s2">-\d</span><span class="si">{4}</span><span class="s2">$&quot;</span><span class="p">)</span>
+<span class="c1"># result.valid -&gt; False</span>
+<span class="c1"># result.errors -&gt; [&quot;String does not match required pattern: ^[A-Z]{2}-\\d{4}$&quot;]</span>
+</code></pre></div>
+<hr />
+<h3 id="validate_monolingualtextvalue"><code>validate_monolingualtext(value)</code></h3>
+<p>Validates and coerces a monolingual text value into the canonical Wikibase <code>{"language", "text"}</code> dict.</p>
+<p>Coercion handles several input forms:</p>
+<ul>
+<li>A plain string is coerced to <code>{"language": "mul", "text": value}</code> (uncertainty flagged)</li>
+<li>A dict with <code>"lang"</code> key is renamed to <code>"language"</code></li>
+<li>Language codes are normalized via an ISO 639-2 / English-name alias map (e.g. <code>"eng"</code> → <code>"en"</code>, <code>"english"</code> → <code>"en"</code>)</li>
+<li>Language codes are validated against BCP-47 format; Wikibase special codes <code>mul</code>, <code>zxx</code>, and <code>und</code> are accepted</li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">gkc.fermenter</span><span class="w"> </span><span class="kn">import</span> <span class="n">validate_monolingualtext</span>
+
+<span class="c1"># Canonical input</span>
+<span class="n">result</span> <span class="o">=</span> <span class="n">validate_monolingualtext</span><span class="p">({</span><span class="s2">&quot;language&quot;</span><span class="p">:</span> <span class="s2">&quot;en&quot;</span><span class="p">,</span> <span class="s2">&quot;text&quot;</span><span class="p">:</span> <span class="s2">&quot;Cherokee Nation&quot;</span><span class="p">})</span>
+<span class="c1"># result.valid → True</span>
+<span class="c1"># result.value → {&quot;language&quot;: &quot;en&quot;, &quot;text&quot;: &quot;Cherokee Nation&quot;}</span>
+<span class="c1"># result.uncertainty → 0.0</span>
+
+<span class="c1"># Plain string coercion</span>
+<span class="n">result</span> <span class="o">=</span> <span class="n">validate_monolingualtext</span><span class="p">(</span><span class="s2">&quot;Cherokee Nation&quot;</span><span class="p">)</span>
+<span class="c1"># result.valid → True</span>
+<span class="c1"># result.value → {&quot;language&quot;: &quot;mul&quot;, &quot;text&quot;: &quot;Cherokee Nation&quot;}</span>
+<span class="c1"># result.uncertainty → 0.5</span>
+
+<span class="c1"># ISO 639-2 three-letter code normalization</span>
+<span class="n">result</span> <span class="o">=</span> <span class="n">validate_monolingualtext</span><span class="p">({</span><span class="s2">&quot;language&quot;</span><span class="p">:</span> <span class="s2">&quot;eng&quot;</span><span class="p">,</span> <span class="s2">&quot;text&quot;</span><span class="p">:</span> <span class="s2">&quot;Hello&quot;</span><span class="p">})</span>
+<span class="c1"># result.valid → True</span>
+<span class="c1"># result.value → {&quot;language&quot;: &quot;en&quot;, &quot;text&quot;: &quot;Hello&quot;}</span>
+<span class="c1"># result.uncertainty → 0.2</span>
+
+<span class="c1"># English language name normalization</span>
+<span class="n">result</span> <span class="o">=</span> <span class="n">validate_monolingualtext</span><span class="p">({</span><span class="s2">&quot;language&quot;</span><span class="p">:</span> <span class="s2">&quot;french&quot;</span><span class="p">,</span> <span class="s2">&quot;text&quot;</span><span class="p">:</span> <span class="s2">&quot;Bonjour&quot;</span><span class="p">})</span>
+<span class="c1"># result.valid → True</span>
+<span class="c1"># result.value → {&quot;language&quot;: &quot;fr&quot;, &quot;text&quot;: &quot;Bonjour&quot;}</span>
+
+<span class="c1"># &quot;lang&quot; key renamed</span>
+<span class="n">result</span> <span class="o">=</span> <span class="n">validate_monolingualtext</span><span class="p">({</span><span class="s2">&quot;lang&quot;</span><span class="p">:</span> <span class="s2">&quot;de&quot;</span><span class="p">,</span> <span class="s2">&quot;text&quot;</span><span class="p">:</span> <span class="s2">&quot;Hallo&quot;</span><span class="p">})</span>
+<span class="c1"># result.valid → True</span>
+<span class="c1"># result.value → {&quot;language&quot;: &quot;de&quot;, &quot;text&quot;: &quot;Hallo&quot;}</span>
+
+<span class="c1"># Invalid language code</span>
+<span class="n">result</span> <span class="o">=</span> <span class="n">validate_monolingualtext</span><span class="p">({</span><span class="s2">&quot;language&quot;</span><span class="p">:</span> <span class="s2">&quot;not-a-code!!!&quot;</span><span class="p">,</span> <span class="s2">&quot;text&quot;</span><span class="p">:</span> <span class="s2">&quot;Hello&quot;</span><span class="p">})</span>
+<span class="c1"># result.valid → False</span>
+<span class="c1"># result.errors → [&quot;&#39;not-a-code!!!&#39; is not a valid BCP-47 language code; ...&quot;]</span>
+</code></pre></div>
+<hr />
+<h3 id="validate_urlvalue"><code>validate_url(value)</code></h3>
+<p>Validates a URL string. Must start with <code>http://</code> or <code>https://</code>.</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">gkc.fermenter</span><span class="w"> </span><span class="kn">import</span> <span class="n">validate_url</span>
+
+<span class="n">result</span> <span class="o">=</span> <span class="n">validate_url</span><span class="p">(</span><span class="s2">&quot;https://www.cherokee.org&quot;</span><span class="p">)</span>
+<span class="c1"># result.valid → True</span>
+
+<span class="n">result</span> <span class="o">=</span> <span class="n">validate_url</span><span class="p">(</span><span class="s2">&quot;www.cherokee.org&quot;</span><span class="p">)</span>
+<span class="c1"># result.valid → True (coerced to https://www.cherokee.org)</span>
+
+<span class="c1"># HEARTBEAT online check</span>
+<span class="n">result</span> <span class="o">=</span> <span class="n">validate_url</span><span class="p">(</span>
+    <span class="s2">&quot;https://www.cherokee.org&quot;</span><span class="p">,</span>
+    <span class="n">validation_policy</span><span class="o">=</span><span class="n">ValidationPolicy</span><span class="o">.</span><span class="n">HEARTBEAT</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="c1"># Performs HEAD request through mash.fetch_url_resource</span>
+
+<span class="c1"># ACTIONABLE online check with content retrieval</span>
+<span class="n">config</span> <span class="o">=</span> <span class="n">ValidationPolicyConfig</span><span class="p">(</span>
+    <span class="n">request_accept</span><span class="o">=</span><span class="s2">&quot;text/html,application/xhtml+xml&quot;</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="n">result</span> <span class="o">=</span> <span class="n">validate_url</span><span class="p">(</span>
+    <span class="s2">&quot;https://www.cherokee.org&quot;</span><span class="p">,</span>
+    <span class="n">validation_policy</span><span class="o">=</span><span class="n">ValidationPolicy</span><span class="o">.</span><span class="n">ACTIONABLE</span><span class="p">,</span>
+    <span class="n">policy_config</span><span class="o">=</span><span class="n">config</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="c1"># Performs GET request and records content-type warning metadata</span>
+</code></pre></div>
+<p>Coercion accepts a wider input set while preserving uncertainty signals:</p>
+<ul>
+<li><code>www.example.org</code> → <code>https://www.example.org</code></li>
+<li><code>example.org/resource</code> → <code>https://example.org/resource</code></li>
+</ul>
+<hr />
+<h3 id="validate_timevalue"><code>validate_time(value)</code></h3>
+<p>Validates and coerces user-style time inputs into a full Wikibase time payload.</p>
+<p>Accepted input shapes include:</p>
+<ul>
+<li>Full Wikibase dict (<code>time</code>, <code>timezone</code>, <code>before</code>, <code>after</code>, <code>calendarmodel</code>)</li>
+<li>Minimal dict with only <code>time</code></li>
+<li>Component dict (<code>year</code>, optional <code>month</code>/<code>day</code>/<code>hour</code>/<code>minute</code>/<code>second</code>)</li>
+<li>Year integer (<code>2024</code>)</li>
+<li>Date/time strings (<code>YYYY</code>, <code>YYYY-MM</code>, <code>YYYY-MM-DD</code>, <code>YYYY-MM-DDTHH:MM[:SS]</code>)</li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">gkc.fermenter</span><span class="w"> </span><span class="kn">import</span> <span class="n">validate_time</span>
+
+<span class="n">result</span> <span class="o">=</span> <span class="n">validate_time</span><span class="p">(</span><span class="s2">&quot;2024&quot;</span><span class="p">)</span>
+<span class="c1"># result.value -&gt; {</span>
+<span class="c1">#   &quot;time&quot;: &quot;+2024-01-01T00:00:00Z&quot;,</span>
+<span class="c1">#   &quot;timezone&quot;: 0,</span>
+<span class="c1">#   &quot;before&quot;: 0,</span>
+<span class="c1">#   &quot;after&quot;: 0,</span>
+<span class="c1">#   &quot;precision&quot;: 9,</span>
+<span class="c1">#   &quot;calendarmodel&quot;: &quot;http://www.wikidata.org/entity/Q1985727&quot;</span>
+<span class="c1"># }</span>
+
+<span class="n">result</span> <span class="o">=</span> <span class="n">validate_time</span><span class="p">(</span><span class="s2">&quot;2024-05&quot;</span><span class="p">)</span>
+<span class="c1"># precision derived from granularity -&gt; 10 (month)</span>
+
+<span class="n">result</span> <span class="o">=</span> <span class="n">validate_time</span><span class="p">({</span><span class="s2">&quot;year&quot;</span><span class="p">:</span> <span class="mi">2024</span><span class="p">,</span> <span class="s2">&quot;month&quot;</span><span class="p">:</span> <span class="mi">5</span><span class="p">,</span> <span class="s2">&quot;day&quot;</span><span class="p">:</span> <span class="mi">6</span><span class="p">})</span>
+<span class="c1"># precision derived from provided components -&gt; 11 (day)</span>
+
+<span class="n">result</span> <span class="o">=</span> <span class="n">validate_time</span><span class="p">({</span><span class="s2">&quot;time&quot;</span><span class="p">:</span> <span class="s2">&quot;+2020-01-15T00:00:00Z&quot;</span><span class="p">})</span>
+<span class="c1"># missing timezone/before/after/calendarmodel auto-filled</span>
+
+<span class="c1"># Full explicit dict still supported</span>
+<span class="n">result</span> <span class="o">=</span> <span class="n">validate_time</span><span class="p">({</span>
+    <span class="s2">&quot;time&quot;</span><span class="p">:</span> <span class="s2">&quot;+2020-01-15T00:00:00Z&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;timezone&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+    <span class="s2">&quot;before&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+    <span class="s2">&quot;after&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+    <span class="s2">&quot;precision&quot;</span><span class="p">:</span> <span class="mi">11</span><span class="p">,</span>
+    <span class="s2">&quot;calendarmodel&quot;</span><span class="p">:</span> <span class="s2">&quot;http://www.wikidata.org/entity/Q1985727&quot;</span><span class="p">,</span>
+<span class="p">})</span>
+<span class="c1"># result.valid → True</span>
+</code></pre></div>
+<hr />
+<h3 id="validate_quantityvalue"><code>validate_quantity(value)</code></h3>
+<p>Validates a Wikibase quantity dict. Requires <code>amount</code> and <code>unit</code> fields.</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">gkc.fermenter</span><span class="w"> </span><span class="kn">import</span> <span class="n">validate_quantity</span>
+
+<span class="n">result</span> <span class="o">=</span> <span class="n">validate_quantity</span><span class="p">({</span>
+    <span class="s2">&quot;amount&quot;</span><span class="p">:</span> <span class="s2">&quot;+3500&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;unit&quot;</span><span class="p">:</span> <span class="s2">&quot;http://www.wikidata.org/entity/Q11573&quot;</span><span class="p">,</span>
+<span class="p">})</span>
+<span class="c1"># result.valid → True</span>
+</code></pre></div>
+<hr />
+<h3 id="validate_globe_coordinatevalue"><code>validate_globe_coordinate(value)</code></h3>
+<p>Validates and coerces broad coordinate input forms into Wikibase globe-coordinate payloads.</p>
+<p>Accepted input shapes include:</p>
+<ul>
+<li>Full coordinate dict (<code>latitude</code>, <code>longitude</code>, optional <code>altitude</code>, optional <code>precision</code>, optional <code>globe</code>)</li>
+<li>Shorthand dict keys (<code>lat</code>/<code>lon</code>/<code>lng</code>)</li>
+<li>String pair (<code>"42.1234,-121.5000"</code>)</li>
+<li>Sequence pair (<code>[42.1234, -121.5]</code>)</li>
+<li>DMS-style coordinate strings (<code>"42 30 0 N"</code>, <code>"121 30 0 W"</code>)</li>
+</ul>
+<p>If <code>precision</code> is omitted, it is derived from input granularity (decimal places or DMS resolution).
+Latitude must be in <code>[-90, 90]</code> and longitude in <code>[-180, 180]</code> after coercion.</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">gkc.fermenter</span><span class="w"> </span><span class="kn">import</span> <span class="n">validate_globe_coordinate</span>
+
+<span class="n">result</span> <span class="o">=</span> <span class="n">validate_globe_coordinate</span><span class="p">(</span><span class="s2">&quot;42.1234,-121.5000&quot;</span><span class="p">)</span>
+<span class="c1"># precision derived from decimal granularity</span>
+
+<span class="n">result</span> <span class="o">=</span> <span class="n">validate_globe_coordinate</span><span class="p">({</span><span class="s2">&quot;lat&quot;</span><span class="p">:</span> <span class="s2">&quot;42.5&quot;</span><span class="p">,</span> <span class="s2">&quot;lng&quot;</span><span class="p">:</span> <span class="s2">&quot;-121.25&quot;</span><span class="p">})</span>
+<span class="c1"># shorthand keys normalized to latitude/longitude</span>
+
+<span class="n">result</span> <span class="o">=</span> <span class="n">validate_globe_coordinate</span><span class="p">({</span>
+    <span class="s2">&quot;latitude&quot;</span><span class="p">:</span> <span class="s2">&quot;42 30 0 N&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;longitude&quot;</span><span class="p">:</span> <span class="s2">&quot;121 30 0 W&quot;</span><span class="p">,</span>
+<span class="p">})</span>
+<span class="c1"># DMS input converted to decimal degrees</span>
+
+<span class="c1"># Full explicit dict remains supported</span>
+<span class="n">result</span> <span class="o">=</span> <span class="n">validate_globe_coordinate</span><span class="p">({</span>
+    <span class="s2">&quot;latitude&quot;</span><span class="p">:</span> <span class="mf">35.5</span><span class="p">,</span>
+    <span class="s2">&quot;longitude&quot;</span><span class="p">:</span> <span class="o">-</span><span class="mf">95.0</span><span class="p">,</span>
+    <span class="s2">&quot;altitude&quot;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="s2">&quot;precision&quot;</span><span class="p">:</span> <span class="mf">0.0001</span><span class="p">,</span>
+    <span class="s2">&quot;globe&quot;</span><span class="p">:</span> <span class="s2">&quot;http://www.wikidata.org/entity/Q2&quot;</span><span class="p">,</span>
+<span class="p">})</span>
+<span class="c1"># result.valid → True</span>
+</code></pre></div>
+<hr />
+<h3 id="validate_commons_mediavalue"><code>validate_commons_media(value)</code></h3>
+<p>Validates a Wikimedia Commons filename against the Commons MediaWiki API.
+Accepts filenames with or without the <code>File:</code> prefix—the canonical form is always returned.</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">gkc.fermenter</span><span class="w"> </span><span class="kn">import</span> <span class="n">validate_commons_media</span><span class="p">,</span> <span class="n">ValidationPolicy</span><span class="p">,</span> <span class="n">ValidationPolicyConfig</span>
+
+<span class="c1"># STRUCTURE (default, offline) — normalizes filename only</span>
+<span class="n">result</span> <span class="o">=</span> <span class="n">validate_commons_media</span><span class="p">(</span><span class="s2">&quot;Cherokee Nation seal.svg&quot;</span><span class="p">)</span>
+<span class="c1"># result.valid → True</span>
+<span class="c1"># result.value → &quot;File:Cherokee Nation seal.svg&quot;</span>
+
+<span class="c1"># HEARTBEAT — confirms the file exists on Commons</span>
+<span class="n">result</span> <span class="o">=</span> <span class="n">validate_commons_media</span><span class="p">(</span>
+    <span class="s2">&quot;Cherokee Nation seal.svg&quot;</span><span class="p">,</span>
+    <span class="n">validation_policy</span><span class="o">=</span><span class="n">ValidationPolicy</span><span class="o">.</span><span class="n">HEARTBEAT</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="c1"># Calls Commons API action=query&amp;prop=imageinfo for the file</span>
+<span class="c1"># result.valid → False + error if the file is not found</span>
+
+<span class="c1"># ACTIONABLE — retrieves full file metadata</span>
+<span class="n">result</span> <span class="o">=</span> <span class="n">validate_commons_media</span><span class="p">(</span>
+    <span class="s2">&quot;File:Cherokee Nation seal.svg&quot;</span><span class="p">,</span>
+    <span class="n">validation_policy</span><span class="o">=</span><span class="n">ValidationPolicy</span><span class="o">.</span><span class="n">ACTIONABLE</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="c1"># result.warnings may include:</span>
+<span class="c1">#   &quot;Commons resource URL: https://upload.wikimedia.org/...&quot;</span>
+<span class="c1">#   &quot;Commons MIME type: image/svg+xml&quot;</span>
+<span class="c1">#   &quot;Commons file size: 12345 bytes&quot;</span>
+
+<span class="c1"># Custom Commons API endpoint (e.g., for testing)</span>
+<span class="n">config</span> <span class="o">=</span> <span class="n">ValidationPolicyConfig</span><span class="p">(</span>
+    <span class="n">commons_api_url</span><span class="o">=</span><span class="s2">&quot;https://test.commons.example.org/w/api.php&quot;</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="n">result</span> <span class="o">=</span> <span class="n">validate_commons_media</span><span class="p">(</span>
+    <span class="s2">&quot;File:Example.jpg&quot;</span><span class="p">,</span>
+    <span class="n">validation_policy</span><span class="o">=</span><span class="n">ValidationPolicy</span><span class="o">.</span><span class="n">HEARTBEAT</span><span class="p">,</span>
+    <span class="n">policy_config</span><span class="o">=</span><span class="n">config</span><span class="p">,</span>
+<span class="p">)</span>
+</code></pre></div>
+<p>Coercion behavior:</p>
+<ul>
+<li>Filenames without <code>File:</code> prefix receive it automatically.</li>
+<li>Lowercase <code>file:</code> prefix is normalized to <code>File:</code> with a warning.</li>
+<li>Non-string values are coerced to string with a warning and uncertainty signal.</li>
+</ul>
+<p>Online checks use <code>gkc.mash.fetch_commons_file_info()</code> via a <code>WikibaseApiClient</code> pointed at
+<code>commons_api_url</code>, keeping the retrieval layer consistent with other Wikibase API consumers in mash.</p>
+<hr />
+<h2 id="value-list-validation">Value List Validation</h2>
+<h3 id="validate_value_from_listvalue-value_list_path-match_policy"><code>validate_value_from_list(value, value_list_path, match_policy)</code></h3>
+<p>Validate a candidate item value against a cached value list JSON file.
+Follows an offline-first design: if the cache file is absent, returns an error rather than attempting live resolution.</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">pathlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">Path</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">gkc.fermenter</span><span class="w"> </span><span class="kn">import</span> <span class="n">validate_value_from_list</span>
+
+<span class="n">result</span> <span class="o">=</span> <span class="n">validate_value_from_list</span><span class="p">(</span>
+    <span class="n">value</span><span class="o">=</span><span class="s2">&quot;Q195562&quot;</span><span class="p">,</span>
+    <span class="n">value_list_path</span><span class="o">=</span><span class="n">Path</span><span class="p">(</span><span class="s2">&quot;/path/to/SpiritSafe/cache/queries/Q4.json&quot;</span><span class="p">),</span>
+    <span class="n">match_policy</span><span class="o">=</span><span class="s2">&quot;strict&quot;</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">result</span><span class="o">.</span><span class="n">valid</span><span class="p">)</span>   <span class="c1"># True if Q195562 is in the cached list</span>
+
+<span class="c1"># With fuzzy label matching</span>
+<span class="n">result</span> <span class="o">=</span> <span class="n">validate_value_from_list</span><span class="p">(</span>
+    <span class="n">value</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;id&quot;</span><span class="p">:</span> <span class="s2">&quot;Q195562&quot;</span><span class="p">,</span> <span class="s2">&quot;label&quot;</span><span class="p">:</span> <span class="s2">&quot;Cherokee Nation&quot;</span><span class="p">},</span>
+    <span class="n">value_list_path</span><span class="o">=</span><span class="n">Path</span><span class="p">(</span><span class="s2">&quot;/path/to/SpiritSafe/cache/queries/Q4.json&quot;</span><span class="p">),</span>
+    <span class="n">match_policy</span><span class="o">=</span><span class="s2">&quot;fuzzy&quot;</span><span class="p">,</span>
+<span class="p">)</span>
+</code></pre></div>
+<p><strong>Arguments:</strong></p>
+<table>
+<thead>
+<tr>
+<th>Argument</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>value</code></td>
+<td><code>Any</code></td>
+<td>A QID string or dict with an <code>"id"</code> key</td>
+</tr>
+<tr>
+<td><code>value_list_path</code></td>
+<td><code>Path</code></td>
+<td>Path to the cached value list JSON file</td>
+</tr>
+<tr>
+<td><code>match_policy</code></td>
+<td><code>str</code></td>
+<td><code>"strict"</code> (QID exact match) or <code>"fuzzy"</code> (label fallback)</td>
+</tr>
+</tbody>
+</table>
+<p>Returns <code>ValidationResult(valid=False, errors=["Value list cache unavailable: ..."])</code> when the cache file does not exist.</p>
+<hr />
+<h2 id="fixed-value-enforcement">Fixed Value Enforcement</h2>
+<h3 id="enforce_fixed_valueuser_value-fixed_value-statement_ref"><code>enforce_fixed_value(user_value, fixed_value, statement_ref)</code></h3>
+<p>Enforce a profile-defined fixed value constraint on a statement.</p>
+<ul>
+<li>If <code>user_value</code> is <code>None</code> — injects the fixed value and emits an <code>info</code> notice</li>
+<li>If <code>user_value</code> matches <code>fixed_value</code> — accepts</li>
+<li>If <code>user_value</code> differs — rejects with an <code>error</code> notice</li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">gkc.fermenter</span><span class="w"> </span><span class="kn">import</span> <span class="n">enforce_fixed_value</span>
+
+<span class="c1"># Auto-injection when user provides nothing</span>
+<span class="n">result</span><span class="p">,</span> <span class="n">notice</span> <span class="o">=</span> <span class="n">enforce_fixed_value</span><span class="p">(</span>
+    <span class="n">user_value</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="n">fixed_value</span><span class="o">=</span><span class="s2">&quot;Q7840353&quot;</span><span class="p">,</span>
+    <span class="n">statement_ref</span><span class="o">=</span><span class="s2">&quot;https://datadistillery.wikibase.cloud/entity/P5&quot;</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="c1"># result.valid → True, result.value → &quot;Q7840353&quot;</span>
+<span class="c1"># notice.code → &quot;fixed_value_injected&quot;</span>
+
+<span class="c1"># Violation</span>
+<span class="n">result</span><span class="p">,</span> <span class="n">notice</span> <span class="o">=</span> <span class="n">enforce_fixed_value</span><span class="p">(</span>
+    <span class="n">user_value</span><span class="o">=</span><span class="s2">&quot;Q9592&quot;</span><span class="p">,</span>
+    <span class="n">fixed_value</span><span class="o">=</span><span class="s2">&quot;Q7840353&quot;</span><span class="p">,</span>
+    <span class="n">statement_ref</span><span class="o">=</span><span class="s2">&quot;https://datadistillery.wikibase.cloud/entity/P5&quot;</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="c1"># result.valid → False</span>
+<span class="c1"># notice.severity → &quot;error&quot;, notice.code → &quot;fixed_value_violation&quot;</span>
+</code></pre></div>
+<p>Returns <code>(ValidationResult, ConformanceNotice | None)</code>. The notice is <code>None</code> when the user value matches the required fixed value exactly.</p>
+<h2 id="conformance-outcome-types">Conformance Outcome Types</h2>
+<p>Fermenter now provides explicit conformance outcome types for statement- and entity-level evaluation.</p>
+<h3 id="conformanceoutcome"><code>ConformanceOutcome</code></h3>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">gkc.fermenter</span><span class="w"> </span><span class="kn">import</span> <span class="n">ConformanceOutcome</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="n">ConformanceOutcome</span><span class="o">.</span><span class="n">CONFORMANT</span><span class="o">.</span><span class="n">value</span><span class="p">)</span>              <span class="c1"># &quot;conformant&quot;</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">ConformanceOutcome</span><span class="o">.</span><span class="n">NON_CONFORMANT_MAPPABLE</span><span class="o">.</span><span class="n">value</span><span class="p">)</span> <span class="c1"># &quot;non_conformant_mappable&quot;</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">ConformanceOutcome</span><span class="o">.</span><span class="n">TO_BE_DEFINED</span><span class="o">.</span><span class="n">value</span><span class="p">)</span>           <span class="c1"># &quot;to_be_defined&quot;</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">ConformanceOutcome</span><span class="o">.</span><span class="n">MISSING</span><span class="o">.</span><span class="n">value</span><span class="p">)</span>                 <span class="c1"># &quot;missing&quot;</span>
+</code></pre></div>
+<h3 id="statementevaluation"><code>StatementEvaluation</code></h3>
+<p>Atomic statement evaluation envelope:</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>outcome</code></td>
+<td><code>ConformanceOutcome</code></td>
+<td>Classification of statement evaluation result</td>
+</tr>
+<tr>
+<td><code>statement_ref</code></td>
+<td><code>str \| None</code></td>
+<td>Statement id/entity/name_identifier reference</td>
+</tr>
+<tr>
+<td><code>property_ref</code></td>
+<td><code>str \| None</code></td>
+<td>Mapped property identifier (for example, PID)</td>
+</tr>
+<tr>
+<td><code>normalized_value</code></td>
+<td><code>Any</code></td>
+<td>Normalized/coerced value payload</td>
+</tr>
+<tr>
+<td><code>raw_claims</code></td>
+<td><code>list[dict]</code></td>
+<td>Original inbound claim objects used for evaluation</td>
+</tr>
+<tr>
+<td><code>notices</code></td>
+<td><code>list[ConformanceNotice]</code></td>
+<td>Statement-scoped notices emitted during evaluation</td>
+</tr>
+<tr>
+<td><code>qualifier_evaluations</code></td>
+<td><code>list[StatementEvaluation]</code></td>
+<td>Nested evaluations for profile-defined qualifiers on the same source claim</td>
+</tr>
+<tr>
+<td><code>reference_evaluations</code></td>
+<td><code>list[StatementEvaluation]</code></td>
+<td>Nested evaluations for profile-defined references on the same source claim</td>
+</tr>
+</tbody>
+</table>
+<h3 id="entityevaluation"><code>EntityEvaluation</code></h3>
+<p>Aggregate entity envelope with outcome buckets:</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>entity_ref</code></td>
+<td><code>str</code></td>
+<td>Entity being evaluated</td>
+</tr>
+<tr>
+<td><code>profile_ref</code></td>
+<td><code>str</code></td>
+<td>Active profile reference</td>
+</tr>
+<tr>
+<td><code>conformant</code></td>
+<td><code>list[StatementEvaluation]</code></td>
+<td>Statements that conform to profile rules</td>
+</tr>
+<tr>
+<td><code>non_conformant_mappable</code></td>
+<td><code>list[StatementEvaluation]</code></td>
+<td>Recognized statements with retained non-conforming values</td>
+</tr>
+<tr>
+<td><code>to_be_defined</code></td>
+<td><code>list[StatementEvaluation]</code></td>
+<td>Statements present in source but not defined by profile</td>
+</tr>
+<tr>
+<td><code>missing</code></td>
+<td><code>list[StatementEvaluation]</code></td>
+<td>Statements expected by profile but absent in input</td>
+</tr>
+</tbody>
+</table>
+<p>Convenience properties:</p>
+<ul>
+<li><code>all_notices</code> returns a flattened list of notices across all buckets.</li>
+<li><code>is_conformant</code> is <code>True</code> only when both <code>non_conformant_mappable</code> and <code>missing</code> are empty.</li>
+</ul>
+<h2 id="statement-and-entity-evaluation">Statement and Entity Evaluation</h2>
+<h3 id="normalize_claim_valueraw_claim-data_type"><code>normalize_claim_value(raw_claim, data_type)</code></h3>
+<p>Normalizes a raw claim payload and dispatches validation through datatype validators.</p>
+<ul>
+<li>Handles <code>snaktype=novalue</code> and <code>snaktype=somevalue</code> safely.</li>
+<li>Returns <code>ValidationResult</code> with normalized value, warnings, and errors.</li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">gkc.fermenter</span><span class="w"> </span><span class="kn">import</span> <span class="n">normalize_claim_value</span>
+
+<span class="n">raw_claim</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">&quot;mainsnak&quot;</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s2">&quot;snaktype&quot;</span><span class="p">:</span> <span class="s2">&quot;value&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;datavalue&quot;</span><span class="p">:</span> <span class="p">{</span>
+            <span class="s2">&quot;value&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;entity-type&quot;</span><span class="p">:</span> <span class="s2">&quot;item&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;numeric-id&quot;</span><span class="p">:</span> <span class="mi">5</span><span class="p">,</span>
+                <span class="s2">&quot;id&quot;</span><span class="p">:</span> <span class="s2">&quot;Q5&quot;</span><span class="p">,</span>
+            <span class="p">}</span>
+        <span class="p">},</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+
+<span class="n">result</span> <span class="o">=</span> <span class="n">normalize_claim_value</span><span class="p">(</span><span class="n">raw_claim</span><span class="p">,</span> <span class="s2">&quot;wikibase-item&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">result</span><span class="o">.</span><span class="n">valid</span><span class="p">)</span>          <span class="c1"># True</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">result</span><span class="o">.</span><span class="n">value</span><span class="p">[</span><span class="s2">&quot;id&quot;</span><span class="p">])</span>    <span class="c1"># Q5</span>
+</code></pre></div>
+<h3 id="evaluate_statement_claimprofile_statement-raw_claim_list-entity_ref-value_list_rootnone"><code>evaluate_statement_claim(profile_statement, raw_claim_list, *, entity_ref="", value_list_root=None)</code></h3>
+<p>Evaluates one profile statement against claim candidates and profile constraints.</p>
+<p>Checks include:</p>
+<ul>
+<li>required/missing evaluation</li>
+<li>datatype normalization</li>
+<li>fixed-value enforcement</li>
+<li>value-list cache validation</li>
+<li>max-count handling</li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">gkc.fermenter</span><span class="w"> </span><span class="kn">import</span> <span class="n">evaluate_statement_claim</span>
+
+<span class="n">statement</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">&quot;id&quot;</span><span class="p">:</span> <span class="s2">&quot;https://datadistillery.wikibase.cloud/entity/Q16&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;max_count&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+    <span class="s2">&quot;value&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;wikibase-item&quot;</span><span class="p">},</span>
+    <span class="s2">&quot;io_map&quot;</span><span class="p">:</span> <span class="p">[{</span><span class="s2">&quot;to&quot;</span><span class="p">:</span> <span class="s2">&quot;http://www.wikidata.org/entity/P31&quot;</span><span class="p">}],</span>
+<span class="p">}</span>
+
+<span class="n">claims</span> <span class="o">=</span> <span class="p">[{</span>
+    <span class="s2">&quot;mainsnak&quot;</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s2">&quot;snaktype&quot;</span><span class="p">:</span> <span class="s2">&quot;value&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;datavalue&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;value&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;entity-type&quot;</span><span class="p">:</span> <span class="s2">&quot;item&quot;</span><span class="p">,</span> <span class="s2">&quot;numeric-id&quot;</span><span class="p">:</span> <span class="mi">5</span><span class="p">,</span> <span class="s2">&quot;id&quot;</span><span class="p">:</span> <span class="s2">&quot;Q5&quot;</span><span class="p">}},</span>
+    <span class="p">}</span>
+<span class="p">}]</span>
+
+<span class="n">evaluation</span> <span class="o">=</span> <span class="n">evaluate_statement_claim</span><span class="p">(</span><span class="n">statement</span><span class="p">,</span> <span class="n">claims</span><span class="p">,</span> <span class="n">entity_ref</span><span class="o">=</span><span class="s2">&quot;Q195562&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">evaluation</span><span class="o">.</span><span class="n">outcome</span><span class="o">.</span><span class="n">value</span><span class="p">)</span>  <span class="c1"># &quot;conformant&quot;</span>
+</code></pre></div>
+<h3 id="evaluate_statement_instanceprofile_statement-raw_claim-entity_ref-value_list_rootnone"><code>evaluate_statement_instance(profile_statement, raw_claim, *, entity_ref="", value_list_root=None)</code></h3>
+<p>Atomic full-shape statement primitive used by packet charging and scenario testing.</p>
+<p>This evaluates one raw Wikibase claim against one profile statement including:</p>
+<ul>
+<li>main statement value constraints</li>
+<li>qualifier statement constraints</li>
+<li>reference statement constraints</li>
+</ul>
+<p>Reference-group behavior for profile statements with multiple defined references:</p>
+<ul>
+<li>parent statement is conformant when at least one defined reference is conformant</li>
+<li>missing alternate defined references are still reported in nested <code>reference_evaluations</code></li>
+<li>if no defined reference is conformant, parent statement receives <code>reference_group_missing</code></li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">gkc.fermenter</span><span class="w"> </span><span class="kn">import</span> <span class="n">evaluate_statement_instance</span>
+
+<span class="n">statement</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">&quot;entity&quot;</span><span class="p">:</span> <span class="s2">&quot;https://datadistillery.wikibase.cloud/entity/Q19&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;name_identifier&quot;</span><span class="p">:</span> <span class="s2">&quot;official_website&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;value&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;url&quot;</span><span class="p">},</span>
+    <span class="s2">&quot;io_map&quot;</span><span class="p">:</span> <span class="p">[{</span><span class="s2">&quot;to&quot;</span><span class="p">:</span> <span class="s2">&quot;http://www.wikidata.org/entity/P856&quot;</span><span class="p">}],</span>
+    <span class="s2">&quot;references&quot;</span><span class="p">:</span> <span class="p">[</span>
+        <span class="p">{</span>
+            <span class="s2">&quot;entity&quot;</span><span class="p">:</span> <span class="s2">&quot;https://datadistillery.wikibase.cloud/entity/Q29&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;name_identifier&quot;</span><span class="p">:</span> <span class="s2">&quot;reference_url&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;value&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;url&quot;</span><span class="p">},</span>
+            <span class="s2">&quot;io_map&quot;</span><span class="p">:</span> <span class="p">[{</span><span class="s2">&quot;to&quot;</span><span class="p">:</span> <span class="s2">&quot;http://www.wikidata.org/entity/P854&quot;</span><span class="p">}],</span>
+        <span class="p">},</span>
+        <span class="p">{</span>
+            <span class="s2">&quot;entity&quot;</span><span class="p">:</span> <span class="s2">&quot;https://datadistillery.wikibase.cloud/entity/Q44&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;name_identifier&quot;</span><span class="p">:</span> <span class="s2">&quot;stated_in&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;value&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;wikibase-item&quot;</span><span class="p">},</span>
+            <span class="s2">&quot;io_map&quot;</span><span class="p">:</span> <span class="p">[{</span><span class="s2">&quot;to&quot;</span><span class="p">:</span> <span class="s2">&quot;http://www.wikidata.org/entity/P248&quot;</span><span class="p">}],</span>
+        <span class="p">},</span>
+    <span class="p">],</span>
+<span class="p">}</span>
+
+<span class="n">claim</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">&quot;mainsnak&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;snaktype&quot;</span><span class="p">:</span> <span class="s2">&quot;value&quot;</span><span class="p">,</span> <span class="s2">&quot;datavalue&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;value&quot;</span><span class="p">:</span> <span class="s2">&quot;https://example.org&quot;</span><span class="p">}},</span>
+    <span class="s2">&quot;references&quot;</span><span class="p">:</span> <span class="p">[</span>
+        <span class="p">{</span>
+            <span class="s2">&quot;snaks&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;P854&quot;</span><span class="p">:</span> <span class="p">[</span>
+                    <span class="p">{</span><span class="s2">&quot;snaktype&quot;</span><span class="p">:</span> <span class="s2">&quot;value&quot;</span><span class="p">,</span> <span class="s2">&quot;datavalue&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;value&quot;</span><span class="p">:</span> <span class="s2">&quot;https://example.org/source&quot;</span><span class="p">}}</span>
+                <span class="p">]</span>
+            <span class="p">}</span>
+        <span class="p">}</span>
+    <span class="p">],</span>
+<span class="p">}</span>
+
+<span class="n">evaluation</span> <span class="o">=</span> <span class="n">evaluate_statement_instance</span><span class="p">(</span><span class="n">statement</span><span class="p">,</span> <span class="n">claim</span><span class="p">,</span> <span class="n">entity_ref</span><span class="o">=</span><span class="s2">&quot;Q14708404&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">evaluation</span><span class="o">.</span><span class="n">outcome</span><span class="o">.</span><span class="n">value</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">([</span><span class="n">child</span><span class="o">.</span><span class="n">outcome</span><span class="o">.</span><span class="n">value</span> <span class="k">for</span> <span class="n">child</span> <span class="ow">in</span> <span class="n">evaluation</span><span class="o">.</span><span class="n">reference_evaluations</span><span class="p">])</span>
+</code></pre></div>
+<h3 id="statement_evaluation_to_recordevaluation-profile_statement-entity_id-json_path"><code>statement_evaluation_to_record(evaluation, profile_statement, *, entity_id, json_path)</code></h3>
+<p>Serialize a <code>StatementEvaluation</code> into packet conformance record shape.</p>
+<p>The serialized record includes a DD Wikibase statement reference block:</p>
+<div class="highlight"><pre><span></span><code><span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;entity_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Q14708404&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;gkc_entity_statement&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;official_website&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;uri&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;https://datadistillery.wikibase.cloud/entity/Q19&quot;</span>
+<span class="w">  </span><span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div>
+<p>Nested qualifier and reference evaluations are serialized recursively using the same shape.</p>
+<h3 id="evaluate_entityprofile_statements-wikidata_item-io_map_index-entity_ref-value_list_rootnone"><code>evaluate_entity(profile_statements, wikidata_item, *, io_map_index, entity_ref="", value_list_root=None)</code></h3>
+<p>Evaluates one source entity against all active profile statements and classifies output into the four conformance buckets.</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">gkc.fermenter</span><span class="w"> </span><span class="kn">import</span> <span class="n">evaluate_entity</span>
+
+<span class="n">entity_eval</span> <span class="o">=</span> <span class="n">evaluate_entity</span><span class="p">(</span>
+    <span class="n">profile_statements</span><span class="o">=</span><span class="p">[</span><span class="o">...</span><span class="p">],</span>
+    <span class="n">wikidata_item</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;id&quot;</span><span class="p">:</span> <span class="s2">&quot;Q195562&quot;</span><span class="p">,</span> <span class="s2">&quot;claims&quot;</span><span class="p">:</span> <span class="p">{</span><span class="o">...</span><span class="p">}},</span>
+    <span class="n">io_map_index</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;P31&quot;</span><span class="p">:</span> <span class="p">{</span><span class="o">...</span><span class="p">},</span> <span class="s2">&quot;P17&quot;</span><span class="p">:</span> <span class="p">{</span><span class="o">...</span><span class="p">}},</span>
+    <span class="n">entity_ref</span><span class="o">=</span><span class="s2">&quot;Q195562&quot;</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">entity_eval</span><span class="o">.</span><span class="n">conformant</span><span class="p">))</span>
+<span class="nb">print</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">entity_eval</span><span class="o">.</span><span class="n">non_conformant_mappable</span><span class="p">))</span>
+<span class="nb">print</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">entity_eval</span><span class="o">.</span><span class="n">to_be_defined</span><span class="p">))</span>
+<span class="nb">print</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">entity_eval</span><span class="o">.</span><span class="n">missing</span><span class="p">))</span>
+</code></pre></div>
+<h2 id="packet-integrity-and-validation-entry-points">Packet Integrity and Validation Entry Points</h2>
+<h3 id="check_packet_integritypacket"><code>check_packet_integrity(packet)</code></h3>
+<p>Verifies metadata digest integrity before any data validation.</p>
+<ul>
+<li>Returns <code>None</code> when digest is valid.</li>
+<li>Returns an <code>error</code> <code>ConformanceNotice</code> on missing metadata integrity fields or digest mismatch.</li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="kn">import</span><span class="w"> </span><span class="nn">hashlib</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">json</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">gkc.fermenter</span><span class="w"> </span><span class="kn">import</span> <span class="n">check_packet_integrity</span>
+
+<span class="n">metadata</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">&quot;primary_profile&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;id&quot;</span><span class="p">:</span> <span class="s2">&quot;https://datadistillery.wikibase.cloud/entity/Q4&quot;</span><span class="p">},</span>
+    <span class="s2">&quot;profiles&quot;</span><span class="p">:</span> <span class="p">[],</span>
+    <span class="s2">&quot;graph&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;nodes&quot;</span><span class="p">:</span> <span class="p">[],</span> <span class="s2">&quot;edges&quot;</span><span class="p">:</span> <span class="p">[]},</span>
+    <span class="s2">&quot;mint&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;minted_at&quot;</span><span class="p">:</span> <span class="s2">&quot;2026-03-26T00:00:00Z&quot;</span><span class="p">,</span> <span class="s2">&quot;generator&quot;</span><span class="p">:</span> <span class="s2">&quot;example&quot;</span><span class="p">},</span>
+<span class="p">}</span>
+<span class="n">digest</span> <span class="o">=</span> <span class="n">hashlib</span><span class="o">.</span><span class="n">sha256</span><span class="p">(</span>
+    <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">metadata</span><span class="p">,</span> <span class="n">sort_keys</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">separators</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;,&quot;</span><span class="p">,</span> <span class="s2">&quot;:&quot;</span><span class="p">))</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="s2">&quot;utf-8&quot;</span><span class="p">)</span>
+<span class="p">)</span><span class="o">.</span><span class="n">hexdigest</span><span class="p">()</span>
+
+<span class="n">packet</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">&quot;packet_id&quot;</span><span class="p">:</span> <span class="s2">&quot;pkt-example&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;metadata&quot;</span><span class="p">:</span> <span class="p">{</span>
+        <span class="o">**</span><span class="n">metadata</span><span class="p">,</span>
+        <span class="s2">&quot;integrity&quot;</span><span class="p">:</span> <span class="p">{</span>
+            <span class="s2">&quot;metadata_canonicalization&quot;</span><span class="p">:</span> <span class="s2">&quot;json-sort-keys-v1&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;metadata_digest_algorithm&quot;</span><span class="p">:</span> <span class="s2">&quot;sha256&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;metadata_digest&quot;</span><span class="p">:</span> <span class="n">digest</span><span class="p">,</span>
+        <span class="p">},</span>
+    <span class="p">},</span>
+    <span class="s2">&quot;data&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;entities&quot;</span><span class="p">:</span> <span class="p">[]},</span>
+<span class="p">}</span>
+
+<span class="n">notice</span> <span class="o">=</span> <span class="n">check_packet_integrity</span><span class="p">(</span><span class="n">packet</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">notice</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">)</span>  <span class="c1"># True</span>
+</code></pre></div>
+<h3 id="validate_packet_inlinepacket-value_list_rootnone"><code>validate_packet_inline(packet, *, value_list_root=None)</code></h3>
+<p>Validates an in-memory packet object.</p>
+<ul>
+<li>Performs integrity check first.</li>
+<li>On integrity mismatch, hard-fails immediately and returns only the integrity notice.</li>
+<li>On success, returns <code>(True, [info notice])</code> with <code>packet_integrity_pass</code>.</li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">gkc.fermenter</span><span class="w"> </span><span class="kn">import</span> <span class="n">validate_packet_inline</span>
+
+<span class="n">packet</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">&quot;packet_id&quot;</span><span class="p">:</span> <span class="s2">&quot;pkt-example&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;metadata&quot;</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s2">&quot;primary_profile&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;id&quot;</span><span class="p">:</span> <span class="s2">&quot;https://datadistillery.wikibase.cloud/entity/Q4&quot;</span><span class="p">},</span>
+        <span class="s2">&quot;profiles&quot;</span><span class="p">:</span> <span class="p">[],</span>
+        <span class="s2">&quot;graph&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;nodes&quot;</span><span class="p">:</span> <span class="p">[],</span> <span class="s2">&quot;edges&quot;</span><span class="p">:</span> <span class="p">[]},</span>
+        <span class="s2">&quot;mint&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;minted_at&quot;</span><span class="p">:</span> <span class="s2">&quot;2026-03-26T00:00:00Z&quot;</span><span class="p">,</span> <span class="s2">&quot;generator&quot;</span><span class="p">:</span> <span class="s2">&quot;example&quot;</span><span class="p">},</span>
+        <span class="s2">&quot;integrity&quot;</span><span class="p">:</span> <span class="p">{</span>
+            <span class="s2">&quot;metadata_canonicalization&quot;</span><span class="p">:</span> <span class="s2">&quot;json-sort-keys-v1&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;metadata_digest_algorithm&quot;</span><span class="p">:</span> <span class="s2">&quot;sha256&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;metadata_digest&quot;</span><span class="p">:</span> <span class="s2">&quot;replace-with-computed-digest&quot;</span><span class="p">,</span>
+        <span class="p">},</span>
+    <span class="p">},</span>
+    <span class="s2">&quot;data&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;entities&quot;</span><span class="p">:</span> <span class="p">[]},</span>
+<span class="p">}</span>
+
+<span class="n">ok</span><span class="p">,</span> <span class="n">notices</span> <span class="o">=</span> <span class="n">validate_packet_inline</span><span class="p">(</span><span class="n">packet</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">ok</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">([</span><span class="n">n</span><span class="o">.</span><span class="n">code</span> <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">notices</span><span class="p">])</span>
+</code></pre></div>
+<h3 id="validate_packet_from_filepath-value_list_rootnone"><code>validate_packet_from_file(path, *, value_list_root=None)</code></h3>
+<p>Loads packet JSON from file, then delegates to <code>validate_packet_inline</code>.</p>
+<p>This provides file/inline parity for notebook and CLI testing workflows.</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">pathlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">Path</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">gkc.fermenter</span><span class="w"> </span><span class="kn">import</span> <span class="n">validate_packet_from_file</span><span class="p">,</span> <span class="n">validate_packet_inline</span>
+
+<span class="n">packet</span> <span class="o">=</span> <span class="p">{</span><span class="o">...</span><span class="p">}</span>
+<span class="n">ok_inline</span><span class="p">,</span> <span class="n">notices_inline</span> <span class="o">=</span> <span class="n">validate_packet_inline</span><span class="p">(</span><span class="n">packet</span><span class="p">)</span>
+<span class="n">ok_file</span><span class="p">,</span> <span class="n">notices_file</span> <span class="o">=</span> <span class="n">validate_packet_from_file</span><span class="p">(</span><span class="n">Path</span><span class="p">(</span><span class="s2">&quot;/tmp/packet.json&quot;</span><span class="p">))</span>
+</code></pre></div>
+<h2 id="local-test-coverage">Local Test Coverage</h2>
+<p>New evaluator and packet-validation behavior is covered in:</p>
+<ul>
+<li><code>tests/test_fermenter_evaluator.py</code></li>
+</ul>
+<p>This suite exercises:</p>
+<ul>
+<li>conformant, non-conformant, missing, and to-be-defined classification paths</li>
+<li>value-list mismatch handling in statement evaluation</li>
+<li>packet integrity pass/fail behavior</li>
+<li>file-vs-inline validation parity</li>
+</ul>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../../..", "features": ["navigation.instant", "navigation.sections", "navigation.top", "toc.follow", "content.code.copy"], "search": "../../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../../assets/javascripts/bundle.79ae519e.min.js"></script>
+      
+        <script src="https://unpkg.com/mermaid@10.6.1/dist/mermaid.min.js"></script>
+      
+        <script src="../../../javascripts/mermaid-init.js"></script>
+      
+    
+  </body>
+</html>

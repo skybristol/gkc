@@ -1,0 +1,3460 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Data Distillery - A framework for data distillation toward the Global Knowledge Commons">
+      
+      
+      
+        <link rel="canonical" href="https://datadistillery.org/gkc/mash/">
+      
+      
+        <link rel="prev" href="../profiles/">
+      
+      
+        <link rel="next" href="../entity-json-schema/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../img/DataDistilleryFavIcon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.4">
+    
+    
+      
+        <title>Mash - Data Distillery</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.484c7ddc.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/_mkdocstrings.css">
+    
+      <link rel="stylesheet" href="../../stylesheets/extra.css">
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    <body dir="ltr">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#mash-module-loading-and-shaping-source-data" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="Data Distillery" class="md-header__button md-logo" aria-label="Data Distillery" data-md-component="logo">
+      
+  <img src="../../img/DataDistilleryIconNight.png" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            Data Distillery
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Mash
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/skybristol/gkc" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    skybristol/gkc
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="Data Distillery" class="md-nav__button md-logo" aria-label="Data Distillery" data-md-component="logo">
+      
+  <img src="../../img/DataDistilleryIconNight.png" alt="logo">
+
+    </a>
+    Data Distillery
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/skybristol/gkc" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    skybristol/gkc
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Data Curation Narratives
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Data Curation Narratives
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../tribes/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Tribal Governments
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Architecture
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../architecture/wikimedia-commons/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Wikimedia Commons
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3_3" id="__nav_3_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Meta-Wikibase
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Meta-Wikibase
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../architecture/meta-wikibase/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../architecture/meta-wikibase/DataDistillery-Wikibase/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Data Distillery Wikibase
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../architecture/meta-wikibase/semantic-anchors/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Semantic Anchors
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../architecture/meta-wikibase/wikibase-datatypes/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Wikibase Datatypes
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../architecture/module-contracts/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Cross-Module Contracts
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../architecture/still_charger/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Still Charger
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_6" >
+        
+          
+          <label class="md-nav__link" for="__nav_3_6" id="__nav_3_6_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SpiritSafe
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3_6">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    SpiritSafe
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../architecture/SpiritSafe/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../architecture/SpiritSafe/profile-loading/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Profile Loading
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../architecture/SpiritSafe/spirit_safe_models/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SpiritSafe Models & API
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../architecture/SpiritSafe/SpiritSafe-testing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SpiritSafe Testing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../architecture/validation-architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Validation Architecture
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    GKC Documentation
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    GKC Documentation
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../background/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Background
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../wikibase_ontology_orientation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Wikibase Ontology Orientation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../profiles/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Entity Profiles
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Mash
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Mash
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#overview" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Overview
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#quick-start" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Quick Start
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Quick Start">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#load-wikidata-items" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Load Wikidata items
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#use-a-source-adapter-directly" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Use a source adapter directly
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#batch-loading" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Batch loading
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#architecture" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Architecture
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Architecture">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#layered-design" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Layered Design
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#component-responsibilities" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Component Responsibilities
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#core-concepts" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Core Concepts
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Core Concepts">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#mashsourceadapter-protocol" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        MashSourceAdapter Protocol
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#datatemplate-protocol" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        DataTemplate Protocol
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#current-source-adapters" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Current Source Adapters
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Current Source Adapters">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#wikibase-adapter-wikibasemashsourceadapter" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Wikibase Adapter: WikibaseMashSourceAdapter
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#wikipedia-adapter-wikipediamashsourceadapter" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Wikipedia Adapter: WikipediaMashSourceAdapter
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#extending-mash-building-new-source-adapters" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Extending Mash: Building New Source Adapters
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Extending Mash: Building New Source Adapters">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#1-create-a-new-adapter-module" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. Create a new adapter module
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2-register-the-adapter" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. Register the adapter
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#3-adapter-skeleton-template" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. Adapter skeleton template
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#4-tips-for-implementation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4. Tips for implementation
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#common-patterns" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Common Patterns
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Common Patterns">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#filtering-and-shaping-entities" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Filtering and shaping entities
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#batch-loading-with-caching" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Batch loading with caching
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#polymorphic-source-dispatch" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Polymorphic source dispatch
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#see-also" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        See Also
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../entity-json-schema/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Entity JSON
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../wizard/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Wizard
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4_8" >
+        
+          
+          <label class="md-nav__link" for="__nav_4_8" id="__nav_4_8_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Getting Started
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_4_8_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4_8">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Getting Started
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../setup/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Setup and Orientation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../authentication/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Authentication
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4_9" >
+        
+          
+          <label class="md-nav__link" for="__nav_4_9" id="__nav_4_9_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Data Distillery Workflow
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_4_9_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4_9">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Data Distillery Workflow
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../shipping/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Shipping
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4_10" >
+        
+          
+          <label class="md-nav__link" for="__nav_4_10" id="__nav_4_10_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API Reference
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_4_10_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4_10">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    API Reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api/auth/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Authentication
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api/mash/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Mash
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api/mash_formatters/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Mash Formatters
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api/wikibase/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Wikibase
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api/still_charger/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Still Charger
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api/fermenter/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Fermenter
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api/bottler/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Bottler
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api/profiles/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Profiles
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api/spirit_safe/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SpiritSafe
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api/shex/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ShEx
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api/shipper/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Shipper
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api/sparql/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SPARQL
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4_11" >
+        
+          
+          <label class="md-nav__link" for="__nav_4_11" id="__nav_4_11_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Command Line Interface
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_4_11_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4_11">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Command Line Interface
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../cli/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../cli/auth/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Authentication
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../cli/mash/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Mash
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../cli/profiles/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Profile
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../cli/packet/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Packet
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../cli/spiritsafe/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SpiritSafe
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../cli/wizard/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Wizard
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../cli/shex/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ShEx
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4_12" >
+        
+          
+          <label class="md-nav__link" for="__nav_4_12" id="__nav_4_12_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Utilities and Tools
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_4_12_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4_12">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Utilities and Tools
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../utilities/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Utilities
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4_13" >
+        
+          
+          <label class="md-nav__link" for="__nav_4_13" id="__nav_4_13_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Development
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_4_13_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4_13">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Development
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../CI_CD/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CI/CD
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../RELEASE/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Release Process
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#overview" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Overview
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#quick-start" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Quick Start
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Quick Start">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#load-wikidata-items" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Load Wikidata items
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#use-a-source-adapter-directly" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Use a source adapter directly
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#batch-loading" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Batch loading
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#architecture" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Architecture
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Architecture">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#layered-design" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Layered Design
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#component-responsibilities" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Component Responsibilities
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#core-concepts" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Core Concepts
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Core Concepts">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#mashsourceadapter-protocol" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        MashSourceAdapter Protocol
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#datatemplate-protocol" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        DataTemplate Protocol
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#current-source-adapters" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Current Source Adapters
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Current Source Adapters">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#wikibase-adapter-wikibasemashsourceadapter" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Wikibase Adapter: WikibaseMashSourceAdapter
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#wikipedia-adapter-wikipediamashsourceadapter" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Wikipedia Adapter: WikipediaMashSourceAdapter
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#extending-mash-building-new-source-adapters" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Extending Mash: Building New Source Adapters
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Extending Mash: Building New Source Adapters">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#1-create-a-new-adapter-module" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. Create a new adapter module
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2-register-the-adapter" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. Register the adapter
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#3-adapter-skeleton-template" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. Adapter skeleton template
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#4-tips-for-implementation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4. Tips for implementation
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#common-patterns" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Common Patterns
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Common Patterns">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#filtering-and-shaping-entities" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Filtering and shaping entities
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#batch-loading-with-caching" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Batch loading with caching
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#polymorphic-source-dispatch" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Polymorphic source dispatch
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#see-also" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        See Also
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="mash-module-loading-and-shaping-source-data">Mash Module: Loading and Shaping Source Data</h1>
+<p><strong>Plain Meaning:</strong> A comprehensive guide to the mash module's role as the inbound/read layer for GKC workflows, covering how to load data from multiple sources, shape entities into templates, and extend mash with new source adapters.</p>
+<h2 id="overview">Overview</h2>
+<p>The <strong>mash module</strong> is GKC's unified read layer for ingesting data from diverse sources. The name comes from the distillery metaphor—like grain milled and steeped to extract fermentable sugars, mashed entities extract essential structure from raw source data, preparing them as ingredients for downstream GKC workflows (validation, transformation, packet creation, and curation).</p>
+<p>The mash module provides:</p>
+<ul>
+<li><strong><code>MashSourceAdapter</code> protocol</strong> — A plugin contract for registering new data sources (Wikibase, Wikipedia, CSV, JSON APIs, dataframes, etc.)</li>
+<li><strong>Pre-built adapters</strong> — Current implementations for Wikidata/Wikibase items, properties, EntitySchemas, and Wikipedia templates</li>
+<li><strong>Template models</strong> — Dataclass-based structures (<code>WikibaseItemTemplate</code>, <code>WikibasePropertyTemplate</code>, <code>WikibaseEntitySchemaTemplate</code>, <code>WikipediaTemplate</code>) that normalize entity shape for downstream processing</li>
+<li><strong>Utilities</strong> — Helpers for filtering, labeling, transforming, and preparing entities for export</li>
+</ul>
+<p>Mash is strictly a <strong>read/load layer</strong>. Write operations (creating, editing, or removing data) belong in the <a href="../shipping/">shipping module</a>—mash shapes data received; shipper ships data created.</p>
+<hr />
+<h2 id="quick-start">Quick Start</h2>
+<h3 id="load-wikidata-items">Load Wikidata items</h3>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">gkc.mash</span><span class="w"> </span><span class="kn">import</span> <span class="n">WikibaseLoader</span>
+
+<span class="n">loader</span> <span class="o">=</span> <span class="n">WikibaseLoader</span><span class="p">()</span>
+<span class="n">template</span> <span class="o">=</span> <span class="n">loader</span><span class="o">.</span><span class="n">load_item</span><span class="p">(</span><span class="s2">&quot;Q42&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">template</span><span class="o">.</span><span class="n">summary</span><span class="p">())</span>
+</code></pre></div>
+<h3 id="use-a-source-adapter-directly">Use a source adapter directly</h3>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">gkc.mash</span><span class="w"> </span><span class="kn">import</span> <span class="n">WikibaseMashSourceAdapter</span><span class="p">,</span> <span class="n">WikipediaMashSourceAdapter</span>
+
+<span class="c1"># Wikibase adapter dispatches based on ID prefix (Q, P, E)</span>
+<span class="n">wb_adapter</span> <span class="o">=</span> <span class="n">WikibaseMashSourceAdapter</span><span class="p">()</span>
+<span class="n">item</span> <span class="o">=</span> <span class="n">wb_adapter</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="s2">&quot;Q42&quot;</span><span class="p">)</span>
+<span class="n">prop</span> <span class="o">=</span> <span class="n">wb_adapter</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="s2">&quot;P31&quot;</span><span class="p">)</span>
+<span class="n">schema</span> <span class="o">=</span> <span class="n">wb_adapter</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="s2">&quot;E502&quot;</span><span class="p">)</span>
+
+<span class="c1"># Wikipedia adapter loads templates</span>
+<span class="n">wp_adapter</span> <span class="o">=</span> <span class="n">WikipediaMashSourceAdapter</span><span class="p">()</span>
+<span class="n">infobox</span> <span class="o">=</span> <span class="n">wp_adapter</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="s2">&quot;Infobox_settlement&quot;</span><span class="p">)</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="n">item</span><span class="o">.</span><span class="n">summary</span><span class="p">(),</span> <span class="n">prop</span><span class="o">.</span><span class="n">summary</span><span class="p">(),</span> <span class="n">schema</span><span class="o">.</span><span class="n">summary</span><span class="p">(),</span> <span class="n">infobox</span><span class="o">.</span><span class="n">summary</span><span class="p">())</span>
+</code></pre></div>
+<h3 id="batch-loading">Batch loading</h3>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">gkc.mash</span><span class="w"> </span><span class="kn">import</span> <span class="n">WikibaseMashSourceAdapter</span>
+
+<span class="n">adapter</span> <span class="o">=</span> <span class="n">WikibaseMashSourceAdapter</span><span class="p">()</span>
+<span class="n">results</span> <span class="o">=</span> <span class="n">adapter</span><span class="o">.</span><span class="n">load_many</span><span class="p">([</span><span class="s2">&quot;Q42&quot;</span><span class="p">,</span> <span class="s2">&quot;Q5&quot;</span><span class="p">,</span> <span class="s2">&quot;Q30&quot;</span><span class="p">])</span>
+<span class="nb">print</span><span class="p">(</span><span class="nb">sorted</span><span class="p">(</span><span class="n">results</span><span class="o">.</span><span class="n">keys</span><span class="p">()))</span>
+</code></pre></div>
+<hr />
+<h2 id="architecture">Architecture</h2>
+<h3 id="layered-design">Layered Design</h3>
+<p>The mash module is organized into focused layers:</p>
+<div class="highlight"><pre><span></span><code>┌─ __init__.py ────────── Stable public API surface
+│                         (exports all public names)
+│
+├─ protocols.py ────────── Plugin contracts
+│  └─ MashSourceAdapter  - Protocol defining source loader interface
+│  └─ DataTemplate       - Protocol defining template shape contract
+│
+├─ core.py ──────────────── Implementations (main module)
+│  ├─ Clients
+│  │  └─ WikibaseApiClient  - HTTP client for Wikibase/Wikidata API
+│  ├─ Templates
+│  │  ├─ WikibaseItemTemplate
+│  │  ├─ WikibasePropertyTemplate
+│  │  ├─ WikibaseEntitySchemaTemplate
+│  │  └─ WikipediaTemplate
+│  ├─ Loaders
+│  │  ├─ WikibaseLoader      - Orchestrates Wikibase item/property/schema loading
+│  │  └─ WikipediaLoader     - Wikipedia template retrieval
+│  ├─ Adapters (plugin implementations)
+│  │  ├─ WikibaseMashSourceAdapter    - Wraps WikibaseLoader with protocol
+│  │  └─ WikipediaMashSourceAdapter   - Wraps WikipediaLoader with protocol
+│  └─ Utilities
+│     ├─ apply_template_language_filter()   - Filter entity labels/descriptions/aliases
+│     ├─ apply_item_property_filters()      - Include/exclude item claims
+│     └─ [other utilities for transformation]
+</code></pre></div>
+<h3 id="component-responsibilities">Component Responsibilities</h3>
+<table>
+<thead>
+<tr>
+<th>Component</th>
+<th>Responsibility</th>
+<th>Typical Use</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>WikibaseApiClient</strong></td>
+<td>Raw HTTP communication with Wikibase instances</td>
+<td>Direct queries, batch entity retrieval, search</td>
+</tr>
+<tr>
+<td><strong>WikibaseLoader</strong></td>
+<td>High-level orchestration: fetch, parse entity data, build templates</td>
+<td>CLI bulk loads, programmatic entity shaping</td>
+</tr>
+<tr>
+<td><strong>MashSourceAdapter</strong></td>
+<td>Plugin interface: <code>can_load()</code>, <code>load()</code>, <code>load_many()</code></td>
+<td>Extension point for CSV/JSON/dataframe sources</td>
+</tr>
+<tr>
+<td><strong>Adapter Implementations</strong></td>
+<td>Concrete adapters wrapping loaders</td>
+<td>Auto-dispatch to correct loader based on source ref format</td>
+</tr>
+<tr>
+<td><strong>Templates</strong></td>
+<td>Normalized entity shape with export methods</td>
+<td>Downstream filtering, validation, transformation, shipper input</td>
+</tr>
+<tr>
+<td><strong>Utilities</strong></td>
+<td>Reusable transforms and helpers</td>
+<td>Language filtering, property filtering, label hydration</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="core-concepts">Core Concepts</h2>
+<h3 id="mashsourceadapter-protocol">MashSourceAdapter Protocol</h3>
+<p>The <code>MashSourceAdapter</code> is the plugin contract for extending mash with new source types. Every source (Wikibase, Wikipedia, CSV, JSON, dataframe, etc.) should implement this protocol.</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Protocol</span><span class="p">,</span> <span class="n">runtime_checkable</span>
+
+<span class="nd">@runtime_checkable</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">MashSourceAdapter</span><span class="p">(</span><span class="n">Protocol</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Plugin interface for loading data from any source into mash templates.</span>
+
+<span class="sd">    Attributes:</span>
+<span class="sd">        source_name (str): Human-readable identifier of the source (e.g., &quot;wikibase&quot;, &quot;csv&quot;)</span>
+
+<span class="sd">    Methods:</span>
+<span class="sd">        can_load(source_ref: str) -&gt; bool</span>
+<span class="sd">            Check if this adapter can load a given source reference.</span>
+
+<span class="sd">        load(source_ref: str) -&gt; DataTemplate</span>
+<span class="sd">            Load a single entity and return a template.</span>
+<span class="sd">            Raises MashLoadError if the reference is not found or is malformed.</span>
+
+<span class="sd">        load_many(source_refs: list[str]) -&gt; dict[str, DataTemplate]</span>
+<span class="sd">            Load multiple entities. Returns dict of source_ref -&gt; template.</span>
+<span class="sd">            Silently skips references that cannot be loaded or returns error stubs.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">source_name</span><span class="p">:</span> <span class="nb">str</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">can_load</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">source_ref</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+        <span class="o">...</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">load</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">source_ref</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">DataTemplate</span><span class="p">:</span>
+        <span class="o">...</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">load_many</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">source_refs</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">DataTemplate</span><span class="p">]:</span>
+        <span class="o">...</span>
+</code></pre></div>
+<p><strong>Key design principles:</strong></p>
+<ul>
+<li>Adapters are <strong>stateless</strong> — each call to <code>load()</code> or <code>load_many()</code> is independent; no session state expected</li>
+<li>Source references are <strong>opaque strings</strong> — each adapter interprets the format (e.g., <code>"Q42"</code> vs. <code>"products-2024-01.csv"</code> vs. <code>"SELECT * FROM users"</code>)</li>
+<li>Templates are <strong>normalized outputs</strong> — all adapters return objects implementing the <code>DataTemplate</code> protocol, regardless of source</li>
+<li>Graceful degradation — <code>load_many()</code> should attempt partial loading rather than failing on first error</li>
+</ul>
+<h3 id="datatemplate-protocol">DataTemplate Protocol</h3>
+<p>Every template returned by any adapter must implement the <code>DataTemplate</code> protocol:</p>
+<div class="highlight"><pre><span></span><code><span class="nd">@runtime_checkable</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">DataTemplate</span><span class="p">(</span><span class="n">Protocol</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Minimal contract for shaped entity data.&quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">summary</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return a human-readable summary (labels, descriptions, key properties).&quot;&quot;&quot;</span>
+        <span class="o">...</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">to_dict</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return full normalized representation.&quot;&quot;&quot;</span>
+        <span class="o">...</span>
+</code></pre></div>
+<hr />
+<h2 id="current-source-adapters">Current Source Adapters</h2>
+<h3 id="wikibase-adapter-wikibasemashsourceadapter">Wikibase Adapter: <code>WikibaseMashSourceAdapter</code></h3>
+<p><strong>Source references:</strong> Wikibase entity IDs formatted as <code>Q&lt;number&gt;</code> (items), <code>P&lt;number&gt;</code> (properties), <code>E&lt;number&gt;</code> (EntitySchemas)</p>
+<p><strong>Example:</strong>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">gkc.mash</span><span class="w"> </span><span class="kn">import</span> <span class="n">WikibaseMashSourceAdapter</span>
+
+<span class="n">adapter</span> <span class="o">=</span> <span class="n">WikibaseMashSourceAdapter</span><span class="p">()</span>
+
+<span class="c1"># All three dispatch automatically based on prefix</span>
+<span class="n">item</span> <span class="o">=</span> <span class="n">adapter</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="s2">&quot;Q42&quot;</span><span class="p">)</span>           <span class="c1"># Item</span>
+<span class="n">prop</span> <span class="o">=</span> <span class="n">adapter</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="s2">&quot;P31&quot;</span><span class="p">)</span>           <span class="c1"># Property</span>
+<span class="n">schema</span> <span class="o">=</span> <span class="n">adapter</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="s2">&quot;E502&quot;</span><span class="p">)</span>        <span class="c1"># EntitySchema</span>
+
+<span class="c1"># Batch loading</span>
+<span class="n">batch</span> <span class="o">=</span> <span class="n">adapter</span><span class="o">.</span><span class="n">load_many</span><span class="p">([</span><span class="s2">&quot;Q42&quot;</span><span class="p">,</span> <span class="s2">&quot;P31&quot;</span><span class="p">,</span> <span class="s2">&quot;E502&quot;</span><span class="p">])</span>
+</code></pre></div></p>
+<p><strong>Configuration:</strong>
+- By default, connects to public Wikidata (<code>https://www.wikidata.org/w/api.php</code>)
+- Can be reconfigured to point to any Wikibase instance via the underlying <code>WikibaseLoader</code></p>
+<p><strong>Output:</strong> <code>WikibaseItemTemplate</code>, <code>WikibasePropertyTemplate</code>, or <code>WikibaseEntitySchemaTemplate</code></p>
+<h3 id="wikipedia-adapter-wikipediamashsourceadapter">Wikipedia Adapter: <code>WikipediaMashSourceAdapter</code></h3>
+<p><strong>Source references:</strong> Wikipedia (or Wikimedia) template names with optional <code>Template:</code> prefix normalization</p>
+<p><strong>Example:</strong>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">gkc.mash</span><span class="w"> </span><span class="kn">import</span> <span class="n">WikipediaMashSourceAdapter</span>
+
+<span class="n">adapter</span> <span class="o">=</span> <span class="n">WikipediaMashSourceAdapter</span><span class="p">()</span>
+
+<span class="c1"># Both are equivalent (prefix normalization handled)</span>
+<span class="n">template1</span> <span class="o">=</span> <span class="n">adapter</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="s2">&quot;Infobox_settlement&quot;</span><span class="p">)</span>
+<span class="n">template2</span> <span class="o">=</span> <span class="n">adapter</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="s2">&quot;Template:Infobox_settlement&quot;</span><span class="p">)</span>
+<span class="k">assert</span> <span class="n">template1</span><span class="o">.</span><span class="n">title</span> <span class="o">==</span> <span class="n">template2</span><span class="o">.</span><span class="n">title</span>
+</code></pre></div></p>
+<p><strong>Configuration:</strong>
+- Connects to <code>en.wikipedia.org</code> by default
+- Language/wiki selection configurable via the underlying <code>WikipediaLoader</code></p>
+<p><strong>Output:</strong> <code>WikipediaTemplate</code></p>
+<hr />
+<h2 id="extending-mash-building-new-source-adapters">Extending Mash: Building New Source Adapters</h2>
+<p>To add a new source type (CSV, JSON API, database query, dataframe, etc.), follow this pattern:</p>
+<h3 id="1-create-a-new-adapter-module">1. Create a new adapter module</h3>
+<p>Create a module in the mash package (or in your own package):</p>
+<div class="highlight"><pre><span></span><code><span class="c1"># Example: gkc/mash/csv_adapter.py</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">gkc.mash</span><span class="w"> </span><span class="kn">import</span> <span class="n">MashSourceAdapter</span><span class="p">,</span> <span class="n">DataTemplate</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pathlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">Path</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">csv</span>
+
+<span class="k">class</span><span class="w"> </span><span class="nc">CSVMashSourceAdapter</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Load rows from CSV files as templates.&quot;&quot;&quot;</span>
+
+    <span class="n">source_name</span> <span class="o">=</span> <span class="s2">&quot;csv&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">file_path</span><span class="p">:</span> <span class="n">Path</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">file_path</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">file_path</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">can_load</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">source_ref</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Check if row ID exists in the CSV.&quot;&quot;&quot;</span>
+        <span class="c1"># source_ref format: &quot;row_id&quot; or &quot;row_index&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">file_path</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+                <span class="n">reader</span> <span class="o">=</span> <span class="n">csv</span><span class="o">.</span><span class="n">DictReader</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+                <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">row</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">reader</span><span class="p">):</span>
+                    <span class="k">if</span> <span class="n">source_ref</span> <span class="o">==</span> <span class="n">row</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;id&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="n">source_ref</span> <span class="o">==</span> <span class="nb">str</span><span class="p">(</span><span class="n">i</span><span class="p">):</span>
+                        <span class="k">return</span> <span class="kc">True</span>
+            <span class="k">return</span> <span class="kc">False</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">False</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">load</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">source_ref</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">DataTemplate</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Load a single CSV row as a template.&quot;&quot;&quot;</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">file_path</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+            <span class="n">reader</span> <span class="o">=</span> <span class="n">csv</span><span class="o">.</span><span class="n">DictReader</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">row</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">reader</span><span class="p">):</span>
+                <span class="k">if</span> <span class="n">source_ref</span> <span class="o">==</span> <span class="n">row</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;id&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="n">source_ref</span> <span class="o">==</span> <span class="nb">str</span><span class="p">(</span><span class="n">i</span><span class="p">):</span>
+                    <span class="k">return</span> <span class="n">CSVRowTemplate</span><span class="p">(</span><span class="n">source_ref</span><span class="p">,</span> <span class="n">row</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="n">MashLoadError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Row </span><span class="si">{</span><span class="n">source_ref</span><span class="si">}</span><span class="s2"> not found in CSV&quot;</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">load_many</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">source_refs</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">DataTemplate</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Load multiple CSV rows.&quot;&quot;&quot;</span>
+        <span class="n">results</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">ref</span> <span class="ow">in</span> <span class="n">source_refs</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">results</span><span class="p">[</span><span class="n">ref</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">ref</span><span class="p">)</span>
+            <span class="k">except</span> <span class="n">MashLoadError</span><span class="p">:</span>
+                <span class="k">pass</span>  <span class="c1"># Skip missing rows</span>
+        <span class="k">return</span> <span class="n">results</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">CSVRowTemplate</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Minimal template wrapper for CSV row data.&quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">source_ref</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">row_data</span><span class="p">:</span> <span class="nb">dict</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">source_ref</span> <span class="o">=</span> <span class="n">source_ref</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">row_data</span> <span class="o">=</span> <span class="n">row_data</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">summary</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+        <span class="k">return</span> <span class="p">{</span>
+            <span class="s2">&quot;source_ref&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">source_ref</span><span class="p">,</span>
+            <span class="s2">&quot;row_data&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">row_data</span><span class="p">,</span>
+            <span class="s2">&quot;field_count&quot;</span><span class="p">:</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">row_data</span><span class="p">),</span>
+        <span class="p">}</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">to_dict</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+        <span class="k">return</span> <span class="p">{</span>
+            <span class="s2">&quot;source_ref&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">source_ref</span><span class="p">,</span>
+            <span class="s2">&quot;row_data&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">row_data</span><span class="p">,</span>
+        <span class="p">}</span>
+</code></pre></div>
+<h3 id="2-register-the-adapter">2. Register the adapter</h3>
+<p>Once created, the adapter can be used directly:</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">gkc.mash.csv_adapter</span><span class="w"> </span><span class="kn">import</span> <span class="n">CSVMashSourceAdapter</span>
+
+<span class="n">csv_adapter</span> <span class="o">=</span> <span class="n">CSVMashSourceAdapter</span><span class="p">(</span><span class="n">Path</span><span class="p">(</span><span class="s2">&quot;data/records.csv&quot;</span><span class="p">))</span>
+
+<span class="c1"># The adapter automatically satisfies the MashSourceAdapter protocol</span>
+<span class="k">if</span> <span class="n">csv_adapter</span><span class="o">.</span><span class="n">can_load</span><span class="p">(</span><span class="s2">&quot;record_123&quot;</span><span class="p">):</span>
+    <span class="n">template</span> <span class="o">=</span> <span class="n">csv_adapter</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="s2">&quot;record_123&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">template</span><span class="o">.</span><span class="n">summary</span><span class="p">())</span>
+</code></pre></div>
+<p>Or register it in your own code for polymorphic dispatch:</p>
+<div class="highlight"><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">load_from_source</span><span class="p">(</span><span class="n">source_ref</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">sources</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">MashSourceAdapter</span><span class="p">]):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Try each adapter until one can load the reference.&quot;&quot;&quot;</span>
+    <span class="k">for</span> <span class="n">adapter</span> <span class="ow">in</span> <span class="n">sources</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
+        <span class="k">if</span> <span class="n">adapter</span><span class="o">.</span><span class="n">can_load</span><span class="p">(</span><span class="n">source_ref</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">adapter</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">source_ref</span><span class="p">)</span>
+    <span class="k">raise</span> <span class="n">MashLoadError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;No adapter can load </span><span class="si">{</span><span class="n">source_ref</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</code></pre></div>
+<h3 id="3-adapter-skeleton-template">3. Adapter skeleton template</h3>
+<p>Use this as a starting point for new adapters:</p>
+<div class="highlight"><pre><span></span><code><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">&lt;SourceType&gt;MashSourceAdapter</span>
+
+<span class="sd">Loads &lt;SourceType&gt; data and shapes it into DataTemplate objects.</span>
+
+<span class="sd">Configuration:</span>
+<span class="sd">  - &lt;config option 1&gt;</span>
+<span class="sd">  - &lt;config option 2&gt;</span>
+
+<span class="sd">Source reference format:</span>
+<span class="sd">  - &lt;description of how source_ref strings are interpreted&gt;</span>
+
+<span class="sd">Output template:</span>
+<span class="sd">  - &lt;class name implementing DataTemplate&gt;</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">gkc.mash</span><span class="w"> </span><span class="kn">import</span> <span class="n">MashSourceAdapter</span><span class="p">,</span> <span class="n">DataTemplate</span><span class="p">,</span> <span class="n">MashLoadError</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="err">&lt;</span><span class="nc">SourceType</span><span class="o">&gt;</span><span class="n">MashSourceAdapter</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Load &lt;source type&gt; data as mash templates.&quot;&quot;&quot;</span>
+
+    <span class="n">source_name</span> <span class="o">=</span> <span class="s2">&quot;&lt;lowercase_source_name&gt;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">config</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Initialize the adapter with source-specific configuration.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            &lt;arg1&gt;: &lt;description&gt;</span>
+<span class="sd">            &lt;arg2&gt;: &lt;description&gt;</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">pass</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">can_load</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">source_ref</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Check if this adapter can load the given source reference.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            source_ref: Source-specific reference format</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            True if the reference exists and is loadable, False otherwise</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">pass</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">load</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">source_ref</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">DataTemplate</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Load a single entity from the source.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            source_ref: Source-specific reference</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            DataTemplate: Normalized template object</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            MashLoadError: If the reference is not found or is malformed</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">pass</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">load_many</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">source_refs</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">DataTemplate</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Load multiple entities from the source.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            source_refs: List of source-specific references</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            dict: Mapping of source_ref -&gt; DataTemplate for successfully loaded refs</span>
+<span class="sd">                  (silently omits references that cannot be loaded)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">pass</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="err">&lt;</span><span class="nc">SourceType</span><span class="o">&gt;</span><span class="n">Template</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Template wrapper for &lt;source type&gt; data.&quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">source_ref</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="nb">dict</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Initialize template with source reference and normalized data.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            source_ref: Original source reference identifier</span>
+<span class="sd">            data: Normalized/extracted data structure</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">pass</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">summary</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return human-readable summary of the entity.&quot;&quot;&quot;</span>
+        <span class="k">pass</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">to_dict</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return full normalized representation.&quot;&quot;&quot;</span>
+        <span class="k">pass</span>
+</code></pre></div>
+<h3 id="4-tips-for-implementation">4. Tips for implementation</h3>
+<ul>
+<li><strong>Lazy loading</strong>: Consider deferring expensive I/O until <code>load()</code> is actually called, not during <code>__init__()</code></li>
+<li><strong>Error handling</strong>: Use <code>MashLoadError</code> for user-facing errors; let infrastructure errors propagate for debugging</li>
+<li><strong>Reference format</strong>: Document your reference format clearly — users need to know what strings are valid (<code>can_load()</code> exists for validation)</li>
+<li><strong>Batch optimization</strong>: Override <code>load_many()</code> if your source supports efficient batch retrieval (e.g., SQL <code>WHERE id IN (...)</code> vs. loops)</li>
+<li><strong>Template normalization</strong>: Keep template outputs simple; complex transformations belong in downstream modules (profiles validation, shipper, etc.)</li>
+<li><strong>Testing</strong>: Use <code>isinstance(adapter, MashSourceAdapter)</code> to verify your implementation satisfies the protocol</li>
+</ul>
+<hr />
+<h2 id="common-patterns">Common Patterns</h2>
+<h3 id="filtering-and-shaping-entities">Filtering and shaping entities</h3>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">gkc.mash</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">WikibaseLoader</span><span class="p">,</span>
+    <span class="n">apply_template_language_filter</span><span class="p">,</span>
+    <span class="n">apply_item_property_filters</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="n">loader</span> <span class="o">=</span> <span class="n">WikibaseLoader</span><span class="p">()</span>
+<span class="n">item</span> <span class="o">=</span> <span class="n">loader</span><span class="o">.</span><span class="n">load_item</span><span class="p">(</span><span class="s2">&quot;Q42&quot;</span><span class="p">)</span>
+
+<span class="c1"># Filter to specific properties only</span>
+<span class="n">apply_item_property_filters</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="n">include_properties</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;P31&quot;</span><span class="p">,</span> <span class="s2">&quot;P21&quot;</span><span class="p">,</span> <span class="s2">&quot;P569&quot;</span><span class="p">])</span>
+
+<span class="c1"># Keep only English labels/descriptions/aliases</span>
+<span class="n">apply_template_language_filter</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="p">[</span><span class="s2">&quot;en&quot;</span><span class="p">])</span>
+
+<span class="c1"># Export as clean template for new item creation</span>
+<span class="n">shell_data</span> <span class="o">=</span> <span class="n">item</span><span class="o">.</span><span class="n">to_shell</span><span class="p">()</span>
+
+<span class="c1"># Or transform for QuickStatements bulk editing</span>
+<span class="n">qs_lines</span> <span class="o">=</span> <span class="n">item</span><span class="o">.</span><span class="n">to_qsv1</span><span class="p">(</span><span class="n">for_new_item</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+</code></pre></div>
+<h3 id="batch-loading-with-caching">Batch loading with caching</h3>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">gkc.mash</span><span class="w"> </span><span class="kn">import</span> <span class="n">WikibaseMashSourceAdapter</span>
+
+<span class="n">adapter</span> <span class="o">=</span> <span class="n">WikibaseMashSourceAdapter</span><span class="p">()</span>
+
+<span class="c1"># Load items, caching successful results</span>
+<span class="n">cache</span> <span class="o">=</span> <span class="p">{}</span>
+<span class="k">for</span> <span class="n">qid</span> <span class="ow">in</span> <span class="n">large_qid_list</span><span class="p">:</span>
+    <span class="k">if</span> <span class="n">qid</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">cache</span><span class="p">:</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">cache</span><span class="p">[</span><span class="n">qid</span><span class="p">]</span> <span class="o">=</span> <span class="n">adapter</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">qid</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Failed to load </span><span class="si">{</span><span class="n">qid</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+<span class="c1"># Reuse without reloading</span>
+<span class="k">for</span> <span class="n">qid</span><span class="p">,</span> <span class="n">template</span> <span class="ow">in</span> <span class="n">cache</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">template</span><span class="o">.</span><span class="n">summary</span><span class="p">())</span>
+</code></pre></div>
+<h3 id="polymorphic-source-dispatch">Polymorphic source dispatch</h3>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">gkc.mash</span><span class="w"> </span><span class="kn">import</span> <span class="n">WikibaseMashSourceAdapter</span><span class="p">,</span> <span class="n">WikipediaMashSourceAdapter</span>
+
+<span class="c1"># Store available adapters</span>
+<span class="n">adapters</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">&quot;wikibase&quot;</span><span class="p">:</span> <span class="n">WikibaseMashSourceAdapter</span><span class="p">(),</span>
+    <span class="s2">&quot;wikipedia&quot;</span><span class="p">:</span> <span class="n">WikipediaMashSourceAdapter</span><span class="p">(),</span>
+<span class="p">}</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">load_from_any_source</span><span class="p">(</span><span class="n">source_ref</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">DataTemplate</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Try each adapter until one succeeds.&quot;&quot;&quot;</span>
+    <span class="k">for</span> <span class="n">adapter</span> <span class="ow">in</span> <span class="n">adapters</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
+        <span class="k">if</span> <span class="n">adapter</span><span class="o">.</span><span class="n">can_load</span><span class="p">(</span><span class="n">source_ref</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">adapter</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">source_ref</span><span class="p">)</span>
+    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;No adapter can load </span><span class="si">{</span><span class="n">source_ref</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</code></pre></div>
+<hr />
+<h2 id="see-also">See Also</h2>
+<ul>
+<li><a href="../api/mash/">Mash API Reference</a> — Full Python API documentation with mkdocstrings</li>
+<li><a href="../cli/mash/">Mash CLI Commands</a> — Command-line interface for bulk loading and transformation</li>
+<li><a href="../shipping/">Shipping Module</a> — Write layer for creating/editing entities</li>
+<li><a href="../profiles/">Profiles Module</a> — Entity validation and curation packets built from mash data</li>
+</ul>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.instant", "navigation.sections", "navigation.top", "toc.follow", "content.code.copy"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.79ae519e.min.js"></script>
+      
+        <script src="https://unpkg.com/mermaid@10.6.1/dist/mermaid.min.js"></script>
+      
+        <script src="../../javascripts/mermaid-init.js"></script>
+      
+    
+  </body>
+</html>

@@ -1,0 +1,100 @@
+body {
+    position: relative;
+}
+
+/* Mermaid Diagram Font Sizing */
+.mermaid svg text {
+    font-size: 18px !important;
+}
+
+.mermaid g text {
+    font-size: 18px !important;
+}
+
+.mermaid tspan {
+    font-size: 18px !important;
+}
+
+.mermaid foreignObject div {
+    font-size: 18px !important;
+}
+
+/* Feature Sections */
+.feature-section,
+.feature-section-alt {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2rem;
+    align-items: center;
+    margin: 2rem 0;
+}
+
+.feature-section-alt {
+    direction: rtl;
+}
+
+.feature-section-alt > * {
+    direction: ltr;
+}
+
+@media (max-width: 76.1875em) {
+    .feature-section,
+    .feature-section-alt {
+        grid-template-columns: 1fr;
+        direction: ltr;
+    }
+}
+
+.feature-content {
+    padding: 1rem;
+}
+
+.feature-image {
+    text-align: center;
+}
+
+.whiskey-image {
+    border-radius: 50%;
+    max-width: 400px;
+    width: 100%;
+    height: auto;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+/* Footer Note */
+.footer-note {
+    text-align: center;
+    font-style: italic;
+    color: var(--md-default-fg-color--light);
+    margin-top: 3rem;
+    padding-top: 2rem;
+    border-top: 1px solid var(--md-default-fg-color--lightest);
+}
+
+/* Adjust main content max-width for better layout */
+.md-content {
+    max-width: 1200px;
+    background-image: url('../img/Laphroaig10YO.jpeg');
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    background-attachment: fixed;
+    position: relative;
+}
+
+.md-content::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(255, 255, 255, 0.93);
+    pointer-events: none;
+    z-index: 0;
+}
+
+.md-content > * {
+    position: relative;
+    z-index: 1;
+}

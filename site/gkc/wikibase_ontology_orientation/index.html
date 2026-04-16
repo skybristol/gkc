@@ -1,0 +1,3414 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Data Distillery - A framework for data distillation toward the Global Knowledge Commons">
+      
+      
+      
+        <link rel="canonical" href="https://datadistillery.org/gkc/wikibase_ontology_orientation/">
+      
+      
+        <link rel="prev" href="../background/">
+      
+      
+        <link rel="next" href="../profiles/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../img/DataDistilleryFavIcon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.4">
+    
+    
+      
+        <title>Wikibase Ontology Orientation - Data Distillery</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.484c7ddc.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/_mkdocstrings.css">
+    
+      <link rel="stylesheet" href="../../stylesheets/extra.css">
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    <body dir="ltr">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#data-distillery-wikibase-ontology-orientation" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="Data Distillery" class="md-header__button md-logo" aria-label="Data Distillery" data-md-component="logo">
+      
+  <img src="../../img/DataDistilleryIconNight.png" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            Data Distillery
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Wikibase Ontology Orientation
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/skybristol/gkc" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    skybristol/gkc
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="Data Distillery" class="md-nav__button md-logo" aria-label="Data Distillery" data-md-component="logo">
+      
+  <img src="../../img/DataDistilleryIconNight.png" alt="logo">
+
+    </a>
+    Data Distillery
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/skybristol/gkc" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    skybristol/gkc
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Data Curation Narratives
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Data Curation Narratives
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../tribes/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Tribal Governments
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Architecture
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../architecture/wikimedia-commons/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Wikimedia Commons
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3_3" id="__nav_3_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Meta-Wikibase
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Meta-Wikibase
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../architecture/meta-wikibase/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../architecture/meta-wikibase/DataDistillery-Wikibase/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Data Distillery Wikibase
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../architecture/meta-wikibase/semantic-anchors/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Semantic Anchors
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../architecture/meta-wikibase/wikibase-datatypes/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Wikibase Datatypes
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../architecture/module-contracts/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Cross-Module Contracts
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../architecture/still_charger/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Still Charger
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_6" >
+        
+          
+          <label class="md-nav__link" for="__nav_3_6" id="__nav_3_6_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SpiritSafe
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3_6">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    SpiritSafe
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../architecture/SpiritSafe/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../architecture/SpiritSafe/profile-loading/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Profile Loading
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../architecture/SpiritSafe/spirit_safe_models/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SpiritSafe Models & API
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../architecture/SpiritSafe/SpiritSafe-testing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SpiritSafe Testing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../architecture/validation-architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Validation Architecture
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    GKC Documentation
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    GKC Documentation
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../background/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Background
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Wikibase Ontology Orientation
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Wikibase Ontology Orientation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#source-of-truth-and-access-pattern" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Source Of Truth And Access Pattern
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#entity-class-hierarchy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Entity Class Hierarchy
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#property-reference" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Property Reference
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Property Reference">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#classification-and-linkage" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Classification And Linkage
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#cardinality-and-value" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Cardinality And Value
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#guidance-and-messaging" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Guidance And Messaging
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#gkc-entity-profile-structure" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        GKC Entity Profile Structure
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="GKC Entity Profile Structure">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#profile-identification" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Profile Identification
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#yielded-entity-identification" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Yielded Entity Identification
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#profile-statements" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Profile Statements
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#statement-type" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Statement Type
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#io-mapping" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        IO Mapping
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#cardinality" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Cardinality
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#statement-values" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Statement Values
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#default-values" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Default Values
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#value-lists-and-refresh-policy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Value Lists And Refresh Policy
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#statement-qualifiers" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Statement Qualifiers
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#statement-references" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Statement References
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#guidance-precedence" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Guidance Precedence
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#language-and-text-policy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Language And Text Policy
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#extraction-implementation-notes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Extraction Implementation Notes
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#theoretical-design-notes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Theoretical Design Notes
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Theoretical Design Notes">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#processing-policies-and-logical-coercion" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Processing Policies And Logical Coercion
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#guidance-channel-configuration" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Guidance Channel Configuration
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#language-fallback-policy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Language Fallback Policy
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#typed-guidance-contracts" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Typed Guidance Contracts
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../profiles/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Entity Profiles
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../mash/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Mash
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../entity-json-schema/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Entity JSON
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../wizard/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Wizard
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4_8" >
+        
+          
+          <label class="md-nav__link" for="__nav_4_8" id="__nav_4_8_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Getting Started
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_4_8_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4_8">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Getting Started
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../setup/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Setup and Orientation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../authentication/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Authentication
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4_9" >
+        
+          
+          <label class="md-nav__link" for="__nav_4_9" id="__nav_4_9_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Data Distillery Workflow
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_4_9_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4_9">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Data Distillery Workflow
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../shipping/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Shipping
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4_10" >
+        
+          
+          <label class="md-nav__link" for="__nav_4_10" id="__nav_4_10_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API Reference
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_4_10_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4_10">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    API Reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api/auth/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Authentication
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api/mash/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Mash
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api/mash_formatters/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Mash Formatters
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api/wikibase/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Wikibase
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api/still_charger/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Still Charger
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api/fermenter/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Fermenter
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api/bottler/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Bottler
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api/profiles/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Profiles
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api/spirit_safe/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SpiritSafe
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api/shex/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ShEx
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api/shipper/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Shipper
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api/sparql/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SPARQL
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4_11" >
+        
+          
+          <label class="md-nav__link" for="__nav_4_11" id="__nav_4_11_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Command Line Interface
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_4_11_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4_11">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Command Line Interface
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../cli/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../cli/auth/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Authentication
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../cli/mash/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Mash
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../cli/profiles/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Profile
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../cli/packet/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Packet
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../cli/spiritsafe/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SpiritSafe
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../cli/wizard/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Wizard
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../cli/shex/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ShEx
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4_12" >
+        
+          
+          <label class="md-nav__link" for="__nav_4_12" id="__nav_4_12_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Utilities and Tools
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_4_12_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4_12">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Utilities and Tools
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../utilities/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Utilities
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4_13" >
+        
+          
+          <label class="md-nav__link" for="__nav_4_13" id="__nav_4_13_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Development
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_4_13_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4_13">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Development
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../CI_CD/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CI/CD
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../RELEASE/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Release Process
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#source-of-truth-and-access-pattern" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Source Of Truth And Access Pattern
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#entity-class-hierarchy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Entity Class Hierarchy
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#property-reference" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Property Reference
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Property Reference">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#classification-and-linkage" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Classification And Linkage
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#cardinality-and-value" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Cardinality And Value
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#guidance-and-messaging" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Guidance And Messaging
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#gkc-entity-profile-structure" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        GKC Entity Profile Structure
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="GKC Entity Profile Structure">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#profile-identification" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Profile Identification
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#yielded-entity-identification" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Yielded Entity Identification
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#profile-statements" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Profile Statements
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#statement-type" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Statement Type
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#io-mapping" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        IO Mapping
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#cardinality" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Cardinality
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#statement-values" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Statement Values
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#default-values" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Default Values
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#value-lists-and-refresh-policy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Value Lists And Refresh Policy
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#statement-qualifiers" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Statement Qualifiers
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#statement-references" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Statement References
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#guidance-precedence" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Guidance Precedence
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#language-and-text-policy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Language And Text Policy
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#extraction-implementation-notes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Extraction Implementation Notes
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#theoretical-design-notes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Theoretical Design Notes
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Theoretical Design Notes">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#processing-policies-and-logical-coercion" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Processing Policies And Logical Coercion
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#guidance-channel-configuration" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Guidance Channel Configuration
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#language-fallback-policy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Language Fallback Policy
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#typed-guidance-contracts" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Typed Guidance Contracts
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="data-distillery-wikibase-ontology-orientation">Data Distillery Wikibase Ontology Orientation</h1>
+<p>This document defines the current structure of the Data Distillery Wikibase ontology as it relates to GKC Entity Profile representation. It is the authoritative reference for how profile structure, constraints, guidance, and linkages are encoded in Wikibase items and properties, and how they translate to the materialized JSON cache in SpiritSafe.</p>
+<p>It is intended to keep implementation work aligned across the modules and workflows that consume these contracts.</p>
+<h2 id="source-of-truth-and-access-pattern">Source Of Truth And Access Pattern</h2>
+<p>The Data Distillery Wikibase is the authoritative source for profile ontology and semantic contracts.</p>
+<p>SpiritSafe is the materialized runtime cache used for deterministic loading in downstream workflows. It is version-controlled and offline-capable — gkc runtime code does not depend on live Wikibase availability.</p>
+<p>Practical note: the Wikibase main page may be blocked by browser bot protection, but the MediaWiki API endpoint is queryable for machine-readable retrieval.</p>
+<h2 id="entity-class-hierarchy">Entity Class Hierarchy</h2>
+<p>All entity classes in the DD Wikibase are organized under a root class using <code>P2</code> (subclass of) relationships. The root class is Q1. The following entity classes are actively used in profile modeling:</p>
+<table>
+<thead>
+<tr>
+<th>QID</th>
+<th>Label</th>
+<th>Role</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Q1</td>
+<td>Root class</td>
+<td>Ancestor of all DD Wikibase entity classes</td>
+</tr>
+<tr>
+<td>Q3</td>
+<td>GKC Entity Profile</td>
+<td>Each profile item has <code>P1 = Q3</code></td>
+</tr>
+<tr>
+<td>Q5</td>
+<td>GKC Entity Statement</td>
+<td>Statement definitions linked from profiles via P157, P158, and P211</td>
+</tr>
+<tr>
+<td>Q7</td>
+<td>GKC Value List</td>
+<td>Value list items linked via P161; may simultaneously classify a profile item</td>
+</tr>
+<tr>
+<td>Q44</td>
+<td>Wikibase Property Template</td>
+<td>Primitive datatype definitions linked from GKC Entity Statements via P194</td>
+</tr>
+<tr>
+<td>Q50</td>
+<td>Manual Refresh</td>
+<td>Refresh policy item used in GKC Value List P210 claims</td>
+</tr>
+<tr>
+<td>Q52</td>
+<td>Wikidata Entity</td>
+<td>Fixed-value reference items linked via P161; carry a P212 (same as) URL pointing to the Wikidata entity</td>
+</tr>
+</tbody>
+</table>
+<p>Most GKC Entity Profile items are also simultaneously classed as GKC Value List items (dual <code>P1 = Q3</code> and <code>P1 = Q7</code> claims). This enables conforming entities to be surfaced as a type-ahead pick list wherever that entity type is a valid statement value.</p>
+<p>The SPARQL query for exploring the full class tree:</p>
+<div class="highlight"><pre><span></span><code><span class="k">PREFIX</span> <span class="nn">wd</span><span class="p">:</span> <span class="nl">&lt;https://datadistillery.wikibase.cloud/entity/&gt;</span>
+<span class="k">PREFIX</span> <span class="nn">wdt</span><span class="p">:</span> <span class="nl">&lt;https://datadistillery.wikibase.cloud/prop/direct/&gt;</span>
+
+<span class="k">SELECT</span> <span class="nv">?item</span> <span class="nv">?itemLabel</span> <span class="nv">?itemDescription</span>
+<span class="k">WHERE</span> <span class="p">{</span>
+  <span class="nv">?item</span> <span class="nn">wdt</span><span class="p">:</span><span class="nt">P2</span><span class="o">*</span> <span class="nn">wd</span><span class="p">:</span><span class="nt">Q1</span> <span class="p">.</span>
+  <span class="k">SERVICE</span> <span class="nn">wikibase</span><span class="p">:</span><span class="nt">label</span> <span class="p">{</span> <span class="nn">bd</span><span class="p">:</span><span class="nt">serviceParam</span> <span class="nn">wikibase</span><span class="p">:</span><span class="nt">language</span> <span class="s">&quot;en&quot;</span><span class="p">.</span> <span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div>
+<h2 id="property-reference">Property Reference</h2>
+<p>The following properties are in active use for profile modeling. Properties use the <code>/prop/</code> namespace URI (e.g., <code>https://datadistillery.wikibase.cloud/prop/P1</code>).</p>
+<h3 id="classification-and-linkage">Classification And Linkage</h3>
+<table>
+<thead>
+<tr>
+<th>PID</th>
+<th>Label</th>
+<th>Datatype</th>
+<th>Used On</th>
+<th>Role</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>P1</td>
+<td>instance of</td>
+<td>wikibase-item</td>
+<td>All items</td>
+<td>Assigns an item to an entity class</td>
+</tr>
+<tr>
+<td>P2</td>
+<td>subclass of</td>
+<td>wikibase-item</td>
+<td>Class items</td>
+<td>Defines entity class hierarchy under Q1</td>
+</tr>
+<tr>
+<td>P3</td>
+<td>see also</td>
+<td>wikibase-item</td>
+<td>Any item</td>
+<td>Cross-reference to related items</td>
+</tr>
+<tr>
+<td>P5</td>
+<td>to wikidata</td>
+<td>url</td>
+<td>GKC Entity Statement (Q5)</td>
+<td>URL of the corresponding Wikidata property (e.g., <code>http://www.wikidata.org/entity/P31</code>)</td>
+</tr>
+<tr>
+<td>P157</td>
+<td>has statement</td>
+<td>wikibase-item</td>
+<td>GKC Entity Profile (Q3)</td>
+<td>Links a profile to a GKC Entity Statement; carries profile-specific qualifier configuration</td>
+</tr>
+<tr>
+<td>P158</td>
+<td>has qualifier</td>
+<td>wikibase-item</td>
+<td>qualifier on P157</td>
+<td>Links to a GKC Entity Statement specifying an expected qualifier type for that statement</td>
+</tr>
+<tr>
+<td>P161</td>
+<td>has value</td>
+<td>wikibase-item</td>
+<td>qualifier on P157; claim on Q5 items</td>
+<td>Value specification; target class determines semantics: Q52 = fixed, Q3 = linked profile, Q7 = value list</td>
+</tr>
+<tr>
+<td>P194</td>
+<td>statement type</td>
+<td>wikibase-item</td>
+<td>GKC Entity Statement (Q5)</td>
+<td>Links to a Wikibase Property Template (Q44) encoding the primitive Wikibase datatype</td>
+</tr>
+<tr>
+<td>P205</td>
+<td>applies to profile</td>
+<td>wikibase-item</td>
+<td>qualifier on statement-level directive claims</td>
+<td>Scopes statement-level P161/P158/P211/P213 behavior to one or more profiles</td>
+</tr>
+<tr>
+<td>P163</td>
+<td>applies to statement</td>
+<td>wikibase-item</td>
+<td>qualifier on statement-level directive claims; qualifier on profile-level P158/P211 claims</td>
+<td>Scopes directives to specific parent statement contexts</td>
+</tr>
+<tr>
+<td>P210</td>
+<td>refresh policy</td>
+<td>wikibase-item</td>
+<td>GKC Value List (Q7)</td>
+<td>Required; links to a refresh policy item (e.g., Q50 manual refresh)</td>
+</tr>
+<tr>
+<td>P211</td>
+<td>has reference</td>
+<td>wikibase-item</td>
+<td>qualifier on P157; claim on Q5 items; claim on Q3 items</td>
+<td>Links to expected reference statement definitions; supports statement-level defaults and profile-level targeted overrides</td>
+</tr>
+<tr>
+<td>P212</td>
+<td>same as</td>
+<td>url</td>
+<td>Wikidata Entity (Q52)</td>
+<td>URL of the specific Wikidata entity (e.g., <code>http://www.wikidata.org/entity/Q7840353</code>)</td>
+</tr>
+<tr>
+<td>P213</td>
+<td>derives default value from</td>
+<td>wikibase-item</td>
+<td>GKC Entity Statement (Q5)</td>
+<td>Declares that when this statement is used as a reference/qualifier on the target statement, its value is derived from the parent statement value</td>
+</tr>
+</tbody>
+</table>
+<h3 id="cardinality-and-value">Cardinality And Value</h3>
+<table>
+<thead>
+<tr>
+<th>PID</th>
+<th>Label</th>
+<th>Datatype</th>
+<th>Used On</th>
+<th>Role</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>P182</td>
+<td>max count</td>
+<td>quantity</td>
+<td>qualifier on P157</td>
+<td><code>novalue</code> = one or more expected; explicit quantity = that exact count expected</td>
+</tr>
+<tr>
+<td>P202</td>
+<td>default value</td>
+<td>url</td>
+<td>GKC Entity Statement (Q5)</td>
+<td>Wikidata entity URL to pre-populate as the statement default value</td>
+</tr>
+<tr>
+<td>P203</td>
+<td>default label</td>
+<td>string</td>
+<td>qualifier on P202 claim</td>
+<td>Human-readable label for the default value entity</td>
+</tr>
+</tbody>
+</table>
+<h3 id="guidance-and-messaging">Guidance And Messaging</h3>
+<p>All guidance properties are monolingual text. They may appear as independent claims on GKC Entity Profile or GKC Entity Statement items, or as qualifiers on a P157 claim in a profile item. Qualifier-level values override item-level values.</p>
+<table>
+<thead>
+<tr>
+<th>PID</th>
+<th>Label</th>
+<th>Used On</th>
+<th>Role</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>P185</td>
+<td>label guidance</td>
+<td>GKC Entity Profile (Q3)</td>
+<td>Guidance for curators entering the entity label</td>
+</tr>
+<tr>
+<td>P186</td>
+<td>description guidance</td>
+<td>GKC Entity Profile (Q3)</td>
+<td>Guidance for curators entering the entity description</td>
+</tr>
+<tr>
+<td>P187</td>
+<td>alias guidance</td>
+<td>GKC Entity Profile (Q3)</td>
+<td>Guidance for curators entering entity aliases</td>
+</tr>
+<tr>
+<td>P188</td>
+<td>label prompt</td>
+<td>GKC Entity Profile (Q3)</td>
+<td>Prompt text for the label input field</td>
+</tr>
+<tr>
+<td>P189</td>
+<td>description prompt</td>
+<td>GKC Entity Profile (Q3)</td>
+<td>Prompt text for the description input field</td>
+</tr>
+<tr>
+<td>P190</td>
+<td>alias prompt</td>
+<td>GKC Entity Profile (Q3)</td>
+<td>Prompt text for the alias input field</td>
+</tr>
+<tr>
+<td>P168</td>
+<td>error message</td>
+<td>GKC Entity Statement (Q5) or Q44 item; qualifier on P157</td>
+<td>Error message shown when statement validation fails; at Q44 level covers primitive type failures</td>
+</tr>
+<tr>
+<td>P169</td>
+<td>statement guidance</td>
+<td>GKC Entity Statement (Q5); qualifier on P157</td>
+<td>Contextual guidance for curators filling out a statement value</td>
+</tr>
+<tr>
+<td>P171</td>
+<td>statement prompt</td>
+<td>GKC Entity Statement (Q5); qualifier on P157</td>
+<td>Prompt text for the statement value input</td>
+</tr>
+</tbody>
+</table>
+<h2 id="gkc-entity-profile-structure">GKC Entity Profile Structure</h2>
+<p>A GKC Entity Profile item (<code>P1 = Q3</code>) encodes everything needed to guide data curators in creating or editing a class of entity. All profile rules are derived from Wikibase item JSON at extraction time and materialized into the SpiritSafe JSON cache. No runtime Wikibase dependency is assumed.</p>
+<h3 id="profile-identification">Profile Identification</h3>
+<p>Each profile item carries a <code>mul</code> label, an <code>en</code> label, and an <code>en</code> description for display in the Wikibase and in downstream interfaces. Additional language labels may be present. A profile is considered "multilingual compliant" when all required prompt and guidance claims are available in a language beyond <code>mul</code>.</p>
+<h3 id="yielded-entity-identification">Yielded Entity Identification</h3>
+<p>A valid profile must have the following monolingual text claims to enable curator guidance for entity creation and editing:</p>
+<table>
+<thead>
+<tr>
+<th>Property</th>
+<th>Required</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>P188 (label prompt)</td>
+<td>Yes — <code>mul</code> required</td>
+<td></td>
+</tr>
+<tr>
+<td>P185 (label guidance)</td>
+<td>Optional</td>
+<td></td>
+</tr>
+<tr>
+<td>P189 (description prompt)</td>
+<td>Yes — <code>mul</code> required</td>
+<td></td>
+</tr>
+<tr>
+<td>P186 (description guidance)</td>
+<td>Optional</td>
+<td></td>
+</tr>
+<tr>
+<td>P190 (alias prompt)</td>
+<td>Yes — <code>mul</code> required</td>
+<td></td>
+</tr>
+<tr>
+<td>P187 (alias guidance)</td>
+<td>Optional</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<h3 id="profile-statements">Profile Statements</h3>
+<p>Statements in a profile are linked via <code>has statement</code> (P157) claims. Each P157 mainsnak targets a <code>GKC Entity Statement</code> item (<code>P1 = Q5</code>). The qualifiers on that P157 claim within the profile item provide profile-specific configuration: cardinality, value rules, expected qualifiers, expected reference types, and guidance overrides.</p>
+<h3 id="statement-type">Statement Type</h3>
+<p>Every GKC Entity Statement item must have a <code>statement type</code> (P194) claim linking to a <code>Wikibase Property Template</code> item (<code>P1 = Q44</code>). Statement type encodes the primitive Wikibase datatype (e.g., <code>wikibase-item</code>, <code>string</code>, <code>time</code>, <code>quantity</code>, <code>url</code>, <code>monolingualtext</code>, <code>external-id</code>, <code>geo-shape</code>). The <code>mul</code> and <code>en</code> labels of the Q44 item correspond to the Wikibase datatype string identifier. Q44 items carry an <code>error message</code> (P168) claim for primitive type validation failures.</p>
+<h3 id="io-mapping">IO Mapping</h3>
+<p>GKC Entity Statement items that correspond to a Wikidata property carry a <code>to wikidata</code> (P5) URL claim linking to the Wikidata property entity URL. This establishes the io mapping used to route curation packet data to Wikidata.</p>
+<h3 id="cardinality">Cardinality</h3>
+<p>The <code>max count</code> (P182) qualifier on a P157 claim declares the expected number of statement values:</p>
+<ul>
+<li><code>novalue</code> → one or more expected (rendered as <code>null</code> in materialized JSON).</li>
+<li>An explicit positive quantity → that exact count is expected.</li>
+</ul>
+<p>All profile-specified statements are considered expected. Under-specified entries are accepted with guidance pointing toward improvement, following Wikidata/Wikipedia curation practice.</p>
+<h3 id="statement-values">Statement Values</h3>
+<p>Statement values are specified using <code>has value</code> (P161) qualifiers on a P157 claim in the profile item, or as independent P161 claims on a GKC Entity Statement item. The profile-level qualifier takes precedence when both are present. The class of the P161 target determines value semantics:</p>
+<p><strong>Fixed Value (P161 → Q52):</strong> The target is a <code>Wikidata Entity</code> item (<code>P1 = Q52</code>). That item carries a <code>same as</code> (P212) URL claim pointing to the specific Wikidata entity URI required as the statement value. Only one fixed value per statement is expected and it is exclusive of options.</p>
+<p><strong>Linked Profile (P161 → Q3):</strong> The target is a GKC Entity Profile item. The statement value should be fulfilled by an existing entity conforming to that profile, or by creating a new one.</p>
+<p><strong>Value List (P161 → Q7):</strong> The target is a GKC Value List item. The list provides a curated set of allowed values optimized for type-ahead delivery. Statement-level P161 defaults may be global (no scoping qualifiers) or context-scoped using <code>applies to profile</code> (P205), <code>applies to statement</code> (P163), or both.</p>
+<p>Multiple P161 qualifiers may appear on a single P157 claim. Profile (Q3) and value list (Q7) targets may coexist and surface together as <code>options</code> in the materialized JSON.</p>
+<h3 id="default-values">Default Values</h3>
+<p>A GKC Entity Statement item may carry a <code>default value</code> (P202) URL claim pointing to a Wikidata entity to pre-populate. This claim must include a <code>default label</code> (P203) string qualifier providing a human-readable label for that entity.</p>
+<p>Derived defaults are modeled separately from static defaults. A GKC Entity Statement item may carry <code>derives default value from</code> (P213) claims targeting one or more parent statement definitions. This means:</p>
+<ul>
+<li>when the subject statement is used as a qualifier/reference on that parent statement,</li>
+<li>the subject statement value should be populated from the parent statement value.</li>
+</ul>
+<p>This pattern is global by default for the targeted parent statement(s). If a derived-default rule must only apply in specific profiles, constrain the P213 claim with <code>applies to profile</code> (P205) qualifiers.</p>
+<h3 id="value-lists-and-refresh-policy">Value Lists And Refresh Policy</h3>
+<p>GKC Value List items (<code>P1 = Q7</code>) must have a <code>refresh policy</code> (P210) claim linking to a refresh policy item (e.g., Q50 for manual refresh). Value list SPARQL queries are stored in the item's Wikibase discussion page and run against the Wikidata Query Service or Qlever to hydrate the SpiritSafe value list cache.</p>
+<h3 id="statement-qualifiers">Statement Qualifiers</h3>
+<p>Expected qualifiers for a statement can be declared from three sources:</p>
+<ul>
+<li>Statement-level defaults via <code>has qualifier</code> (P158) claims on the GKC Entity Statement item.</li>
+<li>Profile-local links via P158 qualifiers on the P157 claim.</li>
+<li>Profile-level targeted overrides via P158 claims on the profile item, qualified with <code>applies to statement</code> (P163).</li>
+</ul>
+<p>All the same structural rules that apply to profile statements — statement type, cardinality, value, and guidance — apply to qualifiers through the targeted GKC Entity Statement item.</p>
+<p>For effective resolution, profile-local entries win for nested statement ids they explicitly define; statement-level defaults remain active for nested statement ids not overridden at profile level.</p>
+<h3 id="statement-references">Statement References</h3>
+<p>Expected references for a statement can be declared from three sources:</p>
+<ul>
+<li>Statement-level defaults via <code>has reference</code> (P211) claims on the GKC Entity Statement item.</li>
+<li>Profile-local links via P211 qualifiers on the P157 claim.</li>
+<li>Profile-level targeted overrides via P211 claims on the profile item, qualified with <code>applies to statement</code> (P163).</li>
+</ul>
+<p>When multiple P211 entries are present for a statement context, effective reference resolution is computed per nested statement id using the same partial-override rule as qualifiers.</p>
+<p>Reference value-derivation rules can appear at the GKC Entity Statement item level via P213. Consumers should apply those rules when reference/qualifier statements are instantiated in profile context, honoring any P205 profile constraints attached to the P213 claim.</p>
+<h3 id="guidance-precedence">Guidance Precedence</h3>
+<p>When resolving guidance or prompt text for a statement, the precedence order is:</p>
+<ol>
+<li><strong>P157 qualifier level</strong> — the guidance property (P169, P171, P168) as a qualifier on the P157 claim in the profile item. Most specific; always preferred.</li>
+<li><strong>GKC Entity Statement item level</strong> — the same property as an independent claim on the Q5 item. Shared default across all profiles that include the statement.</li>
+<li><strong>Wikibase Property Template level</strong> — guidance or error messages on the Q44 statement type item. Broadest fallback; primarily applicable to type-level error messages (P168).</li>
+</ol>
+<h2 id="language-and-text-policy">Language And Text Policy</h2>
+<p>All language variants are preserved as stored in the Wikibase — language keys are not normalized in extraction.</p>
+<p><code>mul</code> (multilingual) is the primary language code for monolingual text guidance and prompt claims. Additional languages are optional and materialized in the JSON cache only when all required guidance and prompt claims are present in that language — partial language overlays are not materialized.</p>
+<p><code>mul</code> and <code>en</code> labels are expected on all primary items. <code>en</code> description is expected. <code>mul</code> description is not currently available in the DD Wikibase instance.</p>
+<p>When a consumer's requested language is absent, runtime behavior should fall back to <code>mul</code>. This is not a hard failure — consumers are responsible for selecting the language to render.</p>
+<h2 id="extraction-implementation-notes">Extraction Implementation Notes</h2>
+<p>The current extraction implementation in <code>gkc/wikibase/ontology.py</code> provides two layers used during the SpiritSafe cache refresh workflow:</p>
+<p><strong>Ontology Index (<code>DDOntologyIndex</code>):</strong> A SPARQL-derived discovery layer that identifies all classified items and properties in the Wikibase by QID/PID. Used as the starting point for profile graph traversal.</p>
+<p><strong>Profile Graph (<code>DDProfileGraph</code>):</strong> Builds a full item JSON payload via breadth-first traversal from GKC Entity Profile items. Fetches complete <code>wbgetentities</code> records for all reachable nodes and preserves all language variants as stored.</p>
+<p>These layers are used during the extraction and materialization stage only. Runtime gkc code consumes the materialized SpiritSafe JSON cache and has no live Wikibase dependency.</p>
+<p>Consumers should use <code>fetch_ontology_index()</code> and <code>fetch_profile_graph()</code>.</p>
+<h2 id="theoretical-design-notes">Theoretical Design Notes</h2>
+<p>These notes capture architecturally plausible next steps not yet fully implemented.</p>
+<h3 id="processing-policies-and-logical-coercion">Processing Policies And Logical Coercion</h3>
+<p>Properties for encoding statement-level logical processing or coercion policies exist in the Wikibase but are not currently active in the profile model. If fermenter-layer policy linkage is needed, those properties should be revisited before introducing new ones. This should wait until the fermenter contract is stable enough to define required inputs.</p>
+<h3 id="guidance-channel-configuration">Guidance Channel Configuration</h3>
+<p>Purpose: allow consumers to request a specific guidance property subset (e.g., prompt-only vs. full guidance bundle) rather than always materializing all four guidance properties.</p>
+<p>Open questions:</p>
+<ul>
+<li>Should guidance channel selection be a Python config parameter, a materialization option, or a Wikibase-level specification?</li>
+</ul>
+<h3 id="language-fallback-policy">Language Fallback Policy</h3>
+<p>Purpose: define deterministic fallback behavior when the requested language is absent.</p>
+<p>Open questions:</p>
+<ul>
+<li>Fallback order: request language → <code>mul</code> → <code>en</code> → any, or request language → <code>en</code> → <code>mul</code> → any? The <code>mul</code> vs. <code>en</code> priority is not yet settled.</li>
+<li>Should fallback be enforced in post-processing Python or in SPARQL query construction?</li>
+</ul>
+<h3 id="typed-guidance-contracts">Typed Guidance Contracts</h3>
+<p>Purpose: allow downstream consumers to distinguish prompt, guidance, error, and consequence channels without inspecting PIDs directly.</p>
+<p>Open questions:</p>
+<ul>
+<li>Should materialized JSON expose guidance as a typed map rather than separate top-level fields?</li>
+<li>Should this contract be versioned in SpiritSafe cache manifests?</li>
+</ul>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.instant", "navigation.sections", "navigation.top", "toc.follow", "content.code.copy"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.79ae519e.min.js"></script>
+      
+        <script src="https://unpkg.com/mermaid@10.6.1/dist/mermaid.min.js"></script>
+      
+        <script src="../../javascripts/mermaid-init.js"></script>
+      
+    
+  </body>
+</html>

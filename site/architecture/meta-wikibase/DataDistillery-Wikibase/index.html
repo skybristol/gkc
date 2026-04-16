@@ -1,0 +1,3944 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Data Distillery - A framework for data distillation toward the Global Knowledge Commons">
+      
+      
+      
+        <link rel="canonical" href="https://datadistillery.org/architecture/meta-wikibase/DataDistillery-Wikibase/">
+      
+      
+        <link rel="prev" href="../">
+      
+      
+        <link rel="next" href="../semantic-anchors/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../../img/DataDistilleryFavIcon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.4">
+    
+    
+      
+        <title>Data Distillery Wikibase - Data Distillery</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../../assets/stylesheets/main.484c7ddc.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../../../assets/_mkdocstrings.css">
+    
+      <link rel="stylesheet" href="../../../stylesheets/extra.css">
+    
+    <script>__md_scope=new URL("../../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    <body dir="ltr">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#data-distillery-wikibase" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../../.." title="Data Distillery" class="md-header__button md-logo" aria-label="Data Distillery" data-md-component="logo">
+      
+  <img src="../../../img/DataDistilleryIconNight.png" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            Data Distillery
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Data Distillery Wikibase
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/skybristol/gkc" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    skybristol/gkc
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../../.." title="Data Distillery" class="md-nav__button md-logo" aria-label="Data Distillery" data-md-component="logo">
+      
+  <img src="../../../img/DataDistilleryIconNight.png" alt="logo">
+
+    </a>
+    Data Distillery
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/skybristol/gkc" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    skybristol/gkc
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Data Curation Narratives
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Data Curation Narratives
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../tribes/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Tribal Governments
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Architecture
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../wikimedia-commons/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Wikimedia Commons
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_3" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_3_3" id="__nav_3_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Meta-Wikibase
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_3_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_3_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Meta-Wikibase
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Data Distillery Wikibase
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Data Distillery Wikibase
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#why-this-exists" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Why This Exists
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#current-architecture-contract" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Current Architecture Contract
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Current Architecture Contract">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#source-of-truth-position" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Source-of-Truth Position
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#top-level-semantic-components" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Top-Level Semantic Components
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#component-gkc-entity-profile" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Component: GKC Entity Profile
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Component: GKC Entity Profile">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#profile-level-qualifier-and-reference-overrides" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Profile-Level Qualifier and Reference Overrides
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#profile-json-assembly-precedence" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Profile JSON Assembly Precedence
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Profile JSON Assembly Precedence">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#directive-resolution-matrix" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Directive Resolution Matrix
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#resolution-flow" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Resolution Flow
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#component-gkc-entity-statement" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Component: GKC Entity Statement
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Component: GKC Entity Statement">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#statement-minimum-shape" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Statement Minimum Shape
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#statement-level-directive-semantics" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Statement-Level Directive Semantics
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Statement-Level Directive Semantics">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#has-reference-p211" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        has reference (P211)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#has-qualifier-p158" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        has qualifier (P158)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#has-value-p161" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        has value (P161)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#component-gkc-value-list" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Component: GKC Value List
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Component: GKC Value List">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#required-value-list-configuration" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Required Value List Configuration
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sparql-query-storage" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        SPARQL Query Storage
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="SPARQL Query Storage">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#side-note-storing-sparql-in-item-data-directly" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Side note: storing SPARQL in item data directly
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#query-construction-principles" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Query Construction Principles
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#scoping" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Scoping
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#composition-model" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Composition Model
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#curation-packet-as-composition-vehicle" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Curation Packet as Composition Vehicle
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#conformance-semantics" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Conformance Semantics
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#scoping-and-rule-resolution" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Scoping and Rule Resolution
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#wikibase-property-template-integration" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Wikibase Property Template Integration
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#foundation-modeling" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Foundation Modeling
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#operational-modes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Operational Modes
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#spiritsafe-synchronization-boundary" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        SpiritSafe Synchronization Boundary
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#cache-sync-contract" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Cache Sync Contract
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Cache Sync Contract">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#full-sync-baseline" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Full-Sync Baseline
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#incremental-watermark-sync" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Incremental Watermark Sync
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#redirect-and-tombstone-policy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Redirect and Tombstone Policy
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#current-cli-behavior" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Current CLI Behavior
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Current CLI Behavior">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#gkc-mash-full-sync-wikibase" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        gkc mash full-sync-wikibase
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#gkc-mash-check-wikibase-revisions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        gkc mash check-wikibase-revisions
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#gkc-mash-cache-wikibase-revisions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        gkc mash cache-wikibase-revisions
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#spiritsafe-cache-and-build-workflows" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        SpiritSafe Cache and Build Workflows
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#shipper-api-contract-notes-data-distillery" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Shipper API Contract Notes (Data Distillery)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#theoretical-design-notes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Theoretical Design Notes
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#environment-variables" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Environment Variables
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#troubleshooting" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Troubleshooting
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#related-documentation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Related Documentation
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../semantic-anchors/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Semantic Anchors
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../wikibase-datatypes/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Wikibase Datatypes
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../module-contracts/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Cross-Module Contracts
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../still_charger/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Still Charger
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_6" >
+        
+          
+          <label class="md-nav__link" for="__nav_3_6" id="__nav_3_6_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SpiritSafe
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3_6">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    SpiritSafe
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../SpiritSafe/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../SpiritSafe/profile-loading/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Profile Loading
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../SpiritSafe/spirit_safe_models/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SpiritSafe Models & API
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../SpiritSafe/SpiritSafe-testing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SpiritSafe Testing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../validation-architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Validation Architecture
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    GKC Documentation
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    GKC Documentation
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../gkc/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../gkc/background/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Background
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../gkc/wikibase_ontology_orientation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Wikibase Ontology Orientation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../gkc/profiles/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Entity Profiles
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../gkc/mash/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Mash
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../gkc/entity-json-schema/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Entity JSON
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../gkc/wizard/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Wizard
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4_8" >
+        
+          
+          <label class="md-nav__link" for="__nav_4_8" id="__nav_4_8_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Getting Started
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_4_8_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4_8">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Getting Started
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../gkc/setup/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Setup and Orientation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../gkc/authentication/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Authentication
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4_9" >
+        
+          
+          <label class="md-nav__link" for="__nav_4_9" id="__nav_4_9_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Data Distillery Workflow
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_4_9_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4_9">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Data Distillery Workflow
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../gkc/shipping/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Shipping
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4_10" >
+        
+          
+          <label class="md-nav__link" for="__nav_4_10" id="__nav_4_10_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API Reference
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_4_10_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4_10">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    API Reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../gkc/api/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../gkc/api/auth/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Authentication
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../gkc/api/mash/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Mash
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../gkc/api/mash_formatters/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Mash Formatters
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../gkc/api/wikibase/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Wikibase
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../gkc/api/still_charger/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Still Charger
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../gkc/api/fermenter/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Fermenter
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../gkc/api/bottler/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Bottler
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../gkc/api/profiles/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Profiles
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../gkc/api/spirit_safe/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SpiritSafe
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../gkc/api/shex/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ShEx
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../gkc/api/shipper/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Shipper
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../gkc/api/sparql/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SPARQL
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4_11" >
+        
+          
+          <label class="md-nav__link" for="__nav_4_11" id="__nav_4_11_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Command Line Interface
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_4_11_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4_11">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Command Line Interface
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../gkc/cli/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../gkc/cli/auth/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Authentication
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../gkc/cli/mash/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Mash
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../gkc/cli/profiles/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Profile
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../gkc/cli/packet/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Packet
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../gkc/cli/spiritsafe/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SpiritSafe
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../gkc/cli/wizard/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Wizard
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../gkc/cli/shex/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ShEx
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4_12" >
+        
+          
+          <label class="md-nav__link" for="__nav_4_12" id="__nav_4_12_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Utilities and Tools
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_4_12_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4_12">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Utilities and Tools
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../gkc/utilities/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Utilities
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4_13" >
+        
+          
+          <label class="md-nav__link" for="__nav_4_13" id="__nav_4_13_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Development
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_4_13_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4_13">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Development
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../gkc/CI_CD/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CI/CD
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../gkc/RELEASE/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Release Process
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#why-this-exists" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Why This Exists
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#current-architecture-contract" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Current Architecture Contract
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Current Architecture Contract">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#source-of-truth-position" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Source-of-Truth Position
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#top-level-semantic-components" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Top-Level Semantic Components
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#component-gkc-entity-profile" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Component: GKC Entity Profile
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Component: GKC Entity Profile">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#profile-level-qualifier-and-reference-overrides" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Profile-Level Qualifier and Reference Overrides
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#profile-json-assembly-precedence" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Profile JSON Assembly Precedence
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Profile JSON Assembly Precedence">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#directive-resolution-matrix" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Directive Resolution Matrix
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#resolution-flow" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Resolution Flow
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#component-gkc-entity-statement" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Component: GKC Entity Statement
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Component: GKC Entity Statement">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#statement-minimum-shape" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Statement Minimum Shape
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#statement-level-directive-semantics" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Statement-Level Directive Semantics
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Statement-Level Directive Semantics">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#has-reference-p211" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        has reference (P211)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#has-qualifier-p158" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        has qualifier (P158)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#has-value-p161" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        has value (P161)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#component-gkc-value-list" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Component: GKC Value List
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Component: GKC Value List">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#required-value-list-configuration" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Required Value List Configuration
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sparql-query-storage" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        SPARQL Query Storage
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="SPARQL Query Storage">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#side-note-storing-sparql-in-item-data-directly" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Side note: storing SPARQL in item data directly
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#query-construction-principles" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Query Construction Principles
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#scoping" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Scoping
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#composition-model" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Composition Model
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#curation-packet-as-composition-vehicle" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Curation Packet as Composition Vehicle
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#conformance-semantics" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Conformance Semantics
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#scoping-and-rule-resolution" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Scoping and Rule Resolution
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#wikibase-property-template-integration" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Wikibase Property Template Integration
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#foundation-modeling" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Foundation Modeling
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#operational-modes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Operational Modes
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#spiritsafe-synchronization-boundary" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        SpiritSafe Synchronization Boundary
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#cache-sync-contract" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Cache Sync Contract
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Cache Sync Contract">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#full-sync-baseline" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Full-Sync Baseline
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#incremental-watermark-sync" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Incremental Watermark Sync
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#redirect-and-tombstone-policy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Redirect and Tombstone Policy
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#current-cli-behavior" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Current CLI Behavior
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Current CLI Behavior">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#gkc-mash-full-sync-wikibase" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        gkc mash full-sync-wikibase
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#gkc-mash-check-wikibase-revisions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        gkc mash check-wikibase-revisions
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#gkc-mash-cache-wikibase-revisions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        gkc mash cache-wikibase-revisions
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#spiritsafe-cache-and-build-workflows" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        SpiritSafe Cache and Build Workflows
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#shipper-api-contract-notes-data-distillery" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Shipper API Contract Notes (Data Distillery)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#theoretical-design-notes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Theoretical Design Notes
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#environment-variables" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Environment Variables
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#troubleshooting" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Troubleshooting
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#related-documentation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Related Documentation
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="data-distillery-wikibase">Data Distillery Wikibase</h1>
+<p>Data Distillery Wikibase (<code>datadistillery.wikibase.cloud</code>) is the seminal reference implementation for the <a href="../">metaWikibase infrastructure</a>. It provides the semantic registry for GKC ontology terms, profile metadata relationships, statement/value-list semantics, and multilingual guidance content that must be queryable and collaboratively maintained.</p>
+<p>This page describes the current reference implementation of the generic <a href="../">Meta-Wikibase Architecture</a>.</p>
+<p>This page focuses on one part of a three-part infrastructure model:</p>
+<ul>
+<li><strong>Meta-wikibase</strong>: semantic source of truth.</li>
+<li><strong>SpiritSafe repository</strong>: materialized artifact registry.</li>
+<li><strong>GKC Python package</strong>: runtime execution layer.</li>
+</ul>
+<h2 id="why-this-exists">Why This Exists</h2>
+<p>The runtime and collaboration needs are different:</p>
+<ul>
+<li>SpiritSafe JSON profile artifacts are optimized for offline execution and deterministic profile consumption.</li>
+<li>Wikibase is optimized for semantic relationships, multilingual fields, and query-oriented discovery.</li>
+</ul>
+<p>The Data Distillery uses the generic meta-wikibase pattern, with a DD-specific ontology and deployment footprint.</p>
+<p>Authoring and execution split:</p>
+<ul>
+<li>The Data Distillery Wikibase holds foundation semantics.</li>
+<li>SpiritSafe holds deterministic materialized/actionable artifacts.</li>
+<li><code>gkc</code> consumes materialized artifacts and runs curation/validation/shipping workflows.</li>
+</ul>
+<h2 id="current-architecture-contract">Current Architecture Contract</h2>
+<h3 id="source-of-truth-position">Source-of-Truth Position</h3>
+<ul>
+<li>JSON Entity Profiles and cache artifacts remain the actionable artifacts consumed by runtime code.</li>
+<li>Wikibase stores semantic linkage and metadata that improve queryability and collaboration.</li>
+<li>Transformations between Wikibase and SpiritSafe must be lossless and testable.</li>
+</ul>
+<p>This establishes a clear semantic chain for all core architectural components:</p>
+<ul>
+<li>Entity Profiles: authored in DD, materialized in SpiritSafe, executed in <code>gkc</code>.</li>
+<li>Entity Statements: authored in DD, embedded/materialized in profile artifacts, evaluated in <code>gkc</code>.</li>
+<li>Value Lists: authored in DD, hydrated in SpiritSafe, applied in packet/wizard validation.</li>
+<li>Curation Packets: assembled and charged in <code>gkc</code> from SpiritSafe artifacts while retaining DD-linked canonical IDs.</li>
+</ul>
+<h3 id="top-level-semantic-components">Top-Level Semantic Components</h3>
+<p>The Data Distillery Wikibase architecture is organized around three primary item types:</p>
+<ul>
+<li>GKC Entity Profile.</li>
+<li>GKC Entity Statement.</li>
+<li>GKC Value List.</li>
+</ul>
+<p>These components are designed to work together as a layered model where profiles compose reusable statements and statements can bind to curated value lists.</p>
+<p>Curation Packets are the runtime integration construct generated by <code>gkc</code> from materialized profile artifacts; they are not authored directly in DD Wikibase, but their structure is semantically grounded in DD-defined profile/statement/value-list directives.</p>
+<p>Profiles and statements are equal-priority architectural components:</p>
+<ul>
+<li>Profiles provide context, composition, and modulation.</li>
+<li>Statements provide reusable semantic units that can span many profiles.</li>
+</ul>
+<p>Validation and packet design should treat both as first-class runtime entities.</p>
+<h3 id="component-gkc-entity-profile">Component: GKC Entity Profile</h3>
+<p>Purpose:
+Defines an entity-shaped curation surface, including identification prompts and statement composition for packet and wizard workflows.</p>
+<p>Profile-level identification messaging fields include:</p>
+<ul>
+<li><code>label prompt</code> (P188)</li>
+<li><code>label guidance</code> (P185)</li>
+<li><code>description prompt</code> (P189)</li>
+<li><code>description guidance</code> (P186)</li>
+<li><code>alias prompt</code> (P190)</li>
+<li><code>alias guidance</code> (P187)</li>
+</ul>
+<p>Key responsibilities:</p>
+<ul>
+<li>Declares which statement instances are used for the entity context.</li>
+<li>Links claim statements to expected qualifier and reference statements.</li>
+<li>Hosts profile-context modulation where entity-specific behavior must differ from reusable statement defaults.</li>
+</ul>
+<p>Profile statements are declared via <code>has statement</code> (P157), where each claim links to a GKC Entity Statement item.</p>
+<p>Each P157 claim may include profile-level override qualifiers for:</p>
+<ul>
+<li><code>statement prompt</code> (P171)</li>
+<li><code>statement guidance</code> (P169)</li>
+<li><code>error message</code> (P168)</li>
+</ul>
+<p>These profile-level qualifiers override the corresponding defaults defined on the linked GKC Entity Statement when exporting profile JSON.</p>
+<p>Each P157 claim may also include <code>has value</code> (P161).</p>
+<p>P157-level P161 follows the same value-linkage semantics as statement-level P161 and may link to:</p>
+<ul>
+<li>GKC Entity Profile and/or GKC Value List for select-or-create behavior.</li>
+<li>GKC Value List for selection-only behavior.</li>
+<li>Wikibase Entity for fixed-value behavior resolved through <code>same as</code>.</li>
+</ul>
+<p>When both profile-level and statement-level P161 are present for the same statement instance, profile-level P161 takes precedence.</p>
+<h4 id="profile-level-qualifier-and-reference-overrides">Profile-Level Qualifier and Reference Overrides</h4>
+<p>A profile item may also carry <code>has qualifier</code> (P158) and <code>has reference</code> (P211) claims at the profile level.</p>
+<p>These claims must be qualified with <code>applies to statement</code> (P163), linking the override to the specific P157 statement instance within that profile to which it applies.</p>
+<p>When present, profile-level P158 and P211 claims with P163 are evaluated as targeted statement-spec overrides for that statement in that profile.</p>
+<p>Override behavior is partial, not wholesale:</p>
+<ul>
+<li>For nested statement specifications explicitly present at profile level, profile-level qualifiers win over statement-level defaults for those same nested statement ids.</li>
+<li>For nested statement specifications not present at profile level, statement-level defaults still flow through.</li>
+</ul>
+<p>This mechanism allows profile authors to declare statement-specific qualifier and reference rules directly on the profile item without modifying the underlying GKC Entity Statement definitions.</p>
+<h3 id="profile-json-assembly-precedence">Profile JSON Assembly Precedence</h3>
+<p>When assembling a profile into JSON, specifications are resolved in the following order for each statement instance, from highest to lowest precedence:</p>
+<ol>
+<li>Profile-level P158/P211 claims with P163 targeting this statement.</li>
+<li>Profile-level P157 qualifier overrides (P171, P169, P168, P161) on the specific P157 claim.</li>
+<li>Statement-level P158/P211 scoped by both P205 and P163.</li>
+<li>Statement-level P158/P211 scoped by P205 only.</li>
+<li>Statement-level P158/P211 scoped by P163 only.</li>
+<li>Statement-level global defaults (no P205 or P163 qualifiers).</li>
+</ol>
+<p>When a higher-precedence rule is present and covers a directive, lower-level rules for the same directive are excluded from the exported JSON for that statement instance.</p>
+<p>The following fields are always present in exported statement JSON regardless of overrides, providing a guaranteed contract for downstream consumers:</p>
+<ul>
+<li><code>statement type</code> (from P194) — not overrideable from the profile.</li>
+<li><code>same as</code> mappings (from P5) — not overrideable from the profile.</li>
+<li><code>max count</code> (from P182, profile-level override permitted).</li>
+<li><code>statement prompt</code> (from P171, resolved through precedence).</li>
+<li><code>statement guidance</code> (from P169, resolved through precedence).</li>
+<li><code>error message</code> (from P168, resolved through precedence).</li>
+</ul>
+<h4 id="directive-resolution-matrix">Directive Resolution Matrix</h4>
+<p>The table below summarizes each directive: where it can be defined, what resolution rule applies when multiple sources compete, and whether it is guaranteed in every exported statement JSON.</p>
+<table>
+<thead>
+<tr>
+<th>Directive</th>
+<th>Where Definable</th>
+<th>Resolution Rule</th>
+<th>Guaranteed in Output</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>statement type</code> (P194)</td>
+<td>Statement only</td>
+<td>No override; statement definition is authoritative</td>
+<td>Yes</td>
+</tr>
+<tr>
+<td><code>same as</code> (P5)</td>
+<td>Statement only</td>
+<td>No override; statement definition is authoritative</td>
+<td>Yes</td>
+</tr>
+<tr>
+<td><code>max count</code> (P182)</td>
+<td>Statement or profile P157 qualifier</td>
+<td>Profile P157 qualifier wins; statement-level baseline otherwise</td>
+<td>Yes</td>
+</tr>
+<tr>
+<td><code>statement prompt</code> (P171)</td>
+<td>Statement (any scope) or profile P157 qualifier</td>
+<td>Profile P157 qualifier wins over all statement-level variants</td>
+<td>Yes</td>
+</tr>
+<tr>
+<td><code>statement guidance</code> (P169)</td>
+<td>Statement (any scope) or profile P157 qualifier</td>
+<td>Profile P157 qualifier wins over all statement-level variants</td>
+<td>Yes</td>
+</tr>
+<tr>
+<td><code>error message</code> (P168)</td>
+<td>Property template, statement (any scope), or profile P157 qualifier</td>
+<td>Profile P157 qualifier wins; statement-level wins over property template fallback</td>
+<td>Yes</td>
+</tr>
+<tr>
+<td><code>has value</code> (P161)</td>
+<td>Statement (any scope) or profile P157 level</td>
+<td>Profile P157-level P161 wins over all statement-level variants</td>
+<td>No</td>
+</tr>
+<tr>
+<td><code>has qualifier</code> (P158)</td>
+<td>Statement (any scope), P157 qualifier, or profile P158 + P163 claim</td>
+<td>Per nested statement id: profile-level wins when present; otherwise statement-level/default sources flow through</td>
+<td>No</td>
+</tr>
+<tr>
+<td><code>has reference</code> (P211)</td>
+<td>Statement (any scope), P157 qualifier, or profile P211 + P163 claim</td>
+<td>Per nested statement id: profile-level wins when present; otherwise statement-level/default sources flow through</td>
+<td>No</td>
+</tr>
+</tbody>
+</table>
+<h4 id="resolution-flow">Resolution Flow</h4>
+<p>The following diagram illustrates the resolution algorithm applied for each directive when assembling a statement instance into profile JSON. Non-overrideable fields (P194, P5) skip this flow entirely — they are read directly from the statement definition. Max count (P182) enters the flow at the profile P157 qualifier check.</p>
+<pre class="mermaid"><code>flowchart TD
+    A([Resolve directive for statement instance]) --&gt; B{Non-overrideable field?\nstatement type · same as}
+    B -- Yes --&gt; C[Read from statement definition\nNo profile override possible]
+    B -- No --&gt; D{Profile item carries P158 or P211\nwith P163 targeting this statement?}
+    D -- Yes --&gt; E[Use profile-level P158/P211\nfor targeted nested statement ids]
+    D -- No --&gt; F{Profile P157 claim carries\nqualifier for this directive?\nP171 · P169 · P168 · P161}
+    F -- Yes --&gt; G[Use profile P157 qualifier override]
+    F -- No --&gt; H{Statement-level directive\nscoped by both P205 and P163?}
+    H -- Yes --&gt; I([Use P205 + P163 scoped value])
+    H -- No --&gt; J{Statement-level directive\nscoped by P205 only?}
+    J -- Yes --&gt; K([Use P205 scoped value])
+    J -- No --&gt; L{Statement-level directive\nscoped by P163 only?}
+    L -- Yes --&gt; M([Use P163 scoped value])
+    L -- No --&gt; N{Statement-level global\ndirective present?}
+    N -- Yes --&gt; O([Use global default])
+    N -- No --&gt; P([Directive absent from output])</code></pre>
+<h3 id="component-gkc-entity-statement">Component: GKC Entity Statement</h3>
+<p>Purpose:
+Represents a reusable statement primitive used for claims, qualifiers, and references.</p>
+<p>Expected statement-level configuration commonly includes:</p>
+<ul>
+<li><code>statement type</code> (P194), linked to a Wikibase Property Template.</li>
+<li><code>same as</code> (P5), used for canonical cross-system URI/PID mappings.</li>
+<li><code>max count</code> (P182), with numeric quantity or <code>novalue</code> for unbounded cardinality.</li>
+<li><code>statement prompt</code> (P171), default short prompt text.</li>
+<li><code>statement guidance</code> (P169), default longer guidance text.</li>
+<li><code>error message</code> (P168), canonical failure message when required content is missing.</li>
+</ul>
+<p>Architectural role:</p>
+<ul>
+<li>Provides reusable defaults and shared semantics across profiles.</li>
+<li>Carries statement-level directives such as value, qualifier, and reference expectations.</li>
+<li>Supports scoping qualifiers for profile-specific or parent-statement-specific behavior.</li>
+</ul>
+<h4 id="statement-minimum-shape">Statement Minimum Shape</h4>
+<p>For curation and validation architecture, a statement is treated as a compound data object with a minimum shape of:</p>
+<ul>
+<li>value</li>
+<li>reference</li>
+<li>provenance</li>
+</ul>
+<p>Reference is itself statement-like and follows statement semantics.</p>
+<p>Provenance must capture presentation circumstances at minimum, including how, when, and by whom the statement was stated.</p>
+<p>Additional provenance depth may be included by profile context, but packet and fermenter workflows should assume this minimum shape as the baseline contract.</p>
+<h3 id="statement-level-directive-semantics">Statement-Level Directive Semantics</h3>
+<p>The following properties are used as directives on GKC Entity Statement items:</p>
+<ul>
+<li><code>has value</code> (P161)</li>
+<li><code>has qualifier</code> (P158)</li>
+<li><code>has reference</code> (P211)</li>
+</ul>
+<p>For P158 and P211, directive values link to other GKC Entity Statement items.</p>
+<h4 id="has-reference-p211"><code>has reference</code> (P211)</h4>
+<p><code>has reference</code> links a parent statement to one or more statement definitions expected as references.</p>
+<p>Current derived-default pattern:</p>
+<ul>
+<li>A P211 linkage may carry a <code>derives default value from</code> (P213) qualifier.</li>
+<li>P213 points to a DD Wikibase item indicating the source for default value derivation.</li>
+<li>For the <code>official website</code> pattern, <code>official website</code> links to <code>reference URL</code> via P211 with P213 targeting the parent statement item.</li>
+<li>Effective behavior: when an <code>official website</code> statement is used in a profile, a <code>reference URL</code> reference is auto-applied with value derived from the parent statement value.</li>
+</ul>
+<p>This pattern is architecturally committed and should be treated as a general mechanism for future derived-default reference behavior, not as a one-off special case.</p>
+<h4 id="has-qualifier-p158"><code>has qualifier</code> (P158)</h4>
+<p><code>has qualifier</code> links to statement definitions expected as qualifiers for the parent statement.</p>
+<p>Current behavior:</p>
+<ul>
+<li>P158 links are interpreted as expected qualifier statements for any profile statements using the parent statement.</li>
+<li>These links currently operate as direct expected-qualifier declarations.</li>
+</ul>
+<p>Future capability:</p>
+<ul>
+<li>P158 linkages may carry specialized qualifiers to refine applicability or value behavior.</li>
+</ul>
+<h4 id="has-value-p161"><code>has value</code> (P161)</h4>
+<p>P161 on statement items follows the established value semantics and is primarily used for wikibase-item type statement definitions.</p>
+<p>Supported linkage patterns:</p>
+<ul>
+<li>Link to a GKC Entity Profile or GKC Value List to support either selection from allowed items or creation via linked profile flow.</li>
+<li>Link to a GKC Value List for selection-only behavior.</li>
+<li>Link to an item classed as a Wikibase Entity to represent a fixed value, resolved via that item's <code>same as</code> mapping.</li>
+</ul>
+<p>These patterns must remain deterministic in profile export and preserve compatibility with offline SpiritSafe consumption.</p>
+<h3 id="component-gkc-value-list">Component: GKC Value List</h3>
+<p>Purpose:
+Represents a curated allowed-item set that constrains value selection for wikibase-item type statement definitions. The goal is to have a value list behind every case where a curator must select one or more Wikidata items as the object of a statement.</p>
+<p>Key responsibilities:</p>
+<ul>
+<li>Encodes reusable value domains linked from statement value directives (P161).</li>
+<li>Scopes allowed-item sets to either universal applicability (any profile using the statement) or profile-specific contexts.</li>
+<li>Hosts the SPARQL query used to hydrate the list from Wikidata or Qlever.</li>
+<li>Carries a refresh policy that governs how and when the list is refreshed.</li>
+<li>Supports deterministic offline consumption via pre-hydrated SpiritSafe cache artifacts.</li>
+</ul>
+<h4 id="required-value-list-configuration">Required Value List Configuration</h4>
+<ul>
+<li><code>instance of</code> (P1): must classify the item as GKC Value List (Q28).</li>
+<li><code>refresh policy</code> (P210): links to a refresh policy item (e.g., <code>manual refresh</code>, Q50). This governs cache update cadence.</li>
+</ul>
+<h4 id="sparql-query-storage">SPARQL Query Storage</h4>
+<p>The SPARQL query for each value list is stored in a <code>&lt;sparql&gt;&lt;/sparql&gt;</code> block in the item's Mediawiki talk/discussion page. This allows queries of arbitrary length and direct execution against Wikidata or Qlever without datatype length constraints.</p>
+<p>Current limitation: retrieving the query requires a Mediawiki API call to read the discussion page, which adds a network dependency during refresh. This is an acceptable tradeoff at current scale but may be revisited if retrieval becomes a bottleneck.</p>
+<h5 id="side-note-storing-sparql-in-item-data-directly">Side note: storing SPARQL in item data directly</h5>
+<p>Monolingual text fields in Wikibase are capped at 400 characters, which is insufficient for meaningful SPARQL queries. External identifiers and string fields share the same constraint. A Wikibase string property with a longer cap would require a custom Wikibase extension or a non-standard configuration — not viable for a hosted instance. Storing the query as a file in the SpiritSafe repository is an alternative but decouples the query from the Wikibase item it belongs to and requires manual synchronization. The discussion-page approach keeps query and item co-located in Wikibase while working within platform constraints. For now, the discussion-page pattern is the committed mechanism.</p>
+<h4 id="query-construction-principles">Query Construction Principles</h4>
+<p>Value list queries are constructed from Wikidata property constraint information (allowed values, class constraints) but are not mechanically derived from constraints alone. Each query should:</p>
+<ul>
+<li>Target Wikidata or Qlever as the execution endpoint.</li>
+<li>Return items appropriate for the statement type in the context of use.</li>
+<li>Where constraints exist, use them as a starting point and adjust for practical coverage based on domain knowledge.</li>
+<li>Include a <code>LIMIT</code> sufficient for the expected list size.</li>
+</ul>
+<h4 id="scoping">Scoping</h4>
+<p>A value list may be universal (applicable whenever its linked statement is used) or profile-specific (applicable only in a specific entity profile context). Profile-specific scoping is encoded at the P161 linkage on the statement or profile item using <code>applies to profile</code> (P205) qualifiers.</p>
+<h3 id="composition-model">Composition Model</h3>
+<p>Profiles compose statement instances. Statements may link to other statements (for qualifier/reference expectations) and to value lists (for constrained value selection).</p>
+<p>Core principles:</p>
+<ul>
+<li>Statement-level defaults should remain reusable and broadly applicable.</li>
+<li>Profile-level directives should capture entity-context specialization.</li>
+<li>Resolution behavior must be deterministic and auditable.</li>
+</ul>
+<h3 id="curation-packet-as-composition-vehicle">Curation Packet as Composition Vehicle</h3>
+<p>The Curation Packet is where profile rules, statement rules, source data capabilities, and evaluation artifacts are assembled into one runtime structure.</p>
+<p>This model must support both broad and thin packet shapes:</p>
+<ul>
+<li>profile-broad packets that include full profile-composed statement sets</li>
+<li>statement-thin packets that slice a single statement across all applicable entities or all occurrences in scope</li>
+</ul>
+<p>Both packet modes should use the same statement and profile contracts so validation, coercion, and notice semantics remain consistent.</p>
+<h3 id="conformance-semantics">Conformance Semantics</h3>
+<p>Fermenter conformance is target-state oriented, not strict required-field enforcement.</p>
+<p>In this model:</p>
+<ul>
+<li>Profile statements represent expected curation coverage for an entity type.</li>
+<li>Runtime validation/coercion accepts partial and incomplete entities as normal operating reality.</li>
+<li>Missing expected statements, qualifiers, or references produce actionable conformance notices with severity, not automatic hard-failure by default.</li>
+<li>Hard-failure behavior is policy-driven and should be applied only where explicitly configured.</li>
+</ul>
+<p>Cardinality interpretation:</p>
+<ul>
+<li><code>max count</code> (P182) defines upper-bound target semantics.</li>
+<li>Lower-bound expectation is effectively zero in current operating practice unless an explicit minimum policy is introduced.</li>
+<li><code>novalue</code>/unbounded forms remain valid where modeled.</li>
+</ul>
+<p>Validation and coercion must stay statement-instance scoped:</p>
+<ul>
+<li>Notice and resolution logic is anchored to the active profile statement instance.</li>
+<li>Optional parent-statement scope (<code>applies to statement</code>, P163) and profile scope (<code>applies to profile</code>, P205) determine contextual applicability.</li>
+<li>This preserves deterministic behavior across wizard, CLI, and batch packet workflows while supporting incremental curation improvement.</li>
+</ul>
+<h3 id="scoping-and-rule-resolution">Scoping and Rule Resolution</h3>
+<p>For statement-level directives that include applicability qualifiers:</p>
+<ul>
+<li>No P205 or P163 qualifiers: global default.</li>
+<li>P205 only: applies only to matching profile context.</li>
+<li>P163 only: applies only when parent statement context matches.</li>
+<li>P205 and P163: both profile and parent statement must match.</li>
+</ul>
+<p>When multiple directives collide, resolution should favor higher specificity first, with explicit diagnostics for unresolved same-specificity conflicts.</p>
+<p>Derived-default note:</p>
+<ul>
+<li><code>derives default value from</code> (P213) is applied in the context of statement-to-statement linkage resolution (for example, a P211-linked reference statement).</li>
+<li>The value source for a derived statement instance is the linked source statement item designated by P213.</li>
+<li>This value-derivation contract is intended to be reusable for additional statement-linkage patterns as they are introduced.</li>
+</ul>
+<h3 id="wikibase-property-template-integration">Wikibase Property Template Integration</h3>
+<p>Wikibase Property Template items define datatype-level defaults that are reusable across statement definitions.</p>
+<p>In addition to datatype labeling, property templates may carry <code>error message</code> statements that are specific to datatype validation and entry expectations.</p>
+<p>Property-template error messages are directly applicable defaults for statements using that template, unless a more specific statement-level or profile-level message overrides them.</p>
+<h3 id="foundation-modeling">Foundation Modeling</h3>
+<p>Legacy <code>foundation_profiles</code> artifacts are non-authoritative for the current Profiles V2 and Fermenter V1 direction.</p>
+<p>Current contract:</p>
+<ul>
+<li>Live Data Distillery Wikibase semantics are the authoritative source for semantic identifiers and relationships.</li>
+<li>SpiritSafe artifacts remain the authoritative runtime materialization for offline execution.</li>
+<li><code>gkc mash check-wikibase-revisions</code> and <code>gkc mash cache-wikibase-revisions</code> are the operational cache-sync tools, but they should not be treated as the primary semantic authority contract.</li>
+</ul>
+<h3 id="operational-modes">Operational Modes</h3>
+<ul>
+<li>Offline-first operation is a hard requirement.</li>
+<li>Network access to Data Distillery is an optional enhancement, not a runtime dependency for core profile-driven workflows.</li>
+<li>SpiritSafe cache and generated support artifacts support deterministic fallback behavior.</li>
+</ul>
+<h3 id="spiritsafe-synchronization-boundary">SpiritSafe Synchronization Boundary</h3>
+<ul>
+<li>Wikibase is the semantic collaboration layer.</li>
+<li>SpiritSafe artifacts are generated synchronization outputs consumed by runtime paths.</li>
+<li>Entity cache refresh and profile build/export are independently invokable operations to support iterative modeling.</li>
+</ul>
+<h2 id="cache-sync-contract">Cache Sync Contract</h2>
+<p>The GKC cache layer maintains a local mirror of Wikibase entity JSON files. Two distinct sync modes govern how the cache is built and maintained.</p>
+<h3 id="full-sync-baseline">Full-Sync Baseline</h3>
+<p>A full-sync baseline discovers every entity in the Wikibase instance using the MediaWiki <code>allpages</code> API, resolving the live item/property namespaces from <code>siteinfo</code>, and fetches the full entity data for each discovered ID via <code>wbgetentities</code>.</p>
+<p>This mode is designed as a one-time seeding operation or a force-rebuild. It is <strong>not</strong> the routine update path.</p>
+<p>Key behavioral rules:</p>
+<ul>
+<li>
+<p><strong>Redirects are ignored.</strong> Redirect entities are excluded during discovery (<code>apfilteredir=nonredirects</code>) and any redirect entity returned from <code>wbgetentities</code> is recorded but not written to cache.</p>
+</li>
+<li>
+<p><strong>Tombstones and gaps are silently skipped.</strong> Numeric gaps in the ID sequence (e.g., <code>Q10</code> does not exist) and deleted entities (missing from <code>wbgetentities</code>) are ignored. No placeholder files are written.</p>
+</li>
+<li>
+<p><strong>Mash full-sync defaults to unauthenticated reads.</strong> The CLI runs full-sync with 50-entity batches unless an explicit batch size is provided. The lower-level loader still accepts an authenticated session for capability-sensitive batching when a caller intentionally provides one.</p>
+</li>
+<li>
+<p><strong>Provenance is embedded in every cache file.</strong> Each written file includes <code>workflow_mode: "full_sync_baseline"</code> and <code>extractor: "gkc.mash.full_sync_wikibase_entity_cache"</code> in its provenance metadata.</p>
+</li>
+</ul>
+<h3 id="incremental-watermark-sync">Incremental Watermark Sync</h3>
+<p>After a full-sync baseline is in place, routine cache maintenance uses the <code>cache-wikibase-revisions</code> mode, which:</p>
+<ul>
+<li>Reads the MediaWiki <code>recentchanges</code> feed from a watermark timestamp forward.</li>
+<li>Fetches only the changed entities.</li>
+<li>Updates only the affected cache files.</li>
+<li>Advances the watermark for the next run.</li>
+</ul>
+<p>The watermark is derived from the most recent cache file timestamp. If no watermark is available, <code>cache-wikibase-revisions</code> raises an error and instructs the operator to seed the cache first via <code>full-sync-wikibase</code>.</p>
+<h3 id="redirect-and-tombstone-policy">Redirect and Tombstone Policy</h3>
+<table>
+<thead>
+<tr>
+<th>Entity State</th>
+<th>Full-Sync</th>
+<th>Incremental</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Normal entity</td>
+<td>Written to cache</td>
+<td>Written to cache</td>
+</tr>
+<tr>
+<td>Redirect</td>
+<td>Excluded at discovery; skipped if seen</td>
+<td>Skipped if detected</td>
+</tr>
+<tr>
+<td>Deleted/missing</td>
+<td>Silently skipped</td>
+<td>Removed from cache</td>
+</tr>
+<tr>
+<td>Numeric gap</td>
+<td>Silently skipped</td>
+<td>Not applicable</td>
+</tr>
+</tbody>
+</table>
+<p>This table defines the canonical behavior contract. Deviations should be treated as bugs.</p>
+<h2 id="current-cli-behavior">Current CLI Behavior</h2>
+<h3 id="gkc-mash-full-sync-wikibase"><code>gkc mash full-sync-wikibase</code></h3>
+<ul>
+<li>Discovers all item and property IDs from the Wikibase instance using the <code>allpages</code> API.</li>
+<li>Fetches full entity data in batches (500 with high-limit auth, 50 otherwise) and writes cache files.</li>
+<li>Handles redirect/tombstone exclusion automatically per the sync contract above.</li>
+<li>Accepts <code>--items-only</code> / <code>--properties-only</code> flags to limit discovery scope.</li>
+<li>Produces an optional JSON result artifact via <code>--output</code> and writes a Markdown summary to <code>$GITHUB_STEP_SUMMARY</code> when running in GitHub Actions.</li>
+</ul>
+<h3 id="gkc-mash-check-wikibase-revisions"><code>gkc mash check-wikibase-revisions</code></h3>
+<ul>
+<li>Reads Data Distillery integration settings from the resolved meta-wikibase config (<code>META_WB_CONFIG</code>, <code>META_WB_API_URL</code>, <code>META_WB_SPARQL_ENDPOINT</code>).</li>
+<li>Checks MediaWiki recentchanges for entity page updates.</li>
+<li>Produces change summaries and optional JSON report via <code>--output</code>.</li>
+</ul>
+<h3 id="gkc-mash-cache-wikibase-revisions"><code>gkc mash cache-wikibase-revisions</code></h3>
+<ul>
+<li>Refreshes per-entity SpiritSafe cache files from recentchanges-derived IDs.</li>
+<li>Supports explicit watermark control via <code>--since</code> and overlap safety window.</li>
+<li>Writes summary artifacts consumable by downstream profile export workflows.</li>
+</ul>
+<h3 id="spiritsafe-cache-and-build-workflows">SpiritSafe Cache and Build Workflows</h3>
+<ul>
+<li><code>Cache from Wikibase</code> refreshes entity cache incrementally from Wikibase changes.</li>
+<li><code>Cache Wikibase and Build Profiles</code> refreshes cache and regenerates profile JSON artifacts.</li>
+<li><code>Hydrate Value Lists</code> refreshes query and allowed-item list artifacts.</li>
+</ul>
+<h2 id="shipper-api-contract-notes-data-distillery">Shipper API Contract Notes (Data Distillery)</h2>
+<p>For property creation with <code>wbeditentity</code>, Data Distillery currently requires <code>datatype</code> inside the serialized <code>data</code> JSON payload for <code>new=property</code> requests.</p>
+<p>Do not send <code>datatype</code> as only a top-level form parameter for this instance.</p>
+<p>This behavior is treated as an instance contract until validated across additional Wikibase targets.</p>
+<h2 id="theoretical-design-notes">Theoretical Design Notes</h2>
+<p>The following items reflect active architectural exploration and are not yet finalized implementation contracts.</p>
+<ul>
+<li>Profile-local statement-instance directives may become the primary effective configuration surface, with statement-level rules serving as reusable defaults.</li>
+<li>A dedicated suppression/removal semantic may be introduced for qualifier/reference collisions instead of relying on absence semantics.</li>
+<li>Additional explicit conflict-reporting structures may be emitted in profile generation reports to improve curation diagnostics at scale.</li>
+<li>URL interpretation and domain-rule semantics are expected to be modeled in Data Distillery so wizard and fermenter URL handling can use a shared ontology-backed rule registry.</li>
+</ul>
+<h2 id="environment-variables">Environment Variables</h2>
+<ul>
+<li><code>META_WB_CONFIG</code></li>
+<li><code>META_WB_API_URL</code></li>
+<li><code>META_WB_SPARQL_ENDPOINT</code></li>
+</ul>
+<p>Recommended baseline:</p>
+<div class="highlight"><pre><span></span><code><span class="nb">export</span><span class="w"> </span><span class="nv">META_WB_CONFIG</span><span class="o">=</span><span class="s2">&quot;/path/to/SpiritSafe/config/dd-wikibase.yaml&quot;</span>
+<span class="c1"># Optional per-run overrides</span>
+<span class="nb">export</span><span class="w"> </span><span class="nv">META_WB_API_URL</span><span class="o">=</span><span class="s2">&quot;https://datadistillery.wikibase.cloud/w/api.php&quot;</span>
+<span class="nb">export</span><span class="w"> </span><span class="nv">META_WB_SPARQL_ENDPOINT</span><span class="o">=</span><span class="s2">&quot;https://datadistillery.wikibase.cloud/query/sparql&quot;</span>
+</code></pre></div>
+<h2 id="troubleshooting">Troubleshooting</h2>
+<ul>
+<li><strong>Auth group mismatch</strong>: if explicit MediaWiki credentials authenticate but write requests fail, verify Data Distillery account permissions include edit rights.</li>
+<li><strong>Write summary missing</strong>: shipper write operations and init flows require a non-empty summary.</li>
+<li><strong>Property create datatype error</strong>: ensure datatype is embedded in the <code>data</code> payload JSON for property creation.</li>
+</ul>
+<h2 id="related-documentation">Related Documentation</h2>
+<ul>
+<li><a href="../../../gkc/setup/">Setup and Orientation</a></li>
+<li><a href="../../../gkc/authentication/">Authentication Guide</a></li>
+<li><a href="../../module-contracts/">Cross-Module Contracts</a></li>
+<li><a href="../../../gkc/api/shipper/">Shipper API</a></li>
+<li><a href="../../../gkc/cli/">CLI Reference</a></li>
+</ul>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../../..", "features": ["navigation.instant", "navigation.sections", "navigation.top", "toc.follow", "content.code.copy"], "search": "../../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../../assets/javascripts/bundle.79ae519e.min.js"></script>
+      
+        <script src="https://unpkg.com/mermaid@10.6.1/dist/mermaid.min.js"></script>
+      
+        <script src="../../../javascripts/mermaid-init.js"></script>
+      
+    
+  </body>
+</html>

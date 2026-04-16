@@ -1,0 +1,3804 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Data Distillery - A framework for data distillation toward the Global Knowledge Commons">
+      
+      
+      
+        <link rel="canonical" href="https://datadistillery.org/gkc/wizard/">
+      
+      
+        <link rel="prev" href="../entity-json-schema/">
+      
+      
+        <link rel="next" href="../setup/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../img/DataDistilleryFavIcon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.4">
+    
+    
+      
+        <title>Wizard - Data Distillery</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.484c7ddc.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/_mkdocstrings.css">
+    
+      <link rel="stylesheet" href="../../stylesheets/extra.css">
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    <body dir="ltr">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#gkc-wizard-documentation" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="Data Distillery" class="md-header__button md-logo" aria-label="Data Distillery" data-md-component="logo">
+      
+  <img src="../../img/DataDistilleryIconNight.png" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            Data Distillery
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Wizard
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/skybristol/gkc" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    skybristol/gkc
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="Data Distillery" class="md-nav__button md-logo" aria-label="Data Distillery" data-md-component="logo">
+      
+  <img src="../../img/DataDistilleryIconNight.png" alt="logo">
+
+    </a>
+    Data Distillery
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/skybristol/gkc" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    skybristol/gkc
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Data Curation Narratives
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Data Curation Narratives
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../tribes/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Tribal Governments
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Architecture
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../architecture/wikimedia-commons/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Wikimedia Commons
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3_3" id="__nav_3_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Meta-Wikibase
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Meta-Wikibase
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../architecture/meta-wikibase/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../architecture/meta-wikibase/DataDistillery-Wikibase/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Data Distillery Wikibase
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../architecture/meta-wikibase/semantic-anchors/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Semantic Anchors
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../architecture/meta-wikibase/wikibase-datatypes/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Wikibase Datatypes
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../architecture/module-contracts/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Cross-Module Contracts
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../architecture/still_charger/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Still Charger
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_6" >
+        
+          
+          <label class="md-nav__link" for="__nav_3_6" id="__nav_3_6_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SpiritSafe
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3_6">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    SpiritSafe
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../architecture/SpiritSafe/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../architecture/SpiritSafe/profile-loading/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Profile Loading
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../architecture/SpiritSafe/spirit_safe_models/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SpiritSafe Models & API
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../architecture/SpiritSafe/SpiritSafe-testing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SpiritSafe Testing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../architecture/validation-architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Validation Architecture
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    GKC Documentation
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    GKC Documentation
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../background/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Background
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../wikibase_ontology_orientation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Wikibase Ontology Orientation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../profiles/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Entity Profiles
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../mash/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Mash
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../entity-json-schema/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Entity JSON
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Wizard
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Wizard
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#launching-the-wizard" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Launching the Wizard
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#overview" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Overview
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#wizard-architecture" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Wizard Architecture
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Wizard Architecture">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#profile-ui-generation-pipeline" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Profile → UI Generation Pipeline
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#charged-packet-contract" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Charged Packet Contract
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-5-step-wizard-structure" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The 5-Step Wizard Structure
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="The 5-Step Wizard Structure">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#step-1-plan-of-action" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Step 1: Plan of Action
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#step-2-basic-identification-labels-descriptions-aliases" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Step 2: Basic Identification (Labels, Descriptions, Aliases)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#step-3-statements" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Step 3: Statements
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#step-4-cross-platform-links-sitelinks" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Step 4: Cross-Platform Links (Sitelinks)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#step-5-review-validate" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Step 5: Review &amp; Validate
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#multi-entity-curation-sessions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Multi-Entity Curation Sessions
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Multi-Entity Curation Sessions">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#profile-graph-loading" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Profile Graph Loading
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#ui-presentation-strategy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        UI Presentation Strategy
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#creating-related-entities" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Creating Related Entities
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#review-stage-for-multi-entity-packets" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Review Stage for Multi-Entity Packets
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#profile-driven-ui-generation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Profile-Driven UI Generation
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Profile-Driven UI Generation">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#guidance-text-rendering" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Guidance Text Rendering
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#input-prompt-customization" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Input Prompt Customization
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#allowed-items-choice-list-rendering" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Allowed Items: Choice List Rendering
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#future-qid-loading-entity-editing" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Future: QID Loading &amp; Entity Editing
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Future: QID Loading &amp; Entity Editing">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#workflow" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Workflow
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#related-entity-auto-loading" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Related Entity Auto-Loading
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#depth-1-loading-strategy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Depth-1 Loading Strategy
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#validation-error-handling" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Validation &amp; Error Handling
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Validation &amp; Error Handling">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#real-time-validation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Real-Time Validation
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#validation-severity-levels" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Validation Severity Levels
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#constraint-violation-messaging" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Constraint Violation Messaging
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#related-documentation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Related Documentation
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4_8" >
+        
+          
+          <label class="md-nav__link" for="__nav_4_8" id="__nav_4_8_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Getting Started
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_4_8_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4_8">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Getting Started
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../setup/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Setup and Orientation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../authentication/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Authentication
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4_9" >
+        
+          
+          <label class="md-nav__link" for="__nav_4_9" id="__nav_4_9_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Data Distillery Workflow
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_4_9_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4_9">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Data Distillery Workflow
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../shipping/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Shipping
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4_10" >
+        
+          
+          <label class="md-nav__link" for="__nav_4_10" id="__nav_4_10_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API Reference
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_4_10_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4_10">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    API Reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api/auth/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Authentication
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api/mash/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Mash
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api/mash_formatters/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Mash Formatters
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api/wikibase/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Wikibase
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api/still_charger/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Still Charger
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api/fermenter/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Fermenter
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api/bottler/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Bottler
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api/profiles/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Profiles
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api/spirit_safe/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SpiritSafe
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api/shex/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ShEx
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api/shipper/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Shipper
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api/sparql/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SPARQL
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4_11" >
+        
+          
+          <label class="md-nav__link" for="__nav_4_11" id="__nav_4_11_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Command Line Interface
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_4_11_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4_11">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Command Line Interface
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../cli/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../cli/auth/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Authentication
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../cli/mash/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Mash
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../cli/profiles/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Profile
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../cli/packet/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Packet
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../cli/spiritsafe/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SpiritSafe
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../cli/wizard/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Wizard
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../cli/shex/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ShEx
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4_12" >
+        
+          
+          <label class="md-nav__link" for="__nav_4_12" id="__nav_4_12_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Utilities and Tools
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_4_12_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4_12">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Utilities and Tools
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../utilities/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Utilities
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4_13" >
+        
+          
+          <label class="md-nav__link" for="__nav_4_13" id="__nav_4_13_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Development
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_4_13_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4_13">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Development
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../CI_CD/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CI/CD
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../RELEASE/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Release Process
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#launching-the-wizard" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Launching the Wizard
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#overview" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Overview
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#wizard-architecture" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Wizard Architecture
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Wizard Architecture">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#profile-ui-generation-pipeline" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Profile → UI Generation Pipeline
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#charged-packet-contract" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Charged Packet Contract
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-5-step-wizard-structure" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The 5-Step Wizard Structure
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="The 5-Step Wizard Structure">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#step-1-plan-of-action" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Step 1: Plan of Action
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#step-2-basic-identification-labels-descriptions-aliases" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Step 2: Basic Identification (Labels, Descriptions, Aliases)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#step-3-statements" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Step 3: Statements
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#step-4-cross-platform-links-sitelinks" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Step 4: Cross-Platform Links (Sitelinks)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#step-5-review-validate" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Step 5: Review &amp; Validate
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#multi-entity-curation-sessions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Multi-Entity Curation Sessions
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Multi-Entity Curation Sessions">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#profile-graph-loading" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Profile Graph Loading
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#ui-presentation-strategy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        UI Presentation Strategy
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#creating-related-entities" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Creating Related Entities
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#review-stage-for-multi-entity-packets" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Review Stage for Multi-Entity Packets
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#profile-driven-ui-generation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Profile-Driven UI Generation
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Profile-Driven UI Generation">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#guidance-text-rendering" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Guidance Text Rendering
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#input-prompt-customization" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Input Prompt Customization
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#allowed-items-choice-list-rendering" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Allowed Items: Choice List Rendering
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#future-qid-loading-entity-editing" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Future: QID Loading &amp; Entity Editing
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Future: QID Loading &amp; Entity Editing">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#workflow" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Workflow
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#related-entity-auto-loading" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Related Entity Auto-Loading
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#depth-1-loading-strategy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Depth-1 Loading Strategy
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#validation-error-handling" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Validation &amp; Error Handling
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Validation &amp; Error Handling">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#real-time-validation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Real-Time Validation
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#validation-severity-levels" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Validation Severity Levels
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#constraint-violation-messaging" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Constraint Violation Messaging
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#related-documentation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Related Documentation
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="gkc-wizard-documentation">GKC Wizard Documentation</h1>
+<p><strong>Purpose:</strong> Document how GKC Wizards consume Entity Profiles to generate interactive, multi-step curation workflows for creating and editing entities across Wikidata, Wikimedia Commons, and other Global Knowledge Commons platforms.</p>
+<hr />
+<h2 id="launching-the-wizard">Launching the Wizard</h2>
+<p>To start the interactive profile wizard, use the dedicated CLI command:</p>
+<div class="highlight"><pre><span></span><code>gkc<span class="w"> </span>wizard<span class="w"> </span>--profile<span class="w"> </span>Q4<span class="w"> </span>--local-root<span class="w"> </span>/path/to/SpiritSafe
+</code></pre></div>
+<p>Replace <code>Q4</code> with the desired profile QID and adjust the path as needed. This launches the Streamlit-based wizard for guided entity curation.</p>
+<hr />
+<h2 id="overview">Overview</h2>
+<p>GKC Wizards are <strong>profile-driven user interfaces</strong> that transform declarative JSON Entity Profile definitions into guided, step-by-step data entry workflows. Every aspect of the wizard—field labels, validation rules, input widgets, help text, and workflow organization—derives directly from the profile with zero hardcoded entity logic.</p>
+<p><strong>Key Characteristics:</strong></p>
+<ul>
+<li><strong>Fully declarative</strong>: All UI behavior comes from profile metadata</li>
+<li><strong>Multi-entity capable</strong>: Can curate primary entity + related entities in single session</li>
+<li><strong>Real-time validation</strong>: Feedback on every field blur, guided by profile constraints</li>
+<li><strong>Graceful degradation</strong>: Follows Wikidata/Wikipedia philosophy—incomplete entities can be saved; enhancement happens iteratively</li>
+</ul>
+<hr />
+<h2 id="wizard-architecture">Wizard Architecture</h2>
+<h3 id="profile-ui-generation-pipeline">Profile → UI Generation Pipeline</h3>
+<div class="highlight"><pre><span></span><code>┌──────────────────────────────────────────────────────────┐
+│  SpiritSafe JSON Entity Profile (Q4 — tribal_government_us) │
+│  - Entity metadata (labels, descriptions, aliases)       │
+│  - Statements with datatypes, constraints, guidance      │
+│  - Profile graph (links to related profile types)        │
+│  - Value-list routes to SPARQL-hydrated cache files      │
+└──────────────────┬──────────────────────────────────────-┘
+                   │ Load &amp; parse
+                   ↓
+┌──────────────────────────────────────────────────────────┐
+│  GKC Spirit Safe Module                                  │
+│  - Load JSON Entity Profile + related profiles           │
+│  - Discover profile graph (linked profile types)         │
+│  - Resolve value-list cache routes                       │
+└──────────────────┬──────────────────────────────────────-┘
+                   │ Provide profile + graph
+                   ↓
+┌──────────────────────────────────────────────────────────┐
+│  Wizard Loader                                           │
+│  - Create GKC Curation Packet with uncharged slots       │
+│  - Entity slots keyed by profile name_identifier and ID  │
+│  - Statement slots keyed by statement name_identifier    │
+└──────────────────┬──────────────────────────────────────-┘
+                   │ Pass packet + profile to renderer
+                   ↓
+┌──────────────────────────────────────────────────────────┐
+│  Wizard Step Renderers                                   │
+│  - Step 1: Plan          (from metadata.description)     │
+│  - Step 2: Identification (labels/desc/aliases)          │
+│  - Step 3: Statements    (statement definitions)         │
+│  - Step 4: Sitelinks     (sitelinks config)              │
+│  - Step 5: Review        (completeness check)            │
+└──────────────────┬──────────────────────────────────────-┘
+                   │ User interaction &amp; data entry
+                   ↓
+┌──────────────────────────────────────────────────────────┐
+│  Curation Packet (updated with user data)               │
+│  - Saved to disk (draft) or shipped to Wikidata          │
+└──────────────────────────────────────────────────────────┘
+</code></pre></div>
+<hr />
+<h2 id="charged-packet-contract">Charged Packet Contract</h2>
+<p>When the wizard loads an existing Wikidata item via <code>--qid</code>, it calls <code>charge_packet_from_wikidata_items()</code> to populate the packet with live Wikidata data. The charged packet provides a stable contract that wizard rendering can rely on.</p>
+<p><strong>What the wizard can consume from a charged packet:</strong></p>
+<ul>
+<li><code>data.entities[*].statements</code> — statement slots with <code>data-value</code> populated from Wikidata; use these to pre-fill form fields.</li>
+<li><code>data.entities[*].labels / descriptions / aliases</code> — filled from Wikidata entity labels; use for Step 2 pre-population.</li>
+<li><code>conformance.entity_profile_map</code> — maps each loaded entity QID (and its profile <code>name_identifier</code> and URI) to the governing profile URI. Use to determine which profile governs each entity tab in multi-entity workflows.</li>
+<li><code>conformance.statement_evaluations</code> — per-claim conformance records with <code>status: conformant</code> or <code>nonconformant</code>. Use to pre-highlight non-conformant statements in the review step without re-running validation inline.</li>
+</ul>
+<p><strong>What the wizard should NOT derive from the charged packet:</strong></p>
+<ul>
+<li>Do not re-infer which profile governs a linked entity. Always read from <code>conformance.entity_profile_map</code>.</li>
+<li>Do not interpret <code>nonconformant</code> records as hard blockers. They are informational notices for curator review; the wizard should surface them with guidance, not prevent saving.</li>
+<li>Richer conformance signals (<code>uncovered</code>, <code>missing_required</code>, coercion notices) will arrive via fermenter integration in a future step. When available they will appear alongside <code>statement_evaluations</code> under <code>conformance</code>.</li>
+</ul>
+<hr />
+<h2 id="the-5-step-wizard-structure">The 5-Step Wizard Structure</h2>
+<p>Every wizard follows a consistent 5-step progression designed to match curator mental models:</p>
+<h3 id="step-1-plan-of-action">Step 1: Plan of Action</h3>
+<p><strong>Purpose:</strong> Orient curator to what they're about to create and what information they'll need</p>
+<p><strong>Content derived from profile:</strong></p>
+<ul>
+<li><strong>Entity type</strong>: <code>metadata.name</code> and profile top-level <code>name</code> field</li>
+<li><strong>Description</strong>: <code>metadata.description</code> (long form) or <code>profile.description</code> (short form)</li>
+<li><strong>Required elements</strong>: Count of required statements, required languages</li>
+<li><strong>Secondary entities</strong>: Lists profiles discovered via profile graph (e.g., "You may also create: Office Held by Head of State")</li>
+<li><strong>Time estimate</strong>: Auto-calculated from statement count and complexity</li>
+<li><strong>Preparation guidance</strong>: Any profile-level <code>preparation_guidance</code> field (future enhancement)</li>
+</ul>
+<p><strong>UI Elements:</strong></p>
+<ul>
+<li>Entity type badge/icon</li>
+<li>Summary statistics ("5 required statements, 8 optional statements")</li>
+<li>List of related entity types that may need creation</li>
+<li>"Start curation" button to proceed to Step 2</li>
+</ul>
+<p><strong>Example Display:</strong></p>
+<div class="highlight"><pre><span></span><code>┌─────────────────────────────────────────────────────────┐
+│ Create Tribal Government (US)                           │
+├─────────────────────────────────────────────────────────┤
+│ Federally recognized Native American tribes in the      │
+│ United States. Comprehensive profile for documenting    │
+│ tribal nomenclature, federal recognition, governmental   │
+│ structure, and cross-platform links.                     │
+│                                                          │
+│ REQUIRED ELEMENTS                                        │
+│ • Labels and descriptions in English                    │
+│ • 3 required statements                                 │
+│ • At least 1 sitelink                                   │
+│                                                          │
+│ YOU MAY ALSO CREATE                                      │
+│ • Office Held by Head of State (optional)               │
+│                                                          │
+│ ESTIMATED TIME: 10-15 minutes                            │
+│                                                          │
+│            [Start Curation →]                            │
+└─────────────────────────────────────────────────────────┘
+</code></pre></div>
+<hr />
+<h3 id="step-2-basic-identification-labels-descriptions-aliases">Step 2: Basic Identification (Labels, Descriptions, Aliases)</h3>
+<p><strong>Purpose:</strong> Collect multilingual metadata that identifies the entity</p>
+<p><strong>Content derived from profile:</strong></p>
+<ul>
+<li><strong>Languages supported</strong>: Discovered by scanning <code>labels</code>, <code>descriptions</code>, <code>aliases</code> sections in profile</li>
+<li><strong>Required vs optional languages</strong>: Inferred from <code>required: true</code> in profile (future: explicit <code>languages</code> section)</li>
+<li><strong>Input prompts</strong>: <code>labels.input_prompt</code>, <code>descriptions.input_prompt</code> (or defaults)</li>
+<li><strong>Guidance text</strong>: <code>labels.guidance</code>, <code>descriptions.guidance</code></li>
+</ul>
+<p><strong>UI Structure:</strong></p>
+<ul>
+<li><strong>Single-language profiles</strong>: Simple form (Label, Description, Aliases)</li>
+<li><strong>Multi-language profiles</strong>: Tabbed interface (one tab per language)</li>
+</ul>
+<p><strong>Field-Specific Behavior:</strong></p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Cardinality</th>
+<th>Validation</th>
+<th>Profile Source</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Label</strong></td>
+<td>1 per language (max)</td>
+<td>Required if language is required; max length ~250 chars</td>
+<td><code>labels.en.input_prompt</code>, <code>labels.en.guidance</code></td>
+</tr>
+<tr>
+<td><strong>Description</strong></td>
+<td>1 per language (max)</td>
+<td>Required if language is required; must be distinctive</td>
+<td><code>descriptions.en.input_prompt</code>, <code>descriptions.en.guidance</code></td>
+</tr>
+<tr>
+<td><strong>Aliases</strong></td>
+<td>0-many per language</td>
+<td>Optional; no duplicates within language</td>
+<td><code>aliases.en.input_prompt</code>, <code>aliases.en.guidance</code></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Validation:</strong></p>
+<ul>
+<li>Real-time: On field blur, check length constraints and required status</li>
+<li>Cross-field: Ensure description doesn't duplicate label</li>
+<li>Pre-advancement: Validate all required languages have non-empty label + description</li>
+</ul>
+<p><strong>Example Display (Multi-Language):</strong></p>
+<div class="highlight"><pre><span></span><code>┌─────────────────────────────────────────────────────────┐
+│ Basic Identification    [EN] [CHR] [NV]                 │
+├─────────────────────────────────────────────────────────┤
+│ ENGLISH (REQUIRED)                                       │
+│                                                          │
+│ Label *                                                  │
+│ ┌─────────────────────────────────────────────────────┐ │
+│ │ Cherokee Nation                                     │ │
+│ └─────────────────────────────────────────────────────┘ │
+│ ℹ️ Use the name the tribe uses to refer to itself      │
+│                                                          │
+│ Description *                                            │
+│ ┌─────────────────────────────────────────────────────┐ │
+│ │ Federally recognized Native American tribe in OK   │ │
+│ └─────────────────────────────────────────────────────┘ │
+│ ℹ️ Short, distinctive description (not just a repeat    │
+│    of the label)                                         │
+│                                                          │
+│ Aliases (Alternative Names)                              │
+│ • Cherokee ✕                                             │
+│ • Cherokee Tribe ✕                                       │
+│ [+ Add another alias]                                    │
+│                                                          │
+│         [← Back]              [Continue →]               │
+└─────────────────────────────────────────────────────────┘
+</code></pre></div>
+<hr />
+<h3 id="step-3-statements">Step 3: Statements</h3>
+<p><strong>Purpose:</strong> Collect all property-value assertions about the entity</p>
+<p><strong>Content derived from profile:</strong></p>
+<ul>
+<li><strong>Statement list</strong>: <code>profile.statements[]</code> array (rendered in order)</li>
+<li><strong>For each statement</strong>:</li>
+<li>Label: <code>statement.label</code></li>
+<li>Input prompt: <code>statement.input_prompt</code> or <code>statement.value.input_prompt</code></li>
+<li>Guidance: <code>statement.guidance</code></li>
+<li>Datatype: <code>statement.value.type</code> → determines widget</li>
+<li>Constraints: <code>statement.constraints[]</code> → validation rules</li>
+<li>Allowed items: <code>statement.value.allowed_items</code> → choice lists</li>
+<li>Qualifiers: <code>statement.qualifiers[]</code> → nested inputs</li>
+<li>References: <code>statement.references</code> → source collection</li>
+</ul>
+<p><strong>Statement Rendering Order:</strong></p>
+<p>Wizard renders statements in the exact order specified in the JSON Entity Profile artifact. Profile designers should order statements logically (e.g., classification statements first, then descriptive, then relationships).</p>
+<p><strong>Widget Selection by Datatype:</strong></p>
+<table>
+<thead>
+<tr>
+<th>Datatype</th>
+<th>Widget</th>
+<th>Behavior</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>item</code></td>
+<td>QID text input OR autocomplete</td>
+<td>If <code>allowed_items</code> present, show searchable dropdown; else free QID entry</td>
+</tr>
+<tr>
+<td><code>entity_profile</code></td>
+<td>QID input + "Create new" button</td>
+<td>Always shows both "Select existing" and "Create new [profile]" options</td>
+</tr>
+<tr>
+<td><code>string</code></td>
+<td>Text input</td>
+<td>Single-line for short strings; multi-line if <code>max_length &gt; 200</code></td>
+</tr>
+<tr>
+<td><code>url</code></td>
+<td>URL input</td>
+<td>Validates URL format; shows protocol dropdown (http/https)</td>
+</tr>
+<tr>
+<td><code>time</code></td>
+<td>Date picker</td>
+<td>Precision auto-detected from input format (YYYY vs YYYY-MM vs YYYY-MM-DD)</td>
+</tr>
+<tr>
+<td><code>quantity</code></td>
+<td>Number input + unit selector</td>
+<td>Unit field shown if <code>unit_behavior != "none"</code></td>
+</tr>
+<tr>
+<td><code>monolingualtext</code></td>
+<td>Text input + language dropdown</td>
+<td>Language choices from <code>allowed_items</code> SPARQL or fallback list</td>
+</tr>
+<tr>
+<td><code>commonsMedia</code></td>
+<td>File upload widget</td>
+<td>Uploads to Wikimedia Commons (requires auth)</td>
+</tr>
+<tr>
+<td><code>globe-coordinate</code></td>
+<td>Map picker</td>
+<td>Click map to set lat/lon; or manual entry</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Skip Functionality:</strong></p>
+<p>Every statement can be skipped via explicit "Skip this statement" button. Philosophy: curators can save incomplete entities and enhance later.</p>
+<p><strong>Multi-Value Statements:</strong></p>
+<p>If <code>statement.max_count &gt; 1</code> or <code>max_count: null</code>, show "Add another [statement label]" button after each value.</p>
+<p><strong>Qualifiers:</strong></p>
+<p>Rendered as nested form under statement value. Each qualifier follows same widget selection rules as statements.</p>
+<p><strong>References:</strong></p>
+<p>Behavior determined by <code>statement.references.behavior</code>:</p>
+<ul>
+<li><code>editable</code>: Show reference collection UI (itemlist from SPARQL or manual entry)</li>
+<li><code>auto_derive</code>: System generates references automatically (e.g., from statement value URL)</li>
+<li><code>fixed</code>: References pre-populated from profile; user cannot edit</li>
+</ul>
+<p><strong>Example Display:</strong></p>
+<div class="highlight"><pre><span></span><code>┌─────────────────────────────────────────────────────────┐
+│ Statements (3 of 8 completed)                           │
+├─────────────────────────────────────────────────────────┤
+│ Instance of (classification) *                           │
+│ ┌─────────────────────────────────────────────────────┐ │
+│ │ Q7840353 - federally recognized Native American... │ │
+│ └─────────────────────────────────────────────────────┘ │
+│ ℹ️ Fixed value: This entity is always classified as a   │
+│    federally recognized tribe.                           │
+│                                                          │
+│ REFERENCES (required: 1+)                                │
+│ • Federal Register notice: Vol. 87, No. 18 ✕            │
+│ [+ Add reference]                                        │
+│ ─────────────────────────────────────────────────────── │
+│                                                          │
+│ Office held by head of state                             │
+│ ┌─────────────────────────────────────────────────────┐ │
+│ │ Q999888 - Principal Chief of the Cherokee Nation   │ │
+│ └─────────────────────────────────────────────────────┘ │
+│ [Select existing QID]  [Create new office →]            │
+│ ℹ️ The executive leadership position (not the person).  │
+│                                                          │
+│              [Skip this statement]                       │
+│ ─────────────────────────────────────────────────────── │
+│                                                          │
+│         [← Back]              [Continue →]               │
+└─────────────────────────────────────────────────────────┘
+</code></pre></div>
+<hr />
+<h3 id="step-4-cross-platform-links-sitelinks">Step 4: Cross-Platform Links (Sitelinks)</h3>
+<p><strong>Purpose:</strong> Link entity to Wikipedia articles and other sister projects</p>
+<p><strong>Content derived from profile:</strong></p>
+<ul>
+<li><strong>Supported languages</strong>: <code>profile.sitelinks.languages[]</code></li>
+<li><strong>Supported projects</strong>: Per language (e.g., <code>en: [wikipedia, wikivoyage]</code>)</li>
+<li><strong>Input mode</strong>: Language+project+title dropdowns (current) or URL-based (future)</li>
+<li><strong>Validation</strong>: Uniqueness constraints (one sitelink per language+project across all Wikidata)</li>
+</ul>
+<p><strong>Current UI Pattern:</strong></p>
+<ol>
+<li>Select language (dropdown)</li>
+<li>Select project (dropdown: wikipedia, wikivoyage, etc.)</li>
+<li>Enter article title (text input)</li>
+<li>Validate: Check if sitelink already exists in Wikidata for another item (conflict detection)</li>
+</ol>
+<p><strong>Future Enhancement: URL-Based Entry:</strong></p>
+<div class="highlight"><pre><span></span><code>Enter Wikipedia or Wikimedia URL:
+┌─────────────────────────────────────────────────────┐
+│ https://en.wikipedia.org/wiki/Cherokee_Nation      │
+└─────────────────────────────────────────────────────┘
+✓ URL validated • Article exists • No conflicts
+
+Relationship type:
+◉ Primary article (exclusively about this entity)
+○ Shared article (discusses multiple entities)
+○ Contextual mention (entity appears in broader topic)
+</code></pre></div>
+<p><strong>Sitelink List Display:</strong></p>
+<div class="highlight"><pre><span></span><code>┌─────────────────────────────────────────────────────────┐
+│ Cross-Platform Links                                    │
+├─────────────────────────────────────────────────────────┤
+│ WIKIPEDIA ARTICLES                                       │
+│ • English: Cherokee_Nation ✕                            │
+│ • Cherokee: ᎳᎫᎿ_ᎠᏰᎲ ✕                                  │
+│                                                          │
+│ [+ Add sitelink]                                         │
+│                                                          │
+│         [← Back]              [Continue →]               │
+└─────────────────────────────────────────────────────────┘
+</code></pre></div>
+<hr />
+<h3 id="step-5-review-validate">Step 5: Review &amp; Validate</h3>
+<p><strong>Purpose:</strong> Show curator a complete summary of what will be created/edited; identify gaps</p>
+<p><strong>Content displayed:</strong></p>
+<ul>
+<li><strong>Entity overview</strong>: Labels, descriptions (all languages)</li>
+<li><strong>Completeness score</strong>: "7 of 10 required elements complete (70%)"</li>
+<li><strong>Statements summary</strong>: Grouped by completed vs skipped</li>
+<li><strong>Secondary entities</strong>: If multi-entity packet, show related entities to be created</li>
+<li><strong>Validation warnings</strong>: Missing required fields, constraint violations</li>
+</ul>
+<p><strong>Completeness Calculation:</strong></p>
+<div class="highlight"><pre><span></span><code>required_fields = 2 (base for label+desc) 
+                + num_required_statements 
+                + (2 * num_required_languages)
+
+completed_fields = count(non_empty required labels) 
+                 + count(non_empty required descriptions)
+                 + count(statements with at least one value)
+
+progress_pct = (completed_fields / required_fields) * 100
+</code></pre></div>
+<p><strong>Action Options:</strong></p>
+<ul>
+<li><strong>Save Draft</strong>: Serialize packet to disk for later editing (allows incomplete entities)</li>
+<li><strong>Ship to Wikidata</strong>: Validate completeness; if warnings present, show confirmation dialog</li>
+<li><strong>Edit [Section]</strong>: Jump back to specific step to fix issues</li>
+</ul>
+<p><strong>Example Display:</strong></p>
+<div class="highlight"><pre><span></span><code>┌─────────────────────────────────────────────────────────┐
+│ Review: Cherokee Nation                                 │
+├─────────────────────────────────────────────────────────┤
+│ COMPLETENESS: 8 of 10 required elements (80%)           │
+│ ████████████████░░░░ Ready to ship                      │
+│                                                          │
+│ IDENTIFICATION ✓                                         │
+│ • English label: Cherokee Nation                        │
+│ • English description: Federally recognized tribe...    │
+│ • 2 aliases                                              │
+│                                                          │
+│ STATEMENTS                                               │
+│ ✓ Instance of: Q7840353                                 │
+│ ✓ Office held by head of state: Q999888                 │
+│ ✓ Member count: 380,000 (2023)                          │
+│ ⚠️ Headquarters location: MISSING                        │
+│ ⚠️ Official website: MISSING                             │
+│                                                          │
+│ CROSS-PLATFORM LINKS ✓                                   │
+│ • enwiki: Cherokee_Nation                               │
+│                                                          │
+│ RELATED ENTITIES TO BE CREATED                           │
+│ • Office: Principal Chief of the Cherokee Nation        │
+│                                                          │
+│ ⚠️ WARNINGS                                              │
+│ • Headquarters location is highly recommended           │
+│ • Official website helps verify tribal government       │
+│                                                          │
+│ [← Back] [Save Draft] [Ship to Wikidata →]              │
+└─────────────────────────────────────────────────────────┘
+</code></pre></div>
+<hr />
+<h2 id="multi-entity-curation-sessions">Multi-Entity Curation Sessions</h2>
+<p>When a profile references other profiles via <code>entity_profile</code> statements, wizard creates a <strong>multi-entity curation packet</strong> and allows curator to work on multiple entities in one session.</p>
+<h3 id="profile-graph-loading">Profile Graph Loading</h3>
+<p><strong>Example:</strong> User launches wizard with <code>TribalGovernmentUS</code> profile</p>
+<ol>
+<li>Wizard loads <code>TribalGovernmentUS</code> profile</li>
+<li>Discovers <code>office_held_by_head_of_state</code> statement with <code>entity_profile: OfficeHeldByHeadOfState</code></li>
+<li>Loads <code>OfficeHeldByHeadOfState</code> profile</li>
+<li>Creates packet with two entity slots:</li>
+<li>Primary slot: profile <code>tribal_government_us</code>, id <code>https://datadistillery.wikibase.cloud/entity/Q4</code></li>
+<li>Related slot: profile <code>office_held_by_head_of_state</code>, id <code>https://datadistillery.wikibase.cloud/entity/Q39</code></li>
+</ol>
+<h3 id="ui-presentation-strategy">UI Presentation Strategy</h3>
+<p><strong>Sidebar Entity Navigator:</strong></p>
+<div class="highlight"><pre><span></span><code>┌──────────────┬──────────────────────────────────────────┐
+│ ENTITIES     │                                          │
+│              │  Step 2: Basic Identification            │
+│ ◉ Tribal Gov │                                          │
+│   (primary)  │  ENGLISH (REQUIRED)                      │
+│              │                                          │
+│ ○ Office     │  Label *                                 │
+│   (related)  │  ┌────────────────────────────────────┐  │
+│              │  │ Cherokee Nation                    │  │
+│              │  └────────────────────────────────────┘  │
+│              │                                          │
+│ ────────────  │  ...                                     │
+│              │                                          │
+│ 80% complete │         [← Back]     [Continue →]        │
+└──────────────┴──────────────────────────────────────────┘
+</code></pre></div>
+<p>Users can click side entities to switch between them at any time. Each entity maintains separate progress through the 5 steps.</p>
+<p><strong>Alternative: Tab-Based Navigation:</strong></p>
+<div class="highlight"><pre><span></span><code>┌─────────────────────────────────────────────────────────┐
+│ [Tribal Government ✓] [Office 40%]                      │
+├─────────────────────────────────────────────────────────┤
+│                                                          │
+│  Currently editing: Office Held by Head of State        │
+│  Step 3: Statements                                     │
+│  ...                                                     │
+└─────────────────────────────────────────────────────────┘
+</code></pre></div>
+<h3 id="creating-related-entities">Creating Related Entities</h3>
+<p><strong>Workflow when curator clicks "Create new office":</strong></p>
+<ol>
+<li>Wizard creates a new related-entity slot in the packet for the linked profile</li>
+<li>Sets <code>creation_path: primary.office_held_by_head_of_state</code></li>
+<li>Switches active entity in UI to office</li>
+<li>Runs through 5 steps for office (Plan → Identify → Statements → Links → Review)</li>
+<li>On office completion:</li>
+<li>Returns focus to primary entity</li>
+<li>Populates <code>office_held_by_head_of_state</code> statement value with the related entity URI/QID reference</li>
+<li>Shows office as "Related entity (completed)" in sidebar/tabs</li>
+</ol>
+<p><strong>Cardinality Enforcement:</strong></p>
+<p>If statement has <code>max_count: 1</code> and office is already created, "Create new office" button is disabled.</p>
+<p>If <code>max_count: null</code>, curator can create multiple offices; wizard adds additional related entity slots keyed by profile + canonical id.</p>
+<h3 id="review-stage-for-multi-entity-packets">Review Stage for Multi-Entity Packets</h3>
+<p>Review step shows <strong>all entities</strong> in packet with expandable sections:</p>
+<div class="highlight"><pre><span></span><code>┌─────────────────────────────────────────────────────────┐
+│ Review: Multi-Entity Packet                             │
+├─────────────────────────────────────────────────────────┤
+│ PRIMARY ENTITY: Cherokee Nation                         │
+│ Profile: TribalGovernmentUS                              │
+│ Completeness: 80%                                        │
+│                                                          │
+│ [▼ Show details]                                         │
+│                                                          │
+│ RELATED ENTITIES (1)                                     │
+│                                                          │
+│ [▶ Office: Principal Chief of the Cherokee Nation]      │
+│    Profile: OfficeHeldByHeadOfState                     │
+│    Completeness: 60%                                     │
+│    [Edit] [Remove]                                       │
+│                                                          │
+│ SHIPPING ORDER                                           │
+│ 1. Office (no dependencies)                              │
+│ 2. Tribal Government (references office)                 │
+│                                                          │
+│ [← Back] [Save Draft] [Ship to Wikidata →]              │
+└─────────────────────────────────────────────────────────┘
+</code></pre></div>
+<hr />
+<h2 id="profile-driven-ui-generation">Profile-Driven UI Generation</h2>
+<h3 id="guidance-text-rendering">Guidance Text Rendering</h3>
+<p>Profile <code>guidance</code> fields appear as:</p>
+<ul>
+<li><strong>Inline help icons</strong> (ℹ️) with tooltip on hover</li>
+<li><strong>Expandable help sections</strong> for longer guidance</li>
+<li><strong>Contextual captions</strong> below input fields</li>
+</ul>
+<p><strong>Example from profile artifact:</strong></p>
+<div class="highlight"><pre><span></span><code><span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;name_identifier&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;native_name&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;messages&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;guidance&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">      </span><span class="nt">&quot;mul&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Use the tribe&#39;s preferred self-designation in their native language(s). Consult tribal language preservation resources or official communications.&quot;</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="w">  </span><span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div>
+<p><strong>Rendered in wizard:</strong></p>
+<div class="highlight"><pre><span></span><code>Native Name
+┌─────────────────────────────────────────────────────┐
+│ ᎳᎫᎿ ᎠᏰᎲ                                            │
+└─────────────────────────────────────────────────────┘
+ℹ️ Use the tribe&#39;s preferred self-designation in their
+   native language(s). [Learn more ▼]
+</code></pre></div>
+<h3 id="input-prompt-customization">Input Prompt Customization</h3>
+<p>Default input prompts:</p>
+<ul>
+<li>Labels: "Enter the primary name for this entity"</li>
+<li>Descriptions: "Enter a short, distinctive description"</li>
+<li>Statements: "Enter [statement label]"</li>
+</ul>
+<p>Profile can override:</p>
+<div class="highlight"><pre><span></span><code><span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;identification&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;labels&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">      </span><span class="nt">&quot;mul&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="nt">&quot;input_prompt&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Use the name the tribe uses in referring to itself&quot;</span>
+<span class="w">      </span><span class="p">}</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="w">  </span><span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div>
+<p>Rendered as placeholder text or caption.</p>
+<h3 id="allowed-items-choice-list-rendering">Allowed Items: Choice List Rendering</h3>
+<p><strong>Behavior by list size:</strong></p>
+<table>
+<thead>
+<tr>
+<th>List Size</th>
+<th>UI Widget</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>&lt; 10 items</td>
+<td>Dropdown (simple select)</td>
+</tr>
+<tr>
+<td>10-50 items</td>
+<td>Searchable select with type-ahead</td>
+</tr>
+<tr>
+<td>50-200 items</td>
+<td>Autocomplete with lazy loading</td>
+</tr>
+<tr>
+<td>200+ items</td>
+<td>Autocomplete with server-side search</td>
+</tr>
+</tbody>
+</table>
+<p><strong>UI hint override:</strong></p>
+<div class="highlight"><pre><span></span><code><span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;value&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;allowed_items&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">      </span><span class="nt">&quot;source&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;sparql&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;query_ref&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;queries/federal_register_issues.sparql&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;ui_hint&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;searchable_select&quot;</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="w">  </span><span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div>
+<p><strong>Fallback behavior:</strong></p>
+<p>If SPARQL query fails or returns empty, wizard uses <code>fallback_items</code> from profile:</p>
+<div class="highlight"><pre><span></span><code><span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;value&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;allowed_items&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">      </span><span class="nt">&quot;source&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;sparql&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;query_ref&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;queries/languages.sparql&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;fallback_items&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">        </span><span class="p">{</span><span class="nt">&quot;id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Q1860&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;label&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;English&quot;</span><span class="p">},</span>
+<span class="w">        </span><span class="p">{</span><span class="nt">&quot;id&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Q1567&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;label&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Cherokee&quot;</span><span class="p">}</span>
+<span class="w">      </span><span class="p">]</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="w">  </span><span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div>
+<hr />
+<h2 id="future-qid-loading-entity-editing">Future: QID Loading &amp; Entity Editing</h2>
+<p>Load existing Wikidata items into the wizard for editing.</p>
+<h3 id="workflow">Workflow</h3>
+<ol>
+<li>User provides QID (e.g., <code>Q5093</code>) + profile name</li>
+<li>Wizard fetches Wikidata JSON via <code>wbgetentities</code> API</li>
+<li>Transforms Wikidata JSON → GKC Entity JSON (reverse serialization)</li>
+<li>Populates curation packet with existing data</li>
+<li>User edits via normal 5-step workflow</li>
+<li>On ship, only <strong>changed</strong> statements are sent to Wikidata (diff-based updates)</li>
+</ol>
+<h3 id="related-entity-auto-loading">Related Entity Auto-Loading</h3>
+<p>If profile references other profiles, wizard:</p>
+<ol>
+<li>Checks existing entity for related statements (e.g., P1906 office held by head of state)</li>
+<li>Fetches referenced QID (e.g., Q999888)</li>
+<li>Loads it into packet as related entity</li>
+<li>Presents multi-entity editing session</li>
+</ol>
+<p><strong>Example:</strong></p>
+<p>User loads Q5093 (Cherokee Nation) with TribalGovernmentUS profile</p>
+<p>→ Wizard finds P1906 = Q999888 (Principal Chief office)</p>
+<p>→ Loads OfficeHeldByHeadOfState profile for Q999888</p>
+<p>→ Packet contains both entities; user can edit either</p>
+<h3 id="depth-1-loading-strategy">Depth-1 Loading Strategy</h3>
+<p><strong>Current design:</strong> Load direct children only (one hop)</p>
+<ul>
+<li>Primary entity → Related entities (via entity_profile statements)</li>
+<li>Does <strong>not</strong> recursively load links-of-links</li>
+</ul>
+<p><strong>Future:</strong> Configurable depth in metadata:</p>
+<div class="highlight"><pre><span></span><code><span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;metadata&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;profile_graph&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">      </span><span class="p">{</span>
+<span class="w">        </span><span class="nt">&quot;target_profile&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;https://datadistillery.wikibase.cloud/entity/Q39&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">&quot;max_depth&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">2</span>
+<span class="w">      </span><span class="p">}</span>
+<span class="w">    </span><span class="p">]</span>
+<span class="w">  </span><span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div>
+<hr />
+<h2 id="validation-error-handling">Validation &amp; Error Handling</h2>
+<h3 id="real-time-validation">Real-Time Validation</h3>
+<ul>
+<li><strong>On field blur</strong>: Check datatype, constraints, required status</li>
+<li><strong>On statement completion</strong>: Validate qualifiers, references, cardinality</li>
+<li><strong>Before step advancement</strong>: Check all required fields in current step are complete</li>
+</ul>
+<h3 id="validation-severity-levels">Validation Severity Levels</h3>
+<table>
+<thead>
+<tr>
+<th>Severity</th>
+<th>Behavior</th>
+<th>Example</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Error</strong></td>
+<td>Blocks progression; must fix</td>
+<td>Missing required label</td>
+</tr>
+<tr>
+<td><strong>Warning</strong></td>
+<td>Allows progression; shows in review</td>
+<td>Missing recommended statement</td>
+</tr>
+<tr>
+<td><strong>Info</strong></td>
+<td>Non-blocking suggestion</td>
+<td>"Consider adding aliases for discoverability"</td>
+</tr>
+</tbody>
+</table>
+<h3 id="constraint-violation-messaging">Constraint Violation Messaging</h3>
+<p>Profile constraints generate user-friendly error messages:</p>
+<p><strong>Profile constraint:</strong></p>
+<div class="highlight"><pre><span></span><code><span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;value&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;constraints&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">      </span><span class="p">{</span>
+<span class="w">        </span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;format&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">&quot;pattern&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;^Q\\d+$&quot;</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">&quot;error_message&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Must be a valid QID (e.g., Q123456)&quot;</span>
+<span class="w">      </span><span class="p">}</span>
+<span class="w">    </span><span class="p">]</span>
+<span class="w">  </span><span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div>
+<p><strong>Rendered error:</strong></p>
+<div class="highlight"><pre><span></span><code>✗ Must be a valid QID (e.g., Q123456)
+  You entered: &quot;Cherokee Nation&quot; (not a valid format)
+</code></pre></div>
+<hr />
+<h2 id="related-documentation">Related Documentation</h2>
+<ul>
+<li><a href="../../architecture/">GKC Architecture Overview</a> — How wizards fit in GKC pipeline</li>
+<li><a href="../profiles/">GKC Entity Profiles</a> — Profile schema and structure reference</li>
+<li><a href="../entity-json-schema/">GKC Entity JSON Schema</a> — Curation packet format</li>
+<li><a href="../profiles/#profile-graphs-cross-references">Profile Graphs &amp; Multi-Entity Linking</a></li>
+</ul>
+<hr />
+<p><strong>Last Updated:</strong> March 26, 2026</p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.instant", "navigation.sections", "navigation.top", "toc.follow", "content.code.copy"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.79ae519e.min.js"></script>
+      
+        <script src="https://unpkg.com/mermaid@10.6.1/dist/mermaid.min.js"></script>
+      
+        <script src="../../javascripts/mermaid-init.js"></script>
+      
+    
+  </body>
+</html>
