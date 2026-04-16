@@ -190,11 +190,11 @@ def _load_meta_wikibase_init_yaml_text() -> str:
     )
 
 
-def load_meta_wikibase_init_document() -> dict[str, Any]:
+def load_wikibase_init_document() -> dict[str, Any]:
     """Load the package-owned Meta-Wikibase init document and normalize it."""
 
     raw_document = yaml.safe_load(_load_meta_wikibase_init_yaml_text())
-    return normalize_meta_wikibase_init_document(raw_document)
+    return normalize_wikibase_init_document(raw_document)
 
 
 def get_wikibase_datatype_spec(canonical_name: str) -> WikibaseDatatypeSpec:
@@ -274,7 +274,7 @@ def load_wikibase_datatype_registry_json() -> dict[str, dict[str, str]]:
     }
 
 
-def normalize_meta_wikibase_init_document(document: dict[str, Any]) -> dict[str, Any]:
+def normalize_wikibase_init_document(document: dict[str, Any]) -> dict[str, Any]:
     """Normalize a Meta-Wikibase init document to canonical runtime datatypes."""
 
     if not isinstance(document, dict):
@@ -351,15 +351,15 @@ def normalize_meta_wikibase_init_document(document: dict[str, Any]) -> dict[str,
     }
 
 
-def build_meta_wikibase_init_index(
+def build_wikibase_init_index(
     document: dict[str, Any] | None = None,
 ) -> MetaWikibaseInitIndex:
     """Build a typed index over the package-owned Meta-Wikibase init fixture."""
 
     normalized_document = (
-        load_meta_wikibase_init_document()
+        load_wikibase_init_document()
         if document is None
-        else normalize_meta_wikibase_init_document(document)
+        else normalize_wikibase_init_document(document)
     )
     metadata_payload = normalized_document["metadata"]
     metadata = MetaWikibaseInitMetadata(
@@ -421,24 +421,24 @@ def build_meta_wikibase_init_index(
     )
 
 
-def get_meta_wikibase_init_entity(entity_key: str) -> MetaWikibaseInitEntity:
+def get_wikibase_init_entity(entity_key: str) -> MetaWikibaseInitEntity:
     """Return one normalized entity entry from the package-owned init fixture."""
 
-    index = build_meta_wikibase_init_index()
+    index = build_wikibase_init_index()
     try:
         return index.entities[entity_key]
     except KeyError as exc:
         raise KeyError(f"Unknown Meta-Wikibase init entity: {entity_key}") from exc
 
 
-def build_meta_wikibase_semantic_anchor_contract(
+def build_wikibase_semantic_anchor_contract(
     document: dict[str, Any] | None = None,
     *,
     internal_name_identifier_prefix: str | None = None,
 ) -> MetaWikibaseSemanticAnchorContract:
     """Compile the package-owned init fixture into a required anchor contract."""
 
-    index = build_meta_wikibase_init_index(document)
+    index = build_wikibase_init_index(document)
     prefix = (
         internal_name_identifier_prefix
         if isinstance(internal_name_identifier_prefix, str)
@@ -462,15 +462,15 @@ def build_meta_wikibase_semantic_anchor_contract(
     )
 
 
-def get_meta_wikibase_init_contract_digest(
+def get_wikibase_init_contract_digest(
     document: dict[str, Any] | None = None,
 ) -> str:
     """Return a stable digest for the normalized Meta-Wikibase init contract."""
 
     normalized_document = (
-        load_meta_wikibase_init_document()
+        load_wikibase_init_document()
         if document is None
-        else normalize_meta_wikibase_init_document(document)
+        else normalize_wikibase_init_document(document)
     )
     serialized = json.dumps(
         normalized_document,
@@ -480,7 +480,7 @@ def get_meta_wikibase_init_contract_digest(
     return hashlib.sha256(serialized.encode("utf-8")).hexdigest()
 
 
-def compile_meta_wikibase_seed(
+def compile_wikibase_seed(
     document: dict[str, Any] | None = None,
     *,
     label_language: str | None = None,
@@ -500,7 +500,7 @@ def compile_meta_wikibase_seed(
         SnakBuilder,
     )
 
-    index = build_meta_wikibase_init_index(document)
+    index = build_wikibase_init_index(document)
     entity_shell_builder = EntityShellBuilder()
     claim_builder = ClaimBuilder(SnakBuilder(DataTypeTransformer()))
     resolved_label_language = _resolve_meta_wikibase_label_language(label_language)
@@ -553,7 +553,7 @@ def compile_meta_wikibase_seed(
     )
 
 
-def plan_meta_wikibase_seed_baseline(
+def plan_wikibase_seed_baseline(
     document: dict[str, Any] | None = None,
     *,
     current_entities_by_internal_name_identifier: (
@@ -565,7 +565,7 @@ def plan_meta_wikibase_seed_baseline(
 ) -> MetaWikibaseSeedPlan:
     """Return a dry-run baseline plan for the package-owned init fixture."""
 
-    compilation = compile_meta_wikibase_seed(
+    compilation = compile_wikibase_seed(
         document,
         label_language=label_language,
     )
@@ -573,7 +573,7 @@ def plan_meta_wikibase_seed_baseline(
     resolved_label_language = _resolve_meta_wikibase_label_language(label_language)
     required_monolingualtext_properties = {
         entity.internal_name_identifier
-        for entity in build_meta_wikibase_init_index(document).properties.values()
+        for entity in build_wikibase_init_index(document).properties.values()
         if entity.datatype == "monolingualtext"
     }
 
@@ -631,7 +631,7 @@ def plan_meta_wikibase_seed_baseline(
     )
 
 
-def normalize_meta_wikibase_required_entity_view(
+def normalize_wikibase_required_entity_view(
     payload: dict[str, Any],
 ) -> dict[str, Any]:
     """Return the canonical comparable view for one compiled seed payload."""
@@ -639,7 +639,7 @@ def normalize_meta_wikibase_required_entity_view(
     return _normalize_meta_wikibase_compiled_payload(payload)
 
 
-def normalize_meta_wikibase_current_entity_view(
+def normalize_wikibase_current_entity_view(
     entity: dict[str, Any],
     *,
     entity_id_to_internal_name_identifier: dict[str, str],
@@ -660,7 +660,7 @@ def normalize_meta_wikibase_current_entity_view(
     )
 
 
-def compare_meta_wikibase_entity_views(
+def compare_wikibase_entity_views(
     required_view: dict[str, Any],
     current_view: dict[str, Any],
     *,
@@ -1492,22 +1492,22 @@ __all__ = [
     "MetaWikibaseSeedPlan",
     "MetaWikibaseSeedPlanEntry",
     "WikibaseDatatypeSpec",
-    "build_meta_wikibase_init_index",
-    "build_meta_wikibase_semantic_anchor_contract",
+    "build_wikibase_init_index",
+    "build_wikibase_semantic_anchor_contract",
     "canonicalize_wikibase_datatype",
-    "compare_meta_wikibase_entity_views",
-    "compile_meta_wikibase_seed",
-    "get_meta_wikibase_init_entity",
-    "get_meta_wikibase_init_contract_digest",
+    "compare_wikibase_entity_views",
+    "compile_wikibase_seed",
+    "get_wikibase_init_entity",
+    "get_wikibase_init_contract_digest",
     "get_wikibase_datatype_spec",
     "is_known_wikibase_datatype",
     "is_wikibase_item_datatype",
     "list_wikibase_datatypes",
-    "load_meta_wikibase_init_document",
+    "load_wikibase_init_document",
     "load_wikibase_datatype_registry",
     "load_wikibase_datatype_registry_json",
-    "normalize_meta_wikibase_current_entity_view",
-    "normalize_meta_wikibase_init_document",
-    "normalize_meta_wikibase_required_entity_view",
-    "plan_meta_wikibase_seed_baseline",
+    "normalize_wikibase_current_entity_view",
+    "normalize_wikibase_init_document",
+    "normalize_wikibase_required_entity_view",
+    "plan_wikibase_seed_baseline",
 ]

@@ -2,13 +2,13 @@
 
 from gkc.fermenter import validate_semantic_anchor_document
 from gkc.wikibase import (
-    build_meta_wikibase_semantic_anchor_contract,
-    get_meta_wikibase_init_contract_digest,
+    build_wikibase_semantic_anchor_contract,
+    get_wikibase_init_contract_digest,
 )
 
 
 def _valid_anchor_document() -> dict:
-    contract = build_meta_wikibase_semantic_anchor_contract()
+    contract = build_wikibase_semantic_anchor_contract()
     entities: dict[str, dict[str, str]] = {}
     property_index = 0
     item_index = 0
@@ -31,7 +31,7 @@ def _valid_anchor_document() -> dict:
     return {
         "metadata": {
             "generated_at": "2026-04-04T00:00:00Z",
-            "contract_digest": get_meta_wikibase_init_contract_digest(),
+            "contract_digest": get_wikibase_init_contract_digest(),
             "property_count": property_index,
             "item_count": item_index,
         },

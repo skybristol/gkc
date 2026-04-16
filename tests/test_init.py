@@ -46,17 +46,17 @@ def test_wikibase_registry_imports():
     assert hasattr(gkc, "MetaWikibaseInitIndex")
     assert hasattr(gkc, "MetaWikibaseInitMetadata")
     assert hasattr(gkc, "WikibaseDatatypeSpec")
-    assert hasattr(gkc, "build_meta_wikibase_init_index")
+    assert hasattr(gkc, "build_wikibase_init_index")
     assert hasattr(gkc, "canonicalize_wikibase_datatype")
-    assert hasattr(gkc, "get_meta_wikibase_init_entity")
+    assert hasattr(gkc, "get_wikibase_init_entity")
     assert hasattr(gkc, "get_wikibase_datatype_spec")
     assert hasattr(gkc, "is_known_wikibase_datatype")
     assert hasattr(gkc, "is_wikibase_item_datatype")
     assert hasattr(gkc, "list_wikibase_datatypes")
-    assert hasattr(gkc, "load_meta_wikibase_init_document")
+    assert hasattr(gkc, "load_wikibase_init_document")
     assert hasattr(gkc, "load_wikibase_datatype_registry")
     assert hasattr(gkc, "load_wikibase_datatype_registry_json")
-    assert hasattr(gkc, "normalize_meta_wikibase_init_document")
+    assert hasattr(gkc, "normalize_wikibase_init_document")
 
 
 def test_mash_adapter_contract_imports():

@@ -7,7 +7,7 @@ from pathlib import Path
 import gkc
 from gkc import cli, still_charger
 from gkc.mash import ClaimSummary, WikibaseItemTemplate
-from gkc.wikibase import build_meta_wikibase_semantic_anchor_contract
+from gkc.wikibase import build_wikibase_semantic_anchor_contract
 
 
 class FakeWikiverseAuth:
@@ -44,7 +44,7 @@ class FakeOpenStreetMapAuth:
 
 
 def _default_semantic_anchor_document() -> dict:
-    contract = build_meta_wikibase_semantic_anchor_contract()
+    contract = build_wikibase_semantic_anchor_contract()
     entities: dict[str, dict[str, str]] = {}
     property_index = 300
     item_index = 300
@@ -243,7 +243,7 @@ def test_wikibase_init_preview_can_compare_live_state(monkeypatch, capsys, tmp_p
 
     monkeypatch.setattr(
         cli,
-        "resolve_spiritsafe_meta_wikibase_config",
+        "resolve_spiritsafe_wikibase_config",
         lambda local_root: (
             Path(local_root) / "config" / "dd-wikibase.yaml",
             {
@@ -365,7 +365,7 @@ def test_wikibase_init_uses_anchor_hints_when_sparql_misses_entity(
 
     monkeypatch.setattr(
         cli,
-        "resolve_spiritsafe_meta_wikibase_config",
+        "resolve_spiritsafe_wikibase_config",
         lambda local_root: (
             Path(local_root) / "config" / "dd-wikibase.yaml",
             {

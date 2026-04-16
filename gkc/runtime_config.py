@@ -115,7 +115,7 @@ class MetaWikibaseConfigValues(TypedDict):
     value_list_talk_page_rules: tuple[ValueListTalkPageRule, ...]
 
 
-def default_meta_wikibase_config_values() -> MetaWikibaseConfigValues:
+def default_wikibase_config_values() -> MetaWikibaseConfigValues:
     return {
         "config_id": None,
         "label": None,
@@ -277,7 +277,7 @@ def _load_spiritsafe_layout(raw_config: dict[object, object]) -> SpiritSafeLayou
     )
 
 
-def discover_meta_wikibase_config_path(
+def discover_wikibase_config_path(
     *,
     start_dir: Optional[Path] = None,
     explicit_path: Optional[str] = None,
@@ -305,7 +305,7 @@ def discover_meta_wikibase_config_path(
     return None
 
 
-def load_meta_wikibase_config(path: Path) -> MetaWikibaseConfigValues:
+def load_wikibase_config(path: Path) -> MetaWikibaseConfigValues:
     try:
         raw_config = yaml.safe_load(path.read_text(encoding="utf-8"))
     except Exception as exc:
@@ -314,7 +314,7 @@ def load_meta_wikibase_config(path: Path) -> MetaWikibaseConfigValues:
         ) from exc
 
     if raw_config is None:
-        return default_meta_wikibase_config_values()
+        return default_wikibase_config_values()
     if not isinstance(raw_config, dict):
         raise RuntimeError(
             f"Meta-wikibase config {path} must contain a top-level mapping"
@@ -354,11 +354,11 @@ def resolve_spiritsafe_layout_for_root(spiritsafe_root: str | Path) -> SpiritSaf
     """Resolve the authored SpiritSafe layout contract for a local checkout root."""
 
     root = Path(spiritsafe_root).expanduser().resolve()
-    config_path = discover_meta_wikibase_config_path(start_dir=root)
+    config_path = discover_wikibase_config_path(start_dir=root)
     if config_path is None:
         return SpiritSafeLayout()
 
-    config_values = load_meta_wikibase_config(config_path)
+    config_values = load_wikibase_config(config_path)
     return config_values.get("spiritsafe_layout", SpiritSafeLayout())
 
 
@@ -377,12 +377,12 @@ def get_wikibase_runtime_config() -> WikibaseRuntimeConfig:
     ``WIKIVERSE_*`` environment variables or explicit parameters.
     """
 
-    config_path = discover_meta_wikibase_config_path()
+    config_path = discover_wikibase_config_path()
     config_values: MetaWikibaseConfigValues
     if config_path:
-        config_values = load_meta_wikibase_config(config_path)
+        config_values = load_wikibase_config(config_path)
     else:
-        config_values = default_meta_wikibase_config_values()
+        config_values = default_wikibase_config_values()
 
     api_url = (
         os.environ.get(META_WB_API_URL_ENV_VAR)

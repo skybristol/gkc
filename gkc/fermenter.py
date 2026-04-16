@@ -25,14 +25,14 @@ from gkc.mash import (
 )
 from gkc.runtime_config import resolve_spiritsafe_layout_for_root
 from gkc.wikibase import (
-    build_meta_wikibase_semantic_anchor_contract,
+    build_wikibase_semantic_anchor_contract,
     canonicalize_wikibase_datatype,
-    compare_meta_wikibase_entity_views,
-    compile_meta_wikibase_seed,
-    get_meta_wikibase_init_contract_digest,
+    compare_wikibase_entity_views,
+    compile_wikibase_seed,
     get_wikibase_datatype_spec,
+    get_wikibase_init_contract_digest,
     is_wikibase_item_datatype,
-    normalize_meta_wikibase_required_entity_view,
+    normalize_wikibase_required_entity_view,
 )
 
 
@@ -169,12 +169,12 @@ def validate_semantic_anchor_document(
 ) -> SemanticAnchorValidationResult:
     """Validate a semantic-anchor document against the package-owned init contract."""
 
-    contract = build_meta_wikibase_semantic_anchor_contract(
+    contract = build_wikibase_semantic_anchor_contract(
         internal_name_identifier_prefix=internal_name_identifier_prefix
     )
-    compilation = compile_meta_wikibase_seed()
+    compilation = compile_wikibase_seed()
     required_views = {
-        internal_name_identifier: normalize_meta_wikibase_required_entity_view(
+        internal_name_identifier: normalize_wikibase_required_entity_view(
             compiled_entity.payload
         )
         for internal_name_identifier, compiled_entity in (
@@ -184,7 +184,7 @@ def validate_semantic_anchor_document(
     notices: list[ConformanceNotice] = []
     entity_results: dict[str, SemanticAnchorEntityValidation] = {}
     required_anchor_count = len(contract.requirements)
-    contract_digest = get_meta_wikibase_init_contract_digest()
+    contract_digest = get_wikibase_init_contract_digest()
 
     if not isinstance(anchor_document, dict):
         notices.append(
@@ -383,7 +383,7 @@ def validate_semantic_anchor_document(
 
         resolved_view = payload.get("resolved")
         if isinstance(resolved_view, dict):
-            drift_codes = compare_meta_wikibase_entity_views(
+            drift_codes = compare_wikibase_entity_views(
                 required_view,
                 resolved_view,
             )
