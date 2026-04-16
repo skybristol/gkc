@@ -803,13 +803,13 @@ def _build_parser() -> argparse.ArgumentParser:
     )
 
     wikibase_parser = subparsers.add_parser(
-        "wikibase", help="Meta-Wikibase bootstrap and preview operations"
+        "wikibase", help="Wikibase seed bootstrap and preview operations"
     )
     wikibase_subparsers = wikibase_parser.add_subparsers(dest="wikibase_command")
 
     wikibase_init = wikibase_subparsers.add_parser(
         "init",
-        help=("Preview the Meta-Wikibase seed compilation and dry-run baseline plan"),
+        help=("Preview the Wikibase seed compilation and dry-run baseline plan"),
     )
     wikibase_init.add_argument(
         "--api-url",
@@ -928,7 +928,7 @@ def _build_parser() -> argparse.ArgumentParser:
 
     spiritsafe_semantic_anchors_validate = spiritsafe_semantic_anchors_subparsers.add_parser(
         "validate",
-        help="Validate semantic anchors against the package-owned Meta-Wikibase contract",
+        help="Validate semantic anchors against the package-owned Wikibase seed contract",
     )
     spiritsafe_semantic_anchors_validate.add_argument(
         "--artifact-file",
@@ -3295,7 +3295,7 @@ def _handle_mash_full_sync_wikibase(args: argparse.Namespace) -> dict[str, Any]:
 
 
 def _handle_wikibase_init(args: argparse.Namespace) -> dict[str, Any]:
-    """Preview Meta-Wikibase seed compilation and dry-run init actions."""
+    """Preview Wikibase seed compilation and dry-run init actions."""
 
     original_languages = gkc.get_languages()
     if args.language:
@@ -3401,7 +3401,7 @@ def _handle_wikibase_init(args: argparse.Namespace) -> dict[str, Any]:
             "command": args.command_path,
             "ok": True,
             "message": (
-                f"Prepared Meta-Wikibase dry-run plan for {len(plan.operations)} seed entities"
+                f"Prepared Wikibase dry-run plan for {len(plan.operations)} seed entities"
             ),
             "details": details,
         }
@@ -3489,13 +3489,13 @@ def _load_wikibase_init_current_entities_from_local_root(
     name_identifier_property_id = config_values.get("name_identifier_property_id")
     if not name_identifier_property_id:
         raise CLIError(
-            "Meta-wikibase config is missing semantic_conventions.name_identifier_property_id"
+            "Wikibase config is missing semantic_conventions.name_identifier_property_id"
         )
 
     sparql_endpoint = config_values.get("sparql_endpoint")
     if not sparql_endpoint:
         raise CLIError(
-            "Meta-wikibase config is missing sparql_endpoint, required for bootstrap dry-run comparison"
+            "Wikibase config is missing sparql_endpoint, required for bootstrap dry-run comparison"
         )
 
     entity_id_to_internal_name_identifier = (

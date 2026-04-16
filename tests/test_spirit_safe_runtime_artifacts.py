@@ -963,13 +963,13 @@ spiritsafe:
 def test_build_spiritsafe_semantic_anchor_document_requires_config(
     tmp_path: Path, fixture_root: Path
 ):
-    """Semantic anchor generation should fail clearly without meta-wikibase config."""
+    """Semantic anchor generation should fail clearly without a Wikibase config."""
 
     root = tmp_path / "spiritsafe"
     copytree(fixture_root, root)
     (root / "config" / "dd-wikibase.yaml").unlink()
 
-    with pytest.raises(FileNotFoundError, match="Meta-wikibase config"):
+    with pytest.raises(FileNotFoundError, match="Wikibase config"):
         build_spiritsafe_semantic_anchor_document(root)
 
 
